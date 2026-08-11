@@ -206,6 +206,28 @@ document.addEventListener("DOMContentLoaded", () => {
   startAppleWatchAutoSync();
 });
 
+// LISTEN FOR SAFARI TAB FOCUS, VISIBILITY & URL NAVIGATION EVENTS (PWA / SAFARI TAB RETURN)
+window.addEventListener("pageshow", () => {
+  addDebugLog("👁️ Evento 'pageshow' (Retorno a la pestaña Safari)", "info", { url: window.location.href });
+  checkUrlParamsForWatchSync();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    addDebugLog("👁️ Evento 'visibilitychange' (Pestaña visible)", "info", { url: window.location.href });
+    checkUrlParamsForWatchSync();
+  }
+});
+
+window.addEventListener("popstate", () => {
+  addDebugLog("🔗 Evento 'popstate' (Navegación URL)", "info", { url: window.location.href });
+  checkUrlParamsForWatchSync();
+});
+
+window.addEventListener("focus", () => {
+  checkUrlParamsForWatchSync();
+});
+
 // CATEGORY & SUBTAB NAVIGATION ENGINE
 const NAVIGATION_CATEGORIES = {
   summary: {
