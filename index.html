@@ -82,9 +82,9 @@
         <!-- NAVIGATION MENU -->
         <ul class="nav-menu">
           <li class="nav-item">
-            <button class="active" onclick="showTab('profile-view', this)">
-              <i class="fa-solid fa-sliders nav-icon"></i>
-              <span>Perfil</span>
+            <button class="active" onclick="showTab('summary-view', this)">
+              <i class="fa-solid fa-gauge-high nav-icon"></i>
+              <span>Resumen</span>
             </button>
           </li>
           <li class="nav-item">
@@ -118,6 +118,12 @@
             </button>
           </li>
           <li class="nav-item">
+            <button onclick="showTab('profile-view', this)">
+              <i class="fa-solid fa-sliders nav-icon"></i>
+              <span>Perfil</span>
+            </button>
+          </li>
+          <li class="nav-item">
             <button onclick="showTab('coach-view', this)">
               <i class="fa-solid fa-robot nav-icon"></i>
               <span>Entrenador AI</span>
@@ -145,52 +151,198 @@
     <!-- MAIN CONTENT VIEW AREA -->
     <main class="main-content">
       
-      <!-- TAB 1: PROFILE & BIOMETRICS VIEW -->
-      <section id="profile-view" class="view-panel active">
+      <!-- TAB 1: MAIN SUMMARY & APPLE WATCH LIVE DASHBOARD -->
+      <section id="summary-view" class="view-panel active">
         <div class="header-title-group">
-          <h1 class="page-title">Perfil & Vista de Entrenamientos</h1>
-          <p class="page-subtitle" id="profile-subtitle">Personalización para recomposición corporal (perder grasa + ganar músculo)</p>
+          <h1 class="page-title">Resumen Diario & Apple Watch</h1>
+          <p class="page-subtitle" id="summary-subtitle">Estado en tiempo real de actividad, salud y entrenamiento de hoy</p>
         </div>
 
-        <div class="dashboard-grid">
+        <!-- APPLE WATCH HERO CARD -->
+        <div class="glass-card summary-watch-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+          <div class="summary-watch-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <div class="watch-pulse-ring" style="width: 38px; height: 38px; font-size: 1.2rem;">
+                <i class="fa-brands fa-apple"></i>
+              </div>
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700;" id="summary-watch-device">Apple Watch (Carlos)</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted);" id="summary-watch-sync-time">Sincronizado: Hace un instante</p>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; padding: 0.35rem 0.7rem; border-radius: 20px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
+                <span class="watch-pulse-dot" style="margin: 0;"></span> Auto-Sync Activo
+              </span>
+              <button class="btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; border-radius: var(--radius-sm);" onclick="openAppleWatchModal()">
+                <i class="fa-brands fa-apple"></i> Panel Watch
+              </button>
+            </div>
+          </div>
+
+          <!-- ACTIVITY RINGS & LIVE METRICS IN RESUMEN -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; align-items: center;">
+            
+            <!-- RINGS SECTION -->
+            <div class="activity-rings-container" style="background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+              <div class="rings-wrapper">
+                <svg class="rings-svg" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" class="ring-bg move-bg" />
+                  <circle cx="60" cy="60" r="38" class="ring-bg exercise-bg" />
+                  <circle cx="60" cy="60" r="26" class="ring-bg stand-bg" />
+                  
+                  <circle cx="60" cy="60" r="50" class="ring-fg move-fg" id="summary-ring-move-circle" stroke-dasharray="314" stroke-dashoffset="60" />
+                  <circle cx="60" cy="60" r="38" class="ring-fg exercise-fg" id="summary-ring-exercise-circle" stroke-dasharray="238" stroke-dashoffset="30" />
+                  <circle cx="60" cy="60" r="26" class="ring-fg stand-fg" id="summary-ring-stand-circle" stroke-dasharray="163" stroke-dashoffset="20" />
+                </svg>
+                <div class="rings-center-icon">
+                  <i class="fa-brands fa-apple"></i>
+                </div>
+              </div>
+
+              <div class="rings-legend">
+                <div class="ring-legend-item move">
+                  <div class="legend-color-dot"></div>
+                  <div class="legend-text">
+                    <span class="legend-title">Movimiento</span>
+                    <span class="legend-val" id="summary-ring-move-val">540 / 600 kcal</span>
+                  </div>
+                </div>
+                <div class="ring-legend-item exercise">
+                  <div class="legend-color-dot"></div>
+                  <div class="legend-text">
+                    <span class="legend-title">Ejercicio</span>
+                    <span class="legend-val" id="summary-ring-exercise-val">42 / 30 min</span>
+                  </div>
+                </div>
+                <div class="ring-legend-item stand">
+                  <div class="legend-color-dot"></div>
+                  <div class="legend-text">
+                    <span class="legend-title">De pie</span>
+                    <span class="legend-val" id="summary-ring-stand-val">10 / 12 hrs</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- METRICS CARDS -->
+            <div class="watch-metrics-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <div class="metric-card">
+                <div class="metric-icon hr-pulse"><i class="fa-solid fa-heart-pulse"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Ritmo Cardíaco</span>
+                  <span class="metric-value" id="summary-metric-hr">74 <small>BPM</small></span>
+                  <span class="metric-sub">En directo</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon steps"><i class="fa-solid fa-shoe-prints"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Pasos Hoy</span>
+                  <span class="metric-value" id="summary-metric-steps">9,840</span>
+                  <span class="metric-sub">Apple Watch</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon dist"><i class="fa-solid fa-route"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Distancia</span>
+                  <span class="metric-value" id="summary-metric-dist">7.2 <small>km</small></span>
+                  <span class="metric-sub">Recorridos</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon kcal"><i class="fa-solid fa-fire"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Calorías Activas</span>
+                  <span class="metric-value" id="summary-metric-kcal">540 <small>kcal</small></span>
+                  <span class="metric-sub">Quemadas hoy</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- TODAY'S WORKOUT SUMMARY BAR -->
+          <div style="margin-top: 1.25rem; background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;" id="summary-today-workout-box">
+            <!-- Dynamically populated by app.js -->
+          </div>
+        </div>
+
+        <!-- RESUMEN NUTRICIONAL & OBJETIVOS DIARIOS -->
+        <h2 style="font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-bullseye" style="color: var(--accent-emerald);"></i> Objetivos Nutricionales Diarios
+        </h2>
+
+        <div class="dashboard-grid" style="margin-bottom: 1.5rem;">
           <div class="glass-card stat-card">
             <div class="stat-icon cal"><i class="fa-solid fa-fire-flame-curry"></i></div>
             <div class="stat-info">
-              <h3>Calorías Diarias Objetivo</h3>
-              <div class="stat-value" id="target-calories">2,150 kcal</div>
-              <div class="stat-subtext">Déficit moderado controlado</div>
+              <h3>Calorías Objetivo</h3>
+              <div class="stat-value" id="summary-target-calories">2,150 kcal</div>
+              <div class="stat-subtext">Déficit controlado</div>
             </div>
           </div>
           <div class="glass-card stat-card">
             <div class="stat-icon prot"><i class="fa-solid fa-drumstick-bite"></i></div>
             <div class="stat-info">
-              <h3>Proteína Diaria</h3>
-              <div class="stat-value" id="target-protein">155 g</div>
-              <div class="stat-subtext">~2.0g / kg de peso</div>
+              <h3>Proteína</h3>
+              <div class="stat-value" id="summary-target-protein">155 g</div>
+              <div class="stat-subtext">Recomposición</div>
             </div>
           </div>
           <div class="glass-card stat-card">
             <div class="stat-icon carb"><i class="fa-solid fa-bowl-rice"></i></div>
             <div class="stat-info">
               <h3>Carbohidratos</h3>
-              <div class="stat-value" id="target-carbs">210 g</div>
-              <div class="stat-subtext">Energía limpia para entrenar</div>
+              <div class="stat-value" id="summary-target-carbs">210 g</div>
+              <div class="stat-subtext">Energía limpia</div>
             </div>
           </div>
           <div class="glass-card stat-card">
             <div class="stat-icon fat"><i class="fa-solid fa-avocado"></i></div>
             <div class="stat-info">
-              <h3>Grasas Saludables</h3>
-              <div class="stat-value" id="target-fats">65 g</div>
-              <div class="stat-subtext">Salud hormonal y saciedad</div>
+              <h3>Grasas</h3>
+              <div class="stat-value" id="summary-target-fats">65 g</div>
+              <div class="stat-subtext">Salud hormonal</div>
             </div>
           </div>
         </div>
 
-        <!-- VISTA DE ENTRENAMIENTOS Y REGISTRO DE DÍAS -->
-        <div id="profile-workouts-container">
-          <!-- Rendered dynamically by app.js -->
+        <!-- QUICK ACCESS SHORTCUTS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="showTab('nutrition-view', document.getElementById('dock-btn-nutrition'))">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+              <h3 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-utensils"></i> Menú del Día
+              </h3>
+              <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem;"></i>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Consulta las comidas planificadas para hoy.</p>
+          </div>
+
+          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="showTab('workouts-view', document.getElementById('dock-btn-workouts'))">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+              <h3 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-dumbbell"></i> Rutina de Ejercicios
+              </h3>
+              <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem;"></i>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Revisa los ejercicios asignados para la sesión.</p>
+          </div>
+
+          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="showTab('dog-routes-view', document.getElementById('dock-btn-dog'))">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+              <h3 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-dog"></i> Rutas con Boo
+              </h3>
+              <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem;"></i>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Rutas de paseo al aire libre con Boo.</p>
+          </div>
         </div>
+
       </section>
 
       <!-- TAB 2: NUTRITION & MEALS VIEW -->
@@ -292,6 +444,54 @@
           <div style="height: 280px; position: relative;">
             <canvas id="weightChart"></canvas>
           </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: PROFILE & BIOMETRICS VIEW -->
+      <section id="profile-view" class="view-panel">
+        <div class="header-title-group">
+          <h1 class="page-title">Perfil & Registro de Entrenamientos</h1>
+          <p class="page-subtitle" id="profile-subtitle">Personalización para recomposición corporal (perder grasa + ganar músculo)</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="glass-card stat-card">
+            <div class="stat-icon cal"><i class="fa-solid fa-fire-flame-curry"></i></div>
+            <div class="stat-info">
+              <h3>Calorías Diarias Objetivo</h3>
+              <div class="stat-value" id="target-calories">2,150 kcal</div>
+              <div class="stat-subtext">Déficit moderado controlado</div>
+            </div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-icon prot"><i class="fa-solid fa-drumstick-bite"></i></div>
+            <div class="stat-info">
+              <h3>Proteína Diaria</h3>
+              <div class="stat-value" id="target-protein">155 g</div>
+              <div class="stat-subtext">~2.0g / kg de peso</div>
+            </div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-icon carb"><i class="fa-solid fa-bowl-rice"></i></div>
+            <div class="stat-info">
+              <h3>Carbohidratos</h3>
+              <div class="stat-value" id="target-carbs">210 g</div>
+              <div class="stat-subtext">Energía limpia para entrenar</div>
+            </div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-icon fat"><i class="fa-solid fa-avocado"></i></div>
+            <div class="stat-info">
+              <h3>Grasas Saludables</h3>
+              <div class="stat-value" id="target-fats">65 g</div>
+              <div class="stat-subtext">Salud hormonal y saciedad</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISTA DE ENTRENAMIENTOS Y REGISTRO DE DÍAS -->
+        <div id="profile-workouts-container">
+          <!-- Rendered dynamically by app.js -->
         </div>
       </section>
 
@@ -434,9 +634,9 @@
 
   <!-- IOS BOTTOM NAVIGATION DOCK (IPHONE RESPONSIVE DOCK BAR) -->
   <nav class="ios-bottom-dock">
-    <button class="ios-dock-btn active" id="dock-btn-profile" onclick="showTab('profile-view', this)">
-      <i class="fa-solid fa-sliders"></i>
-      <span>Perfil</span>
+    <button class="ios-dock-btn active" id="dock-btn-summary" onclick="showTab('summary-view', this)">
+      <i class="fa-solid fa-gauge-high"></i>
+      <span>Resumen</span>
     </button>
     <button class="ios-dock-btn" id="dock-btn-nutrition" onclick="showTab('nutrition-view', this)">
       <i class="fa-solid fa-utensils"></i>
@@ -458,14 +658,13 @@
       <i class="fa-solid fa-chart-line"></i>
       <span>Progreso</span>
     </button>
+    <button class="ios-dock-btn" id="dock-btn-profile" onclick="showTab('profile-view', this)">
+      <i class="fa-solid fa-sliders"></i>
+      <span>Perfil</span>
+    </button>
     <button class="ios-dock-btn" id="dock-btn-settings" onclick="showTab('settings-view', this)">
       <i class="fa-solid fa-gear"></i>
       <span>Ajustes</span>
-    </button>
-    <button class="ios-dock-btn watch-dock-highlight" onclick="openAppleWatchModal()">
-      <div class="watch-badge-dot"></div>
-      <i class="fa-brands fa-apple"></i>
-      <span>Apple Watch</span>
     </button>
   </nav>
 

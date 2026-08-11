@@ -150,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.switchProfile = switchProfile;
   window.setDeviceDefaultProfile = setDeviceDefaultProfile;
   window.showTab = showTab;
+  window.renderSummaryView = renderSummaryView;
   window.addExclusion = addExclusion;
   window.removeExclusion = removeExclusion;
   window.toggleWorkoutDay = toggleWorkoutDay;
@@ -180,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // MAIN RENDER CONTROLLER
 function renderAll() {
+  renderSummaryView();
   renderProfileView();
   renderNutritionView();
   renderShoppingView();
@@ -209,6 +211,7 @@ function switchProfile(profileId) {
   if (iosBtnHe) iosBtnHe.classList.toggle("active", profileId === "he");
   if (iosBtnShe) iosBtnShe.classList.toggle("active", profileId === "she");
 
+  renderSummaryView();
   renderProfileView();
   renderNutritionView();
   renderShoppingView();
@@ -235,13 +238,15 @@ function showTab(tabId, btnElement) {
 
   // Sync mobile dock buttons
   const tabMap = {
-    'profile-view': 'dock-btn-profile',
+    'summary-view': 'dock-btn-summary',
     'nutrition-view': 'dock-btn-nutrition',
     'shopping-view': 'dock-btn-shopping',
     'workouts-view': 'dock-btn-workouts',
     'dog-routes-view': 'dock-btn-dog',
     'progress-view': 'dock-btn-progress',
-    'settings-view': 'dock-btn-settings'
+    'profile-view': 'dock-btn-profile',
+    'settings-view': 'dock-btn-settings',
+    'coach-view': 'dock-btn-coach'
   };
 
   if (tabMap[tabId]) {
@@ -249,7 +254,9 @@ function showTab(tabId, btnElement) {
     if (dockBtn) dockBtn.classList.add("active");
   }
 
-  if (tabId === 'settings-view') {
+  if (tabId === 'summary-view') {
+    renderSummaryView();
+  } else if (tabId === 'settings-view') {
     renderSettingsView();
   }
 
@@ -321,6 +328,8 @@ function performAutoSyncTick() {
   // Update UI indicators
   updateHeaderWatchBadge();
   
+  renderSummaryView();
+
   if (document.getElementById("apple-watch-modal")?.classList.contains("active")) {
     updateAppleWatchModalUI();
   }
@@ -556,6 +565,131 @@ function simulateBluetoothPairing() {
   showIosToast(` Pulsómetro Apple Watch enlazado por Bluetooth: Frecuencia cardíaca en directo 142 BPM`, "fa-solid fa-heart-pulse");
 }
 
+// RENDER MAIN SUMMARY & APPLE WATCH DASHBOARD
+function renderSummaryView() {
+  const pid = appState.activeProfileId;
+  const p = appState.profiles[pid];
+  const m = appState.appleWatch?.metrics?.[pid];
+  if (!p || !m) return;
+
+  const pName = p.name.split(" ")[0];
+
+  // Subtitle
+  const subEl = document.getElementById("summary-subtitle");
+  if (subEl) subEl.innerText = `Estado en tiempo real de actividad, salud y entrenamiento de hoy (${pName})`;
+
+  // Watch Device & Sync Time
+  const deviceEl = document.getElementById("summary-watch-device");
+  if (deviceEl) deviceEl.innerText = `${m.deviceName}`;
+
+  const timeDiffSec = Math.round((new Date() - new Date(appState.appleWatch.lastGlobalSync || new Date())) / 1000);
+  const syncTimeEl = document.getElementById("summary-watch-sync-time");
+  if (syncTimeEl) syncTimeEl.innerText = `Sincronizado: Hace ${timeDiffSec < 3 ? 'un instante' : timeDiffSec + ' seg'}`;
+
+  // Live Metrics
+  const hrEl = document.getElementById("summary-metric-hr");
+  if (hrEl) hrEl.innerHTML = `${m.hr} <small>BPM</small>`;
+
+  const stepsEl = document.getElementById("summary-metric-steps");
+  if (stepsEl) stepsEl.innerText = m.steps.toLocaleString();
+
+  const distEl = document.getElementById("summary-metric-dist");
+  if (distEl) distEl.innerHTML = `${m.distanceKm} <small>km</small>`;
+
+  const kcalEl = document.getElementById("summary-metric-kcal");
+  if (kcalEl) kcalEl.innerHTML = `${m.moveKcal} <small>kcal</small>`;
+
+  // Rings
+  const moveCircle = document.getElementById("summary-ring-move-circle");
+  const moveRatio = Math.min(1.2, m.moveKcal / m.moveGoal);
+  const moveOffset = Math.max(0, 314 - (314 * Math.min(1, moveRatio)));
+  if (moveCircle) moveCircle.style.strokeDashoffset = moveOffset;
+  const moveValEl = document.getElementById("summary-ring-move-val");
+  if (moveValEl) moveValEl.innerText = `${m.moveKcal} / ${m.moveGoal} kcal`;
+
+  const exCircle = document.getElementById("summary-ring-exercise-circle");
+  const exRatio = Math.min(1.2, m.exerciseMin / m.exerciseGoal);
+  const exOffset = Math.max(0, 238 - (238 * Math.min(1, exRatio)));
+  if (exCircle) exCircle.style.strokeDashoffset = exOffset;
+  const exValEl = document.getElementById("summary-ring-exercise-val");
+  if (exValEl) exValEl.innerText = `${m.exerciseMin} / ${m.exerciseGoal} min`;
+
+  const standCircle = document.getElementById("summary-ring-stand-circle");
+  const standRatio = Math.min(1.2, m.standHours / m.standGoal);
+  const standOffset = Math.max(0, 163 - (163 * Math.min(1, standRatio)));
+  if (standCircle) standCircle.style.strokeDashoffset = standOffset;
+  const standValEl = document.getElementById("summary-ring-stand-val");
+  if (standValEl) standValEl.innerText = `${m.standHours} / ${m.standGoal} hrs`;
+
+  // Nutrition targets
+  const targetCalEl = document.getElementById("summary-target-calories");
+  if (targetCalEl) targetCalEl.innerText = `${p.targetCalories} kcal`;
+  const targetProtEl = document.getElementById("summary-target-protein");
+  if (targetProtEl) targetProtEl.innerText = `${p.protein} g`;
+  const targetCarbsEl = document.getElementById("summary-target-carbs");
+  if (targetCarbsEl) targetCarbsEl.innerText = `${p.carbs} g`;
+  const targetFatsEl = document.getElementById("summary-target-fats");
+  if (targetFatsEl) targetFatsEl.innerText = `${p.fats} g`;
+
+  // Today's Workout Summary Box
+  const todayWorkoutBox = document.getElementById("summary-today-workout-box");
+  if (todayWorkoutBox) {
+    const todayName = getTodayDayName();
+    const isCompleted = isDayCompleted(pid, todayName);
+    const watchData = getDayWatchData(pid, todayName);
+
+    if (isCompleted && watchData) {
+      todayWorkoutBox.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
+              Entrenamiento de Hoy (${todayName}) Completado
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem;">
+              Registrado con ${watchData.deviceName} a las ${watchData.timestamp}
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-emerald);">
+            <i class="fa-solid fa-fire"></i> ${watchData.kcal} kcal
+          </span>
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-cyan);">
+            <i class="fa-solid fa-stopwatch"></i> ${watchData.durationMin} min
+          </span>
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-purple);">
+            <i class="fa-solid fa-heart-pulse"></i> ${watchData.avgHr} BPM
+          </span>
+        </div>
+      `;
+    } else {
+      todayWorkoutBox.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
+              Entrenamiento de Hoy (${todayName}): Pendiente
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem;">
+              Puedes vincular la actividad leída automáticamente por tu Apple Watch
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; background: var(--accent-emerald);" onclick="recordWatchWorkoutForDay()">
+          <i class="fa-brands fa-apple"></i> Registrar Entrenamiento Hoy
+        </button>
+      `;
+    }
+  }
+}
+
 // RENDER PROFILE & MACROS
 function renderProfileView() {
   const p = appState.profiles[appState.activeProfileId];
@@ -703,6 +837,7 @@ function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = tru
   };
 
   saveState();
+  renderSummaryView();
   renderProfileView();
   renderWorkoutsView();
 
@@ -733,6 +868,7 @@ function toggleWorkoutDay(dayName) {
   }
 
   saveState();
+  renderSummaryView();
   renderProfileView();
   renderWorkoutsView();
 }
@@ -747,6 +883,7 @@ function resetWorkoutWeek() {
     appState.completedWorkouts[profileId][d] = { done: false, watchData: null };
   });
   saveState();
+  renderSummaryView();
   renderProfileView();
   renderWorkoutsView();
 }
