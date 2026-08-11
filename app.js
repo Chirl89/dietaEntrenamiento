@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, DOG_ROUTES_DATABASE, INGREDIENT_CATEGORIES } from './data.js';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, DOG_ROUTES_DATABASE, INGREDIENT_CATEGORIES } from './data.js?v=1.0.3';
 
 // STATE STORAGE KEY
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -162,6 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.triggerManualSync = triggerManualSync;
   window.handleHealthFileImport = handleHealthFileImport;
   window.connectBluetoothHR = connectBluetoothHR;
+  window.forceAppRefresh = forceAppRefresh;
 
   renderAll();
   startAppleWatchAutoSync();
@@ -630,12 +631,30 @@ function renderDeviceMemorySettings() {
         </button>
       </div>
 
-      <div class="device-memory-footer">
-        <i class="fa-solid fa-circle-info"></i>
-        <span>Esta preferencia se guarda localmente en este móvil/navegador y es independiente de la del otro usuario.</span>
+      <div class="device-memory-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Esta preferencia se guarda localmente en este móvil/navegador.</span>
+        </div>
+        <button class="btn-secondary-sm" onclick="forceAppRefresh()" title="Recargar y vaciar caché del acceso directo en pantalla de inicio">
+          <i class="fa-solid fa-arrows-rotate"></i> Actualizar Acceso Directo
+        </button>
       </div>
     </div>
   `;
+}
+
+function forceAppRefresh() {
+  triggerHapticTouch();
+  showIosToast("🔄 Actualizando y vaciando caché del acceso directo...", "fa-solid fa-arrows-rotate");
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      for (let name of names) caches.delete(name);
+    });
+  }
+  setTimeout(() => {
+    window.location.href = window.location.pathname + '?v=' + Date.now();
+  }, 400);
 }
 
 // WORKOUT TRACKER & VISTA DE ENTRENAMIENTOS ENGINE
