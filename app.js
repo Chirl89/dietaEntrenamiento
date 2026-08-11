@@ -692,20 +692,50 @@ async function importFromShortcutText() {
   }
 }
 
-// SMART HEALTH DATA PARSER (HANDLES BOTH JSON OBJECTS & URL PARAMETER STRINGS)
+// SMART HEALTH DATA PARSER (ULTRA-RESILIENT MULTI-FORMAT PARSER FOR IOS SHORTCUTS)
 function parseHealthTextOrUrl(text) {
-  if (!text) return null;
+  if (!text || typeof text !== 'string') return null;
   text = text.trim();
+  if (text.length === 0) return null;
 
   // Case 1: Plain JSON object e.g. {"kcal": 540, "steps": 9840}
-  if (text.startsWith("{") && text.endsWith("}")) {
+  if (text.startsWith("{")) {
     try {
-      return JSON.parse(text);
-    } catch(e) {}
+      const cleanJsonStr = text.replace(/,\s*([}\]])/g, '$1');
+      return JSON.parse(cleanJsonStr);
+    } catch(e) {
+      // Extract metrics via regex if JSON parsing failed due to bracket formatting
+      const kcalMatch = text.match(/"(?:kcal|moveKcal|activeCalories)"\s*:\s*\[?([0-9.,\s]+)\]?/i);
+      const stepsMatch = text.match(/"(?:steps)"\s*:\s*\[?([0-9.,\s]+)\]?/i);
+      const hrMatch = text.match(/"(?:hr|heartRate|avgHr)"\s*:\s*\[?([0-9.,\s]+)\]?/i);
+
+      if (kcalMatch || stepsMatch || hrMatch) {
+        const obj = {};
+        if (kcalMatch) obj.kcal = kcalMatch[1];
+        if (stepsMatch) obj.steps = stepsMatch[1];
+        if (hrMatch) obj.hr = hrMatch[1];
+        return obj;
+      }
+    }
   }
 
-  // Case 2: URL String e.g. https://chirl89.github.io/dietaEntrenamiento/?syncWatch=true&kcal=540&steps=9840&hr=72
-  if (text.includes("?") || text.includes("kcal") || text.includes("steps") || text.includes("moveKcal")) {
+  // Case 2: Array string e.g. [450, 520, 540]
+  if (text.startsWith("[")) {
+    try {
+      const arr = JSON.parse(text);
+      if (Array.isArray(arr) && arr.length > 0) {
+        return { kcal: arr };
+      }
+    } catch(e) {
+      const numbers = text.match(/\d+/g);
+      if (numbers && numbers.length > 0) {
+        return { kcal: numbers };
+      }
+    }
+  }
+
+  // Case 3: URL String e.g. https://chirl89.github.io/dietaEntrenamiento/?syncWatch=true&kcal=540&steps=9840&hr=72
+  if (text.includes("?") || text.includes("kcal=") || text.includes("steps=") || text.includes("moveKcal=")) {
     let queryString = text;
     if (text.includes("?")) {
       queryString = text.substring(text.indexOf("?") + 1);
@@ -720,12 +750,25 @@ function parseHealthTextOrUrl(text) {
     }
   }
 
-  // Case 3: Standard JSON parse fallback
-  try {
-    return JSON.parse(text);
-  } catch(e) {
-    return null;
+  // Case 4: Key-value string e.g. kcal=540&steps=9840 or kcal: 540, steps: 9840
+  const kcalMatch = text.match(/(?:kcal|moveKcal|activeCalories)[:=]\s*([0-9.,\s]+)/i);
+  const stepsMatch = text.match(/(?:steps)[:=]\s*([0-9.,\s]+)/i);
+  const hrMatch = text.match(/(?:hr|heartRate|avgHr)[:=]\s*([0-9.,\s]+)/i);
+
+  if (kcalMatch || stepsMatch || hrMatch) {
+    const obj = {};
+    if (kcalMatch) obj.kcal = kcalMatch[1];
+    if (stepsMatch) obj.steps = stepsMatch[1];
+    if (hrMatch) obj.hr = hrMatch[1];
+    return obj;
   }
+
+  // Case 5: Single plain number e.g. "540"
+  if (!isNaN(parseInt(text))) {
+    return { kcal: parseInt(text) };
+  }
+
+  return null;
 }
 
 // SMART 7-DAY METRIC PARSERS
