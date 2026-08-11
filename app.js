@@ -2,8 +2,9 @@ import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, DOG_ROUTES
 
 // STATE STORAGE KEY
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
+const DEVICE_DEFAULT_PROFILE_KEY = "FITDUO_DEVICE_PREFERRED_PROFILE";
+const LAST_ACTIVE_PROFILE_KEY = "FITDUO_LAST_ACTIVE_PROFILE";
 
-// INITIAL STATE STRUCTURE
 // INITIAL STATE STRUCTURE
 let appState = {
   activeProfileId: "he", // 'he' (Carlos) or 'she' (Andrea)
@@ -38,7 +39,7 @@ let appState = {
     lastGlobalSync: new Date().toISOString(),
     metrics: {
       he: {
-        deviceName: "Apple Watch Series 9 (Carlos)",
+        deviceName: "Apple Watch (Carlos)",
         battery: 88,
         hr: 74,
         steps: 9840,
@@ -51,7 +52,7 @@ let appState = {
         distanceKm: 7.2
       },
       she: {
-        deviceName: "Apple Watch Series 8 (Andrea)",
+        deviceName: "Apple Watch (Andrea)",
         battery: 92,
         hr: 68,
         steps: 11200,
@@ -65,7 +66,7 @@ let appState = {
       }
     },
     syncLogs: [
-      { timestamp: new Date().toLocaleTimeString(), device: "Apple Watch Series 9", hr: 74, kcal: 540, steps: 9840, status: "Auto-Sync OK" }
+      { timestamp: new Date().toLocaleTimeString(), device: "Apple Watch (Carlos)", hr: 74, kcal: 540, steps: 9840, status: "Auto-Sync OK" }
     ]
   }
 };
@@ -84,6 +85,17 @@ function loadSavedState() {
       console.warn("Could not parse saved state, using defaults.");
     }
   }
+
+  // Device-specific profile memory preference
+  const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
+  const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
+
+  if (devicePref === 'he' || devicePref === 'she') {
+    appState.activeProfileId = devicePref;
+  } else if (lastProfile === 'he' || lastProfile === 'she') {
+    appState.activeProfileId = lastProfile;
+  }
+
   // Ensure names are updated to Carlos, Andrea, and Boo
   appState.profiles.he.name = "Él (Carlos)";
   appState.profiles.she.name = "Ella (Andrea)";
@@ -108,8 +120,8 @@ function loadSavedState() {
       syncIntervalSec: 6,
       lastGlobalSync: new Date().toISOString(),
       metrics: {
-        he: { deviceName: "Apple Watch Series 9 (Carlos)", battery: 88, hr: 74, steps: 9840, moveKcal: 540, moveGoal: 600, exerciseMin: 42, exerciseGoal: 30, standHours: 10, standGoal: 12, distanceKm: 7.2 },
-        she: { deviceName: "Apple Watch Series 8 (Andrea)", battery: 92, hr: 68, steps: 11200, moveKcal: 480, moveGoal: 500, exerciseMin: 45, exerciseGoal: 30, standHours: 11, standGoal: 12, distanceKm: 8.4 }
+        he: { deviceName: "Apple Watch (Carlos)", battery: 88, hr: 74, steps: 9840, moveKcal: 540, moveGoal: 600, exerciseMin: 42, exerciseGoal: 30, standHours: 10, standGoal: 12, distanceKm: 7.2 },
+        she: { deviceName: "Apple Watch (Andrea)", battery: 92, hr: 68, steps: 11200, moveKcal: 480, moveGoal: 500, exerciseMin: 45, exerciseGoal: 30, standHours: 11, standGoal: 12, distanceKm: 8.4 }
       },
       syncLogs: []
     };
@@ -127,6 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Make functions available globally on window object for HTML inline onclick handlers
   window.switchProfile = switchProfile;
+  window.setDeviceDefaultProfile = setDeviceDefaultProfile;
   window.showTab = showTab;
   window.addExclusion = addExclusion;
   window.removeExclusion = removeExclusion;
@@ -169,6 +182,7 @@ function renderAll() {
 function switchProfile(profileId) {
   triggerHapticTouch();
   appState.activeProfileId = profileId;
+  localStorage.setItem(LAST_ACTIVE_PROFILE_KEY, profileId);
   saveState();
 
   // Desktop buttons
@@ -537,6 +551,91 @@ function renderProfileView() {
   document.getElementById("target-fats").innerText = `${p.fats} g`;
 
   renderWorkoutTracker();
+  renderDeviceMemorySettings();
+}
+
+// DEVICE PROFILE MEMORY SETTINGS & HANDLERS
+function setDeviceDefaultProfile(mode) {
+  triggerHapticTouch();
+  localStorage.setItem(DEVICE_DEFAULT_PROFILE_KEY, mode);
+
+  if (mode === 'he' || mode === 'she') {
+    switchProfile(mode);
+  } else {
+    // 'last'
+    const last = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY) || 'he';
+    switchProfile(last);
+  }
+
+  const msg = mode === 'he'
+    ? "📱 Perfil predeterminado en este teléfono fijado a CARLOS"
+    : mode === 'she'
+    ? "📱 Perfil predeterminado en este teléfono fijado a ANDREA"
+    : "📱 Se recordará el último perfil seleccionado en este teléfono";
+
+  showIosToast(msg, "fa-solid fa-mobile-screen-button");
+}
+
+function renderDeviceMemorySettings() {
+  const container = document.getElementById("profile-device-memory-container");
+  if (!container) return;
+
+  const currentPref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
+  const activeProfile = appState.activeProfileId;
+  const activeName = activeProfile === 'he' ? 'Carlos' : 'Andrea';
+
+  let currentPrefLabel = "";
+  if (currentPref === 'he') currentPrefLabel = "Carlos (Siempre)";
+  else if (currentPref === 'she') currentPrefLabel = "Andrea (Siempre)";
+  else currentPrefLabel = `Último usado (${activeName})`;
+
+  container.innerHTML = `
+    <div class="glass-card device-memory-card" style="margin-bottom: 1.5rem;">
+      <div class="device-memory-header">
+        <div class="device-memory-title">
+          <i class="fa-solid fa-mobile-screen-button" style="color: var(--accent-cyan); font-size: 1.2rem;"></i>
+          <div>
+            <h3>Memoria de Perfil por Dispositivo</h3>
+            <p class="device-memory-subtitle">Configura qué perfil se abrirá por defecto al acceder desde <strong>este teléfono/navegador</strong>.</p>
+          </div>
+        </div>
+        <div class="device-badge">
+          <i class="fa-solid fa-shield-halved"></i> ${currentPrefLabel}
+        </div>
+      </div>
+
+      <div class="device-pref-options">
+        <button class="device-pref-btn ${currentPref === 'he' ? 'active' : ''}" onclick="setDeviceDefaultProfile('he')">
+          <i class="fa-solid fa-mars"></i>
+          <div class="pref-btn-text">
+            <strong>Carlos</strong>
+            <span>Abrir siempre como Carlos en este teléfono</span>
+          </div>
+        </button>
+
+        <button class="device-pref-btn ${currentPref === 'she' ? 'active' : ''}" onclick="setDeviceDefaultProfile('she')">
+          <i class="fa-solid fa-venus"></i>
+          <div class="pref-btn-text">
+            <strong>Andrea</strong>
+            <span>Abrir siempre como Andrea en este teléfono</span>
+          </div>
+        </button>
+
+        <button class="device-pref-btn ${currentPref === 'last' ? 'active' : ''}" onclick="setDeviceDefaultProfile('last')">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <div class="pref-btn-text">
+            <strong>Recordar último</strong>
+            <span>Cargar el último perfil usado en este teléfono</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="device-memory-footer">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Esta preferencia se guarda localmente en este móvil/navegador y es independiente de la del otro usuario.</span>
+      </div>
+    </div>
+  `;
 }
 
 // WORKOUT TRACKER & VISTA DE ENTRENAMIENTOS ENGINE
