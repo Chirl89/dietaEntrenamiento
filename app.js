@@ -377,6 +377,8 @@ function showTab(tabId, btnElement) {
 
   if (tabId === 'summary-view') {
     renderSummaryView();
+  } else if (tabId === 'apple-watch-view') {
+    updateAppleWatchModalUI();
   } else if (tabId === 'settings-view') {
     renderSettingsView();
   }
