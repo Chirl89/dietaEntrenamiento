@@ -637,7 +637,9 @@ async function importFromShortcutText() {
   const m = appState.appleWatch.metrics[pid];
 
   try {
-    const json = JSON.parse(text);
+    const json = parseHealthTextOrUrl(text);
+    if (!json) throw new Error("No se detectaron parámetros de Salud ni JSON válido en el texto");
+
     let updated = false;
 
     const kcalRaw = json.kcal || json.moveKcal || json.activeCalories;
@@ -687,6 +689,42 @@ async function importFromShortcutText() {
   } catch(e) {
     addDebugLog("⚠️ Error al parsear JSON pegado", "error", e.message);
     showIosToast("⚠️ El formato pegado no es un JSON válido. Comprueba los datos.", "fa-solid fa-triangle-exclamation");
+  }
+}
+
+// SMART HEALTH DATA PARSER (HANDLES BOTH JSON OBJECTS & URL PARAMETER STRINGS)
+function parseHealthTextOrUrl(text) {
+  if (!text) return null;
+  text = text.trim();
+
+  // Case 1: Plain JSON object e.g. {"kcal": 540, "steps": 9840}
+  if (text.startsWith("{") && text.endsWith("}")) {
+    try {
+      return JSON.parse(text);
+    } catch(e) {}
+  }
+
+  // Case 2: URL String e.g. https://chirl89.github.io/dietaEntrenamiento/?syncWatch=true&kcal=540&steps=9840&hr=72
+  if (text.includes("?") || text.includes("kcal") || text.includes("steps") || text.includes("moveKcal")) {
+    let queryString = text;
+    if (text.includes("?")) {
+      queryString = text.substring(text.indexOf("?") + 1);
+    }
+    const params = new URLSearchParams(queryString);
+    const obj = {};
+    for (const [k, v] of params.entries()) {
+      obj[k] = v;
+    }
+    if (obj.kcal || obj.moveKcal || obj.activeCalories || obj.steps || obj.hr || obj.exerciseMin) {
+      return obj;
+    }
+  }
+
+  // Case 3: Standard JSON parse fallback
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    return null;
   }
 }
 
@@ -918,15 +956,12 @@ async function checkClipboardForWatchSync() {
 
   try {
     const text = await navigator.clipboard.readText();
-    if (!text || (!text.includes("kcal") && !text.includes("steps") && !text.includes("syncWatch"))) {
-      return false;
-    }
+    const json = parseHealthTextOrUrl(text);
+    if (!json) return false;
+    addDebugLog("📋 Datos de Salud detectados en portapapeles (URL o JSON)", "clipboard", json);
 
     const pid = appState.activeProfileId;
     const m = appState.appleWatch.metrics[pid];
-
-    const json = JSON.parse(text);
-    addDebugLog("📋 Texto JSON de Salud detectado en portapapeles", "clipboard", json);
 
     let updated = false;
 
@@ -986,7 +1021,7 @@ async function checkClipboardForWatchSync() {
 
       const pName = appState.profiles[pid].name.split(" ")[0];
       addDebugLog(` Datos de Salud actualizados vía Portapapeles para ${pName}`, "success", { moveKcal: m.moveKcal, steps: m.steps });
-      showIosToast(` <strong>Sincronización de 7 días:</strong> Datos de Apple Watch (${pName}) cargados (${m.moveKcal} kcal hoy)`, "fa-brands fa-apple");
+      showIosToast(` <strong>Sincronización de Resumen:</strong> Datos de Apple Watch (${pName}) cargados (${m.moveKcal} kcal hoy)`, "fa-brands fa-apple");
       return true;
     }
   } catch(e) {
@@ -1016,10 +1051,10 @@ async function launchIosShortcutSync(isAuto = false) {
   if (!isAuto && navigator.clipboard && navigator.clipboard.readText) {
     try {
       const clipText = await navigator.clipboard.readText();
-      if (clipText && (clipText.includes("kcal") || clipText.includes("steps") || clipText.includes("moveKcal") || clipText.includes("{"))) {
+      const json = parseHealthTextOrUrl(clipText);
+      if (json) {
         const pid = appState.activeProfileId;
         const m = appState.appleWatch.metrics[pid];
-        const json = JSON.parse(clipText);
         
         const kcalRaw = json.kcal || json.moveKcal || json.activeCalories;
         const kcalVal = parseSmartMetricValue(kcalRaw);
@@ -1028,6 +1063,10 @@ async function launchIosShortcutSync(isAuto = false) {
         const stepsRaw = json.steps;
         const stepsVal = parseSmartMetricValue(stepsRaw);
         if (stepsVal !== null) { m.steps = stepsVal; m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2)); }
+
+        const hrRaw = json.hr || json.heartRate || json.avgHr;
+        const hrVal = parseSmartMetricValue(hrRaw);
+        if (hrVal !== null) m.hr = hrVal;
 
         const exMinRaw = json.exerciseMin || json.durationMin;
         const exMinVal = parseSmartMetricValue(exMinRaw);
@@ -1043,7 +1082,7 @@ async function launchIosShortcutSync(isAuto = false) {
         renderWorkoutsView();
 
         const pName = appState.profiles[pid].name.split(" ")[0];
-        addDebugLog(` Sync directo desde portapapeles al pulsar  Sync Watch`, "success", { kcal: m.moveKcal, steps: m.steps });
+        addDebugLog(` Sync directo desde portapapeles al pulsar  Sync Resumen`, "success", { kcal: m.moveKcal, steps: m.steps, hr: m.hr });
         showIosToast(` <strong>Datos cargados del Portapapeles:</strong> ${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos`, "fa-brands fa-apple");
         return;
       }
