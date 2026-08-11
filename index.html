@@ -123,6 +123,12 @@
               <span>Entrenador AI</span>
             </button>
           </li>
+          <li class="nav-item">
+            <button onclick="showTab('settings-view', this)">
+              <i class="fa-solid fa-gear nav-icon"></i>
+              <span>Configuración</span>
+            </button>
+          </li>
         </ul>
       </div>
 
@@ -179,11 +185,6 @@
               <div class="stat-subtext">Salud hormonal y saciedad</div>
             </div>
           </div>
-        </div>
-
-        <!-- CONFIGURACIÓN DE MEMORIA DE PERFIL POR DISPOSITIVO -->
-        <div id="profile-device-memory-container">
-          <!-- Rendered dynamically by app.js -->
         </div>
 
         <!-- VISTA DE ENTRENAMIENTOS Y REGISTRO DE DÍAS -->
@@ -316,6 +317,16 @@
             </button>
           </div>
         </div>
+      <!-- TAB 7: SETTINGS & CONFIGURATION VIEW -->
+      <section id="settings-view" class="view-panel">
+        <div class="header-title-group">
+          <h1 class="page-title">Configuración & Preferencias del Dispositivo</h1>
+          <p class="page-subtitle">Ajustes locales del teléfono, memoria de perfiles y actualización de accesos directos</p>
+        </div>
+
+        <div id="settings-view-container">
+          <!-- Rendered dynamically by app.js -->
+        </div>
       </section>
 
     </main>
@@ -346,6 +357,10 @@
     <button class="ios-dock-btn" id="dock-btn-progress" onclick="showTab('progress-view', this)">
       <i class="fa-solid fa-chart-line"></i>
       <span>Progreso</span>
+    </button>
+    <button class="ios-dock-btn" id="dock-btn-settings" onclick="showTab('settings-view', this)">
+      <i class="fa-solid fa-gear"></i>
+      <span>Ajustes</span>
     </button>
     <button class="ios-dock-btn watch-dock-highlight" onclick="openAppleWatchModal()">
       <div class="watch-badge-dot"></div>
