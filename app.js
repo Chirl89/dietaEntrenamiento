@@ -186,6 +186,14 @@ document.addEventListener("DOMContentLoaded", () => {
   window.openEditWorkoutWatchModal = openEditWorkoutWatchModal;
   window.closeEditWorkoutWatchModal = closeEditWorkoutWatchModal;
   window.saveWorkoutWatchDataFromModal = saveWorkoutWatchDataFromModal;
+  window.launchIosShortcutSync = launchIosShortcutSync;
+  window.toggleAutoLaunchShortcutOnOpen = toggleAutoLaunchShortcutOnOpen;
+  window.toggleShortcutGuide = toggleShortcutGuide;
+
+  const syncedFromUrl = checkUrlParamsForWatchSync();
+  if (!syncedFromUrl) {
+    checkAutoLaunchShortcutOnOpen();
+  }
 
   renderAll();
   startAppleWatchAutoSync();
@@ -654,6 +662,152 @@ function importFromShortcutText() {
   }
 }
 
+// IOS SHORTCUTS URL PARAMETER SYNC HANDLER & AUTO-LAUNCH ENGINE
+function checkUrlParamsForWatchSync() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("syncWatch") && !params.has("kcal") && !params.has("steps")) {
+    return false;
+  }
+
+  const pid = appState.activeProfileId;
+  const m = appState.appleWatch?.metrics?.[pid];
+  if (!m) return false;
+
+  let updated = false;
+
+  const kcalParam = params.get("kcal") || params.get("moveKcal") || params.get("activeCalories");
+  if (kcalParam && !isNaN(parseInt(kcalParam))) {
+    m.moveKcal = parseInt(kcalParam);
+    updated = true;
+  }
+
+  const stepsParam = params.get("steps");
+  if (stepsParam && !isNaN(parseInt(stepsParam))) {
+    m.steps = parseInt(stepsParam);
+    m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+    updated = true;
+  }
+
+  const hrParam = params.get("hr") || params.get("heartRate");
+  if (hrParam && !isNaN(parseInt(hrParam))) {
+    m.hr = parseInt(hrParam);
+    updated = true;
+  }
+
+  const maxHrParam = params.get("maxHr");
+  if (maxHrParam && !isNaN(parseInt(maxHrParam))) {
+    m.maxHr = parseInt(maxHrParam);
+    updated = true;
+  }
+
+  const exMinParam = params.get("exMin") || params.get("exerciseMin");
+  if (exMinParam && !isNaN(parseInt(exMinParam))) {
+    m.exerciseMin = parseInt(exMinParam);
+    updated = true;
+  }
+
+  const standHoursParam = params.get("standHours");
+  if (standHoursParam && !isNaN(parseInt(standHoursParam))) {
+    m.standHours = parseInt(standHoursParam);
+    updated = true;
+  }
+
+  const deviceParam = params.get("deviceName");
+  if (deviceParam) {
+    m.deviceName = decodeURIComponent(deviceParam);
+    updated = true;
+  }
+
+  if (updated) {
+    appState.appleWatch.syncMode = "real";
+    appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
+    const pName = appState.profiles[pid].name.split(" ")[0];
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    appState.appleWatch.syncLogs.unshift({
+      timestamp: timeStr,
+      device: m.deviceName,
+      hr: m.hr,
+      kcal: m.moveKcal,
+      steps: m.steps,
+      status: "Sincronizado vía Atajo iOS"
+    });
+    if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
+
+    saveState();
+
+    // Clean query params from browser location bar without reloading
+    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+
+    sessionStorage.setItem("fitduo_shortcut_synced", "true");
+
+    setTimeout(() => {
+      showIosToast(` <strong>Atajo de iOS ejecutado:</strong> Datos de Apple Watch (${pName}) sincronizados (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-brands fa-apple");
+    }, 400);
+
+    return true;
+  }
+
+  return false;
+}
+
+function checkAutoLaunchShortcutOnOpen() {
+  if (!appState.appleWatch?.autoLaunchShortcutOnOpen) return;
+  if (sessionStorage.getItem("fitduo_shortcut_synced") === "true") return;
+  if (sessionStorage.getItem("fitduo_shortcut_launched") === "true") return;
+
+  sessionStorage.setItem("fitduo_shortcut_launched", "true");
+
+  setTimeout(() => {
+    launchIosShortcutSync(true);
+  }, 1000);
+}
+
+function launchIosShortcutSync(isAuto = false) {
+  triggerHapticTouch();
+  sessionStorage.setItem("fitduo_shortcut_launched", "true");
+
+  const shortcutName = encodeURIComponent(appState.appleWatch?.shortcutName || "SincronizarSaludFitDuo");
+  const url = `shortcuts://run-shortcut?name=${shortcutName}`;
+
+  if (isAuto) {
+    showIosToast("⚡ Ejecutando Atajo de Salud de iOS al iniciar...", "fa-brands fa-apple");
+  } else {
+    showIosToast("⚡ Abriendo la App Atajos de iOS...", "fa-brands fa-apple");
+  }
+
+  setTimeout(() => {
+    window.location.href = url;
+  }, 300);
+}
+
+function toggleAutoLaunchShortcutOnOpen(enabled) {
+  triggerHapticTouch();
+  if (!appState.appleWatch) appState.appleWatch = {};
+  appState.appleWatch.autoLaunchShortcutOnOpen = enabled;
+  saveState();
+
+  showIosToast(
+    enabled 
+      ? "⚡ <strong>Auto-Sincronización con Atajo al abrir ACTIVADA</strong>" 
+      : "⏸️ Auto-Sincronización con Atajo desactivada",
+    enabled ? "fa-solid fa-bolt" : "fa-solid fa-pause"
+  );
+}
+
+function toggleShortcutGuide() {
+  triggerHapticTouch();
+  const guide = document.getElementById("shortcut-guide-box");
+  const icon = document.getElementById("shortcut-guide-icon");
+  if (guide) {
+    const isHidden = guide.style.display === "none";
+    guide.style.display = isHidden ? "block" : "none";
+    if (icon) icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+  }
+}
+
 function updateAppleWatchModalUI() {
   const pid = appState.activeProfileId;
   const m = appState.appleWatch.metrics[pid];
@@ -661,6 +815,10 @@ function updateAppleWatchModalUI() {
   if (!m) return;
 
   const mode = appState.appleWatch.syncMode || "real";
+
+  // Auto-launch shortcut checkbox
+  const shortcutToggle = document.getElementById("toggle-auto-launch-shortcut");
+  if (shortcutToggle) shortcutToggle.checked = !!appState.appleWatch.autoLaunchShortcutOnOpen;
 
   // Sync Mode buttons state
   const btnReal = document.getElementById("btn-mode-real");

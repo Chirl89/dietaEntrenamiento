@@ -613,6 +613,47 @@
           </p>
         </div>
 
+        <!-- IOS SHORTCUT & AUTOMATION CARD -->
+        <div class="shortcut-integration-card glass-card">
+          <div class="shortcut-card-header">
+            <div class="shortcut-title">
+              <i class="fa-solid fa-bolt" style="color: var(--accent-amber);"></i>
+              <div>
+                <h4>Atajo de iOS (1-Clic & Auto-Lanzamiento)</h4>
+                <p>Sincroniza Salud y Apple Watch al abrir la app o con 1 toque</p>
+              </div>
+            </div>
+            <button class="btn-launch-shortcut" onclick="launchIosShortcutSync()">
+              <i class="fa-solid fa-play"></i> Lanzar Atajo
+            </button>
+          </div>
+
+          <div class="shortcut-card-options">
+            <label class="shortcut-auto-launch-label">
+              <input type="checkbox" id="toggle-auto-launch-shortcut" onchange="toggleAutoLaunchShortcutOnOpen(this.checked)">
+              <span>⚡ Sincronizar automáticamente con Atajo de iOS al abrir la App</span>
+            </label>
+
+            <button class="btn-toggle-shortcut-guide" onclick="toggleShortcutGuide()">
+              <i class="fa-solid fa-circle-info"></i> Guía paso a paso: ¿Cómo configurar el Atajo en tu iPhone? <i class="fa-solid fa-chevron-down" id="shortcut-guide-icon"></i>
+            </button>
+          </div>
+
+          <div id="shortcut-guide-box" class="shortcut-guide-box" style="display: none;">
+            <h5><i class="fa-brands fa-apple"></i> Configuración rápida en la App Atajos de iOS:</h5>
+            <ol class="shortcut-steps-list">
+              <li>Abre la app <strong>Atajos</strong> en tu iPhone y crea un atajo llamado <code>SincronizarSaludFitDuo</code>.</li>
+              <li>Añade las acciones de Salud:
+                <ul>
+                  <li><code>Obtener Muestras de Salud</code> (Calorías activas, Pasos, Ritmo cardíaco).</li>
+                  <li><code>Abrir URL</code> con los parámetros: <br><code class="code-url-sample">?syncWatch=true&kcal=[Calorías]&steps=[Pasos]&hr=[Ritmo]</code></li>
+                </ul>
+              </li>
+              <li><strong>Automatización al iniciar (Opcional):</strong> En la pestaña <em>Automatización</em> de la app Atajos de tu iPhone, selecciona: <em>Al abrir la App FitDuo/Safari → Ejecutar SincronizarSaludFitDuo</em>.</li>
+            </ol>
+          </div>
+        </div>
+
         <!-- LIVE SYNC STATUS BAR -->
         <div class="watch-sync-status-card">
           <div class="sync-status-left">
