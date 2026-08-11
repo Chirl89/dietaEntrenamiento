@@ -150,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.switchProfile = switchProfile;
   window.setDeviceDefaultProfile = setDeviceDefaultProfile;
   window.showTab = showTab;
+  window.switchCategory = switchCategory;
   window.renderSummaryView = renderSummaryView;
   window.addExclusion = addExclusion;
   window.removeExclusion = removeExclusion;
@@ -179,6 +180,75 @@ document.addEventListener("DOMContentLoaded", () => {
   startAppleWatchAutoSync();
 });
 
+// CATEGORY & SUBTAB NAVIGATION ENGINE
+const NAVIGATION_CATEGORIES = {
+  summary: {
+    name: "Resumen & Salud",
+    dockId: "dock-btn-summary",
+    sidebarId: "sidebar-nav-summary",
+    subtabs: [
+      { id: "summary-view", label: " Apple Watch", icon: "fa-brands fa-apple" },
+      { id: "progress-view", label: "📈 Progreso", icon: "fa-solid fa-chart-line" }
+    ]
+  },
+  nutrition: {
+    name: "Nutrición",
+    dockId: "dock-btn-nutrition",
+    sidebarId: "sidebar-nav-nutrition",
+    subtabs: [
+      { id: "nutrition-view", label: "📅 Menú Semanal", icon: "fa-solid fa-utensils" },
+      { id: "shopping-view", label: "🛒 Lista Compra", icon: "fa-solid fa-cart-shopping" }
+    ]
+  },
+  workouts: {
+    name: "Entrenamiento",
+    dockId: "dock-btn-workouts",
+    sidebarId: "sidebar-nav-workouts",
+    subtabs: [
+      { id: "workouts-view", label: "💪 Ejercicios", icon: "fa-solid fa-dumbbell" },
+      { id: "dog-routes-view", label: "🐶 Rutas Boo", icon: "fa-solid fa-dog" }
+    ]
+  },
+  profile: {
+    name: "Perfil & Ajustes",
+    dockId: "dock-btn-profile",
+    sidebarId: "sidebar-nav-profile",
+    subtabs: [
+      { id: "profile-view", label: "👤 Perfil", icon: "fa-solid fa-sliders" },
+      { id: "coach-view", label: "🤖 Coach AI", icon: "fa-solid fa-robot" },
+      { id: "settings-view", label: "⚙️ Ajustes", icon: "fa-solid fa-gear" }
+    ]
+  }
+};
+
+function switchCategory(categoryKey, targetTabId = null, btnElement = null) {
+  triggerHapticTouch();
+  const cat = NAVIGATION_CATEGORIES[categoryKey];
+  if (!cat) return;
+
+  const tabToOpen = targetTabId || cat.subtabs[0].id;
+  showTab(tabToOpen);
+}
+
+function renderSubtabSegmentedControl(categoryKey, activeTabId) {
+  const container = document.getElementById("ios-segmented-control-inner");
+  if (!container) return;
+
+  const cat = NAVIGATION_CATEGORIES[categoryKey];
+  if (!cat || !cat.subtabs) {
+    container.parentElement.style.display = "none";
+    return;
+  }
+
+  container.parentElement.style.display = "flex";
+  container.innerHTML = cat.subtabs.map(sub => `
+    <button class="ios-segmented-btn ${sub.id === activeTabId ? 'active' : ''}" onclick="showTab('${sub.id}')">
+      <i class="${sub.icon}"></i>
+      <span>${sub.label}</span>
+    </button>
+  `).join("");
+}
+
 // MAIN RENDER CONTROLLER
 function renderAll() {
   renderSummaryView();
@@ -190,6 +260,7 @@ function renderAll() {
   renderProgressView();
   renderSettingsView();
   updateHeaderWatchBadge();
+  renderSubtabSegmentedControl('summary', 'summary-view');
 }
 
 // PROFILE SWITCHER (DESKTOP & IPHONE HEADER SYNC)
@@ -223,36 +294,38 @@ function switchProfile(profileId) {
   }
 }
 
-// TAB NAVIGATION (DESKTOP SIDEBAR & IPHONE DOCK SYNC)
+// TAB NAVIGATION (DESKTOP SIDEBAR & IPHONE DOCK SYNC WITH SUBTABS)
 function showTab(tabId, btnElement) {
   triggerHapticTouch();
+
+  // Find active category
+  let activeCatKey = 'summary';
+  for (const [catKey, catObj] of Object.entries(NAVIGATION_CATEGORIES)) {
+    if (catObj.subtabs.some(s => s.id === tabId)) {
+      activeCatKey = catKey;
+      break;
+    }
+  }
+
   document.querySelectorAll(".view-panel").forEach(panel => panel.classList.remove("active"));
-  document.querySelectorAll(".nav-item button").forEach(btn => btn.classList.remove("active"));
-  document.querySelectorAll(".ios-dock-btn").forEach(btn => btn.classList.remove("active"));
+  const targetPanel = document.getElementById(tabId);
+  if (targetPanel) targetPanel.classList.add("active");
 
-  document.getElementById(tabId).classList.add("active");
-  
-  if (btnElement) {
-    btnElement.classList.add("active");
-  }
+  // Highlight Category Dock & Sidebar buttons
+  const catObj = NAVIGATION_CATEGORIES[activeCatKey];
+  if (catObj) {
+    document.querySelectorAll(".ios-dock-btn").forEach(btn => btn.classList.remove("active"));
+    document.querySelectorAll(".nav-menu button").forEach(btn => btn.classList.remove("active"));
 
-  // Sync mobile dock buttons
-  const tabMap = {
-    'summary-view': 'dock-btn-summary',
-    'nutrition-view': 'dock-btn-nutrition',
-    'shopping-view': 'dock-btn-shopping',
-    'workouts-view': 'dock-btn-workouts',
-    'dog-routes-view': 'dock-btn-dog',
-    'progress-view': 'dock-btn-progress',
-    'profile-view': 'dock-btn-profile',
-    'settings-view': 'dock-btn-settings',
-    'coach-view': 'dock-btn-coach'
-  };
-
-  if (tabMap[tabId]) {
-    const dockBtn = document.getElementById(tabMap[tabId]);
+    const dockBtn = document.getElementById(catObj.dockId);
     if (dockBtn) dockBtn.classList.add("active");
+
+    const sidebarBtn = document.getElementById(catObj.sidebarId);
+    if (sidebarBtn) sidebarBtn.classList.add("active");
   }
+
+  // Render Segmented Control pills
+  renderSubtabSegmentedControl(activeCatKey, tabId);
 
   if (tabId === 'summary-view') {
     renderSummaryView();
