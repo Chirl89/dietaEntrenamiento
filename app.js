@@ -999,9 +999,14 @@ async function checkClipboardForWatchSync() {
 
   try {
     const text = await navigator.clipboard.readText();
+    addDebugLog("📥 TEXTO BRUTO LEÍDO DEL PORTAPAPELES", "clipboard", { rawText: text, length: text ? text.length : 0 });
+
     const json = parseHealthTextOrUrl(text);
-    if (!json) return false;
-    addDebugLog("📋 Datos de Salud detectados en portapapeles (URL o JSON)", "clipboard", json);
+    if (!json) {
+      addDebugLog("⚠️ No se detectaron valores reconocibles de Salud en el portapapeles", "warning", { rawText: text });
+      return false;
+    }
+    addDebugLog("🔍 ESTRUCTURA PARSEADA DE SALUD", "health", json);
 
     const pid = appState.activeProfileId;
     const m = appState.appleWatch.metrics[pid];
@@ -1063,12 +1068,19 @@ async function checkClipboardForWatchSync() {
       renderWorkoutsView();
 
       const pName = appState.profiles[pid].name.split(" ")[0];
-      addDebugLog(` Datos de Salud actualizados vía Portapapeles para ${pName}`, "success", { moveKcal: m.moveKcal, steps: m.steps });
+      addDebugLog(`🎯 MÉTRICAS FINALES ACTUALIZADAS PARA ${pName}`, "success", {
+        moveKcal: m.moveKcal,
+        steps: m.steps,
+        hr: m.hr,
+        exerciseMin: m.exerciseMin,
+        distanceKm: m.distanceKm,
+        lastSync: appState.appleWatch.lastGlobalSync
+      });
       showIosToast(` <strong>Sincronización de Resumen:</strong> Datos de Apple Watch (${pName}) cargados (${m.moveKcal} kcal hoy)`, "fa-brands fa-apple");
       return true;
     }
   } catch(e) {
-    addDebugLog("⚠️ Fallo o formato no válido en portapapeles", "warning", e.message);
+    addDebugLog("⚠️ Error o permiso denegado leyendo portapapeles", "warning", e.message);
   }
 
   return false;
@@ -1094,8 +1106,11 @@ async function launchIosShortcutSync(isAuto = false) {
   if (!isAuto && navigator.clipboard && navigator.clipboard.readText) {
     try {
       const clipText = await navigator.clipboard.readText();
+      addDebugLog("📥 TEXTO BRUTO DEL PORTAPAPELES (AL PULSAR BOTÓN)", "clipboard", { rawText: clipText, length: clipText ? clipText.length : 0 });
+
       const json = parseHealthTextOrUrl(clipText);
       if (json) {
+        addDebugLog("🔍 ESTRUCTURA PARSEADA DE SALUD (AL PULSAR BOTÓN)", "health", json);
         const pid = appState.activeProfileId;
         const m = appState.appleWatch.metrics[pid];
         
@@ -1125,7 +1140,12 @@ async function launchIosShortcutSync(isAuto = false) {
         renderWorkoutsView();
 
         const pName = appState.profiles[pid].name.split(" ")[0];
-        addDebugLog(` Sync directo desde portapapeles al pulsar  Sync Resumen`, "success", { kcal: m.moveKcal, steps: m.steps, hr: m.hr });
+        addDebugLog(`🎯 MÉTRICAS FINALES ACTUALIZADAS PARA ${pName} (SYNC DIRECTO)`, "success", {
+          moveKcal: m.moveKcal,
+          steps: m.steps,
+          hr: m.hr,
+          exerciseMin: m.exerciseMin
+        });
         showIosToast(` <strong>Datos cargados del Portapapeles:</strong> ${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos`, "fa-brands fa-apple");
         return;
       }
