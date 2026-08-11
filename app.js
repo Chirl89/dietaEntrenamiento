@@ -1102,58 +1102,6 @@ async function launchIosShortcutSync(isAuto = false) {
   triggerHapticTouch();
   sessionStorage.setItem("fitduo_shortcut_launched", "true");
 
-  // Attempt direct clipboard sync first on touch gesture
-  if (!isAuto && navigator.clipboard && navigator.clipboard.readText) {
-    try {
-      const clipText = await navigator.clipboard.readText();
-      addDebugLog("📥 TEXTO BRUTO DEL PORTAPAPELES (AL PULSAR BOTÓN)", "clipboard", { rawText: clipText, length: clipText ? clipText.length : 0 });
-
-      const json = parseHealthTextOrUrl(clipText);
-      if (json) {
-        addDebugLog("🔍 ESTRUCTURA PARSEADA DE SALUD (AL PULSAR BOTÓN)", "health", json);
-        const pid = appState.activeProfileId;
-        const m = appState.appleWatch.metrics[pid];
-        
-        const kcalRaw = json.kcal || json.moveKcal || json.activeCalories;
-        const kcalVal = parseSmartMetricValue(kcalRaw);
-        if (kcalVal !== null) m.moveKcal = kcalVal;
-
-        const stepsRaw = json.steps;
-        const stepsVal = parseSmartMetricValue(stepsRaw);
-        if (stepsVal !== null) { m.steps = stepsVal; m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2)); }
-
-        const hrRaw = json.hr || json.heartRate || json.avgHr;
-        const hrVal = parseSmartMetricValue(hrRaw);
-        if (hrVal !== null) m.hr = hrVal;
-
-        const exMinRaw = json.exerciseMin || json.durationMin;
-        const exMinVal = parseSmartMetricValue(exMinRaw);
-        if (exMinVal !== null) m.exerciseMin = exMinVal;
-
-        appState.appleWatch.syncMode = "real";
-        appState.appleWatch.lastGlobalSync = new Date().toISOString();
-
-        saveState();
-        updateAppleWatchModalUI();
-        renderSummaryView();
-        renderProfileView();
-        renderWorkoutsView();
-
-        const pName = appState.profiles[pid].name.split(" ")[0];
-        addDebugLog(`🎯 MÉTRICAS FINALES ACTUALIZADAS PARA ${pName} (SYNC DIRECTO)`, "success", {
-          moveKcal: m.moveKcal,
-          steps: m.steps,
-          hr: m.hr,
-          exerciseMin: m.exerciseMin
-        });
-        showIosToast(` <strong>Datos cargados del Portapapeles:</strong> ${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos`, "fa-brands fa-apple");
-        return;
-      }
-    } catch(e) {
-      addDebugLog("⚠️ Portapapeles vacío o no accesible al pulsar el botón", "info", e.message);
-    }
-  }
-
   const shortcutName = appState.appleWatch?.shortcutName || "SincronizarSaludFitDuo";
   const url = `shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}`;
 
