@@ -589,18 +589,18 @@
 
         <!-- ACTION BUTTONS: MANUAL SYNC & APPLE HEALTH FILE IMPORT -->
         <div class="modal-actions-row">
-          <button class="btn-apple-sync-modal" onclick="triggerManualSync()">
-            <i class="fa-solid fa-rotate"></i> Sincronizar Ahora
+          <button class="btn-apple-sync-modal" onclick="recordWatchWorkoutForDay()">
+            <i class="fa-brands fa-apple"></i> Sincronizar y Vincular Entrenamiento de Hoy
+          </button>
+
+          <button class="btn-apple-sync-modal" style="background: var(--surface-card); border: 1px solid var(--border-color);" onclick="triggerManualSync()">
+            <i class="fa-solid fa-rotate"></i> Sync Métricas
           </button>
 
           <label class="btn-import-health" title="Importar datos de export.xml de la app Salud de tu iPhone">
-            <i class="fa-solid fa-file-arrow-up"></i> Importar Archivo Salud iOS (XML/JSON)
+            <i class="fa-solid fa-file-arrow-up"></i> Importar Salud iOS (XML/JSON)
             <input type="file" id="health-file-input" accept=".xml,.json" style="display:none;" onchange="handleHealthFileImport(event)">
           </label>
-          
-          <button class="btn-bt-sync" onclick="connectBluetoothHR()">
-            <i class="fa-solid fa-bluetooth-b"></i> Conectar Pulsómetro BT
-          </button>
         </div>
 
         <!-- RECENT SYNC LOGS -->

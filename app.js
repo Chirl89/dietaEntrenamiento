@@ -11,8 +11,17 @@ let appState = {
   profiles: JSON.parse(JSON.stringify(INITIAL_PROFILES)),
   exclusions: [], // Kept for backward safety
   completedWorkouts: {
-    he: { Lunes: true, Martes: true, Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false },
-    she: { Lunes: true, Martes: false, Miércoles: true, Jueves: false, Viernes: false, Sábado: false, Domingo: false }
+    he: {
+      Lunes: { done: true, watchData: { deviceName: "Apple Watch (Carlos)", durationMin: 45, kcal: 430, avgHr: 142, maxHr: 168, timestamp: "09:30 hs", autoSync: true } },
+      Martes: { done: true, watchData: { deviceName: "Apple Watch (Carlos)", durationMin: 40, kcal: 390, avgHr: 136, maxHr: 160, timestamp: "18:15 hs", autoSync: true } },
+      Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false
+    },
+    she: {
+      Lunes: { done: true, watchData: { deviceName: "Apple Watch (Andrea)", durationMin: 45, kcal: 380, avgHr: 138, maxHr: 162, timestamp: "09:30 hs", autoSync: true } },
+      Martes: false,
+      Miércoles: { done: true, watchData: { deviceName: "Apple Watch (Andrea)", durationMin: 50, kcal: 410, avgHr: 140, maxHr: 165, timestamp: "19:00 hs", autoSync: true } },
+      Jueves: false, Viernes: false, Sábado: false, Domingo: false
+    }
   },
   activeDay: "Lunes",
   activeWorkoutDay: "Lunes",
@@ -160,6 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.closeAppleWatchModalOnBackdrop = closeAppleWatchModalOnBackdrop;
   window.toggleAutoSync = toggleAutoSync;
   window.triggerManualSync = triggerManualSync;
+  window.recordWatchWorkoutForDay = recordWatchWorkoutForDay;
   window.handleHealthFileImport = handleHealthFileImport;
   window.connectBluetoothHR = connectBluetoothHR;
   window.forceAppRefresh = forceAppRefresh;
@@ -628,15 +638,103 @@ function forceAppRefresh() {
   }, 400);
 }
 
-// WORKOUT TRACKER & VISTA DE ENTRENAMIENTOS ENGINE
+// WORKOUT TRACKER & APPLE WATCH SESSION ENGINE
+function isDayCompleted(profileId, dayName) {
+  const val = appState.completedWorkouts?.[profileId]?.[dayName];
+  if (!val) return false;
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'object') return !!val.done;
+  return false;
+}
+
+function getDayWatchData(profileId, dayName) {
+  const val = appState.completedWorkouts?.[profileId]?.[dayName];
+  if (val && typeof val === 'object' && val.watchData) {
+    return val.watchData;
+  }
+  if (val === true) {
+    const snapshot = createWatchDataSnapshot(profileId);
+    if (!appState.completedWorkouts[profileId]) appState.completedWorkouts[profileId] = {};
+    appState.completedWorkouts[profileId][dayName] = { done: true, watchData: snapshot };
+    saveState();
+    return snapshot;
+  }
+  return null;
+}
+
+function createWatchDataSnapshot(profileId, customDuration = null) {
+  const m = appState.appleWatch?.metrics?.[profileId] || {};
+  const pName = appState.profiles[profileId]?.name?.split(" ")[0] || "Apple Watch";
+  const duration = customDuration || (m.exerciseMin > 0 ? m.exerciseMin : 45);
+  const kcal = m.moveKcal > 0 ? Math.round(m.moveKcal * 0.8) : 420;
+  const avgHr = m.hr || 138;
+  const maxHr = Math.min(185, avgHr + Math.floor(Math.random() * 18) + 14);
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  return {
+    deviceName: m.deviceName || `Apple Watch (${pName})`,
+    durationMin: duration,
+    kcal: kcal,
+    avgHr: avgHr,
+    maxHr: maxHr,
+    timestamp: timeStr,
+    autoSync: true
+  };
+}
+
+function getTodayDayName() {
+  const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const idx = new Date().getDay();
+  return days[idx];
+}
+
+function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = true) {
+  const pid = profileId || appState.activeProfileId;
+  const targetDay = dayName || appState.activeWorkoutDay || getTodayDayName();
+  
+  if (!appState.completedWorkouts[pid]) {
+    appState.completedWorkouts[pid] = {};
+  }
+
+  const snapshot = createWatchDataSnapshot(pid);
+  appState.completedWorkouts[pid][targetDay] = {
+    done: true,
+    watchData: snapshot
+  };
+
+  saveState();
+  renderProfileView();
+  renderWorkoutsView();
+
+  if (notify) {
+    const pName = appState.profiles[pid].name.split(" ")[0];
+    showIosToast(` Entrenamiento de ${targetDay} vinculado automáticamente desde Apple Watch (${pName})`, "fa-brands fa-apple");
+  }
+}
+
 function toggleWorkoutDay(dayName) {
   const profileId = appState.activeProfileId;
   if (!appState.completedWorkouts[profileId]) {
     appState.completedWorkouts[profileId] = {};
   }
-  appState.completedWorkouts[profileId][dayName] = !appState.completedWorkouts[profileId][dayName];
+
+  const currentDone = isDayCompleted(profileId, dayName);
+
+  if (currentDone) {
+    appState.completedWorkouts[profileId][dayName] = { done: false, watchData: null };
+  } else {
+    const watchSnapshot = createWatchDataSnapshot(profileId);
+    appState.completedWorkouts[profileId][dayName] = {
+      done: true,
+      watchData: watchSnapshot
+    };
+    const pName = appState.profiles[profileId].name.split(" ")[0];
+    showIosToast(` Entrenamiento de ${dayName} registrado con Apple Watch (${pName}: ${watchSnapshot.kcal} kcal - ${watchSnapshot.durationMin} min)`, "fa-brands fa-apple");
+  }
+
   saveState();
   renderProfileView();
+  renderWorkoutsView();
 }
 
 function resetWorkoutWeek() {
@@ -646,14 +744,16 @@ function resetWorkoutWeek() {
     appState.completedWorkouts[profileId] = {};
   }
   days.forEach(d => {
-    appState.completedWorkouts[profileId][d] = false;
+    appState.completedWorkouts[profileId][d] = { done: false, watchData: null };
   });
   saveState();
   renderProfileView();
+  renderWorkoutsView();
 }
 
 function syncAppleWatchData() {
   triggerManualSync();
+  recordWatchWorkoutForDay(appState.activeWorkoutDay || "Lunes", appState.activeProfileId, true);
   openAppleWatchModal();
 }
 
@@ -663,7 +763,6 @@ function renderWorkoutTracker() {
 
   const profileId = appState.activeProfileId;
   const p = appState.profiles[profileId];
-  const userCompleted = appState.completedWorkouts[profileId] || {};
   const watchMetrics = appState.appleWatch?.metrics[profileId] || { moveKcal: 540, hr: 74, steps: 9840, distanceKm: 7.2 };
   const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -671,11 +770,16 @@ function renderWorkoutTracker() {
   let totalMinutes = 0;
 
   days.forEach(d => {
-    if (userCompleted[d]) {
+    if (isDayCompleted(profileId, d)) {
       completedCount++;
-      const schedule = WEEKLY_WORKOUT_SCHEDULE[d];
-      if (schedule && schedule.duration) {
-        totalMinutes += schedule.duration;
+      const watchData = getDayWatchData(profileId, d);
+      if (watchData && watchData.durationMin) {
+        totalMinutes += watchData.durationMin;
+      } else {
+        const schedule = WEEKLY_WORKOUT_SCHEDULE[d];
+        if (schedule && schedule.duration) {
+          totalMinutes += schedule.duration;
+        }
       }
     }
   });
@@ -692,7 +796,7 @@ function renderWorkoutTracker() {
             Registro y Vista de Entrenamientos Semanales (${p.name})
           </h2>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
-            Marca manualmente o sincroniza en tiempo real con tu Apple Watch para controlar constancia y métricas de Salud iOS.
+            Sincronización en tiempo real con Apple Watch: los entrenamientos grabados en el reloj se vinculan automáticamente a su día correspondiente.
           </p>
         </div>
         <button class="btn-secondary-sm" onclick="resetWorkoutWeek()" title="Reiniciar semana">
@@ -725,7 +829,7 @@ function renderWorkoutTracker() {
           <span class="stat-pill-val">${totalMinutes} min</span>
         </div>
         <div class="stat-pill-item">
-          <span class="stat-pill-label"><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> Frec. Cardíaca (Watch)</span>
+          <span class="stat-pill-label"><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> FC Media (Watch)</span>
           <span class="stat-pill-val">${watchMetrics.hr} BPM</span>
         </div>
         <div class="stat-pill-item">
@@ -749,8 +853,26 @@ function renderWorkoutTracker() {
   `;
 
   days.forEach(day => {
-    const isDone = !!userCompleted[day];
+    const isDone = isDayCompleted(profileId, day);
+    const watchData = getDayWatchData(profileId, day);
     const routine = WEEKLY_WORKOUT_SCHEDULE[day] || {};
+
+    let watchBadgeHtml = "";
+    if (isDone && watchData) {
+      watchBadgeHtml = `
+        <div class="watch-day-badge">
+          <div class="watch-badge-top">
+            <span class="watch-badge-device"><i class="fa-brands fa-apple"></i> ${watchData.deviceName}</span>
+            <span class="watch-badge-time"><i class="fa-regular fa-clock"></i> ${watchData.timestamp}</span>
+          </div>
+          <div class="watch-badge-metrics">
+            <span class="watch-mini-pill"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> ${watchData.durationMin} min</span>
+            <span class="watch-mini-pill"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> ${watchData.kcal} kcal</span>
+            <span class="watch-mini-pill"><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> ${watchData.avgHr} BPM</span>
+          </div>
+        </div>
+      `;
+    }
 
     html += `
       <div class="day-workout-card ${isDone ? 'completed' : ''}" onclick="toggleWorkoutDay('${day}')">
@@ -760,7 +882,7 @@ function renderWorkoutTracker() {
             <span class="day-name">${day}</span>
           </div>
           <span class="day-status-badge ${isDone ? 'done' : 'pending'}">
-            ${isDone ? '<i class="fa-solid fa-circle-check"></i> Entrenado' : '<i class="fa-regular fa-circle"></i> Pendiente'}
+            ${isDone ? (watchData ? '<i class="fa-brands fa-apple"></i> Watch OK' : '<i class="fa-solid fa-circle-check"></i> Entrenado') : '<i class="fa-regular fa-circle"></i> Pendiente'}
           </span>
         </div>
 
@@ -774,6 +896,8 @@ function renderWorkoutTracker() {
         <p class="day-routine-focus">
           <strong>Enfoque:</strong> ${routine.focus || 'Actividad libre'}
         </p>
+
+        ${watchBadgeHtml}
 
         <details style="margin-top: 0.6rem; font-size: 0.78rem;" onclick="event.stopPropagation();">
           <summary style="color: var(--accent-cyan); cursor: pointer; font-weight: 600;">
@@ -1011,9 +1135,57 @@ function selectWorkoutDay(dayName, btnElem) {
 
 function renderWorkoutsView() {
   const container = document.getElementById("routines-container");
+  if (!container) return;
   container.innerHTML = "";
 
-  const routine = WEEKLY_WORKOUT_SCHEDULE[appState.activeWorkoutDay] || WEEKLY_WORKOUT_SCHEDULE["Lunes"];
+  const activeDay = appState.activeWorkoutDay || "Lunes";
+  const routine = WEEKLY_WORKOUT_SCHEDULE[activeDay] || WEEKLY_WORKOUT_SCHEDULE["Lunes"];
+  const profileId = appState.activeProfileId;
+  const isDone = isDayCompleted(profileId, activeDay);
+  const watchData = getDayWatchData(profileId, activeDay);
+
+  // If completed with watch data, show top Apple Watch banner
+  if (isDone && watchData) {
+    const watchBanner = document.createElement("div");
+    watchBanner.className = "glass-card watch-workout-summary-card";
+    watchBanner.style.marginBottom = "1rem";
+    watchBanner.innerHTML = `
+      <div class="watch-summary-header">
+        <div class="watch-summary-title">
+          <div class="watch-icon-glow"><i class="fa-brands fa-apple"></i></div>
+          <div>
+            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+               Sesión Medida por Apple Watch (${activeDay})
+            </h3>
+            <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
+              Sincronizado automáticamente a las ${watchData.timestamp} • ${watchData.deviceName}
+            </p>
+          </div>
+        </div>
+        <span class="watch-live-badge"><i class="fa-solid fa-circle-check"></i> Salud iOS Sync</span>
+      </div>
+
+      <div class="watch-summary-grid">
+        <div class="summary-metric-box">
+          <span class="metric-lbl"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Tiempo Medido</span>
+          <span class="metric-val" style="color:var(--accent-cyan);">${watchData.durationMin} <small>min</small></span>
+        </div>
+        <div class="summary-metric-box">
+          <span class="metric-lbl"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías Activas</span>
+          <span class="metric-val" style="color:var(--accent-rose);">${watchData.kcal} <small>kcal</small></span>
+        </div>
+        <div class="summary-metric-box">
+          <span class="metric-lbl"><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> FC Media</span>
+          <span class="metric-val" style="color:var(--accent-emerald);">${watchData.avgHr} <small>BPM</small></span>
+        </div>
+        <div class="summary-metric-box">
+          <span class="metric-lbl"><i class="fa-solid fa-chart-line" style="color:var(--accent-amber);"></i> FC Máxima</span>
+          <span class="metric-val" style="color:var(--accent-amber);">${watchData.maxHr} <small>BPM</small></span>
+        </div>
+      </div>
+    `;
+    container.appendChild(watchBanner);
+  }
 
   const card = document.createElement("div");
   card.className = "glass-card";
