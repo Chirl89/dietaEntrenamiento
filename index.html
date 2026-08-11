@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FitDuo iOS">
+  <meta name="theme-color" content="#0b0f19">
+  <title>FitDuo & Collie Coach - Carlos, Andrea y Boo (iOS Edition)</title>
+  
+  <!-- Google Fonts & Icon Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Application CSS -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Chart.js for progress graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- MOBILE TOP HEADER BAR (IPHONE VIEWPORT) -->
+  <header class="ios-top-bar">
+    <div class="ios-header-brand">
+      <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span></span>
+    </div>
+
+    <div class="ios-header-actions">
+      <!-- Profile pill switcher for iPhone header -->
+      <div class="ios-profile-pill">
+        <button class="ios-profile-btn active" id="ios-btn-profile-he" onclick="switchProfile('he')">Carlos</button>
+        <button class="ios-profile-btn" id="ios-btn-profile-she" onclick="switchProfile('she')">Andrea</button>
+      </div>
+
+      <!-- Apple Watch Live Status Badge Button -->
+      <button class="ios-watch-status-btn" onclick="openAppleWatchModal()" title="Abrir Panel Apple Watch & Salud iOS">
+        <span class="watch-pulse-dot"></span>
+        <i class="fa-brands fa-apple"></i>
+        <span class="watch-btn-text" id="ios-header-watch-text">Auto-Sync ON</span>
+      </button>
+    </div>
+  </header>
+
+  <div id="app-container">
+    
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+      <div>
+        <div class="brand-header">
+          <div class="brand-icon">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <div>
+            <div class="brand-title">FitDuo & Collie</div>
+            <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
+          </div>
+        </div>
+
+        <!-- PROFILE SWITCHER -->
+        <div class="profile-selector-box">
+          <span class="profile-selector-label"><i class="fa-solid fa-user-check"></i> Seleccionar Perfil:</span>
+          <div class="profile-toggle-btns">
+            <button class="profile-btn active" id="btn-profile-he" onclick="switchProfile('he')">
+              <i class="fa-solid fa-mars"></i> Carlos
+            </button>
+            <button class="profile-btn" id="btn-profile-she" onclick="switchProfile('she')">
+              <i class="fa-solid fa-venus"></i> Andrea
+            </button>
+          </div>
+        </div>
+
+        <!-- NAVIGATION MENU -->
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <button class="active" onclick="showTab('profile-view', this)">
+              <i class="fa-solid fa-sliders nav-icon"></i>
+              <span>Perfil</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button onclick="showTab('nutrition-view', this)">
+              <i class="fa-solid fa-utensils nav-icon"></i>
+              <span>Menú Semanal</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button onclick="showTab('shopping-view', this)">
+              <i class="fa-solid fa-cart-shopping nav-icon"></i>
+              <span>Lista de la Compra</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button onclick="showTab('workouts-view', this)">
+              <i class="fa-solid fa-dumbbell nav-icon"></i>
+              <span>Tabla Ejercicios</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button onclick="showTab('dog-routes-view', this)">
+              <i class="fa-solid fa-dog nav-icon"></i>
+              <span>Rutas con Boo</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button onclick="showTab('progress-view', this)">
+              <i class="fa-solid fa-chart-line nav-icon"></i>
+              <span>Seguimiento</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button onclick="showTab('coach-view', this)">
+              <i class="fa-solid fa-robot nav-icon"></i>
+              <span>Entrenador AI</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- BORDER COLLIE MINI INFO -->
+      <div class="dog-info-card">
+        <div class="dog-avatar">🐶</div>
+        <div class="dog-details">
+          <h4>Boo (Border Collie)</h4>
+          <p><i class="fa-solid fa-fire"></i> 75 min actividad/día</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT VIEW AREA -->
+    <main class="main-content">
+      
+      <!-- TAB 1: PROFILE & BIOMETRICS VIEW -->
+      <section id="profile-view" class="view-panel active">
+        <div class="header-title-group">
+          <h1 class="page-title">Perfil & Vista de Entrenamientos</h1>
+          <p class="page-subtitle" id="profile-subtitle">Personalización para recomposición corporal (perder grasa + ganar músculo)</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="glass-card stat-card">
+            <div class="stat-icon cal"><i class="fa-solid fa-fire-flame-curry"></i></div>
+            <div class="stat-info">
+              <h3>Calorías Diarias Objetivo</h3>
+              <div class="stat-value" id="target-calories">2,150 kcal</div>
+              <div class="stat-subtext">Déficit moderado controlado</div>
+            </div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-icon prot"><i class="fa-solid fa-drumstick-bite"></i></div>
+            <div class="stat-info">
+              <h3>Proteína Diaria</h3>
+              <div class="stat-value" id="target-protein">155 g</div>
+              <div class="stat-subtext">~2.0g / kg de peso</div>
+            </div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-icon carb"><i class="fa-solid fa-bowl-rice"></i></div>
+            <div class="stat-info">
+              <h3>Carbohidratos</h3>
+              <div class="stat-value" id="target-carbs">210 g</div>
+              <div class="stat-subtext">Energía limpia para entrenar</div>
+            </div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-icon fat"><i class="fa-solid fa-avocado"></i></div>
+            <div class="stat-info">
+              <h3>Grasas Saludables</h3>
+              <div class="stat-value" id="target-fats">65 g</div>
+              <div class="stat-subtext">Salud hormonal y saciedad</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISTA DE ENTRENAMIENTOS Y REGISTRO DE DÍAS -->
+        <div id="profile-workouts-container">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- TAB 2: NUTRITION & MEALS VIEW -->
+      <section id="nutrition-view" class="view-panel">
+        <div class="header-title-group">
+          <h1 class="page-title">Menú Semanal Equilibrado</h1>
+          <p class="page-subtitle">Plan de alimentación rico en proteínas y saciante ajustado a vuestros gustos</p>
+        </div>
+
+        <div class="weekly-days-tabs" id="days-tabs">
+          <button class="day-tab active" onclick="selectDay('Lunes', this)">Lunes</button>
+          <button class="day-tab" onclick="selectDay('Martes', this)">Martes</button>
+          <button class="day-tab" onclick="selectDay('Miércoles', this)">Miércoles</button>
+          <button class="day-tab" onclick="selectDay('Jueves', this)">Jueves</button>
+          <button class="day-tab" onclick="selectDay('Viernes', this)">Viernes</button>
+          <button class="day-tab" onclick="selectDay('Sábado', this)">Sábado</button>
+          <button class="day-tab" onclick="selectDay('Domingo', this)">Domingo</button>
+        </div>
+
+        <div class="meal-cards-grid" id="meal-cards-container">
+          <!-- Meal Cards Render Dynamically -->
+        </div>
+      </section>
+
+      <!-- TAB 3: SMART SHOPPING LIST VIEW -->
+      <section id="shopping-view" class="view-panel">
+        <div class="shopping-header">
+          <div>
+            <h1 class="page-title">Lista de la Compra Inteligente</h1>
+            <p class="page-subtitle">Agrupada por secciones para los 7 días de la semana</p>
+          </div>
+          <button class="btn-primary" onclick="copyShoppingList()">
+            <i class="fa-solid fa-copy"></i> Copiar al Portapapeles
+          </button>
+        </div>
+
+        <div id="shopping-categories-container">
+          <!-- Categorized Shopping Items Render Dynamically -->
+        </div>
+      </section>
+
+      <!-- TAB 4: MINIMAL EQUIPMENT WORKOUTS VIEW -->
+      <section id="workouts-view" class="view-panel">
+        <div class="header-title-group">
+          <h1 class="page-title">Tabla de Ejercicios Diaria</h1>
+          <p class="page-subtitle">Planificación semanal para entrenar juntos (Carlos & Andrea) el mismo tiempo</p>
+        </div>
+
+        <div class="weekly-days-tabs" id="workout-days-tabs">
+          <button class="day-tab active" onclick="selectWorkoutDay('Lunes', this)">Lunes</button>
+          <button class="day-tab" onclick="selectWorkoutDay('Martes', this)">Martes</button>
+          <button class="day-tab" onclick="selectWorkoutDay('Miércoles', this)">Miércoles</button>
+          <button class="day-tab" onclick="selectWorkoutDay('Jueves', this)">Jueves</button>
+          <button class="day-tab" onclick="selectWorkoutDay('Viernes', this)">Viernes</button>
+          <button class="day-tab" onclick="selectWorkoutDay('Sábado', this)">Sábado</button>
+          <button class="day-tab" onclick="selectWorkoutDay('Domingo', this)">Domingo</button>
+        </div>
+
+        <div class="routine-cards-container" id="routines-container">
+          <!-- Routines render dynamically -->
+        </div>
+      </section>
+
+      <!-- TAB 5: BORDER COLLIE OUTDOOR ROUTES -->
+      <section id="dog-routes-view" class="view-panel">
+        <div class="header-title-group">
+          <h1 class="page-title">Rutas & Ejercicio con Boo (Border Collie)</h1>
+          <p class="page-subtitle">Rutas al aire libre combinando cardio, intervalos y agilidad para vosotros y Boo</p>
+        </div>
+
+        <div class="routine-cards-container" id="dog-routes-container">
+          <!-- Dog Routes render dynamically -->
+        </div>
+      </section>
+
+      <!-- TAB 6: PROGRESS TRACKER VIEW -->
+      <section id="progress-view" class="view-panel">
+        <div class="header-title-group">
+          <h1 class="page-title">Seguimiento y Registro de Progreso</h1>
+          <p class="page-subtitle">Visualiza la evolución de vuestro peso y niveles de energía</p>
+        </div>
+
+        <div class="glass-card" style="margin-bottom: 1.25rem;">
+          <h2 style="font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-weight-scale" style="color: var(--accent-cyan);"></i> Registrar Peso de Hoy
+          </h2>
+          <div class="input-group-inline">
+            <input type="number" id="weight-input" class="custom-input" placeholder="Ej: 77.5 (kg)" step="0.1">
+            <button class="btn-primary" onclick="addWeightEntry()">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar Registro
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h2 style="font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-chart-area" style="color: var(--accent-emerald);"></i> Gráfica de Peso (Últimas Semanas)
+          </h2>
+          <div style="height: 280px; position: relative;">
+            <canvas id="weightChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: AI PERSONAL TRAINER CHAT VIEW -->
+      <section id="coach-view" class="view-panel">
+        <div class="header-title-group">
+          <h1 class="page-title">Asistente Entrenador AI ("Coach Nova")</h1>
+          <p class="page-subtitle">Pregunta cualquier duda sobre técnica, intercambios de platos o motivación</p>
+        </div>
+
+        <div class="glass-card chat-container">
+          <div class="chat-messages-box" id="chat-messages">
+            <div class="chat-bubble bot">
+              👋 ¡Hola Carlos y Andrea! Soy <strong>Coach Nova</strong>, vuestro entrenador y nutricionista personal. 
+              Estoy aquí para ayudaros a vosotros y a Boo a conseguir una recomposición corporal sana y sostenible. 
+              ¿En qué puedo ayudaros hoy? Podéis preguntarme por sustitutos de alimentos, técnica de ejercicios o consejos para entrenar con Boo.
+            </div>
+          </div>
+          <div class="chat-input-bar">
+            <input type="text" id="chat-input" class="custom-input" placeholder="Escribe tu mensaje o duda aquí..." onkeypress="handleChatKeyPress(event)">
+            <button class="btn-primary" onclick="sendChatMessage()">
+              <i class="fa-solid fa-paper-plane"></i> Enviar
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- IOS BOTTOM NAVIGATION DOCK (IPHONE RESPONSIVE DOCK BAR) -->
+  <nav class="ios-bottom-dock">
+    <button class="ios-dock-btn active" id="dock-btn-profile" onclick="showTab('profile-view', this)">
+      <i class="fa-solid fa-sliders"></i>
+      <span>Perfil</span>
+    </button>
+    <button class="ios-dock-btn" id="dock-btn-nutrition" onclick="showTab('nutrition-view', this)">
+      <i class="fa-solid fa-utensils"></i>
+      <span>Menú</span>
+    </button>
+    <button class="ios-dock-btn" id="dock-btn-shopping" onclick="showTab('shopping-view', this)">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span>Compra</span>
+    </button>
+    <button class="ios-dock-btn" id="dock-btn-workouts" onclick="showTab('workouts-view', this)">
+      <i class="fa-solid fa-dumbbell"></i>
+      <span>Ejercicios</span>
+    </button>
+    <button class="ios-dock-btn" id="dock-btn-dog" onclick="showTab('dog-routes-view', this)">
+      <i class="fa-solid fa-dog"></i>
+      <span>Boo</span>
+    </button>
+    <button class="ios-dock-btn" id="dock-btn-progress" onclick="showTab('progress-view', this)">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Progreso</span>
+    </button>
+    <button class="ios-dock-btn watch-dock-highlight" onclick="openAppleWatchModal()">
+      <div class="watch-badge-dot"></div>
+      <i class="fa-brands fa-apple"></i>
+      <span>Apple Watch</span>
+    </button>
+  </nav>
+
+  <!-- APPLE WATCH & HEALTHKIT CONTROL CENTER MODAL -->
+  <div id="apple-watch-modal" class="modal-overlay" onclick="closeAppleWatchModalOnBackdrop(event)">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <i class="fa-brands fa-apple apple-logo-glow"></i>
+          <div>
+            <h3> Apple Watch & Salud iOS</h3>
+            <p id="modal-watch-subtitle">Sincronización Automática en Tiempo Real</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeAppleWatchModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- LIVE SYNC STATUS BAR -->
+        <div class="watch-sync-status-card">
+          <div class="sync-status-left">
+            <div class="watch-pulse-ring">
+              <i class="fa-brands fa-apple"></i>
+            </div>
+            <div>
+              <div class="watch-device-name" id="watch-device-name">Apple Watch Series 9</div>
+              <div class="watch-sync-timestamp" id="watch-sync-timestamp">Sincronizado: Hace 3 seg</div>
+            </div>
+          </div>
+          <div class="sync-status-right">
+            <div class="battery-indicator">
+              <i class="fa-solid fa-battery-three-quarters" style="color: var(--accent-emerald);"></i>
+              <span id="watch-battery-level">88%</span>
+            </div>
+            <label class="ios-switch" title="Activar/Desactivar Sincronización Automática">
+              <input type="checkbox" id="toggle-auto-sync" checked onchange="toggleAutoSync(this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- APPLE ACTIVITY RINGS (MOVIEMIENTO, EJERCICIO, DE PIE) -->
+        <div class="activity-rings-container">
+          <div class="rings-wrapper">
+            <svg class="rings-svg" viewBox="0 0 120 120">
+              <!-- Background Circles -->
+              <circle cx="60" cy="60" r="50" class="ring-bg move-bg" />
+              <circle cx="60" cy="60" r="38" class="ring-bg exercise-bg" />
+              <circle cx="60" cy="60" r="26" class="ring-bg stand-bg" />
+              
+              <!-- Progress Circles -->
+              <circle cx="60" cy="60" r="50" class="ring-fg move-fg" id="ring-move-circle" stroke-dasharray="314" stroke-dashoffset="60" />
+              <circle cx="60" cy="60" r="38" class="ring-fg exercise-fg" id="ring-exercise-circle" stroke-dasharray="238" stroke-dashoffset="30" />
+              <circle cx="60" cy="60" r="26" class="ring-fg stand-fg" id="ring-stand-circle" stroke-dasharray="163" stroke-dashoffset="20" />
+            </svg>
+            <div class="rings-center-icon">
+              <i class="fa-brands fa-apple"></i>
+            </div>
+          </div>
+
+          <div class="rings-legend">
+            <div class="ring-legend-item move">
+              <div class="legend-color-dot"></div>
+              <div class="legend-text">
+                <span class="legend-title">Movimiento (Calorías)</span>
+                <span class="legend-val" id="ring-move-val">540 / 600 kcal</span>
+              </div>
+            </div>
+            <div class="ring-legend-item exercise">
+              <div class="legend-color-dot"></div>
+              <div class="legend-text">
+                <span class="legend-title">Ejercicio (Minutos)</span>
+                <span class="legend-val" id="ring-exercise-val">42 / 30 min</span>
+              </div>
+            </div>
+            <div class="ring-legend-item stand">
+              <div class="legend-color-dot"></div>
+              <div class="legend-text">
+                <span class="legend-title">De pie (Horas)</span>
+                <span class="legend-val" id="ring-stand-val">10 / 12 hrs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIVE METRICS GRID -->
+        <div class="watch-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon hr-pulse"><i class="fa-solid fa-heart-pulse"></i></div>
+            <div class="metric-data">
+              <span class="metric-label">Ritmo Cardíaco</span>
+              <span class="metric-value" id="watch-metric-hr">72 <small>BPM</small></span>
+              <span class="metric-sub">Reposo / Actividad</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon steps"><i class="fa-solid fa-shoe-prints"></i></div>
+            <div class="metric-data">
+              <span class="metric-label">Pasos Diarios</span>
+              <span class="metric-value" id="watch-metric-steps">9,840</span>
+              <span class="metric-sub">Salud iOS & Watch</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon dist"><i class="fa-solid fa-route"></i></div>
+            <div class="metric-data">
+              <span class="metric-label">Distancia Total</span>
+              <span class="metric-value" id="watch-metric-dist">7.2 <small>km</small></span>
+              <span class="metric-sub">Paseos con Boo</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon kcal"><i class="fa-solid fa-fire"></i></div>
+            <div class="metric-data">
+              <span class="metric-label">Calorías Activas</span>
+              <span class="metric-value" id="watch-metric-kcal">540 <small>kcal</small></span>
+              <span class="metric-sub">Sincronizado hoy</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS: MANUAL SYNC & APPLE HEALTH FILE IMPORT -->
+        <div class="modal-actions-row">
+          <button class="btn-apple-sync-modal" onclick="triggerManualSync()">
+            <i class="fa-solid fa-rotate"></i> Sincronizar Ahora
+          </button>
+
+          <label class="btn-import-health" title="Importar datos de export.xml de la app Salud de tu iPhone">
+            <i class="fa-solid fa-file-arrow-up"></i> Importar Archivo Salud iOS (XML/JSON)
+            <input type="file" id="health-file-input" accept=".xml,.json" style="display:none;" onchange="handleHealthFileImport(event)">
+          </label>
+          
+          <button class="btn-bt-sync" onclick="connectBluetoothHR()">
+            <i class="fa-solid fa-bluetooth-b"></i> Conectar Pulsómetro BT
+          </button>
+        </div>
+
+        <!-- RECENT SYNC LOGS -->
+        <div class="sync-log-box">
+          <h4><i class="fa-solid fa-list-check"></i> Historial de Sincronización Reciente</h4>
+          <ul class="sync-log-list" id="sync-log-list">
+            <!-- Rendered dynamically -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING IOS TOAST NOTIFICATIONS CONTAINER -->
+  <div id="ios-toast-container" class="ios-toast-container"></div>
+
+  <!-- Application Logic -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
