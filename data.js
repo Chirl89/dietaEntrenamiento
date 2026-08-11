@@ -353,7 +353,18 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
       { name: "Fartlek: 1 min trote + 2 min caminata (5 Bloques)", sets: 5, reps: "3 min c/u", rest: "En caminata", technique: "Intercala trote suave a ritmo conversacional con caminata rápida." },
       { name: "Circuito en Banco: Step-ups + Flexiones en banco", sets: 3, reps: "10/pierna + 10 flex", rest: "45 seg", technique: "Carlos y Andrea se turnan mientras Boo realiza 'Sentado/Quieto'." },
       { name: "Estiramientos de Enfriamiento", sets: 1, reps: "5 min", rest: "-", technique: "Estiramiento de cuádriceps, gemelos e isquios." }
-    ]
+    ],
+    routeDetails: {
+      title: "Ruta Fartlek Urbano & Parque con Boo",
+      description: "Combina paseo activo con intervalos de trote y paradas de ejercicio funcional mientras Boo canaliza su energía.",
+      breakdown: [
+        { step: "0 - 10 min", activity: "Paseo de Calentamiento y olfateo libre para Boo." },
+        { step: "10 - 25 min", activity: "Fartlek Intervalar: 1 min trote suave + 2 min caminata rápida (5 bloques)." },
+        { step: "25 - 35 min", activity: "Circuito en Banco de Parque: Step-ups + Flexiones + Sentadillas mientras Boo realiza 'Sentado/Quieto'." },
+        { step: "35 - 40 min", activity: "Paseo de vuelta a casa y estiramientos suaves." }
+      ],
+      collieTips: "Lleva agua para Boo, un juguete lanzador o Frisbee y premios magros (ej. taquitos de pechuga de pavo)."
+    }
   },
   Miércoles: {
     day: "Miércoles",
@@ -383,7 +394,16 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
       { name: "Paseo Tranquilo de Olfateo con Boo", sets: 1, reps: "25 min", rest: "-", technique: "Paseo a ritmo suave permitiendo que Boo explore a su aire." },
       { name: "Movilidad Columna 'Gato-Vaca'", sets: 2, reps: "10 repeticiones", rest: "30 seg", technique: "Moviliza la espalda suavemente para liberar tensión." },
       { name: "Estiramiento de Psoas e Isquios", sets: 2, reps: "30 seg / lado", rest: "30 seg", technique: "Relaja flexores de cadera tras horas de postura sentado." }
-    ]
+    ],
+    routeDetails: {
+      title: "Paseo de Olfateo & Recuperación Activa con Boo",
+      description: "Sesión enfocada en la recuperación muscular y estimulación mental sensorial para Boo.",
+      breakdown: [
+        { step: "0 - 25 min", activity: "Paseo a ritmo libre y pausado. Deja que Boo explore rastros y olfatee a su aire (reduce el estrés canino)." },
+        { step: "25 - 30 min", activity: "Vuelta a casa + rutina de movilidad articular (Gato-Vaca y estiramiento de psoas)." }
+      ],
+      collieTips: "El olfateo activo durante 20-25 min cansa mentalmente a un Border Collie tanto como 1 hora de carrera continua."
+    }
   },
   Viernes: {
     day: "Viernes",
@@ -413,7 +433,18 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
       { name: "Marcha Activa a Ritmo Vivo (5.5 km/h)", sets: 1, reps: "25 min", rest: "-", technique: "Paso firme apretando glúteos en subidas." },
       { name: "Parada de Agilidad con Boo + Sentadillas", sets: 3, reps: "15 sentadillas", rest: "60 seg", technique: "Mientras Boo hace juegos de buscar el juguete, realizáis sentadillas y flexiones." },
       { name: "Caminata de Regreso y Enfriamiento", sets: 1, reps: "20 min", rest: "-", technique: "Ritmo progresivamente más suave." }
-    ]
+    ],
+    routeDetails: {
+      title: "Ruta Senderismo Trail Active & Agilidad en Naturaleza",
+      description: "Marcha activa con desnivel moderado que quema calorías a ritmo sostenido y ejercita a Boo en su entorno ideal.",
+      breakdown: [
+        { step: "Fase 1 (20 min)", activity: "Caminata a ritmo vivo (5.5 - 6 km/h) en terreno plano o ligera subida." },
+        { step: "Fase 2 (20 min)", activity: "Subida con pasos largos apretando glúteos. Boo en arnés o suelta si el espacio es seguro." },
+        { step: "Fase 3 (15 min)", activity: "Parada de descanso activo: Juego de buscar el juguete entre arbustos (estimulación mental Collie) + Sentadillas." },
+        { step: "Fase 4 (Regreso)", activity: "Bajada a ritmo tranquilo para soltar piernas." }
+      ],
+      collieTips: "Usa un arnés ergonómico tipo correa de cintura (canicross) para poder caminar o trotar con las manos libres de forma cómoda."
+    }
   },
   Domingo: {
     day: "Domingo",
@@ -426,53 +457,14 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     exercises: [
       { name: "Paseo Libre en Familia con Boo", sets: 1, reps: "Libre", rest: "-", technique: "Disfrutad del día sin exigencia física." },
       { name: "Masaje de Soltado / Estiramientos suaves", sets: 1, reps: "10 min", rest: "-", technique: "Masajea suavemente muslos y espalda para soltar rigidez." }
-    ]
+    ],
+    routeDetails: {
+      title: "Paseo Libre en Familia con Boo",
+      description: "Paseo recreativo en parque o zona verde sin exigencia física intensa.",
+      breakdown: [
+        { step: "Libre", activity: "Disfrutad del paseo a vuestro ritmo en familia con Boo, dejando espacio para juegos sencillos o descanso." }
+      ],
+      collieTips: "Aprovecha para reforzar comandos de obediencia básica de forma lúdica y positiva."
+    }
   }
 };
-
-export const DOG_ROUTES_DATABASE = [
-  {
-    id: "dr1",
-    title: "Ruta 1: Fartlek Urbano & Parque con Boo (Border Collie)",
-    duration: "45 min",
-    type: "Cardio Intervalar + Agilidad",
-    location: "Parque cercano con zonas verdes o senderos",
-    description: "Combina paseo activo con intervalos de trote y paradas de ejercicio funcional mientras Boo canaliza su energía.",
-    breakdown: [
-      { step: "0 - 10 min", activity: "Paseo de Calentamiento y olfateo libre para Boo." },
-      { step: "10 - 25 min", activity: "Fartlek Intervalar: 1 min trote suave + 2 min caminata rápida. (Repetir 5 bloques)." },
-      { step: "25 - 35 min", activity: "Circuito en Banco de Parque: 10 Step-ups por pierna + 10 Flexiones en banco + 15 Sentadillas mientras Boo realiza 'Sentado/Quieto' o salto suave sobre ramas/troncos." },
-      { step: "35 - 45 min", activity: "Paseo de vuelta a casa y estiramientos para vosotros." }
-    ],
-    collieTips: "Lleva agua para Boo, un juguete lanzador o Frisbee y premios magros (ej. taquitos de pechuga de pavo)."
-  },
-  {
-    id: "dr2",
-    title: "Ruta 2: Senderismo Trail Active & Agilidad en Naturaleza",
-    duration: "60 - 90 min",
-    type: "Resistencia Aeróbica + Desconexión",
-    location: "Ruta de campo, monte bajo o vía verde",
-    description: "Ideal para el fin de semana. Marcha activa con desnivel moderado que quema calorías a ritmo sostenido y ejercita a Boo en su entorno ideal.",
-    breakdown: [
-      { step: "Fase 1 (20 min)", activity: "Caminata a ritmo vivo (5.5 - 6 km/h) en terreno plano o ligera subida." },
-      { step: "Fase 2 (20 min)", activity: "Subida con pasos largos apretando glúteos. Boo en arnés o suelta si el espacio es seguro." },
-      { step: "Fase 3 (15 min)", activity: "Parada de descanso activo: Juego de buscar el juguete entre arbustos (estimulación mental Collie) + 3 series de Sentadillas y Plancha." },
-      { step: "Fase 4 (Regreso)", activity: "Bajada a ritmo tranquilo para soltar piernas." }
-    ],
-    collieTips: "Usa un arnés ergonómico tipo correa de cintura (canicross) para poder caminar o trotar con las manos libres de forma cómoda."
-  },
-  {
-    id: "dr3",
-    title: "Ruta 3: Sesión Express 30min 'Sprint & Fetch'",
-    duration: "30 min",
-    type: "HIIT Suave & Juego de Agilidad",
-    location: "Zona de césped o parque canino amplio",
-    description: "Perfecto para días laborables con poco tiempo pero alta necesidad de quemar energía.",
-    breakdown: [
-      { step: "0 - 5 min", activity: "Caminata rápida de ida al parque." },
-      { step: "5 - 20 min", activity: "Lanza la pelota/frisbee a Boo. Mientras ella corre a traerla, realizas: 5 Burpees adaptados o 10 Sentadillas. Cuando vuelva, descansas y vuelves a lanzar." },
-      { step: "20 - 30 min", activity: "Caminata de enfriamiento de regreso a casa." }
-    ],
-    collieTips: "Combina el ejercicio físico con comandos de obediencia: 'Suelta', 'Tumba', 'Busca'."
-  }
-];

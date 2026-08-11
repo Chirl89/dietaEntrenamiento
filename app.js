@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, DOG_ROUTES_DATABASE, INGREDIENT_CATEGORIES } from './data.js?v=1.0.4';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES } from './data.js?v=1.0.4';
 
 // STATE STORAGE KEY
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -205,8 +205,7 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-workouts",
     sidebarId: "sidebar-nav-workouts",
     subtabs: [
-      { id: "workouts-view", label: "💪 Ejercicios", icon: "fa-solid fa-dumbbell" },
-      { id: "dog-routes-view", label: "🐶 Rutas Boo", icon: "fa-solid fa-dog" }
+      { id: "workouts-view", label: "💪 Ejercicios", icon: "fa-solid fa-dumbbell" }
     ]
   },
   profile: {
@@ -235,7 +234,7 @@ function renderSubtabSegmentedControl(categoryKey, activeTabId) {
   if (!container) return;
 
   const cat = NAVIGATION_CATEGORIES[categoryKey];
-  if (!cat || !cat.subtabs) {
+  if (!cat || !cat.subtabs || cat.subtabs.length <= 1) {
     container.parentElement.style.display = "none";
     return;
   }
@@ -256,7 +255,6 @@ function renderAll() {
   renderNutritionView();
   renderShoppingView();
   renderWorkoutsView();
-  renderDogRoutesView();
   renderProgressView();
   renderSettingsView();
   updateHeaderWatchBadge();
@@ -1445,49 +1443,44 @@ function renderWorkoutsView() {
   `;
 
   container.appendChild(card);
-}
 
-// RENDER DOG ROUTES VIEW
-function renderDogRoutesView() {
-  const container = document.getElementById("dog-routes-container");
-  container.innerHTML = "";
+  // Render integrated outdoor route & Boo activity details if available for the day
+  if (routine.routeDetails) {
+    const routeCard = document.createElement("div");
+    routeCard.className = "glass-card route-card";
+    routeCard.style.marginTop = "1.25rem";
 
-  DOG_ROUTES_DATABASE.forEach(route => {
-    const card = document.createElement("div");
-    card.className = "glass-card route-card";
-
-    const stepsHtml = route.breakdown.map(b => `
+    const stepsHtml = routine.routeDetails.breakdown.map(b => `
       <div class="route-step-item">
         <span class="step-time">${b.step}</span>
         <span style="font-size: 0.9rem; color: var(--text-main);">${b.activity}</span>
       </div>
     `).join("");
 
-    card.innerHTML = `
-      <div class="routine-header-box">
+    routeCard.innerHTML = `
+      <div class="routine-header-box" style="margin-bottom: 0.75rem;">
         <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">🐶 ${route.title}</h2>
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 2px;">${route.description}</p>
+          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-dog"></i> ${routine.routeDetails.title}
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">${routine.routeDetails.description}</p>
         </div>
-        <span class="routine-badge" style="background:rgba(6, 182, 212, 0.2); color:var(--accent-cyan); border-color:rgba(6, 182, 212, 0.4);">
-          <i class="fa-solid fa-stopwatch"></i> ${route.duration}
-        </span>
       </div>
 
       <div class="route-step-list">
         ${stepsHtml}
       </div>
 
-      <div class="collie-tip-box">
-        <i class="fa-solid fa-paw" style="font-size: 1.2rem;"></i>
+      <div class="collie-tip-box" style="margin-top: 1rem;">
+        <i class="fa-solid fa-paw" style="font-size: 1.2rem; color: var(--accent-cyan);"></i>
         <div>
-          <strong>Consejo Border Collie:</strong> ${route.collieTips}
+          <strong style="color: var(--accent-cyan);">Consejo Border Collie:</strong> ${routine.routeDetails.collieTips}
         </div>
       </div>
     `;
 
-    container.appendChild(card);
-  });
+    container.appendChild(routeCard);
+  }
 }
 
 // RENDER PROGRESS VIEW WITH CHART.JS
