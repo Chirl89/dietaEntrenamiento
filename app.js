@@ -420,7 +420,7 @@ function performAutoSyncTick() {
 function updateHeaderWatchBadge() {
   const badgeText = document.getElementById("ios-header-watch-text");
   if (badgeText) {
-    badgeText.innerText = " Sync Watch";
+    badgeText.innerText = " Sync Resumen";
   }
 }
 
