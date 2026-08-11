@@ -125,15 +125,19 @@ function loadSavedState() {
   // Ensure Apple Watch structure exists
   if (!appState.appleWatch) {
     appState.appleWatch = {
+      syncMode: "real", // 'real' (Precise real data, locked) or 'demo' (Live simulation)
       autoSyncEnabled: true,
       syncIntervalSec: 6,
       lastGlobalSync: new Date().toISOString(),
       metrics: {
-        he: { deviceName: "Apple Watch (Carlos)", battery: 88, hr: 74, steps: 9840, moveKcal: 540, moveGoal: 600, exerciseMin: 42, exerciseGoal: 30, standHours: 10, standGoal: 12, distanceKm: 7.2 },
-        she: { deviceName: "Apple Watch (Andrea)", battery: 92, hr: 68, steps: 11200, moveKcal: 480, moveGoal: 500, exerciseMin: 45, exerciseGoal: 30, standHours: 11, standGoal: 12, distanceKm: 8.4 }
+        he: { deviceName: "Apple Watch (Carlos)", battery: 88, hr: 74, maxHr: 165, steps: 9840, moveKcal: 540, moveGoal: 600, exerciseMin: 42, exerciseGoal: 30, standHours: 10, standGoal: 12, distanceKm: 7.2 },
+        she: { deviceName: "Apple Watch (Andrea)", battery: 92, hr: 68, maxHr: 158, steps: 11200, moveKcal: 480, moveGoal: 500, exerciseMin: 45, exerciseGoal: 30, standHours: 11, standGoal: 12, distanceKm: 8.4 }
       },
       syncLogs: []
     };
+  }
+  if (!appState.appleWatch.syncMode) {
+    appState.appleWatch.syncMode = "real";
   }
 }
 
@@ -175,6 +179,13 @@ document.addEventListener("DOMContentLoaded", () => {
   window.handleHealthFileImport = handleHealthFileImport;
   window.connectBluetoothHR = connectBluetoothHR;
   window.forceAppRefresh = forceAppRefresh;
+  window.setAppleWatchSyncMode = setAppleWatchSyncMode;
+  window.toggleCalibrationForm = toggleCalibrationForm;
+  window.saveAppleWatchRealMetricsFromForm = saveAppleWatchRealMetricsFromForm;
+  window.importFromShortcutText = importFromShortcutText;
+  window.openEditWorkoutWatchModal = openEditWorkoutWatchModal;
+  window.closeEditWorkoutWatchModal = closeEditWorkoutWatchModal;
+  window.saveWorkoutWatchDataFromModal = saveWorkoutWatchDataFromModal;
 
   renderAll();
   startAppleWatchAutoSync();
@@ -364,7 +375,7 @@ function showIosToast(message, iconClass = "fa-brands fa-apple") {
 }
 
 // ==========================================
-// APPLE WATCH & HEALTHKIT AUTO-SYNC ENGINE
+// APPLE WATCH & HEALTHKIT CONTROL & SYNC ENGINE
 // ==========================================
 
 function startAppleWatchAutoSync() {
@@ -380,32 +391,37 @@ function startAppleWatchAutoSync() {
 
 function performAutoSyncTick() {
   const pid = appState.activeProfileId;
-  const m = appState.appleWatch.metrics[pid];
+  const m = appState.appleWatch?.metrics?.[pid];
   if (!m) return;
 
-  // Simulate realistic Apple Watch telemetry updates
-  const stepAdd = Math.floor(Math.random() * 9) + 2; // +2 to 10 steps
-  const kcalAdd = Math.random() > 0.4 ? 1 : 0; // +1 active kcal
-  const hrChange = (Math.floor(Math.random() * 5) - 2); // -2 to +2 BPM
+  const mode = appState.appleWatch.syncMode || "real";
 
-  m.steps += stepAdd;
-  m.moveKcal += kcalAdd;
-  m.hr = Math.max(62, Math.min(155, m.hr + hrChange));
-  m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+  if (mode === "demo") {
+    // Demo Mode: Simulate live telemetry updates for testing
+    const stepAdd = Math.floor(Math.random() * 9) + 2; // +2 to 10 steps
+    const kcalAdd = Math.random() > 0.4 ? 1 : 0; // +1 active kcal
+    const hrChange = (Math.floor(Math.random() * 5) - 2); // -2 to +2 BPM
+
+    m.steps += stepAdd;
+    m.moveKcal += kcalAdd;
+    m.hr = Math.max(62, Math.min(155, m.hr + hrChange));
+    m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+  } else {
+    // Real Data Mode: Maintain exact calibrated user metrics stable without random variations
+    // Only refresh timestamp of synchronization
+  }
+
   appState.appleWatch.lastGlobalSync = new Date().toISOString();
-
   saveState();
 
   // Update UI indicators
   updateHeaderWatchBadge();
-  
   renderSummaryView();
 
   if (document.getElementById("apple-watch-modal")?.classList.contains("active")) {
     updateAppleWatchModalUI();
   }
 
-  // Update profile metrics summary cards if on profile view
   const kcalEl = document.getElementById("target-calories");
   if (kcalEl && document.getElementById("profile-view")?.classList.contains("active")) {
     renderWorkoutTracker();
@@ -415,8 +431,26 @@ function performAutoSyncTick() {
 function updateHeaderWatchBadge() {
   const badgeText = document.getElementById("ios-header-watch-text");
   if (badgeText) {
-    const isAuto = appState.appleWatch?.autoSyncEnabled;
-    badgeText.innerText = isAuto ? "Auto-Sync ON" : "Sync Manual";
+    const isReal = appState.appleWatch?.syncMode === "real";
+    badgeText.innerText = isReal ? " Datos Reales" : "🧪 Demo Sync";
+  }
+}
+
+function setAppleWatchSyncMode(mode) {
+  triggerHapticTouch();
+  if (!appState.appleWatch) appState.appleWatch = {};
+  appState.appleWatch.syncMode = mode;
+  saveState();
+
+  updateHeaderWatchBadge();
+  updateAppleWatchModalUI();
+  renderSummaryView();
+  renderProfileView();
+
+  if (mode === "real") {
+    showIosToast("🎯 <strong>Modo Datos Reales Activado</strong>: Tus números de Apple Watch se mantendrán estables con máxima precisión.", "fa-solid fa-shield-halved");
+  } else {
+    showIosToast("🧪 <strong>Modo Simulación Demo Activado</strong>: Simulando telemetría en vivo.", "fa-solid fa-vial");
   }
 }
 
@@ -450,8 +484,8 @@ function toggleAutoSync(enabled) {
 
   showIosToast(
     enabled 
-      ? " Sincronización automática de Apple Watch <strong>ACTIVADA</strong>" 
-      : "⏸️ Sincronización automática de Apple Watch <strong>PAUSADA</strong>",
+      ? " Sincronización de Apple Watch <strong>ACTIVADA</strong>" 
+      : "⏸️ Sincronización de Apple Watch <strong>PAUSADA</strong>",
     enabled ? "fa-brands fa-apple" : "fa-solid fa-pause"
   );
 }
@@ -461,15 +495,18 @@ function triggerManualSync() {
   const pid = appState.activeProfileId;
   const m = appState.appleWatch.metrics[pid];
   const pName = appState.profiles[pid].name.split(" ")[0];
+  const mode = appState.appleWatch.syncMode || "real";
 
-  // Add instant sync burst
-  m.steps += Math.floor(Math.random() * 120) + 40;
-  m.moveKcal += Math.floor(Math.random() * 15) + 5;
-  m.exerciseMin = Math.min(60, m.exerciseMin + 2);
-  m.hr = Math.floor(Math.random() * 20) + 72;
-  m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
-  
+  if (mode === "demo") {
+    m.steps += Math.floor(Math.random() * 120) + 40;
+    m.moveKcal += Math.floor(Math.random() * 15) + 5;
+    m.exerciseMin = Math.min(60, m.exerciseMin + 2);
+    m.hr = Math.floor(Math.random() * 20) + 72;
+    m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+  }
+
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  appState.appleWatch.lastGlobalSync = new Date().toISOString();
   
   appState.appleWatch.syncLogs.unshift({
     timestamp: timeStr,
@@ -477,15 +514,144 @@ function triggerManualSync() {
     hr: m.hr,
     kcal: m.moveKcal,
     steps: m.steps,
-    status: "Sincronizado Manualmente"
+    status: mode === "real" ? "Verificado con Salud iOS" : "Simulado Manualmente"
   });
   if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
 
   saveState();
   updateAppleWatchModalUI();
+  renderSummaryView();
   renderWorkoutTracker();
 
-  showIosToast(` ¡Apple Watch de ${pName} sincronizado correctamente! (${m.moveKcal} kcal - ${m.steps} pasos)`, "fa-solid fa-circle-check");
+  showIosToast(` ¡Datos de Apple Watch (${pName}) verificados! (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-solid fa-circle-check");
+}
+
+function toggleCalibrationForm() {
+  triggerHapticTouch();
+  const body = document.getElementById("calibration-form-body");
+  const icon = document.getElementById("calibration-toggle-icon");
+  if (body) {
+    const isHidden = body.style.display === "none";
+    body.style.display = isHidden ? "block" : "none";
+    if (icon) {
+      icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+    }
+    if (isHidden) {
+      populateCalibrationForm();
+    }
+  }
+}
+
+function populateCalibrationForm() {
+  const pid = appState.activeProfileId;
+  const m = appState.appleWatch?.metrics?.[pid];
+  if (!m) return;
+
+  const deviceInput = document.getElementById("watch-input-device");
+  if (deviceInput) deviceInput.value = m.deviceName || "";
+
+  const moveKcalInput = document.getElementById("watch-input-move-kcal");
+  if (moveKcalInput) moveKcalInput.value = m.moveKcal || "";
+
+  const exMinInput = document.getElementById("watch-input-ex-min");
+  if (exMinInput) exMinInput.value = m.exerciseMin || "";
+
+  const standHoursInput = document.getElementById("watch-input-stand-hours");
+  if (standHoursInput) standHoursInput.value = m.standHours || "";
+
+  const stepsInput = document.getElementById("watch-input-steps");
+  if (stepsInput) stepsInput.value = m.steps || "";
+
+  const distInput = document.getElementById("watch-input-dist");
+  if (distInput) distInput.value = m.distanceKm || "";
+
+  const hrInput = document.getElementById("watch-input-hr");
+  if (hrInput) hrInput.value = m.hr || "";
+
+  const maxHrInput = document.getElementById("watch-input-max-hr");
+  if (maxHrInput) maxHrInput.value = m.maxHr || 165;
+}
+
+function saveAppleWatchRealMetricsFromForm(e) {
+  e.preventDefault();
+  triggerHapticTouch();
+
+  const pid = appState.activeProfileId;
+  const m = appState.appleWatch.metrics[pid];
+  const pName = appState.profiles[pid].name.split(" ")[0];
+
+  const deviceVal = document.getElementById("watch-input-device")?.value.trim();
+  const moveKcalVal = parseInt(document.getElementById("watch-input-move-kcal")?.value);
+  const exMinVal = parseInt(document.getElementById("watch-input-ex-min")?.value);
+  const standHoursVal = parseInt(document.getElementById("watch-input-stand-hours")?.value);
+  const stepsVal = parseInt(document.getElementById("watch-input-steps")?.value);
+  const distVal = parseFloat(document.getElementById("watch-input-dist")?.value);
+  const hrVal = parseInt(document.getElementById("watch-input-hr")?.value);
+  const maxHrVal = parseInt(document.getElementById("watch-input-max-hr")?.value);
+
+  if (deviceVal) m.deviceName = deviceVal;
+  if (!isNaN(moveKcalVal)) m.moveKcal = moveKcalVal;
+  if (!isNaN(exMinVal)) m.exerciseMin = exMinVal;
+  if (!isNaN(standHoursVal)) m.standHours = standHoursVal;
+  if (!isNaN(stepsVal)) m.steps = stepsVal;
+  if (!isNaN(distVal)) m.distanceKm = distVal;
+  if (!isNaN(hrVal)) m.hr = hrVal;
+  if (!isNaN(maxHrVal)) m.maxHr = maxHrVal;
+
+  appState.appleWatch.syncMode = "real";
+  appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  appState.appleWatch.syncLogs.unshift({
+    timestamp: timeStr,
+    device: m.deviceName,
+    hr: m.hr,
+    kcal: m.moveKcal,
+    steps: m.steps,
+    status: "Datos Reales Calibrados"
+  });
+  if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
+
+  saveState();
+  updateAppleWatchModalUI();
+  renderSummaryView();
+  renderProfileView();
+  renderWorkoutsView();
+
+  showIosToast(`🎯 <strong>Datos reales de Apple Watch de ${pName} guardados:</strong> ${m.moveKcal} kcal, ${m.steps.toLocaleString()} pasos, ${m.hr} BPM.`, "fa-solid fa-circle-check");
+}
+
+function importFromShortcutText() {
+  triggerHapticTouch();
+  const text = prompt("Pega aquí el texto o JSON exportado desde tu Atajo de iOS (Apple Health):\n\nEjemplo: {\"kcal\": 540, \"steps\": 9840, \"hr\": 74, \"exerciseMin\": 45}");
+  if (!text) return;
+
+  const pid = appState.activeProfileId;
+  const m = appState.appleWatch.metrics[pid];
+
+  try {
+    const json = JSON.parse(text);
+    if (json.kcal || json.moveKcal || json.activeCalories) m.moveKcal = parseInt(json.kcal || json.moveKcal || json.activeCalories);
+    if (json.steps) m.steps = parseInt(json.steps);
+    if (json.hr || json.heartRate || json.avgHr) m.hr = parseInt(json.hr || json.heartRate || json.avgHr);
+    if (json.maxHr) m.maxHr = parseInt(json.maxHr);
+    if (json.exerciseMin || json.durationMin) m.exerciseMin = parseInt(json.exerciseMin || json.durationMin);
+    if (json.distanceKm || json.distance) m.distanceKm = parseFloat(json.distanceKm || json.distance);
+    if (json.deviceName) m.deviceName = json.deviceName;
+
+    appState.appleWatch.syncMode = "real";
+    appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
+    saveState();
+    updateAppleWatchModalUI();
+    renderSummaryView();
+    renderProfileView();
+    renderWorkoutsView();
+
+    showIosToast(`📋 Datos importados desde Atajo de iOS: ${m.moveKcal} kcal y ${m.steps.toLocaleString()} pasos.`, "fa-solid fa-file-circle-check");
+  } catch(e) {
+    showIosToast("⚠️ El formato pegado no es un JSON válido. Comprueba los datos.", "fa-solid fa-triangle-exclamation");
+  }
 }
 
 function updateAppleWatchModalUI() {
@@ -494,12 +660,34 @@ function updateAppleWatchModalUI() {
   const pName = appState.profiles[pid].name.split(" ")[0];
   if (!m) return;
 
+  const mode = appState.appleWatch.syncMode || "real";
+
+  // Sync Mode buttons state
+  const btnReal = document.getElementById("btn-mode-real");
+  const btnDemo = document.getElementById("btn-mode-demo");
+  if (btnReal) btnReal.className = `mode-btn ${mode === 'real' ? 'active' : ''}`;
+  if (btnDemo) btnDemo.className = `mode-btn ${mode === 'demo' ? 'active' : ''}`;
+
+  const modeBadge = document.getElementById("watch-mode-badge");
+  if (modeBadge) {
+    modeBadge.innerHTML = mode === "real" 
+      ? `<i class="fa-solid fa-shield-halved"></i> Datos Reales Estables` 
+      : `<i class="fa-solid fa-vial"></i> Simulación Demo`;
+  }
+
+  const modeDesc = document.getElementById("watch-mode-desc");
+  if (modeDesc) {
+    modeDesc.innerHTML = mode === "real" 
+      ? `✓ <strong>Modo Datos Reales:</strong> Las mediciones se mantienen congeladas y 100% precisas según los datos reales de tu reloj.` 
+      : `⚡ <strong>Modo Simulación Demo:</strong> Generando telemetría simulada en tiempo real para demostración.`;
+  }
+
   // Device & Subtitle
   const deviceEl = document.getElementById("watch-device-name");
   if (deviceEl) deviceEl.innerText = `${m.deviceName}`;
 
   const subEl = document.getElementById("modal-watch-subtitle");
-  if (subEl) subEl.innerText = `Salud iOS (${pName}) - Auto-Sync Activo`;
+  if (subEl) subEl.innerText = `Salud iOS (${pName}) - ${mode === 'real' ? 'Medición Real' : 'Demostración'}`;
 
   const batEl = document.getElementById("watch-battery-level");
   if (batEl) batEl.innerText = `${m.battery}%`;
@@ -525,7 +713,6 @@ function updateAppleWatchModalUI() {
   if (kcalEl) kcalEl.innerHTML = `${m.moveKcal} <small>kcal</small>`;
 
   // Apple Activity Rings Calculations
-  // Ring 1 (Move): stroke-dasharray = 314
   const moveCircle = document.getElementById("ring-move-circle");
   const moveRatio = Math.min(1.2, m.moveKcal / m.moveGoal);
   const moveOffset = Math.max(0, 314 - (314 * Math.min(1, moveRatio)));
@@ -533,7 +720,6 @@ function updateAppleWatchModalUI() {
   const moveValEl = document.getElementById("ring-move-val");
   if (moveValEl) moveValEl.innerText = `${m.moveKcal} / ${m.moveGoal} kcal`;
 
-  // Ring 2 (Exercise): stroke-dasharray = 238
   const exCircle = document.getElementById("ring-exercise-circle");
   const exRatio = Math.min(1.2, m.exerciseMin / m.exerciseGoal);
   const exOffset = Math.max(0, 238 - (238 * Math.min(1, exRatio)));
@@ -541,7 +727,6 @@ function updateAppleWatchModalUI() {
   const exValEl = document.getElementById("ring-exercise-val");
   if (exValEl) exValEl.innerText = `${m.exerciseMin} / ${m.exerciseGoal} min`;
 
-  // Ring 3 (Stand): stroke-dasharray = 163
   const standCircle = document.getElementById("ring-stand-circle");
   const standRatio = Math.min(1.2, m.standHours / m.standGoal);
   const standOffset = Math.max(0, 163 - (163 * Math.min(1, standRatio)));
@@ -558,7 +743,7 @@ function updateAppleWatchModalUI() {
       logList.innerHTML = appState.appleWatch.syncLogs.map(l => `
         <li class="sync-log-item">
           <span class="sync-log-time">${l.timestamp} - ${l.device}</span>
-          <span class="sync-log-detail">${l.kcal} kcal | ${l.hr} BPM | ${l.steps} pasos</span>
+          <span class="sync-log-detail">${l.kcal} kcal | ${l.hr} BPM | ${l.steps} pasos (${l.status})</span>
         </li>
       `).join("");
     }
@@ -583,7 +768,6 @@ function handleHealthFileImport(event) {
         if (json.activeCalories) m.moveKcal = parseInt(json.activeCalories);
         if (json.heartRate) m.hr = parseInt(json.heartRate);
       } else {
-        // XML regex parsing for Apple Health export.xml records
         const stepMatches = [...content.matchAll(/HKQuantityTypeIdentifierStepCount[^>]+value="(\d+)"/g)];
         if (stepMatches.length > 0) {
           const totalSteps = stepMatches.slice(-20).reduce((acc, match) => acc + parseInt(match[1]), 0);
@@ -598,8 +782,12 @@ function handleHealthFileImport(event) {
       }
 
       m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+      appState.appleWatch.syncMode = "real";
+      appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
       saveState();
       updateAppleWatchModalUI();
+      renderSummaryView();
       renderWorkoutTracker();
 
       showIosToast(`📄 Archivo de Salud iOS importado con éxito: ${m.steps.toLocaleString()} pasos y ${m.moveKcal} kcal cargados.`, "fa-solid fa-file-circle-check");
@@ -608,6 +796,88 @@ function handleHealthFileImport(event) {
     }
   };
   reader.readAsText(file);
+}
+
+// EDIT INDIVIDUAL WORKOUT APPLE WATCH DATA MODAL
+function openEditWorkoutWatchModal(dayName) {
+  triggerHapticTouch();
+  const pid = appState.activeProfileId;
+  const watchData = getDayWatchData(pid, dayName) || createWatchDataSnapshot(pid);
+
+  const modal = document.getElementById("edit-workout-watch-modal");
+  if (!modal) return;
+
+  const dayInput = document.getElementById("edit-workout-day-name");
+  if (dayInput) dayInput.value = dayName;
+
+  const sub = document.getElementById("edit-workout-modal-subtitle");
+  if (sub) sub.innerText = `Ajustar mediciones reales de Apple Watch del ${dayName}`;
+
+  const devInput = document.getElementById("edit-workout-device-name");
+  if (devInput) devInput.value = watchData.deviceName || `Apple Watch (${appState.profiles[pid].name.split(" ")[0]})`;
+
+  const durInput = document.getElementById("edit-workout-duration");
+  if (durInput) durInput.value = watchData.durationMin || 45;
+
+  const kcalInput = document.getElementById("edit-workout-kcal");
+  if (kcalInput) kcalInput.value = watchData.kcal || 400;
+
+  const avgHrInput = document.getElementById("edit-workout-avg-hr");
+  if (avgHrInput) avgHrInput.value = watchData.avgHr || 140;
+
+  const maxHrInput = document.getElementById("edit-workout-max-hr");
+  if (maxHrInput) maxHrInput.value = watchData.maxHr || 168;
+
+  const tsInput = document.getElementById("edit-workout-timestamp");
+  if (tsInput) tsInput.value = watchData.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+
+  modal.classList.add("active");
+}
+
+function closeEditWorkoutWatchModal() {
+  triggerHapticTouch();
+  const modal = document.getElementById("edit-workout-watch-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+function saveWorkoutWatchDataFromModal(e) {
+  e.preventDefault();
+  triggerHapticTouch();
+
+  const pid = appState.activeProfileId;
+  const dayName = document.getElementById("edit-workout-day-name")?.value;
+  if (!dayName) return;
+
+  const deviceName = document.getElementById("edit-workout-device-name")?.value.trim();
+  const durationMin = parseInt(document.getElementById("edit-workout-duration")?.value) || 45;
+  const kcal = parseInt(document.getElementById("edit-workout-kcal")?.value) || 400;
+  const avgHr = parseInt(document.getElementById("edit-workout-avg-hr")?.value) || 140;
+  const maxHr = parseInt(document.getElementById("edit-workout-max-hr")?.value) || 168;
+  const timestamp = document.getElementById("edit-workout-timestamp")?.value.trim() || "09:30 hs";
+
+  if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
+
+  appState.completedWorkouts[pid][dayName] = {
+    done: true,
+    watchData: {
+      deviceName: deviceName || `Apple Watch (${appState.profiles[pid].name.split(" ")[0]})`,
+      durationMin,
+      kcal,
+      avgHr,
+      maxHr,
+      timestamp,
+      autoSync: false
+    }
+  };
+
+  saveState();
+  closeEditWorkoutWatchModal();
+
+  renderSummaryView();
+  renderProfileView();
+  renderWorkoutsView();
+
+  showIosToast(` Entrenamiento de ${dayName} calibrado con éxito (${kcal} kcal - ${durationMin} min)`, "fa-solid fa-circle-check");
 }
 
 // WEBBTUETOOTH HEART RATE MONITOR PAIRING
@@ -871,10 +1141,10 @@ function createWatchDataSnapshot(profileId, customDuration = null) {
   const m = appState.appleWatch?.metrics?.[profileId] || {};
   const pName = appState.profiles[profileId]?.name?.split(" ")[0] || "Apple Watch";
   const duration = customDuration || (m.exerciseMin > 0 ? m.exerciseMin : 45);
-  const kcal = m.moveKcal > 0 ? Math.round(m.moveKcal * 0.8) : 420;
+  const kcal = m.moveKcal > 0 ? m.moveKcal : 420;
   const avgHr = m.hr || 138;
-  const maxHr = Math.min(185, avgHr + Math.floor(Math.random() * 18) + 14);
-  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const maxHr = m.maxHr || (avgHr + 22);
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
 
   return {
     deviceName: m.deviceName || `Apple Watch (${pName})`,
@@ -1077,6 +1347,7 @@ function renderWorkoutTracker() {
             <span class="watch-mini-pill"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> ${watchData.durationMin} min</span>
             <span class="watch-mini-pill"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> ${watchData.kcal} kcal</span>
             <span class="watch-mini-pill"><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> ${watchData.avgHr} BPM</span>
+            <button class="btn-edit-watch-mini" onclick="event.stopPropagation(); openEditWorkoutWatchModal('${day}')" title="Calibrar datos reales de este entrenamiento"><i class="fa-solid fa-pen"></i></button>
           </div>
         </div>
       `;

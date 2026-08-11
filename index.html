@@ -587,13 +587,32 @@
           <i class="fa-brands fa-apple apple-logo-glow"></i>
           <div>
             <h3> Apple Watch & Salud iOS</h3>
-            <p id="modal-watch-subtitle">Sincronización Automática en Tiempo Real</p>
+            <p id="modal-watch-subtitle">Sincronización Precisa de Datos Reales</p>
           </div>
         </div>
         <button class="modal-close-btn" onclick="closeAppleWatchModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="modal-body">
+        <!-- MODE SELECTOR BAR -->
+        <div class="watch-mode-selector-card">
+          <div class="mode-selector-header">
+            <span class="mode-label"><i class="fa-solid fa-sliders"></i> Modo de Datos de Salud</span>
+            <span class="mode-badge" id="watch-mode-badge"><i class="fa-solid fa-shield-halved"></i> Datos Reales Estables</span>
+          </div>
+          <div class="mode-toggle-group">
+            <button class="mode-btn active" id="btn-mode-real" onclick="setAppleWatchSyncMode('real')">
+              <i class="fa-solid fa-circle-check"></i> 🎯 Datos Reales (Preciso)
+            </button>
+            <button class="mode-btn" id="btn-mode-demo" onclick="setAppleWatchSyncMode('demo')">
+              <i class="fa-solid fa-vial"></i> 🧪 Simulación Demo
+            </button>
+          </div>
+          <p class="mode-description" id="watch-mode-desc">
+            ✓ <strong>Modo Datos Reales:</strong> Los números del reloj se mantienen congelados y 100% estables según tus mediciones reales, sin generar cambios ni variaciones ficticias.
+          </p>
+        </div>
+
         <!-- LIVE SYNC STATUS BAR -->
         <div class="watch-sync-status-card">
           <div class="sync-status-left">
@@ -617,7 +636,7 @@
           </div>
         </div>
 
-        <!-- APPLE ACTIVITY RINGS (MOVIEMIENTO, EJERCICIO, DE PIE) -->
+        <!-- APPLE ACTIVITY RINGS (MOVIMIENTO, EJERCICIO, DE PIE) -->
         <div class="activity-rings-container">
           <div class="rings-wrapper">
             <svg class="rings-svg" viewBox="0 0 120 120">
@@ -666,7 +685,7 @@
           <div class="metric-card">
             <div class="metric-icon hr-pulse"><i class="fa-solid fa-heart-pulse"></i></div>
             <div class="metric-data">
-              <span class="metric-label">Ritmo Cardíaco</span>
+              <span class="metric-label">Ritmo Cardíaco Promedio</span>
               <span class="metric-value" id="watch-metric-hr">72 <small>BPM</small></span>
               <span class="metric-sub">Reposo / Actividad</span>
             </div>
@@ -684,7 +703,7 @@
             <div class="metric-data">
               <span class="metric-label">Distancia Total</span>
               <span class="metric-value" id="watch-metric-dist">7.2 <small>km</small></span>
-              <span class="metric-sub">Paseos con Boo</span>
+              <span class="metric-sub">Paseos & Entreno</span>
             </div>
           </div>
           <div class="metric-card">
@@ -697,18 +716,80 @@
           </div>
         </div>
 
-        <!-- ACTION BUTTONS: MANUAL SYNC & APPLE HEALTH FILE IMPORT -->
+        <!-- FORMULARIO DE CALIBRACIÓN DIRECTA DE DATOS REALES DE APPLE WATCH -->
+        <div class="watch-calibration-card glass-card">
+          <div class="calibration-card-header" onclick="toggleCalibrationForm()">
+            <h4><i class="fa-solid fa-pen-ruler"></i> Calibrar / Introducir Datos Reales de tu Apple Watch</h4>
+            <i class="fa-solid fa-chevron-down" id="calibration-toggle-icon"></i>
+          </div>
+          <div id="calibration-form-body" class="calibration-form-body" style="display: none;">
+            <p class="calibration-hint">Introduce aquí las mediciones exactas que ves en la pantalla de tu reloj o en la app Salud de tu iPhone:</p>
+            
+            <form onsubmit="saveAppleWatchRealMetricsFromForm(event)">
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label><i class="fa-brands fa-apple"></i> Nombre de tu Reloj</label>
+                  <input type="text" id="watch-input-device" class="ios-input" placeholder="ej. Apple Watch Series 9">
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías Activas (kcal)</label>
+                  <input type="number" id="watch-input-move-kcal" class="ios-input" placeholder="ej. 540">
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Min. Ejercicio</label>
+                  <input type="number" id="watch-input-ex-min" class="ios-input" placeholder="ej. 45">
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-user-ninja" style="color:var(--accent-emerald);"></i> Horas de Pie</label>
+                  <input type="number" id="watch-input-stand-hours" class="ios-input" placeholder="ej. 10">
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-shoe-prints"></i> Pasos Totales</label>
+                  <input type="number" id="watch-input-steps" class="ios-input" placeholder="ej. 9840">
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label><i class="fa-solid fa-route"></i> Distancia (km)</label>
+                  <input type="number" step="0.1" id="watch-input-dist" class="ios-input" placeholder="ej. 7.2">
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> FC Media (BPM)</label>
+                  <input type="number" id="watch-input-hr" class="ios-input" placeholder="ej. 74">
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-chart-line" style="color:var(--accent-amber);"></i> FC Máxima (BPM)</label>
+                  <input type="number" id="watch-input-max-hr" class="ios-input" placeholder="ej. 165">
+                </div>
+              </div>
+
+              <button type="submit" class="btn-save-calibration">
+                <i class="fa-solid fa-check-double"></i> Guardar y Congelar Datos Reales de Salud
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS: MANUAL SYNC & APPLE HEALTH FILE IMPORT & SHORTCUT PASTE -->
         <div class="modal-actions-row">
           <button class="btn-apple-sync-modal" onclick="recordWatchWorkoutForDay()">
-            <i class="fa-brands fa-apple"></i> Sincronizar y Vincular Entrenamiento de Hoy
+            <i class="fa-brands fa-apple"></i> Vincular Datos al Entrenamiento de Hoy
           </button>
 
           <button class="btn-apple-sync-modal" style="background: var(--surface-card); border: 1px solid var(--border-color);" onclick="triggerManualSync()">
-            <i class="fa-solid fa-rotate"></i> Sync Métricas
+            <i class="fa-solid fa-arrows-rotate"></i> Sync Estado Salud
+          </button>
+
+          <button class="btn-apple-sync-modal" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-emerald);" onclick="importFromShortcutText()">
+            <i class="fa-solid fa-paste"></i> Pegar desde Atajo iOS
           </button>
 
           <label class="btn-import-health" title="Importar datos de export.xml de la app Salud de tu iPhone">
-            <i class="fa-solid fa-file-arrow-up"></i> Importar Salud iOS (XML/JSON)
+            <i class="fa-solid fa-file-arrow-up"></i> Archivo Salud (XML/JSON)
             <input type="file" id="health-file-input" accept=".xml,.json" style="display:none;" onchange="handleHealthFileImport(event)">
           </label>
         </div>
@@ -720,6 +801,58 @@
             <!-- Rendered dynamically -->
           </ul>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE EDICIÓN INDIVIDUAL DE DATOS DE APPLE WATCH POR ENTRENAMIENTO -->
+  <div id="edit-workout-watch-modal" class="modal-overlay" onclick="if(event.target.id==='edit-workout-watch-modal') closeEditWorkoutWatchModal()">
+    <div class="modal-card glass-modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <i class="fa-brands fa-apple apple-logo-glow"></i>
+          <div>
+            <h3> Calibrar Entrenamiento Real</h3>
+            <p id="edit-workout-modal-subtitle">Ajusta los datos medidos por tu Apple Watch</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeEditWorkoutWatchModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="saveWorkoutWatchDataFromModal(event)">
+          <input type="hidden" id="edit-workout-day-name">
+          <div class="form-group">
+            <label><i class="fa-brands fa-apple"></i> Reloj Registrador</label>
+            <input type="text" id="edit-workout-device-name" class="ios-input" required>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Duración (min)</label>
+              <input type="number" id="edit-workout-duration" class="ios-input" required>
+            </div>
+            <div class="form-group">
+              <label><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías (kcal)</label>
+              <input type="number" id="edit-workout-kcal" class="ios-input" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> FC Promedio (BPM)</label>
+              <input type="number" id="edit-workout-avg-hr" class="ios-input" required>
+            </div>
+            <div class="form-group">
+              <label><i class="fa-solid fa-chart-line" style="color:var(--accent-amber);"></i> FC Máxima (BPM)</label>
+              <input type="number" id="edit-workout-max-hr" class="ios-input" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label><i class="fa-regular fa-clock"></i> Hora de Registro</label>
+            <input type="text" id="edit-workout-timestamp" class="ios-input" placeholder="ej. 09:30 hs">
+          </div>
+          <button type="submit" class="btn-save-calibration" style="margin-top: 1rem; width: 100%;">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Mediciones Reales del Entrenamiento
+          </button>
+        </form>
       </div>
     </div>
   </div>
