@@ -239,6 +239,10 @@ function showTab(tabId, btnElement) {
     if (dockBtn) dockBtn.classList.add("active");
   }
 
+  if (tabId === 'settings-view') {
+    renderSettingsView();
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
