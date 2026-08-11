@@ -777,13 +777,13 @@ function parseSmartMetricValue(val) {
   if (typeof val === 'number') return Math.round(val);
   if (Array.isArray(val)) {
     if (val.length === 0) return null;
-    const last = val[val.length - 1];
-    return typeof last === 'number' ? Math.round(last) : parseInt(last);
+    const validNums = val.map(v => parseInt(v)).filter(v => !isNaN(v) && v > 0);
+    if (validNums.length === 0) return null;
+    return validNums[validNums.length - 1]; // Pick last valid number (today's active sample!)
   }
   if (typeof val === 'string') {
-    const parts = val.split(',').map(s => s.trim()).filter(s => s.length > 0 && !isNaN(parseInt(s)));
+    const parts = val.split(',').map(s => s.trim()).filter(s => s.length > 0 && !isNaN(parseInt(s)) && parseInt(s) > 0);
     if (parts.length > 0) {
-      // Pick the last number (most recent/today's sample!)
       return parseInt(parts[parts.length - 1]);
     }
   }
