@@ -192,6 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const syncedFromUrl = checkUrlParamsForWatchSync();
   if (!syncedFromUrl) {
+    checkClipboardForWatchSync();
     checkAutoLaunchShortcutOnOpen();
   }
 
@@ -662,10 +663,83 @@ function importFromShortcutText() {
   }
 }
 
+// SMART 7-DAY METRIC PARSERS
+function parseSmartMetricValue(val) {
+  if (val === null || val === undefined) return null;
+  if (typeof val === 'number') return Math.round(val);
+  if (Array.isArray(val)) {
+    if (val.length === 0) return null;
+    const last = val[val.length - 1];
+    return typeof last === 'number' ? Math.round(last) : parseInt(last);
+  }
+  if (typeof val === 'string') {
+    const parts = val.split(',').map(s => s.trim()).filter(s => s.length > 0 && !isNaN(parseInt(s)));
+    if (parts.length > 0) {
+      // Pick the last number (most recent/today's sample!)
+      return parseInt(parts[parts.length - 1]);
+    }
+  }
+  const parsed = parseInt(val);
+  return isNaN(parsed) ? null : parsed;
+}
+
+function parseSmartMetricArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map(v => parseInt(v)).filter(v => !isNaN(v));
+  if (typeof val === 'string') {
+    return val.split(',').map(s => parseInt(s.trim())).filter(v => !isNaN(v));
+  }
+  const p = parseInt(val);
+  return isNaN(p) ? [] : [p];
+}
+
+// Helper to sync weekly history array (7 days) across past days of the week
+function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], hrArr = []) {
+  if (!kcalArr || kcalArr.length === 0) return;
+
+  const daysOfWeek = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const todayIdx = new Date().getDay(); // 0 (Domingo) to 6 (Sábado)
+
+  // Align 7 days leading up to today
+  // arr[6] = today, arr[5] = yesterday, arr[4] = 2 days ago, etc.
+  for (let i = 0; i < kcalArr.length; i++) {
+    const offsetFromToday = (kcalArr.length - 1) - i;
+    if (offsetFromToday >= 7) continue;
+
+    let targetDayIdx = todayIdx - offsetFromToday;
+    if (targetDayIdx < 0) targetDayIdx += 7;
+    const targetDayName = daysOfWeek[targetDayIdx];
+
+    const kcalVal = kcalArr[i];
+    const durVal = exMinArr[i] || 45;
+    const hrVal = hrArr[i] || 138;
+
+    if (kcalVal && kcalVal > 150) {
+      if (!appState.completedWorkouts[profileId]) appState.completedWorkouts[profileId] = {};
+
+      const existing = appState.completedWorkouts[profileId][targetDayName];
+      if (!existing || !existing.done || !existing.watchData) {
+        appState.completedWorkouts[profileId][targetDayName] = {
+          done: true,
+          watchData: {
+            deviceName: appState.appleWatch.metrics[profileId]?.deviceName || "Apple Watch",
+            durationMin: durVal,
+            kcal: kcalVal,
+            avgHr: hrVal,
+            maxHr: hrVal + 22,
+            timestamp: "Salud iOS Sync",
+            autoSync: true
+          }
+        };
+      }
+    }
+  }
+}
+
 // IOS SHORTCUTS URL PARAMETER SYNC HANDLER & AUTO-LAUNCH ENGINE
 function checkUrlParamsForWatchSync() {
   const params = new URLSearchParams(window.location.search);
-  if (!params.has("syncWatch") && !params.has("kcal") && !params.has("steps")) {
+  if (!params.has("syncWatch") && !params.has("kcal") && !params.has("steps") && !params.has("workout") && !params.has("duration")) {
     return false;
   }
 
@@ -675,46 +749,92 @@ function checkUrlParamsForWatchSync() {
 
   let updated = false;
 
-  const kcalParam = params.get("kcal") || params.get("moveKcal") || params.get("activeCalories");
-  if (kcalParam && !isNaN(parseInt(kcalParam))) {
-    m.moveKcal = parseInt(kcalParam);
+  const kcalRaw = params.get("kcal") || params.get("moveKcal") || params.get("activeCalories") || params.get("workoutKcal");
+  const kcalVal = parseSmartMetricValue(kcalRaw);
+  if (kcalVal !== null) {
+    m.moveKcal = kcalVal;
     updated = true;
   }
 
-  const stepsParam = params.get("steps");
-  if (stepsParam && !isNaN(parseInt(stepsParam))) {
-    m.steps = parseInt(stepsParam);
+  const stepsRaw = params.get("steps");
+  const stepsVal = parseSmartMetricValue(stepsRaw);
+  if (stepsVal !== null) {
+    m.steps = stepsVal;
     m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
     updated = true;
   }
 
-  const hrParam = params.get("hr") || params.get("heartRate");
-  if (hrParam && !isNaN(parseInt(hrParam))) {
-    m.hr = parseInt(hrParam);
+  const hrRaw = params.get("hr") || params.get("heartRate") || params.get("avgHr");
+  const hrVal = parseSmartMetricValue(hrRaw);
+  if (hrVal !== null) {
+    m.hr = hrVal;
     updated = true;
   }
 
-  const maxHrParam = params.get("maxHr");
-  if (maxHrParam && !isNaN(parseInt(maxHrParam))) {
-    m.maxHr = parseInt(maxHrParam);
+  const maxHrRaw = params.get("maxHr");
+  const maxHrVal = parseSmartMetricValue(maxHrRaw);
+  if (maxHrVal !== null) {
+    m.maxHr = maxHrVal;
     updated = true;
   }
 
-  const exMinParam = params.get("exMin") || params.get("exerciseMin");
-  if (exMinParam && !isNaN(parseInt(exMinParam))) {
-    m.exerciseMin = parseInt(exMinParam);
+  const exMinRaw = params.get("exMin") || params.get("exerciseMin") || params.get("duration") || params.get("dur");
+  const exMinVal = parseSmartMetricValue(exMinRaw);
+  if (exMinVal !== null) {
+    m.exerciseMin = exMinVal;
     updated = true;
   }
 
-  const standHoursParam = params.get("standHours");
-  if (standHoursParam && !isNaN(parseInt(standHoursParam))) {
-    m.standHours = parseInt(standHoursParam);
+  const standHoursRaw = params.get("standHours");
+  const standHoursVal = parseSmartMetricValue(standHoursRaw);
+  if (standHoursVal !== null) {
+    m.standHours = standHoursVal;
     updated = true;
   }
 
   const deviceParam = params.get("deviceName");
   if (deviceParam) {
     m.deviceName = decodeURIComponent(deviceParam);
+    updated = true;
+  }
+
+  // Handle 7-day weekly history sync if an array of values was passed
+  const kcalArr = parseSmartMetricArray(kcalRaw);
+  const exMinArr = parseSmartMetricArray(exMinRaw);
+  const hrArr = parseSmartMetricArray(hrRaw);
+  if (kcalArr.length > 1) {
+    syncWeeklyWatchHistory(pid, kcalArr, exMinArr, hrArr);
+    updated = true;
+  }
+
+  // Check if we should also record/complete a workout session
+  const isWorkoutSync = params.has("workout") || params.get("syncWorkout") === "true" || params.has("duration") || params.has("workoutKcal");
+  let targetDay = params.get("day");
+  if (!targetDay) {
+    targetDay = getTodayDayName();
+  }
+
+  if (isWorkoutSync) {
+    const durMin = exMinVal !== null ? exMinVal : (m.exerciseMin || 45);
+    const wKcal = kcalVal !== null ? kcalVal : (m.moveKcal || 400);
+    const avgH = hrVal !== null ? hrVal : (m.hr || 140);
+    const maxH = maxHrVal !== null ? maxHrVal : (m.maxHr || (avgH + 20));
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+
+    if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
+
+    appState.completedWorkouts[pid][targetDay] = {
+      done: true,
+      watchData: {
+        deviceName: m.deviceName || `Apple Watch (${appState.profiles[pid].name.split(" ")[0]})`,
+        durationMin: durMin,
+        kcal: wKcal,
+        avgHr: avgH,
+        maxHr: maxH,
+        timestamp: timeStr,
+        autoSync: true
+      }
+    };
     updated = true;
   }
 
@@ -731,7 +851,7 @@ function checkUrlParamsForWatchSync() {
       hr: m.hr,
       kcal: m.moveKcal,
       steps: m.steps,
-      status: "Sincronizado vía Atajo iOS"
+      status: kcalArr.length > 1 ? "Semanas (7 días) Sincronizadas" : (isWorkoutSync ? `Entrenamiento (${targetDay}) Registrado` : "Sincronizado vía Atajo iOS")
     });
     if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
 
@@ -744,10 +864,99 @@ function checkUrlParamsForWatchSync() {
     sessionStorage.setItem("fitduo_shortcut_synced", "true");
 
     setTimeout(() => {
-      showIosToast(` <strong>Atajo de iOS ejecutado:</strong> Datos de Apple Watch (${pName}) sincronizados (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-brands fa-apple");
+      if (kcalArr.length > 1) {
+        showIosToast(` <strong>¡Historial de 7 días de Apple Watch sincronizado!</strong> (${m.moveKcal} kcal hoy)`, "fa-brands fa-apple");
+      } else if (isWorkoutSync) {
+        showIosToast(` <strong>¡Entrenamiento de ${targetDay} registrado con Apple Watch!</strong> (${m.moveKcal} kcal - ${m.exerciseMin} min)`, "fa-brands fa-apple");
+      } else {
+        showIosToast(` <strong>Atajo de iOS ejecutado:</strong> Datos de Apple Watch (${pName}) sincronizados (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-brands fa-apple");
+      }
     }, 400);
 
     return true;
+  }
+
+  return false;
+}
+
+async function checkClipboardForWatchSync() {
+  if (!navigator.clipboard || !navigator.clipboard.readText) return false;
+  if (sessionStorage.getItem("fitduo_clipboard_checked") === "true") return false;
+
+  sessionStorage.setItem("fitduo_clipboard_checked", "true");
+
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text || (!text.includes("kcal") && !text.includes("steps") && !text.includes("syncWatch"))) {
+      return false;
+    }
+
+    const pid = appState.activeProfileId;
+    const m = appState.appleWatch.metrics[pid];
+
+    const json = JSON.parse(text);
+    let updated = false;
+
+    const kcalRaw = json.kcal || json.moveKcal || json.activeCalories;
+    const kcalVal = parseSmartMetricValue(kcalRaw);
+    if (kcalVal !== null) {
+      m.moveKcal = kcalVal;
+      updated = true;
+    }
+
+    const stepsRaw = json.steps;
+    const stepsVal = parseSmartMetricValue(stepsRaw);
+    if (stepsVal !== null) {
+      m.steps = stepsVal;
+      m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+      updated = true;
+    }
+
+    const hrRaw = json.hr || json.heartRate || json.avgHr;
+    const hrVal = parseSmartMetricValue(hrRaw);
+    if (hrVal !== null) {
+      m.hr = hrVal;
+      updated = true;
+    }
+
+    const maxHrRaw = json.maxHr;
+    const maxHrVal = parseSmartMetricValue(maxHrRaw);
+    if (maxHrVal !== null) {
+      m.maxHr = maxHrVal;
+      updated = true;
+    }
+
+    const exMinRaw = json.exerciseMin || json.durationMin;
+    const exMinVal = parseSmartMetricValue(exMinRaw);
+    if (exMinVal !== null) {
+      m.exerciseMin = exMinVal;
+      updated = true;
+    }
+
+    const kcalArr = parseSmartMetricArray(kcalRaw);
+    const exMinArr = parseSmartMetricArray(exMinRaw);
+    const hrArr = parseSmartMetricArray(hrRaw);
+    if (kcalArr.length > 1) {
+      syncWeeklyWatchHistory(pid, kcalArr, exMinArr, hrArr);
+      updated = true;
+    }
+
+    if (updated) {
+      appState.appleWatch.syncMode = "real";
+      appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
+      saveState();
+      updateAppleWatchModalUI();
+      renderSummaryView();
+      renderProfileView();
+      renderWorkoutsView();
+
+      const pName = appState.profiles[pid].name.split(" ")[0];
+      showIosToast(` <strong>Sincronización de 7 días:</strong> Datos de Apple Watch (${pName}) cargados (${m.moveKcal} kcal hoy)`, "fa-brands fa-apple");
+      return true;
+    }
+  } catch(e) {
+    // Clipboard not readable or not JSON
   }
 
   return false;
