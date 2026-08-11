@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, DOG_ROUTES_DATABASE, INGREDIENT_CATEGORIES } from './data.js?v=1.0.3';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, DOG_ROUTES_DATABASE, INGREDIENT_CATEGORIES } from './data.js?v=1.0.4';
 
 // STATE STORAGE KEY
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -584,122 +584,35 @@ function setDeviceDefaultProfile(mode) {
 }
 
 function renderSettingsView() {
-  const container = document.getElementById("settings-view-container");
-  if (!container) return;
-
   const currentPref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
-  const activeProfile = appState.activeProfileId;
-  const activeName = activeProfile === 'he' ? 'Carlos' : 'Andrea';
-  const p = appState.profiles[activeProfile];
+  const activeProfile = appState.activeProfileId || 'he';
+  const p = appState.profiles?.[activeProfile] || { name: activeProfile === 'he' ? 'Él (Carlos)' : 'Ella (Andrea)' };
+  const watchMetrics = appState.appleWatch?.metrics?.[activeProfile] || {};
 
-  let currentPrefLabel = "";
-  if (currentPref === 'he') currentPrefLabel = "Carlos (Siempre)";
-  else if (currentPref === 'she') currentPrefLabel = "Andrea (Siempre)";
-  else currentPrefLabel = `Último usado (${activeName})`;
+  const btnHe = document.getElementById("pref-btn-he");
+  const btnShe = document.getElementById("pref-btn-she");
+  const btnLast = document.getElementById("pref-btn-last");
+  
+  if (btnHe) btnHe.classList.toggle("active", currentPref === 'he');
+  if (btnShe) btnShe.classList.toggle("active", currentPref === 'she');
+  if (btnLast) btnLast.classList.toggle("active", currentPref === 'last');
 
-  const watchMetrics = appState.appleWatch?.metrics[activeProfile] || {};
+  const badge = document.getElementById("settings-device-badge");
+  if (badge) {
+    const rawName = p.name || (activeProfile === 'he' ? 'Carlos' : 'Andrea');
+    let label = currentPref === 'he' ? "Carlos (Siempre)" : currentPref === 'she' ? "Andrea (Siempre)" : `Último usado (${rawName})`;
+    badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> ${label}`;
+  }
 
-  container.innerHTML = `
-    <!-- DEVICE PROFILE MEMORY CARD -->
-    <div class="glass-card device-memory-card" style="margin-bottom: 1.5rem;">
-      <div class="device-memory-header">
-        <div class="device-memory-title">
-          <i class="fa-solid fa-mobile-screen-button" style="color: var(--accent-cyan); font-size: 1.3rem;"></i>
-          <div>
-            <h3>Memoria de Perfil por Dispositivo</h3>
-            <p class="device-memory-subtitle">Configura qué perfil se abrirá por defecto al acceder desde <strong>este teléfono/navegador</strong>.</p>
-          </div>
-        </div>
-        <div class="device-badge">
-          <i class="fa-solid fa-shield-halved"></i> ${currentPrefLabel}
-        </div>
-      </div>
+  const statusProfile = document.getElementById("settings-status-profile");
+  if (statusProfile) {
+    statusProfile.innerHTML = `<i class="fa-solid ${activeProfile === 'he' ? 'fa-mars' : 'fa-venus'}" style="color: var(--accent-emerald);"></i> ${p.name || 'Perfil Activo'}`;
+  }
 
-      <div class="device-pref-options">
-        <button class="device-pref-btn ${currentPref === 'he' ? 'active' : ''}" onclick="setDeviceDefaultProfile('he')">
-          <i class="fa-solid fa-mars"></i>
-          <div class="pref-btn-text">
-            <strong>Carlos</strong>
-            <span>Abrir siempre como Carlos en este teléfono</span>
-          </div>
-        </button>
-
-        <button class="device-pref-btn ${currentPref === 'she' ? 'active' : ''}" onclick="setDeviceDefaultProfile('she')">
-          <i class="fa-solid fa-venus"></i>
-          <div class="pref-btn-text">
-            <strong>Andrea</strong>
-            <span>Abrir siempre como Andrea en este teléfono</span>
-          </div>
-        </button>
-
-        <button class="device-pref-btn ${currentPref === 'last' ? 'active' : ''}" onclick="setDeviceDefaultProfile('last')">
-          <i class="fa-solid fa-clock-rotate-left"></i>
-          <div class="pref-btn-text">
-            <strong>Recordar último</strong>
-            <span>Cargar el último perfil usado en este teléfono</span>
-          </div>
-        </button>
-      </div>
-
-      <div class="device-memory-footer" style="display: flex; align-items: center; gap: 0.5rem;">
-        <i class="fa-solid fa-circle-info"></i>
-        <span>Esta preferencia se guarda localmente en este móvil/navegador y no afecta al otro usuario.</span>
-      </div>
-    </div>
-
-    <!-- ACCESO DIRECTO & CACHÉ UPDATE CARD -->
-    <div class="glass-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
-      <div class="device-memory-header">
-        <div class="device-memory-title">
-          <i class="fa-solid fa-arrows-rotate" style="color: var(--accent-emerald); font-size: 1.3rem;"></i>
-          <div>
-            <h3>Acceso Directo & Sincronización de Versión</h3>
-            <p class="device-memory-subtitle">Fuerza la descarga de la última versión si el icono de la pantalla de inicio no se ha actualizado.</p>
-          </div>
-        </div>
-        <div class="device-badge" style="background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.3); color: var(--accent-cyan);">
-          <i class="fa-solid fa-code-branch"></i> v1.0.3 iOS
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem;">
-        <button class="btn-primary" onclick="forceAppRefresh()" style="display: flex; align-items: center; gap: 0.5rem;">
-          <i class="fa-solid fa-arrows-rotate"></i> Actualizar Acceso Directo Ahora
-        </button>
-        <span style="font-size: 0.8rem; color: var(--text-muted);">Vacía la memoria caché local del icono de la pantalla de inicio y recarga el código más reciente.</span>
-      </div>
-    </div>
-
-    <!-- SYSTEM STATUS & DISPOSITIVOS CONECTADOS -->
-    <div class="glass-card" style="padding: 1.25rem;">
-      <h3 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-        <i class="fa-solid fa-sliders" style="color: var(--accent-purple);"></i> Información del Dispositivo & Estado
-      </h3>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-        <div style="background: var(--bg-primary); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Perfil Activo</span>
-          <strong style="font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; margin-top: 0.2rem;">
-            <i class="fa-solid ${activeProfile === 'he' ? 'fa-mars' : 'fa-venus'}" style="color: var(--accent-emerald);"></i> ${p.name}
-          </strong>
-        </div>
-
-        <div style="background: var(--bg-primary); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Apple Watch Sincronizado</span>
-          <strong style="font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; margin-top: 0.2rem;">
-            <i class="fa-brands fa-apple" style="color: var(--accent-cyan);"></i> ${watchMetrics.deviceName || 'Apple Watch'}
-          </strong>
-        </div>
-
-        <div style="background: var(--bg-primary); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Modo de Red</span>
-          <strong style="font-size: 0.95rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.4rem; margin-top: 0.2rem;">
-            <i class="fa-solid fa-circle" style="font-size: 0.6rem;"></i> En línea (PWA iOS)
-          </strong>
-        </div>
-      </div>
-    </div>
-  `;
+  const statusWatch = document.getElementById("settings-status-watch");
+  if (statusWatch) {
+    statusWatch.innerHTML = `<i class="fa-brands fa-apple" style="color: var(--accent-cyan);"></i> ${watchMetrics.deviceName || 'Apple Watch'}`;
+  }
 }
 
 function forceAppRefresh() {
