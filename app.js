@@ -189,6 +189,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.launchIosShortcutSync = launchIosShortcutSync;
   window.toggleAutoLaunchShortcutOnOpen = toggleAutoLaunchShortcutOnOpen;
   window.toggleShortcutGuide = toggleShortcutGuide;
+  window.addDebugLog = addDebugLog;
+  window.clearDebugLogs = clearDebugLogs;
+  window.copyDebugLogsToClipboard = copyDebugLogsToClipboard;
+  window.renderDebugLogsView = renderDebugLogsView;
+
+  addDebugLog("⚡ App FitDuo arrancada (DOMContentLoaded)", "info", { url: window.location.href, userAgent: navigator.userAgent });
 
   const syncedFromUrl = checkUrlParamsForWatchSync();
   if (!syncedFromUrl) {
@@ -207,7 +213,8 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-summary",
     sidebarId: "sidebar-nav-summary",
     subtabs: [
-      { id: "summary-view", label: " Apple Watch", icon: "fa-brands fa-apple" },
+      { id: "summary-view", label: "📊 Resumen Diario", icon: "fa-solid fa-gauge-high" },
+      { id: "logs-view", label: "📋 Logs & Diagnóstico", icon: "fa-solid fa-list-check" },
       { id: "progress-view", label: "📈 Progreso", icon: "fa-solid fa-chart-line" }
     ]
   },
@@ -234,6 +241,7 @@ const NAVIGATION_CATEGORIES = {
     sidebarId: "sidebar-nav-profile",
     subtabs: [
       { id: "profile-view", label: "👤 Perfil", icon: "fa-solid fa-sliders" },
+      { id: "apple-watch-view", label: " Apple Watch & Salud", icon: "fa-brands fa-apple" },
       { id: "coach-view", label: "🤖 Coach AI", icon: "fa-solid fa-robot" },
       { id: "settings-view", label: "⚙️ Ajustes", icon: "fa-solid fa-gear" }
     ]
@@ -389,13 +397,7 @@ function showIosToast(message, iconClass = "fa-brands fa-apple") {
 
 function startAppleWatchAutoSync() {
   if (autoSyncIntervalTimer) clearInterval(autoSyncIntervalTimer);
-
-  // Background Auto-Sync Loop every 6 seconds
-  autoSyncIntervalTimer = setInterval(() => {
-    if (!appState.appleWatch || !appState.appleWatch.autoSyncEnabled) return;
-
-    performAutoSyncTick();
-  }, 6000);
+  // Auto-sync periodic background interval loop completely disabled per user preference!
 }
 
 function performAutoSyncTick() {
@@ -403,45 +405,22 @@ function performAutoSyncTick() {
   const m = appState.appleWatch?.metrics?.[pid];
   if (!m) return;
 
-  const mode = appState.appleWatch.syncMode || "real";
-
-  if (mode === "demo") {
-    // Demo Mode: Simulate live telemetry updates for testing
-    const stepAdd = Math.floor(Math.random() * 9) + 2; // +2 to 10 steps
-    const kcalAdd = Math.random() > 0.4 ? 1 : 0; // +1 active kcal
-    const hrChange = (Math.floor(Math.random() * 5) - 2); // -2 to +2 BPM
-
-    m.steps += stepAdd;
-    m.moveKcal += kcalAdd;
-    m.hr = Math.max(62, Math.min(155, m.hr + hrChange));
-    m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
-  } else {
-    // Real Data Mode: Maintain exact calibrated user metrics stable without random variations
-    // Only refresh timestamp of synchronization
-  }
-
   appState.appleWatch.lastGlobalSync = new Date().toISOString();
   saveState();
 
-  // Update UI indicators
   updateHeaderWatchBadge();
   renderSummaryView();
+  renderProfileView();
 
   if (document.getElementById("apple-watch-modal")?.classList.contains("active")) {
     updateAppleWatchModalUI();
-  }
-
-  const kcalEl = document.getElementById("target-calories");
-  if (kcalEl && document.getElementById("profile-view")?.classList.contains("active")) {
-    renderWorkoutTracker();
   }
 }
 
 function updateHeaderWatchBadge() {
   const badgeText = document.getElementById("ios-header-watch-text");
   if (badgeText) {
-    const isReal = appState.appleWatch?.syncMode === "real";
-    badgeText.innerText = isReal ? " Datos Reales" : "🧪 Demo Sync";
+    badgeText.innerText = " Sync Watch";
   }
 }
 
@@ -747,6 +726,8 @@ function checkUrlParamsForWatchSync() {
   const m = appState.appleWatch?.metrics?.[pid];
   if (!m) return false;
 
+  addDebugLog("🔗 Parámetros de URL detectados al cargar la app", "url", Object.fromEntries(params));
+
   let updated = false;
 
   const kcalRaw = params.get("kcal") || params.get("moveKcal") || params.get("activeCalories") || params.get("workoutKcal");
@@ -805,6 +786,7 @@ function checkUrlParamsForWatchSync() {
   if (kcalArr.length > 1) {
     syncWeeklyWatchHistory(pid, kcalArr, exMinArr, hrArr);
     updated = true;
+    addDebugLog("📊 Historial de 7 días de Salud procesado desde URL", "health", { kcalArr, exMinArr, hrArr });
   }
 
   // Check if we should also record/complete a workout session
@@ -843,6 +825,7 @@ function checkUrlParamsForWatchSync() {
     appState.appleWatch.lastGlobalSync = new Date().toISOString();
 
     const pName = appState.profiles[pid].name.split(" ")[0];
+    addDebugLog(` Datos de Salud actualizados vía URL para ${pName}`, "success", { moveKcal: m.moveKcal, steps: m.steps, hr: m.hr, exerciseMin: m.exerciseMin });
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     appState.appleWatch.syncLogs.unshift({
@@ -895,6 +878,8 @@ async function checkClipboardForWatchSync() {
     const m = appState.appleWatch.metrics[pid];
 
     const json = JSON.parse(text);
+    addDebugLog("📋 Texto JSON de Salud detectado en portapapeles", "clipboard", json);
+
     let updated = false;
 
     const kcalRaw = json.kcal || json.moveKcal || json.activeCalories;
@@ -952,11 +937,12 @@ async function checkClipboardForWatchSync() {
       renderWorkoutsView();
 
       const pName = appState.profiles[pid].name.split(" ")[0];
+      addDebugLog(` Datos de Salud actualizados vía Portapapeles para ${pName}`, "success", { moveKcal: m.moveKcal, steps: m.steps });
       showIosToast(` <strong>Sincronización de 7 días:</strong> Datos de Apple Watch (${pName}) cargados (${m.moveKcal} kcal hoy)`, "fa-brands fa-apple");
       return true;
     }
   } catch(e) {
-    // Clipboard not readable or not JSON
+    addDebugLog("⚠️ Fallo o formato no válido en portapapeles", "warning", e.message);
   }
 
   return false;
@@ -978,13 +964,15 @@ function launchIosShortcutSync(isAuto = false) {
   triggerHapticTouch();
   sessionStorage.setItem("fitduo_shortcut_launched", "true");
 
-  const shortcutName = encodeURIComponent(appState.appleWatch?.shortcutName || "SincronizarSaludFitDuo");
-  const url = `shortcuts://run-shortcut?name=${shortcutName}`;
+  const shortcutName = appState.appleWatch?.shortcutName || "SincronizarSaludFitDuo";
+  const url = `shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}`;
+
+  addDebugLog(`⚡ Invocando Atajo de iOS: ${shortcutName} (${isAuto ? 'Auto' : 'Manual'})`, "info", { url });
 
   if (isAuto) {
     showIosToast("⚡ Ejecutando Atajo de Salud de iOS al iniciar...", "fa-brands fa-apple");
   } else {
-    showIosToast("⚡ Abriendo la App Atajos de iOS...", "fa-brands fa-apple");
+    showIosToast("⚡ Lanzando Atajo de Salud de iOS...", "fa-brands fa-apple");
   }
 
   setTimeout(() => {
@@ -2234,4 +2222,123 @@ function generateBotReply(query) {
   }
   
   return "💪 ¡Gran pregunta! Recordad que el secreto de la recomposición corporal de Carlos y Andrea es mantener una ingesta de proteína adecuada, dormir 7-8 horas y no saltarse los paseos activos con Boo. ¡Seguid así!";
+}
+
+// DEBUG & DIAGNOSTIC LOGS ENGINE
+function addDebugLog(message, type = 'info', data = null) {
+  if (!appState.debugLogs) appState.debugLogs = [];
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + "." + String(now.getMilliseconds()).padStart(3, '0');
+  
+  const logEntry = {
+    id: Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+    timestamp: timeStr,
+    message: message,
+    type: type, // 'info', 'success', 'warning', 'error', 'url', 'clipboard', 'health'
+    data: data ? (typeof data === 'object' ? JSON.parse(JSON.stringify(data)) : data) : null
+  };
+
+  appState.debugLogs.unshift(logEntry);
+  if (appState.debugLogs.length > 60) appState.debugLogs.pop();
+
+  saveState();
+
+  if (document.getElementById("logs-view")?.classList.contains("active")) {
+    renderDebugLogsView();
+  }
+}
+
+function clearDebugLogs() {
+  triggerHapticTouch();
+  appState.debugLogs = [];
+  saveState();
+  renderDebugLogsView();
+  showIosToast("🗑️ Logs de diagnóstico limpiados", "fa-solid fa-trash-can");
+}
+
+function copyDebugLogsToClipboard() {
+  triggerHapticTouch();
+  if (!appState.debugLogs || appState.debugLogs.length === 0) {
+    showIosToast("⚠️ No hay logs para copiar", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+
+  const logText = appState.debugLogs.map(l => 
+    `[${l.timestamp}] [${l.type.toUpperCase()}] ${l.message}` + (l.data ? ` | Data: ${JSON.stringify(l.data)}` : '')
+  ).join("\n");
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(logText).then(() => {
+      showIosToast("📋 ¡Logs copiados al portapapeles con éxito!", "fa-solid fa-copy");
+    }).catch(() => {
+      prompt("Copia manualmente los logs:", logText);
+    });
+  } else {
+    prompt("Copia manualmente los logs:", logText);
+  }
+}
+
+function renderDebugLogsView() {
+  const container = document.getElementById("debug-logs-container");
+  if (!container) return;
+
+  const countBadge = document.getElementById("logs-count-badge");
+  if (countBadge) countBadge.innerText = `${(appState.debugLogs || []).length} Registros`;
+
+  const urlBadge = document.getElementById("logs-env-url");
+  if (urlBadge) {
+    const search = window.location.search || "? (Sin parámetros)";
+    urlBadge.innerText = search;
+  }
+
+  const lastSyncBadge = document.getElementById("logs-env-last-sync");
+  if (lastSyncBadge) {
+    const lastSync = appState.appleWatch?.lastGlobalSync;
+    lastSyncBadge.innerText = lastSync ? new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "Pendiente";
+  }
+
+  const modeBadge = document.getElementById("logs-env-mode");
+  if (modeBadge) {
+    const mode = appState.appleWatch?.syncMode || "real";
+    modeBadge.innerText = mode === "real" ? "🎯 Datos Reales (Preciso)" : "🧪 Simulación Demo";
+  }
+
+  const logs = appState.debugLogs || [];
+  if (logs.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+        <i class="fa-solid fa-terminal" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block; color: var(--border-color);"></i>
+        No hay registros aún en la consola de diagnóstico. Realiza una acción o sincroniza para ver los eventos en vivo.
+      </div>
+    `;
+    return;
+  }
+
+  const typeStyles = {
+    info: { icon: "fa-solid fa-circle-info", color: "var(--accent-cyan)", bg: "rgba(6, 182, 212, 0.08)", border: "rgba(6, 182, 212, 0.2)" },
+    success: { icon: "fa-solid fa-circle-check", color: "var(--accent-emerald)", bg: "rgba(16, 185, 129, 0.08)", border: "rgba(16, 185, 129, 0.2)" },
+    warning: { icon: "fa-solid fa-triangle-exclamation", color: "var(--accent-amber)", bg: "rgba(245, 158, 11, 0.08)", border: "rgba(245, 158, 11, 0.2)" },
+    error: { icon: "fa-solid fa-circle-xmark", color: "var(--accent-rose)", bg: "rgba(239, 68, 68, 0.08)", border: "rgba(239, 68, 68, 0.2)" },
+    url: { icon: "fa-solid fa-link", color: "var(--accent-amber)", bg: "rgba(245, 158, 11, 0.1)", border: "rgba(245, 158, 11, 0.3)" },
+    clipboard: { icon: "fa-solid fa-paste", color: "var(--accent-purple)", bg: "rgba(168, 85, 247, 0.1)", border: "rgba(168, 85, 247, 0.3)" },
+    health: { icon: "fa-brands fa-apple", color: "#fff", bg: "rgba(255, 255, 255, 0.08)", border: "rgba(255, 255, 255, 0.2)" }
+  };
+
+  container.innerHTML = logs.map(l => {
+    const style = typeStyles[l.type] || typeStyles.info;
+    const dataHtml = l.data ? `<pre style="margin-top: 0.35rem; padding: 0.45rem; background: rgba(0,0,0,0.5); border-radius: 4px; overflow-x: auto; font-size: 0.72rem; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.08);">${JSON.stringify(l.data, null, 2)}</pre>` : '';
+
+    return `
+      <div style="background: ${style.bg}; border: 1px solid ${style.border}; padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.78rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+          <span style="color: ${style.color}; font-weight: 700; display: flex; align-items: center; gap: 0.35rem;">
+            <i class="${style.icon}"></i> [${l.type.toUpperCase()}] ${l.message}
+          </span>
+          <span style="color: var(--text-muted); font-size: 0.7rem;">${l.timestamp}</span>
+        </div>
+        ${dataHtml}
+      </div>
+    `;
+  }).join("");
 }
