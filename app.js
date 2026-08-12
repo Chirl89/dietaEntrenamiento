@@ -240,7 +240,9 @@ window.addEventListener("pageshow", () => {
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     addDebugLog("👁️ Evento 'visibilitychange' (Pestaña visible)", "info", { url: window.location.href });
+    sessionStorage.removeItem("fitduo_clipboard_checked");
     checkUrlParamsForWatchSync();
+    checkClipboardForWatchSync();
   }
 });
 
@@ -250,7 +252,9 @@ window.addEventListener("popstate", () => {
 });
 
 window.addEventListener("focus", () => {
+  sessionStorage.removeItem("fitduo_clipboard_checked");
   checkUrlParamsForWatchSync();
+  checkClipboardForWatchSync();
 });
 
 // CATEGORY & SUBTAB NAVIGATION ENGINE
@@ -1206,7 +1210,7 @@ async function checkClipboardForWatchSync() {
       renderWorkoutsView();
 
       const pName = appState.profiles[pid].name.split(" ")[0];
-      addDebugLog(`🎯 MÉTRICAS FINALES ACTUALIZADAS PARA ${pName}`, "success", {
+      addDebugLog(`🎯 MÉTRICAS FINALES ACTUALIZADAS PARA ${pName} DESDE PORTAPAPELES`, "success", {
         moveKcal: m.moveKcal,
         steps: m.steps,
         hr: m.hr,
@@ -1214,7 +1218,14 @@ async function checkClipboardForWatchSync() {
         distanceKm: m.distanceKm,
         lastSync: appState.appleWatch.lastGlobalSync
       });
-      showIosToast(` <strong>Sincronización de Resumen:</strong> Datos de Apple Watch (${pName}) cargados (${m.moveKcal} kcal hoy)`, "fa-brands fa-apple");
+
+      // Clear clipboard after successfully reading health metrics so it doesn't re-trigger
+      try {
+        await navigator.clipboard.writeText("");
+        addDebugLog("🧹 Portapapeles limpiado automáticamente tras la sincronización", "info");
+      } catch (clipErr) {}
+
+      showIosToast(`📋 <strong>Sincronización silenciosa:</strong> Datos de Apple Watch (${pName}) cargados desde Portapapeles (${m.moveKcal} kcal · ${m.steps.toLocaleString()} pasos)`, "fa-solid fa-clipboard-check");
       return true;
     }
   } catch(e) {
