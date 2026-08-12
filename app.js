@@ -1746,6 +1746,9 @@ function renderSummaryView() {
           <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-purple);">
             <i class="fa-solid fa-heart-pulse"></i> ${watchData.avgHr} BPM
           </span>
+          <button class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.76rem; background: rgba(16, 185, 129, 0.2); border: 1px solid var(--accent-emerald); color: var(--accent-emerald);" onclick="toggleWorkoutDay('${todayName}')">
+            <i class="fa-solid fa-rotate-left"></i> Cambiar
+          </button>
         </div>
       `;
     } else {
