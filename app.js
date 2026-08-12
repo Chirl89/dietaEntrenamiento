@@ -272,9 +272,7 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-summary",
     sidebarId: "sidebar-nav-summary",
     subtabs: [
-      { id: "summary-view", label: "📊 Resumen Diario", icon: "fa-solid fa-gauge-high" },
-      { id: "logs-view", label: "📋 Logs & Diagnóstico", icon: "fa-solid fa-list-check" },
-      { id: "progress-view", label: "📈 Progreso", icon: "fa-solid fa-chart-line" }
+      { id: "summary-view", label: "📊 Resumen Diario", icon: "fa-solid fa-gauge-high" }
     ]
   },
   nutrition: {
@@ -300,7 +298,6 @@ const NAVIGATION_CATEGORIES = {
     sidebarId: "sidebar-nav-profile",
     subtabs: [
       { id: "profile-view", label: "👤 Perfil", icon: "fa-solid fa-sliders" },
-      { id: "apple-watch-view", label: " Apple Watch & Salud", icon: "fa-brands fa-apple" },
       { id: "coach-view", label: "🤖 Coach AI", icon: "fa-solid fa-robot" },
       { id: "settings-view", label: "⚙️ Ajustes", icon: "fa-solid fa-gear" }
     ]
@@ -321,7 +318,7 @@ function renderSubtabSegmentedControl(categoryKey, activeTabId) {
   if (!container) return;
 
   const cat = NAVIGATION_CATEGORIES[categoryKey];
-  if (!cat || !cat.subtabs || cat.subtabs.length === 0) {
+  if (!cat || !cat.subtabs || cat.subtabs.length <= 1) {
     if (container.parentElement) container.parentElement.style.cssText = "display: none !important;";
     return;
   }
@@ -1431,6 +1428,27 @@ function simulateBluetoothPairing() {
   showIosToast(` Pulsómetro Apple Watch enlazado por Bluetooth: Frecuencia cardíaca en directo 142 BPM`, "fa-solid fa-heart-pulse");
 }
 
+function formatSyncRelativeTime(lastSyncDate) {
+  if (!lastSyncDate) return "Sincronizado hace 0 segundos";
+  const now = new Date();
+  const past = new Date(lastSyncDate);
+  const diffSec = Math.max(0, Math.floor((now - past) / 1000));
+
+  if (diffSec < 60) {
+    return `Sincronizado hace ${diffSec} segundos`;
+  }
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return `Sincronizado hace ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`;
+  }
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) {
+    return `Sincronizado hace ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
+  }
+  const diffDays = Math.floor(diffHours / 24);
+  return `Sincronizado hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
+}
+
 // RENDER MAIN SUMMARY & APPLE WATCH DASHBOARD
 function renderSummaryView() {
   const pid = appState.activeProfileId;
@@ -1440,17 +1458,12 @@ function renderSummaryView() {
 
   const pName = p.name.split(" ")[0];
 
-  // Subtitle
-  const subEl = document.getElementById("summary-subtitle");
-  if (subEl) subEl.innerText = `Estado en tiempo real de actividad, salud y entrenamiento de hoy (${pName})`;
-
   // Watch Device & Sync Time
   const deviceEl = document.getElementById("summary-watch-device");
   if (deviceEl) deviceEl.innerText = `${m.deviceName}`;
 
-  const timeDiffSec = Math.round((new Date() - new Date(appState.appleWatch.lastGlobalSync || new Date())) / 1000);
   const syncTimeEl = document.getElementById("summary-watch-sync-time");
-  if (syncTimeEl) syncTimeEl.innerText = `Sincronizado: Hace ${timeDiffSec < 3 ? 'un instante' : timeDiffSec + ' seg'}`;
+  if (syncTimeEl) syncTimeEl.innerText = formatSyncRelativeTime(appState.appleWatch?.lastGlobalSync);
 
   // Live Metrics
   const hrEl = document.getElementById("summary-metric-hr");
@@ -1811,7 +1824,7 @@ function renderWorkoutTracker() {
       </div>
 
       <!-- APPLE WATCH SYNC BANNER -->
-      <div class="apple-watch-banner" onclick="openAppleWatchModal()" style="cursor: pointer;">
+      <div class="apple-watch-banner">
         <div class="apple-watch-info">
           <div class="apple-watch-icon"><i class="fa-brands fa-apple"></i></div>
           <div>
@@ -1819,8 +1832,8 @@ function renderWorkoutTracker() {
             <p class="apple-watch-subtitle">Última sync: ${watchMetrics.steps.toLocaleString()} pasos • ${watchMetrics.moveKcal} kcal • ${watchMetrics.hr} BPM (${watchMetrics.distanceKm} km con Boo)</p>
           </div>
         </div>
-        <button class="btn-apple-sync" onclick="event.stopPropagation(); syncAppleWatchData();">
-          <i class="fa-brands fa-apple"></i> Panel Apple Watch
+        <button class="btn-apple-sync" onclick="syncAppleWatchData();">
+          <i class="fa-brands fa-apple"></i> Sincronizar
         </button>
       </div>
 
@@ -2515,3 +2528,11 @@ function renderDebugLogsView() {
     `;
   }).join("");
 }
+
+// Live timer update for summary sync time
+setInterval(() => {
+  const syncTimeEl = document.getElementById("summary-watch-sync-time");
+  if (syncTimeEl && appState?.appleWatch?.lastGlobalSync) {
+    syncTimeEl.innerText = formatSyncRelativeTime(appState.appleWatch.lastGlobalSync);
+  }
+}, 5000);

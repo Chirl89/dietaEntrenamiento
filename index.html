@@ -104,17 +104,11 @@
               <span>Configuración Perfil</span>
             </button>
           </li>
-          <li class="nav-item">
-            <button id="sidebar-nav-watch" onclick="switchCategory('watch', 'apple-watch-view', this)">
-              <i class="fa-brands fa-apple nav-icon"></i>
-              <span>Apple Watch & Salud</span>
-            </button>
-          </li>
         </ul>
       </div>
 
       <div class="sidebar-footer">
-        <div class="user-pill-footer" onclick="openAppleWatchModal()" title="Abrir Panel Apple Watch">
+        <div class="user-pill-footer">
           <i class="fa-brands fa-apple"></i>
           <div>
             <div class="user-pill-name" id="sidebar-watch-user">Carlos (Series 9)</div>
@@ -127,31 +121,8 @@
     <!-- MAIN CONTENT VIEW AREA -->
     <main class="main-content">
       
-      <!-- TOP SUBTAB SEGMENTED CONTROL BAR (IOS & WEB) -->
-      <div class="ios-subtab-container" id="ios-subtab-bar" style="display: flex !important; visibility: visible !important;">
-        <div class="ios-segmented-control" id="ios-segmented-control-inner">
-          <button type="button" class="ios-segmented-btn active" onclick="showTab('summary-view')">
-            <i class="fa-solid fa-gauge-high"></i>
-            <span>📊 Resumen Diario</span>
-          </button>
-          <button type="button" class="ios-segmented-btn" onclick="showTab('logs-view')">
-            <i class="fa-solid fa-list-check"></i>
-            <span>📋 Logs & Diagnóstico</span>
-          </button>
-          <button type="button" class="ios-segmented-btn" onclick="showTab('progress-view')">
-            <i class="fa-solid fa-chart-line"></i>
-            <span>📈 Progreso</span>
-          </button>
-        </div>
-      </div>
-      
       <!-- TAB 1: MAIN SUMMARY & APPLE WATCH LIVE DASHBOARD -->
       <section id="summary-view" class="view-panel active">
-        <div class="header-title-group">
-          <h1 class="page-title">Resumen Diario & Apple Watch</h1>
-          <p class="page-subtitle" id="summary-subtitle">Estado en tiempo real de actividad, salud y entrenamiento de hoy</p>
-        </div>
-
         <!-- APPLE WATCH HERO CARD -->
         <div class="glass-card summary-watch-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
           <div class="summary-watch-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
@@ -161,17 +132,8 @@
               </div>
               <div>
                 <h3 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700;" id="summary-watch-device">Apple Watch (Carlos)</h3>
-                <p style="font-size: 0.75rem; color: var(--text-muted);" id="summary-watch-sync-time">Sincronizado: Hace un instante</p>
+                <p style="font-size: 0.75rem; color: var(--text-muted);" id="summary-watch-sync-time">Sincronizado hace 0 segundos</p>
               </div>
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; padding: 0.35rem 0.7rem; border-radius: 20px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
-                <span class="watch-pulse-dot" style="margin: 0;"></span> Auto-Sync Activo
-              </span>
-              <button class="btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; border-radius: var(--radius-sm);" onclick="openAppleWatchModal()">
-                <i class="fa-brands fa-apple"></i> Panel Watch
-              </button>
             </div>
           </div>
 
@@ -286,73 +248,6 @@
             <p style="font-size: 0.8rem; color: var(--text-secondary);">Revisa los ejercicios asignados para la sesión.</p>
           </div>
 
-          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="showTab('progress-view', document.getElementById('dock-btn-summary'))">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
-              <h3 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-chart-line"></i> Progreso & Peso
-              </h3>
-              <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem;"></i>
-            </div>
-            <p style="font-size: 0.8rem; color: var(--text-secondary);">Consulta la evolución del peso y hábitos.</p>
-      </section>
-
-      <!-- TAB 1B: DIAGNOSTIC LOGS & HEALTH TERMINAL VIEW -->
-      <section id="logs-view" class="view-panel">
-        <div class="header-title-group">
-          <h1 class="page-title"><i class="fa-solid fa-list-check" style="color: var(--accent-cyan);"></i> Logs de Diagnóstico & Sincronización</h1>
-          <p class="page-subtitle">Terminal en vivo de llamadas de Atajos iOS, parámetros de URL, portapapeles y respuestas de Salud</p>
-        </div>
-
-        <!-- DIAGNOSTIC ACTIONS & STATUS BAR -->
-        <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span class="badge" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); padding: 0.3rem 0.6rem; border-radius: 20px; font-weight: 700; font-size: 0.78rem;">
-                <i class="fa-solid fa-terminal"></i> <span id="logs-count-badge">0 Registros</span>
-              </span>
-              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.3rem 0.6rem; border-radius: 20px; font-weight: 700; font-size: 0.78rem;" id="logs-device-badge">
-                <i class="fa-brands fa-apple"></i> iPhone / Web
-              </span>
-            </div>
-
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;" onclick="copyDebugLogsToClipboard()">
-                <i class="fa-solid fa-copy"></i> Copiar Logs
-              </button>
-              <button class="btn-primary" style="background: rgba(239, 68, 68, 0.15); color: var(--accent-rose); border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.45rem 0.85rem; font-size: 0.8rem;" onclick="clearDebugLogs()">
-                <i class="fa-solid fa-trash-can"></i> Limpiar Logs
-              </button>
-              <button class="btn-primary" style="background: var(--surface-card); border: 1px solid var(--border-color); padding: 0.45rem 0.85rem; font-size: 0.8rem;" onclick="renderDebugLogsView()">
-                <i class="fa-solid fa-arrows-rotate"></i> Refrescar
-              </button>
-            </div>
-          </div>
-
-          <!-- SYSTEM ENVIRONMENT SUMMARY -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; background: var(--bg-primary); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.78rem;">
-            <div>
-              <span style="color: var(--text-muted); display: block;">Parámetros URL Detectados:</span>
-              <code style="color: var(--accent-amber); word-break: break-all;" id="logs-env-url">Ninguno</code>
-            </div>
-            <div>
-              <span style="color: var(--text-muted); display: block;">Última Sync Salud:</span>
-              <strong style="color: var(--accent-emerald);" id="logs-env-last-sync">Pendiente</strong>
-            </div>
-            <div>
-              <span style="color: var(--text-muted); display: block;">Modo de Datos:</span>
-              <strong style="color: var(--accent-cyan);" id="logs-env-mode">🎯 Datos Reales (Preciso)</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- TERMINAL LOGS LIST CONTAINER -->
-        <div class="glass-card" style="padding: 1.25rem;">
-          <h3 style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
-            <i class="fa-solid fa-code"></i> Registro Detallado en Vivo (Debugging Móvil)
-          </h3>
-
-          <div id="debug-logs-container" style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 520px; overflow-y: auto; font-family: monospace; font-size: 0.78rem;">
-            <!-- Rendered dynamically -->
           </div>
         </div>
       </section>
@@ -882,158 +777,6 @@
             </div>
             <button class="btn-launch-shortcut" onclick="launchIosShortcutSync()">
               <i class="fa-solid fa-play"></i> Lanzar Atajo
-            </button>
-          </div>
-
-          <div class="shortcut-card-options">
-            <label class="shortcut-auto-launch-label">
-              <input type="checkbox" id="toggle-auto-launch-shortcut" onchange="toggleAutoLaunchShortcutOnOpen(this.checked)">
-              <span>⚡ Sincronizar automáticamente con Atajo de iOS al abrir la App</span>
-            </label>
-
-            <button class="btn-toggle-shortcut-guide" onclick="toggleShortcutGuide()">
-              <i class="fa-solid fa-circle-info"></i> Guía paso a paso: ¿Cómo configurar el Atajo en tu iPhone? <i class="fa-solid fa-chevron-down" id="shortcut-guide-icon"></i>
-            </button>
-          </div>
-
-          <div id="shortcut-guide-box" class="shortcut-guide-box" style="display: none;">
-            <h5><i class="fa-brands fa-apple"></i> Configuración rápida en la App Atajos de iOS:</h5>
-            <ol class="shortcut-steps-list">
-              <li>Abre la app <strong>Atajos</strong> en tu iPhone y crea un atajo llamado <code>SincronizarSaludFitDuo</code>.</li>
-              <li>Añade las acciones de Salud:
-                <ul>
-                  <li><code>Obtener Muestras de Salud</code> (Calorías activas, Pasos, Ritmo cardíaco).</li>
-                  <li><code>Abrir URL</code> con los parámetros: <br><code class="code-url-sample">?syncWatch=true&kcal=[Calorías]&steps=[Pasos]&hr=[Ritmo]</code></li>
-                </ul>
-              </li>
-              <li><strong>Automatización al iniciar (Opcional):</strong> En la pestaña <em>Automatización</em> de la app Atajos de tu iPhone, selecciona: <em>Al abrir la App FitDuo/Safari → Ejecutar SincronizarSaludFitDuo</em>.</li>
-            </ol>
-          </div>
-        </div>
-
-        <!-- LIVE SYNC STATUS BAR -->
-        <div class="watch-sync-status-card">
-          <div class="sync-status-left">
-            <div class="watch-pulse-ring">
-              <i class="fa-brands fa-apple"></i>
-            </div>
-            <div>
-              <div class="watch-device-name" id="watch-device-name">Apple Watch Series 9</div>
-              <div class="watch-sync-timestamp" id="watch-sync-timestamp">Sincronizado: Hace 3 seg</div>
-            </div>
-          </div>
-          <div class="sync-status-right">
-            <div class="battery-indicator">
-              <i class="fa-solid fa-battery-three-quarters" style="color: var(--accent-emerald);"></i>
-              <span id="watch-battery-level">88%</span>
-            </div>
-            <label class="ios-switch" title="Activar/Desactivar Sincronización Automática">
-              <input type="checkbox" id="toggle-auto-sync" checked onchange="toggleAutoSync(this.checked)">
-              <span class="ios-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- APPLE ACTIVITY RINGS (MOVIMIENTO, EJERCICIO, PASOS) -->
-        <div class="activity-rings-container">
-          <div class="rings-wrapper">
-            <svg class="rings-svg" viewBox="0 0 120 120">
-              <!-- Background Circles -->
-              <circle cx="60" cy="60" r="50" class="ring-bg move-bg" />
-              <circle cx="60" cy="60" r="38" class="ring-bg exercise-bg" />
-              <circle cx="60" cy="60" r="26" class="ring-bg steps-bg" />
-              
-              <!-- Progress Circles -->
-              <circle cx="60" cy="60" r="50" class="ring-fg move-fg" id="ring-move-circle" stroke-dasharray="314" stroke-dashoffset="60" />
-              <circle cx="60" cy="60" r="38" class="ring-fg exercise-fg" id="ring-exercise-circle" stroke-dasharray="238" stroke-dashoffset="30" />
-              <circle cx="60" cy="60" r="26" class="ring-fg steps-fg" id="ring-steps-circle" stroke-dasharray="163" stroke-dashoffset="20" />
-            </svg>
-            <div class="rings-center-icon">
-              <i class="fa-brands fa-apple"></i>
-            </div>
-          </div>
-
-          <div class="rings-legend">
-            <div class="ring-legend-item move">
-              <div class="legend-color-dot"></div>
-              <div class="legend-text">
-                <span class="legend-title">Movimiento (Calorías)</span>
-                <span class="legend-val" id="ring-move-val">-- / 600 kcal</span>
-              </div>
-            </div>
-            <div class="ring-legend-item exercise">
-              <div class="legend-color-dot"></div>
-              <div class="legend-text">
-                <span class="legend-title">Ejercicio (Minutos)</span>
-                <span class="legend-val" id="ring-exercise-val">-- / 30 min</span>
-              </div>
-            </div>
-            <div class="ring-legend-item steps">
-              <div class="legend-color-dot"></div>
-              <div class="legend-text">
-                <span class="legend-title">Pasos (Diarios)</span>
-                <span class="legend-val" id="ring-steps-val">-- / 10.000 pasos</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- LIVE METRICS GRID -->
-        <div class="watch-metrics-grid">
-          <div class="metric-card">
-            <div class="metric-icon hr-pulse"><i class="fa-solid fa-heart-pulse"></i></div>
-            <div class="metric-data">
-              <span class="metric-label">Ritmo Cardíaco Promedio</span>
-              <span class="metric-value" id="watch-metric-hr">-- <small>BPM</small></span>
-              <span class="metric-sub">Reposo / Actividad</span>
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon steps"><i class="fa-solid fa-shoe-prints"></i></div>
-            <div class="metric-data">
-              <span class="metric-label">Pasos Diarios</span>
-              <span class="metric-value" id="watch-metric-steps">--</span>
-              <span class="metric-sub">Salud iOS & Watch</span>
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon dist"><i class="fa-solid fa-route"></i></div>
-            <div class="metric-data">
-              <span class="metric-label">Distancia Total</span>
-              <span class="metric-value" id="watch-metric-dist">-- <small>km</small></span>
-              <span class="metric-sub">Paseos & Entreno</span>
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon kcal"><i class="fa-solid fa-fire"></i></div>
-            <div class="metric-data">
-              <span class="metric-label">Calorías Activas</span>
-              <span class="metric-value" id="watch-metric-kcal">-- <small>kcal</small></span>
-              <span class="metric-sub">Sincronizado hoy</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ACTION BUTTONS: MANUAL SYNC -->
-        <div class="modal-actions-row">
-          <button class="btn-apple-sync-modal" onclick="recordWatchWorkoutForDay()">
-            <i class="fa-brands fa-apple"></i> Vincular Datos al Entrenamiento de Hoy
-          </button>
-
-          <button class="btn-apple-sync-modal" style="background: var(--surface-card); border: 1px solid var(--border-color);" onclick="triggerManualSync()">
-            <i class="fa-solid fa-arrows-rotate"></i> Sync Estado Salud
-          </button>
-        </div>
-
-        <!-- RECENT SYNC LOGS -->
-        <div class="sync-log-box">
-          <h4><i class="fa-solid fa-list-check"></i> Historial de Sincronización Reciente</h4>
-          <ul class="sync-log-list" id="sync-log-list">
-            <!-- Rendered dynamically -->
-          </ul>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- MODAL DE EDICIÓN INDIVIDUAL DE DATOS DE APPLE WATCH POR ENTRENAMIENTO -->
