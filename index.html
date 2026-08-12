@@ -222,7 +222,7 @@
 
         <!-- QUICK ACCESS SHORTCUTS -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
-          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="showTab('nutrition-view', document.getElementById('dock-btn-nutrition'))">
+          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="openTodayNutrition()">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
               <h3 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.5rem;">
                 <i class="fa-solid fa-utensils"></i> Menú del Día
@@ -232,7 +232,7 @@
             <p style="font-size: 0.8rem; color: var(--text-secondary);">Consulta las comidas planificadas para hoy.</p>
           </div>
 
-          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="showTab('workouts-view', document.getElementById('dock-btn-workouts'))">
+          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="openTodayWorkouts()">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
               <h3 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.5rem;">
                 <i class="fa-solid fa-dumbbell"></i> Rutina de Ejercicios

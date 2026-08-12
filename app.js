@@ -164,6 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.syncAppleWatchData = syncAppleWatchData;
   window.selectDay = selectDay;
   window.selectWorkoutDay = selectWorkoutDay;
+  window.openTodayNutrition = openTodayNutrition;
+  window.openTodayWorkouts = openTodayWorkouts;
   window.toggleShoppingItem = toggleShoppingItem;
   window.copyShoppingList = copyShoppingList;
   window.addWeightEntry = addWeightEntry;
@@ -1953,6 +1955,18 @@ function getFilteredRecipes() {
 }
 
 // RENDER NUTRITION VIEW
+function openTodayNutrition() {
+  const today = getTodayDayName();
+  let targetBtn = null;
+  document.querySelectorAll("#days-tabs .day-tab").forEach(btn => {
+    if (btn.innerText.trim().toLowerCase() === today.toLowerCase()) {
+      targetBtn = btn;
+    }
+  });
+  selectDay(today, targetBtn);
+  showTab("nutrition-view", document.getElementById("dock-btn-nutrition"));
+}
+
 function selectDay(dayName, btnElem) {
   appState.activeDay = dayName;
   document.querySelectorAll(".day-tab").forEach(tab => tab.classList.remove("active"));
@@ -2142,6 +2156,18 @@ function copyShoppingList() {
 }
 
 // RENDER WORKOUTS VIEW
+function openTodayWorkouts() {
+  const today = getTodayDayName();
+  let targetBtn = null;
+  document.querySelectorAll("#workout-days-tabs .day-tab").forEach(btn => {
+    if (btn.innerText.trim().toLowerCase() === today.toLowerCase()) {
+      targetBtn = btn;
+    }
+  });
+  selectWorkoutDay(today, targetBtn);
+  showTab("workouts-view", document.getElementById("dock-btn-workouts"));
+}
+
 function selectWorkoutDay(dayName, btnElem) {
   appState.activeWorkoutDay = dayName;
   document.querySelectorAll("#workout-days-tabs .day-tab").forEach(tab => tab.classList.remove("active"));
