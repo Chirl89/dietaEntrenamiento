@@ -210,6 +210,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderAll();
   updateShortcutUrlInputs();
+
+  // Direct event listeners binding for Atajos tab switcher
+  const btnHealthTab = document.getElementById("shortcut-tab-btn-health");
+  if (btnHealthTab) {
+    btnHealthTab.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchShortcutTab('health');
+    });
+  }
+
+  const btnWorkoutTab = document.getElementById("shortcut-tab-btn-workout");
+  if (btnWorkoutTab) {
+    btnWorkoutTab.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchShortcutTab('workout');
+    });
+  }
+
   startAppleWatchAutoSync();
 });
 
@@ -1233,29 +1251,47 @@ function updateShortcutUrlInputs() {
 }
 
 function copyShortcutUrlToClipboard(mode = 'health') {
-  triggerHapticTouch();
+  try { triggerHapticTouch(); } catch(e) {}
   const url = getShortcutUrl(mode);
   
   const inputId = mode === 'workout' ? 'shortcut-url-workout-input' : 'shortcut-url-health-input';
   const inputEl = document.getElementById(inputId);
-  if (inputEl) inputEl.value = url;
+  if (inputEl) {
+    inputEl.value = url;
+    inputEl.focus();
+    inputEl.select();
+    inputEl.setSelectionRange(0, 99999);
+  }
+
+  const label = mode === 'workout' ? 'Entrenamiento + Salud' : 'Solo Salud';
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url).then(() => {
-      const label = mode === 'workout' ? 'Entrenamiento + Salud' : 'Solo Salud';
       showIosToast(`📋 <strong>URL del Atajo (${label}) copiada al portapapeles</strong>. Pégala en la acción "Abrir URL" de Atajos iOS.`, "fa-solid fa-copy");
     }).catch(() => {
-      fallbackCopyTextToClipboard(url, mode);
+      try {
+        document.execCommand('copy');
+        showIosToast(`📋 <strong>URL del Atajo (${label}) seleccionada y copiada</strong>.`, "fa-solid fa-copy");
+      } catch(err) {
+        showIosToast("📋 Texto seleccionado. Mantén pulsado el cuadro y selecciona 'Copiar'.", "fa-solid fa-copy");
+      }
     });
   } else {
-    fallbackCopyTextToClipboard(url, mode);
+    try {
+      document.execCommand('copy');
+      showIosToast(`📋 <strong>URL del Atajo (${label}) copiada al portapapeles</strong>.`, "fa-solid fa-copy");
+    } catch(err) {
+      showIosToast("📋 Texto seleccionado. Mantén pulsado el cuadro y selecciona 'Copiar'.", "fa-solid fa-copy");
+    }
   }
 }
+window.copyShortcutUrlToClipboard = copyShortcutUrlToClipboard;
 
 function fallbackCopyTextToClipboard(text, mode) {
   const inputId = mode === 'workout' ? 'shortcut-url-workout-input' : 'shortcut-url-health-input';
   const inputEl = document.getElementById(inputId);
   if (inputEl) {
+    inputEl.focus();
     inputEl.select();
     inputEl.setSelectionRange(0, 99999);
     try {
@@ -1269,20 +1305,22 @@ function fallbackCopyTextToClipboard(text, mode) {
 }
 
 function openHealthSyncModal() {
-  triggerHapticTouch();
+  try { triggerHapticTouch(); } catch(e) {}
   updateShortcutUrlInputs();
   const modal = document.getElementById("health-sync-modal");
   if (modal) modal.classList.add("active");
 }
+window.openHealthSyncModal = openHealthSyncModal;
 
 function closeHealthSyncModal() {
-  triggerHapticTouch();
+  try { triggerHapticTouch(); } catch(e) {}
   const modal = document.getElementById("health-sync-modal");
   if (modal) modal.classList.remove("active");
 }
+window.closeHealthSyncModal = closeHealthSyncModal;
 
 function switchShortcutTab(tabName) {
-  triggerHapticTouch();
+  try { triggerHapticTouch(); } catch(e) {}
   updateShortcutUrlInputs();
 
   const btnHealth = document.getElementById("shortcut-tab-btn-health");
@@ -1291,17 +1329,42 @@ function switchShortcutTab(tabName) {
   const paneWorkout = document.getElementById("shortcut-pane-workout");
 
   if (tabName === 'health') {
-    if (btnHealth) btnHealth.className = "shortcut-tab-btn active";
-    if (btnWorkout) btnWorkout.className = "shortcut-tab-btn";
-    if (paneHealth) paneHealth.style.cssText = "display: block !important;";
-    if (paneWorkout) paneWorkout.style.cssText = "display: none !important;";
+    if (btnHealth) {
+      btnHealth.className = "shortcut-tab-btn active";
+      btnHealth.style.background = "var(--gradient-primary)";
+      btnHealth.style.color = "#ffffff";
+    }
+    if (btnWorkout) {
+      btnWorkout.className = "shortcut-tab-btn";
+      btnWorkout.style.background = "transparent";
+      btnWorkout.style.color = "var(--text-secondary)";
+    }
+    if (paneHealth) {
+      paneHealth.style.cssText = "display: block !important; visibility: visible !important; opacity: 1 !important;";
+    }
+    if (paneWorkout) {
+      paneWorkout.style.cssText = "display: none !important; visibility: hidden !important; opacity: 0 !important;";
+    }
   } else {
-    if (btnHealth) btnHealth.className = "shortcut-tab-btn";
-    if (btnWorkout) btnWorkout.className = "shortcut-tab-btn active";
-    if (paneHealth) paneHealth.style.cssText = "display: none !important;";
-    if (paneWorkout) paneWorkout.style.cssText = "display: block !important;";
+    if (btnHealth) {
+      btnHealth.className = "shortcut-tab-btn";
+      btnHealth.style.background = "transparent";
+      btnHealth.style.color = "var(--text-secondary)";
+    }
+    if (btnWorkout) {
+      btnWorkout.className = "shortcut-tab-btn active";
+      btnWorkout.style.background = "linear-gradient(135deg, #f43f5e, #e11d48)";
+      btnWorkout.style.color = "#ffffff";
+    }
+    if (paneHealth) {
+      paneHealth.style.cssText = "display: none !important; visibility: hidden !important; opacity: 0 !important;";
+    }
+    if (paneWorkout) {
+      paneWorkout.style.cssText = "display: block !important; visibility: visible !important; opacity: 1 !important;";
+    }
   }
 }
+window.switchShortcutTab = switchShortcutTab;
 
 function testSimulatedHealthSync() {
   triggerHapticTouch();
