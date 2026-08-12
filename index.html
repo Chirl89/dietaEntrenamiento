@@ -499,10 +499,10 @@
 
           <!-- MODES TAB SELECTOR -->
           <div class="shortcut-tab-selector">
-            <button id="shortcut-tab-btn-health" class="shortcut-tab-btn active" onclick="switchShortcutTab('health')">
+            <button type="button" id="shortcut-tab-btn-health" class="shortcut-tab-btn active" onclick="switchShortcutTab('health')">
               <i class="fa-brands fa-apple"></i> 1. Solo Salud (Vía Botón )
             </button>
-            <button id="shortcut-tab-btn-workout" class="shortcut-tab-btn" onclick="switchShortcutTab('workout')">
+            <button type="button" id="shortcut-tab-btn-workout" class="shortcut-tab-btn" onclick="switchShortcutTab('workout')">
               <i class="fa-solid fa-dumbbell"></i> 2. Salud + Entrenamiento (Post-Entreno)
             </button>
           </div>
@@ -520,8 +520,8 @@
             <div class="shortcut-url-generator-box">
               <label><i class="fa-solid fa-link"></i> Tu URL de Integración para Atajos (Acción Abrir URL):</label>
               <div class="url-copy-input-wrapper">
-                <input type="text" id="shortcut-url-health-input" class="ios-code-input" readonly>
-                <button class="btn-copy-action" onclick="copyShortcutUrlToClipboard('health')">
+                <input type="text" id="shortcut-url-health-input" class="ios-code-input" readonly placeholder="Calculando URL...">
+                <button type="button" class="btn-copy-action" onclick="copyShortcutUrlToClipboard('health')">
                   <i class="fa-solid fa-copy"></i> Copiar URL
                 </button>
               </div>
@@ -545,10 +545,10 @@
             </div>
 
             <div class="modal-test-actions">
-              <button class="btn-launch-shortcut-modal" onclick="launchIosShortcutSync(false, 'health')">
+              <button type="button" class="btn-launch-shortcut-modal" onclick="launchIosShortcutSync(false, 'health')">
                 <i class="fa-solid fa-play"></i> Lanzar Atajo en iPhone
               </button>
-              <button class="btn-test-simulated-modal" onclick="testSimulatedHealthSync()">
+              <button type="button" class="btn-test-simulated-modal" onclick="testSimulatedHealthSync()">
                 <i class="fa-solid fa-vial"></i> Simular Sincronización Salud
               </button>
             </div>
@@ -567,8 +567,8 @@
             <div class="shortcut-url-generator-box">
               <label><i class="fa-solid fa-link"></i> Tu URL de Integración Post-Entrenamiento:</label>
               <div class="url-copy-input-wrapper">
-                <input type="text" id="shortcut-url-workout-input" class="ios-code-input" readonly>
-                <button class="btn-copy-action btn-copy-workout" onclick="copyShortcutUrlToClipboard('workout')">
+                <input type="text" id="shortcut-url-workout-input" class="ios-code-input" readonly placeholder="Calculando URL...">
+                <button type="button" class="btn-copy-action btn-copy-workout" onclick="copyShortcutUrlToClipboard('workout')">
                   <i class="fa-solid fa-copy"></i> Copiar URL
                 </button>
               </div>

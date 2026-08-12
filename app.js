@@ -209,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   renderAll();
+  updateShortcutUrlInputs();
   startAppleWatchAutoSync();
 });
 
@@ -1198,7 +1199,14 @@ async function launchIosShortcutSync(isAuto = false, mode = 'health') {
 }
 
 function getShortcutUrl(mode = 'health') {
-  const baseUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+  let baseUrl = window.location.origin 
+    ? (window.location.origin + window.location.pathname) 
+    : window.location.href.split('?')[0].split('#')[0];
+  
+  if (!baseUrl || baseUrl === "null" || baseUrl.startsWith("about:")) {
+    baseUrl = window.location.href.split('?')[0].split('#')[0];
+  }
+
   if (mode === 'workout') {
     return `${baseUrl}?syncWatch=true&workout=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&exMin=[Minutos_Ejercicio]&dist=[Distancia_Km]&stand=[Horas_De_Pie]&workoutKcal=[Calorias_Entrenamiento]&duration=[Duracion_Minutos]&avgHr=[FC_Entrenamiento_Media]&maxHr=[FC_Entrenamiento_Max]`;
   } else {
@@ -1208,36 +1216,57 @@ function getShortcutUrl(mode = 'health') {
 
 function updateShortcutUrlInputs() {
   const healthInput = document.getElementById("shortcut-url-health-input");
-  if (healthInput) healthInput.value = getShortcutUrl('health');
+  if (healthInput) {
+    healthInput.value = getShortcutUrl('health');
+  }
 
   const workoutInput = document.getElementById("shortcut-url-workout-input");
-  if (workoutInput) workoutInput.value = getShortcutUrl('workout');
+  if (workoutInput) {
+    workoutInput.value = getShortcutUrl('workout');
+  }
 }
 
 function copyShortcutUrlToClipboard(mode = 'health') {
   triggerHapticTouch();
   const url = getShortcutUrl(mode);
-  navigator.clipboard.writeText(url).then(() => {
-    const label = mode === 'workout' ? 'Entrenamiento + Salud' : 'Solo Salud';
-    showIosToast(`📋 <strong>URL del Atajo (${label}) copiada al portapapeles</strong>. Pégala en la acción "Abrir URL" de Atajos iOS.`, "fa-solid fa-copy");
-  }).catch(() => {
-    showIosToast("⚠️ No se pudo copiar automáticamente. Puedes seleccionar el texto del cuadro.", "fa-solid fa-exclamation-triangle");
-  });
+  
+  const inputId = mode === 'workout' ? 'shortcut-url-workout-input' : 'shortcut-url-health-input';
+  const inputEl = document.getElementById(inputId);
+  if (inputEl) inputEl.value = url;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      const label = mode === 'workout' ? 'Entrenamiento + Salud' : 'Solo Salud';
+      showIosToast(`📋 <strong>URL del Atajo (${label}) copiada al portapapeles</strong>. Pégala en la acción "Abrir URL" de Atajos iOS.`, "fa-solid fa-copy");
+    }).catch(() => {
+      fallbackCopyTextToClipboard(url, mode);
+    });
+  } else {
+    fallbackCopyTextToClipboard(url, mode);
+  }
+}
+
+function fallbackCopyTextToClipboard(text, mode) {
+  const inputId = mode === 'workout' ? 'shortcut-url-workout-input' : 'shortcut-url-health-input';
+  const inputEl = document.getElementById(inputId);
+  if (inputEl) {
+    inputEl.select();
+    inputEl.setSelectionRange(0, 99999);
+    try {
+      document.execCommand('copy');
+      const label = mode === 'workout' ? 'Entrenamiento + Salud' : 'Solo Salud';
+      showIosToast(`📋 <strong>URL del Atajo (${label}) copiada al portapapeles</strong>.`, "fa-solid fa-copy");
+      return;
+    } catch(e) {}
+  }
+  showIosToast("⚠️ Selecciona el texto del cuadro y usa Copiar.", "fa-solid fa-exclamation-triangle");
 }
 
 function openHealthSyncModal() {
   triggerHapticTouch();
+  updateShortcutUrlInputs();
   const modal = document.getElementById("health-sync-modal");
-  if (modal) {
-    modal.classList.add("active");
-    
-    // Update dynamic URL input values
-    const healthInput = document.getElementById("shortcut-url-health-input");
-    if (healthInput) healthInput.value = getShortcutUrl('health');
-
-    const workoutInput = document.getElementById("shortcut-url-workout-input");
-    if (workoutInput) workoutInput.value = getShortcutUrl('workout');
-  }
+  if (modal) modal.classList.add("active");
 }
 
 function closeHealthSyncModal() {
@@ -1248,6 +1277,8 @@ function closeHealthSyncModal() {
 
 function switchShortcutTab(tabName) {
   triggerHapticTouch();
+  updateShortcutUrlInputs();
+
   const btnHealth = document.getElementById("shortcut-tab-btn-health");
   const btnWorkout = document.getElementById("shortcut-tab-btn-workout");
   const paneHealth = document.getElementById("shortcut-pane-health");
