@@ -386,6 +386,14 @@ function renderAll() {
   renderSettingsView();
   updateHeaderWatchBadge();
 
+  if (document.getElementById("apple-watch-modal")?.classList.contains("active")) {
+    updateAppleWatchModalUI();
+  }
+
+  if (document.getElementById("logs-view")?.classList.contains("active")) {
+    renderDebugLogsView();
+  }
+
   const activePanel = document.querySelector(".view-panel.active");
   const activeTabId = activePanel ? activePanel.id : "summary-view";
   let activeCatKey = 'summary';
@@ -417,16 +425,7 @@ function switchProfile(profileId) {
   if (iosBtnHe) iosBtnHe.classList.toggle("active", profileId === "he");
   if (iosBtnShe) iosBtnShe.classList.toggle("active", profileId === "she");
 
-  renderSummaryView();
-  renderProfileView();
-  renderNutritionView();
-  renderShoppingView();
-  renderProgressView();
-  renderSettingsView();
-
-  if (document.getElementById("apple-watch-modal")?.classList.contains("active")) {
-    updateAppleWatchModalUI();
-  }
+  renderAll();
 }
 
 // TAB NAVIGATION (DESKTOP SIDEBAR & IPHONE DOCK SYNC WITH SUBTABS)
@@ -518,14 +517,7 @@ function performAutoSyncTick() {
 
   appState.appleWatch.lastGlobalSync = new Date().toISOString();
   saveState();
-
-  updateHeaderWatchBadge();
-  renderSummaryView();
-  renderProfileView();
-
-  if (document.getElementById("apple-watch-modal")?.classList.contains("active")) {
-    updateAppleWatchModalUI();
-  }
+  renderAll();
 }
 
 function updateHeaderWatchBadge() {
@@ -541,10 +533,7 @@ function setAppleWatchSyncMode(mode) {
   appState.appleWatch.syncMode = mode;
   saveState();
 
-  updateHeaderWatchBadge();
-  updateAppleWatchModalUI();
-  renderSummaryView();
-  renderProfileView();
+  renderAll();
 
   if (mode === "real") {
     showIosToast("🎯 <strong>Modo Datos Reales Activado</strong>: Tus números de Apple Watch se mantendrán estables con máxima precisión.", "fa-solid fa-shield-halved");
@@ -618,9 +607,7 @@ function triggerManualSync() {
   if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
 
   saveState();
-  updateAppleWatchModalUI();
-  renderSummaryView();
-  renderWorkoutTracker();
+  renderAll();
 
   showIosToast(` ¡Datos de Apple Watch (${pName}) verificados! (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-solid fa-circle-check");
 }
@@ -712,10 +699,7 @@ function saveAppleWatchRealMetricsFromForm(e) {
   if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
 
   saveState();
-  updateAppleWatchModalUI();
-  renderSummaryView();
-  renderProfileView();
-  renderWorkoutsView();
+  renderAll();
 
   showIosToast(`🎯 <strong>Datos reales de Apple Watch de ${pName} guardados:</strong> ${m.moveKcal} kcal, ${m.steps.toLocaleString()} pasos, ${m.hr} BPM.`, "fa-solid fa-circle-check");
 }
@@ -788,10 +772,7 @@ async function importFromShortcutText() {
       appState.appleWatch.lastGlobalSync = new Date().toISOString();
 
       saveState();
-      updateAppleWatchModalUI();
-      renderSummaryView();
-      renderProfileView();
-      renderWorkoutsView();
+      renderAll();
 
       const pName = appState.profiles[pid].name.split(" ")[0];
       addDebugLog(` Datos de Salud pegados exitosamente para ${pName}`, "success", { kcal: m.moveKcal, steps: m.steps });
@@ -1155,6 +1136,7 @@ function checkUrlParamsForWatchSync() {
     if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
 
     saveState();
+    renderAll();
 
     // Clean query params from browser location bar without reloading
     const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
@@ -1267,10 +1249,7 @@ async function checkClipboardForWatchSync(forceManual = false) {
       appState.appleWatch.lastGlobalSync = new Date().toISOString();
 
       saveState();
-      updateAppleWatchModalUI();
-      renderSummaryView();
-      renderProfileView();
-      renderWorkoutsView();
+      renderAll();
 
       const pName = appState.profiles[pid].name.split(" ")[0];
       addDebugLog(`🎯 MÉTRICAS FINALES ACTUALIZADAS PARA ${pName} DESDE PORTAPAPELES`, "success", {
@@ -1647,9 +1626,7 @@ function handleHealthFileImport(event) {
       appState.appleWatch.lastGlobalSync = new Date().toISOString();
 
       saveState();
-      updateAppleWatchModalUI();
-      renderSummaryView();
-      renderWorkoutTracker();
+      renderAll();
 
       showIosToast(`📄 Archivo de Salud iOS importado con éxito: ${m.steps.toLocaleString()} pasos y ${m.moveKcal} kcal cargados.`, "fa-solid fa-file-circle-check");
     } catch(err) {
@@ -1733,10 +1710,7 @@ function saveWorkoutWatchDataFromModal(e) {
 
   saveState();
   closeEditWorkoutWatchModal();
-
-  renderSummaryView();
-  renderProfileView();
-  renderWorkoutsView();
+  renderAll();
 
   showIosToast(` Entrenamiento de ${dayName} calibrado con éxito (${kcal} kcal - ${durationMin} min)`, "fa-solid fa-circle-check");
 }
@@ -2048,9 +2022,7 @@ function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = tru
   };
 
   saveState();
-  renderSummaryView();
-  renderProfileView();
-  renderWorkoutsView();
+  renderAll();
 
   if (notify) {
     const pName = appState.profiles[pid].name.split(" ")[0];
@@ -2079,9 +2051,7 @@ function toggleWorkoutDay(dayName) {
   }
 
   saveState();
-  renderSummaryView();
-  renderProfileView();
-  renderWorkoutsView();
+  renderAll();
 }
 
 function resetWorkoutWeek() {
@@ -2094,9 +2064,7 @@ function resetWorkoutWeek() {
     appState.completedWorkouts[profileId][d] = { done: false, watchData: null };
   });
   saveState();
-  renderSummaryView();
-  renderProfileView();
-  renderWorkoutsView();
+  renderAll();
 }
 
 function syncAppleWatchData() {
@@ -2680,7 +2648,7 @@ function addWeightEntry() {
     });
     input.value = "";
     saveState();
-    renderProgressView();
+    renderAll();
     alert(`¡Registro de ${val} kg guardado correctamente!`);
   }
 }
