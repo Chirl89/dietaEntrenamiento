@@ -43,9 +43,13 @@
       </div>
 
       <!-- Apple Watch Sync Resumen Header Button -->
-      <button class="ios-watch-status-btn" onclick="launchIosShortcutSync()" title="Sincronizar Resumen de Salud (Calorías, Pasos y Pulso)">
+      <button class="ios-watch-status-btn" onclick="launchIosShortcutSync(false, 'health')" title="Sincronizar Resumen de Salud (Calorías, Pasos y Pulso)">
         <i class="fa-brands fa-apple"></i>
         <span class="watch-btn-text" id="ios-header-watch-text"> Sync Resumen</span>
+      </button>
+      <button class="ios-watch-status-btn" style="background: rgba(0, 122, 255, 0.2); border-color: rgba(0, 122, 255, 0.4);" onclick="openHealthSyncModal()" title="Configurar Atajo de la App Salud">
+        <i class="fa-solid fa-plug" style="color: #38bdf8;"></i>
+        <span class="watch-btn-text">Atajos Salud</span>
       </button>
     </div>
   </header>
@@ -1200,6 +1204,121 @@
             <i class="fa-solid fa-floppy-disk"></i> Guardar Mediciones Reales del Entrenamiento
           </button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONECTIVIDAD AVANZADA CON LA APP SALUD E IOS ATAJOS -->
+  <div id="health-sync-modal" class="modal-overlay" onclick="if(event.target.id==='health-sync-modal') closeHealthSyncModal()">
+    <div class="modal-card glass-modal health-sync-modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <i class="fa-brands fa-apple apple-logo-glow"></i>
+          <div>
+            <h3>🔌 Conectividad App Salud & Entrenamientos</h3>
+            <p>Sincroniza tus datos de salud por botón o al terminar entrenamientos</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeHealthSyncModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- MODES TAB SELECTOR -->
+        <div class="shortcut-tab-selector">
+          <button id="shortcut-tab-btn-health" class="shortcut-tab-btn active" onclick="switchShortcutTab('health')">
+            <i class="fa-brands fa-apple"></i> 1. Solo Salud (Vía Botón )
+          </button>
+          <button id="shortcut-tab-btn-workout" class="shortcut-tab-btn" onclick="switchShortcutTab('workout')">
+            <i class="fa-solid fa-dumbbell"></i> 2. Salud + Entrenamiento (Post-Entreno)
+          </button>
+        </div>
+
+        <!-- PANE 1: SOLO SALUD (BOTÓN MANUAL) -->
+        <div id="shortcut-pane-health" class="shortcut-tab-pane" style="display: block;">
+          <div class="shortcut-mode-banner">
+            <i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i>
+            <div>
+              <strong>Modo A: Sincronización de Datos de Salud (1-Clic)</strong>
+              <p>Ideal para pulsar el botón <code> Sync Resumen</code> en la cabecera en cualquier momento. Actualiza calorías activas, pasos, pulso y horas de pie.</p>
+            </div>
+          </div>
+
+          <div class="shortcut-url-generator-box">
+            <label><i class="fa-solid fa-link"></i> Tu URL de Integración para Atajos (Acción Abrir URL):</label>
+            <div class="url-copy-input-wrapper">
+              <input type="text" id="shortcut-url-health-input" class="ios-code-input" readonly>
+              <button class="btn-copy-action" onclick="copyShortcutUrlToClipboard('health')">
+                <i class="fa-solid fa-copy"></i> Copiar URL
+              </button>
+            </div>
+          </div>
+
+          <div class="shortcut-steps-card">
+            <h5><i class="fa-brands fa-apple"></i> Guía de configuración en la app Atajos de tu iPhone:</h5>
+            <ol class="shortcut-guided-steps">
+              <li>Abre la app <strong>Atajos</strong> en tu iPhone y crea un atajo llamado <code>SincronizarSaludFitDuo</code>.</li>
+              <li>Añade la acción <strong>"Buscar muestras de salud"</strong> para:
+                <ul>
+                  <li><code>Calorías activas</code> (Filtro: Fecha de inicio es hoy, Sumar)</li>
+                  <li><code>Pasos</code> (Filtro: Fecha de inicio es hoy, Sumar)</li>
+                  <li><code>Frecuencia cardíaca</code> (Última muestra)</li>
+                  <li><code>Tiempo de ejercicio</code> (Filtro: Fecha de inicio es hoy, Sumar)</li>
+                </ul>
+              </li>
+              <li>Añade la acción <strong>"Abrir URL"</strong> y pega la URL que has copiado arriba.</li>
+            </ol>
+          </div>
+
+          <div class="modal-test-actions">
+            <button class="btn-launch-shortcut-modal" onclick="launchIosShortcutSync(false, 'health')">
+              <i class="fa-solid fa-play"></i> Lanzar Atajo en iPhone
+            </button>
+            <button class="btn-test-simulated-modal" onclick="testSimulatedHealthSync()">
+              <i class="fa-solid fa-vial"></i> Simular Sincronización Salud
+            </button>
+          </div>
+        </div>
+
+        <!-- PANE 2: SALUD + ENTRENAMIENTO (AUTOMATIZACIÓN POST-ENTRENO) -->
+        <div id="shortcut-pane-workout" class="shortcut-tab-pane" style="display: none;">
+          <div class="shortcut-mode-banner workout-banner">
+            <i class="fa-solid fa-fire" style="color: var(--accent-rose);"></i>
+            <div>
+              <strong>Modo B: Sincronización Completa Post-Entrenamiento</strong>
+              <p>Se ejecuta al finalizar un entrenamiento en tu Apple Watch. Recoge calorías y duración del entrenamiento Y actualiza las métricas diarias de Salud.</p>
+            </div>
+          </div>
+
+          <div class="shortcut-url-generator-box">
+            <label><i class="fa-solid fa-link"></i> Tu URL de Integración Post-Entrenamiento:</label>
+            <div class="url-copy-input-wrapper">
+              <input type="text" id="shortcut-url-workout-input" class="ios-code-input" readonly>
+              <button class="btn-copy-action btn-copy-workout" onclick="copyShortcutUrlToClipboard('workout')">
+                <i class="fa-solid fa-copy"></i> Copiar URL
+              </button>
+            </div>
+          </div>
+
+          <div class="shortcut-steps-card">
+            <h5><i class="fa-brands fa-apple"></i> Configuración de Automatización en iOS:</h5>
+            <ol class="shortcut-guided-steps">
+              <li>En la app <strong>Atajos</strong> de tu iPhone, ve a la pestaña <strong>Automatización</strong>.</li>
+              <li>Toca <strong>+ Nueva automatización</strong> y selecciona <strong>"Al finalizar un entrenamiento"</strong>.</li>
+              <li>Selecciona tu Apple Watch y añade las acciones para leer el entrenamiento finalizado + datos de Salud del día.</li>
+              <li>Añade la acción <strong>"Abrir URL"</strong> usando la URL copiada arriba.</li>
+            </ol>
+          </div>
+
+          <div class="modal-test-actions">
+            <button class="btn-launch-shortcut-modal workout-launch-btn" onclick="launchIosShortcutSync(false, 'workout')">
+              <i class="fa-solid fa-play"></i> Lanzar Atajo Post-Entrenamiento
+            </button>
+            <button class="btn-test-simulated-modal" onclick="testSimulatedWorkoutSync()">
+              <i class="fa-solid fa-vial"></i> Simular Cierre Entrenamiento + Salud
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

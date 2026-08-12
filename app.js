@@ -189,6 +189,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.launchIosShortcutSync = launchIosShortcutSync;
   window.toggleAutoLaunchShortcutOnOpen = toggleAutoLaunchShortcutOnOpen;
   window.toggleShortcutGuide = toggleShortcutGuide;
+  window.openHealthSyncModal = openHealthSyncModal;
+  window.closeHealthSyncModal = closeHealthSyncModal;
+  window.switchShortcutTab = switchShortcutTab;
+  window.copyShortcutUrlToClipboard = copyShortcutUrlToClipboard;
+  window.testSimulatedHealthSync = testSimulatedHealthSync;
+  window.testSimulatedWorkoutSync = testSimulatedWorkoutSync;
   window.addDebugLog = addDebugLog;
   window.clearDebugLogs = clearDebugLogs;
   window.copyDebugLogsToClipboard = copyDebugLogsToClipboard;
@@ -870,20 +876,43 @@ function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], hrArr = 
 
 // IOS SHORTCUTS URL PARAMETER SYNC HANDLER & AUTO-LAUNCH ENGINE
 function checkUrlParamsForWatchSync() {
-  const params = new URLSearchParams(window.location.search);
-  if (!params.has("syncWatch") && !params.has("kcal") && !params.has("steps") && !params.has("workout") && !params.has("duration")) {
+  let searchStr = window.location.search;
+  let hashStr = window.location.hash;
+  
+  if (!searchStr && hashStr.includes("?")) {
+    searchStr = hashStr.substring(hashStr.indexOf("?"));
+  } else if (!searchStr && hashStr.includes("=")) {
+    searchStr = hashStr.replace("#", "?");
+  }
+
+  const params = new URLSearchParams(searchStr);
+  if (!params.has("syncWatch") && !params.has("kcal") && !params.has("steps") && !params.has("workout") && !params.has("duration") && !params.has("workoutKcal") && !params.has("hr")) {
     return false;
   }
 
-  const pid = appState.activeProfileId;
+  // Profile resolution: optional URL override (&profile=he / &profile=she / &profile=carlos / &profile=andrea)
+  let pid = appState.activeProfileId;
+  const profileParam = params.get("profile") || params.get("user");
+  if (profileParam) {
+    const pLower = profileParam.toLowerCase();
+    if (pLower.includes("carlos") || pLower === "he" || pLower === "m") {
+      pid = "he";
+      appState.activeProfileId = "he";
+    } else if (pLower.includes("andrea") || pLower === "she" || pLower === "f") {
+      pid = "she";
+      appState.activeProfileId = "she";
+    }
+  }
+
   const m = appState.appleWatch?.metrics?.[pid];
   if (!m) return false;
 
-  addDebugLog("🔗 Parámetros de URL detectados al cargar la app", "url", Object.fromEntries(params));
+  addDebugLog("🔗 Parámetros de URL/Acceso Directo detectados al cargar la app", "url", Object.fromEntries(params));
 
   let updated = false;
 
-  const kcalRaw = params.get("kcal") || params.get("moveKcal") || params.get("activeCalories") || params.get("workoutKcal");
+  // 1. General Daily Health Metrics
+  const kcalRaw = params.get("kcal") || params.get("moveKcal") || params.get("activeCalories");
   const kcalVal = parseSmartMetricValue(kcalRaw);
   if (kcalVal !== null) {
     m.moveKcal = kcalVal;
@@ -919,14 +948,14 @@ function checkUrlParamsForWatchSync() {
     updated = true;
   }
 
-  const standHoursRaw = params.get("standHours");
+  const standHoursRaw = params.get("standHours") || params.get("stand");
   const standHoursVal = parseSmartMetricValue(standHoursRaw);
   if (standHoursVal !== null) {
     m.standHours = standHoursVal;
     updated = true;
   }
 
-  const deviceParam = params.get("deviceName");
+  const deviceParam = params.get("deviceName") || params.get("device");
   if (deviceParam) {
     m.deviceName = decodeURIComponent(deviceParam);
     updated = true;
@@ -942,18 +971,23 @@ function checkUrlParamsForWatchSync() {
     addDebugLog("📊 Historial de 7 días de Salud procesado desde URL", "health", { kcalArr, exMinArr, hrArr });
   }
 
-  // Check if we should also record/complete a workout session
-  const isWorkoutSync = params.has("workout") || params.get("syncWorkout") === "true" || params.has("duration") || params.has("workoutKcal");
+  // 2. Workout specific metrics (if this is a post-workout sync)
+  const isWorkoutSync = params.has("workout") || params.get("syncWorkout") === "true" || params.has("workoutKcal") || (params.has("duration") && params.has("avgHr"));
   let targetDay = params.get("day");
   if (!targetDay) {
     targetDay = getTodayDayName();
   }
 
+  let workoutKcalVal = parseSmartMetricValue(params.get("workoutKcal") || params.get("wKcal"));
+  let workoutDurationVal = parseSmartMetricValue(params.get("workoutDuration") || params.get("dur") || params.get("duration"));
+  let workoutAvgHrVal = parseSmartMetricValue(params.get("workoutAvgHr") || params.get("avgHr"));
+  let workoutMaxHrVal = parseSmartMetricValue(params.get("workoutMaxHr") || params.get("maxHr"));
+
   if (isWorkoutSync) {
-    const durMin = exMinVal !== null ? exMinVal : (m.exerciseMin || 45);
-    const wKcal = kcalVal !== null ? kcalVal : (m.moveKcal || 400);
-    const avgH = hrVal !== null ? hrVal : (m.hr || 140);
-    const maxH = maxHrVal !== null ? maxHrVal : (m.maxHr || (avgH + 20));
+    const durMin = workoutDurationVal !== null ? workoutDurationVal : (exMinVal !== null ? exMinVal : 45);
+    const wKcal = workoutKcalVal !== null ? workoutKcalVal : (kcalVal !== null ? kcalVal : 350);
+    const avgH = workoutAvgHrVal !== null ? workoutAvgHrVal : (hrVal !== null ? hrVal : 140);
+    const maxH = workoutMaxHrVal !== null ? workoutMaxHrVal : (m.maxHr || (avgH + 20));
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
 
     if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
@@ -983,11 +1017,11 @@ function checkUrlParamsForWatchSync() {
 
     appState.appleWatch.syncLogs.unshift({
       timestamp: timeStr,
-      device: m.deviceName,
+      device: m.deviceName || "Apple Watch",
       hr: m.hr,
       kcal: m.moveKcal,
       steps: m.steps,
-      status: kcalArr.length > 1 ? "Semanas (7 días) Sincronizadas" : (isWorkoutSync ? `Entrenamiento (${targetDay}) Registrado` : "Sincronizado vía Atajo iOS")
+      status: kcalArr.length > 1 ? "Semanas (7 días) Sincronizadas" : (isWorkoutSync ? `Entrenamiento + Salud (${targetDay}) Sincronizado` : "Salud General Sincronizado vía Atajo iOS")
     });
     if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
 
@@ -1003,9 +1037,9 @@ function checkUrlParamsForWatchSync() {
       if (kcalArr.length > 1) {
         showIosToast(` <strong>¡Historial de 7 días de Apple Watch sincronizado!</strong> (${m.moveKcal} kcal hoy)`, "fa-brands fa-apple");
       } else if (isWorkoutSync) {
-        showIosToast(` <strong>¡Entrenamiento de ${targetDay} registrado con Apple Watch!</strong> (${m.moveKcal} kcal - ${m.exerciseMin} min)`, "fa-brands fa-apple");
+        showIosToast(`🏋️ <strong>¡Entrenamiento (${targetDay}) y Salud sincronizados!</strong> (${workoutKcalVal || m.moveKcal} kcal entreno · ${m.steps.toLocaleString()} pasos)`, "fa-solid fa-dumbbell");
       } else {
-        showIosToast(` <strong>Atajo de iOS ejecutado:</strong> Datos de Apple Watch (${pName}) sincronizados (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-brands fa-apple");
+        showIosToast(` <strong>Atajo de Salud ejecutado:</strong> Datos de Apple Watch (${pName}) cargados (${m.moveKcal} kcal · ${m.steps.toLocaleString()} pasos)`, "fa-brands fa-apple");
       }
     }, 400);
 
@@ -1118,23 +1152,26 @@ function checkAutoLaunchShortcutOnOpen() {
   sessionStorage.setItem("fitduo_shortcut_launched", "true");
 
   setTimeout(() => {
-    launchIosShortcutSync(true);
+    launchIosShortcutSync(true, 'health');
   }, 1000);
 }
 
-async function launchIosShortcutSync(isAuto = false) {
+async function launchIosShortcutSync(isAuto = false, mode = 'health') {
   triggerHapticTouch();
   sessionStorage.setItem("fitduo_shortcut_launched", "true");
 
-  const shortcutName = appState.appleWatch?.shortcutName || "SincronizarSaludFitDuo";
+  const shortcutName = mode === 'workout' 
+    ? (appState.appleWatch?.shortcutWorkoutName || "SincronizarEntrenamientoFitDuo")
+    : (appState.appleWatch?.shortcutName || "SincronizarSaludFitDuo");
+
   const url = `shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}`;
 
-  addDebugLog(`⚡ Invocando Atajo de iOS: ${shortcutName} (${isAuto ? 'Auto' : 'Manual'})`, "info", { url });
+  addDebugLog(`⚡ Invocando Atajo de iOS: ${shortcutName} (${isAuto ? 'Auto' : 'Manual'}, Modo: ${mode})`, "info", { url });
 
   if (isAuto) {
     showIosToast("⚡ Ejecutando Atajo de Salud de iOS al iniciar...", "fa-brands fa-apple");
   } else {
-    showIosToast("⚡ Lanzando Atajo de Salud de iOS...", "fa-brands fa-apple");
+    showIosToast(`⚡ Lanzando Atajo de iOS (${shortcutName})...`, "fa-brands fa-apple");
   }
 
   setTimeout(() => {
@@ -1142,29 +1179,90 @@ async function launchIosShortcutSync(isAuto = false) {
   }, 300);
 }
 
-function toggleAutoLaunchShortcutOnOpen(enabled) {
-  triggerHapticTouch();
-  if (!appState.appleWatch) appState.appleWatch = {};
-  appState.appleWatch.autoLaunchShortcutOnOpen = enabled;
-  saveState();
-
-  showIosToast(
-    enabled 
-      ? "⚡ <strong>Auto-Sincronización con Atajo al abrir ACTIVADA</strong>" 
-      : "⏸️ Auto-Sincronización con Atajo desactivada",
-    enabled ? "fa-solid fa-bolt" : "fa-solid fa-pause"
-  );
+function getShortcutUrl(mode = 'health') {
+  const baseUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+  if (mode === 'workout') {
+    return `${baseUrl}?syncWatch=true&workout=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&exMin=[Minutos_Ejercicio]&dist=[Distancia_Km]&stand=[Horas_De_Pie]&workoutKcal=[Calorias_Entrenamiento]&duration=[Duracion_Minutos]&avgHr=[FC_Entrenamiento_Media]&maxHr=[FC_Entrenamiento_Max]`;
+  } else {
+    return `${baseUrl}?syncWatch=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&exMin=[Minutos_Ejercicio]&dist=[Distancia_Km]&stand=[Horas_De_Pie]`;
+  }
 }
 
-function toggleShortcutGuide() {
+function copyShortcutUrlToClipboard(mode = 'health') {
   triggerHapticTouch();
-  const guide = document.getElementById("shortcut-guide-box");
-  const icon = document.getElementById("shortcut-guide-icon");
-  if (guide) {
-    const isHidden = guide.style.display === "none";
-    guide.style.display = isHidden ? "block" : "none";
-    if (icon) icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+  const url = getShortcutUrl(mode);
+  navigator.clipboard.writeText(url).then(() => {
+    const label = mode === 'workout' ? 'Entrenamiento + Salud' : 'Solo Salud';
+    showIosToast(`📋 <strong>URL del Atajo (${label}) copiada al portapapeles</strong>. Pégala en la acción "Abrir URL" de Atajos iOS.`, "fa-solid fa-copy");
+  }).catch(() => {
+    showIosToast("⚠️ No se pudo copiar automáticamente. Puedes seleccionar el texto del cuadro.", "fa-solid fa-exclamation-triangle");
+  });
+}
+
+function openHealthSyncModal() {
+  triggerHapticTouch();
+  const modal = document.getElementById("health-sync-modal");
+  if (modal) {
+    modal.classList.add("active");
+    
+    // Update dynamic URL input values
+    const healthInput = document.getElementById("shortcut-url-health-input");
+    if (healthInput) healthInput.value = getShortcutUrl('health');
+
+    const workoutInput = document.getElementById("shortcut-url-workout-input");
+    if (workoutInput) workoutInput.value = getShortcutUrl('workout');
   }
+}
+
+function closeHealthSyncModal() {
+  triggerHapticTouch();
+  const modal = document.getElementById("health-sync-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+function switchShortcutTab(tabName) {
+  triggerHapticTouch();
+  const btnHealth = document.getElementById("shortcut-tab-btn-health");
+  const btnWorkout = document.getElementById("shortcut-tab-btn-workout");
+  const paneHealth = document.getElementById("shortcut-pane-health");
+  const paneWorkout = document.getElementById("shortcut-pane-workout");
+
+  if (tabName === 'health') {
+    if (btnHealth) btnHealth.classList.add("active");
+    if (btnWorkout) btnWorkout.classList.remove("active");
+    if (paneHealth) paneHealth.style.display = "block";
+    if (paneWorkout) paneWorkout.style.display = "none";
+  } else {
+    if (btnHealth) btnHealth.classList.remove("active");
+    if (btnWorkout) btnWorkout.classList.add("active");
+    if (paneHealth) paneHealth.style.display = "none";
+    if (paneWorkout) paneWorkout.style.display = "block";
+  }
+}
+
+function testSimulatedHealthSync() {
+  triggerHapticTouch();
+  const randomKcal = Math.floor(480 + Math.random() * 220);
+  const randomSteps = Math.floor(8200 + Math.random() * 4000);
+  const randomHr = Math.floor(68 + Math.random() * 18);
+  const testUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?syncWatch=true&kcal=${randomKcal}&steps=${randomSteps}&hr=${randomHr}&exMin=45&dist=6.8&stand=10`;
+  window.history.replaceState({}, document.title, testUrl);
+  checkUrlParamsForWatchSync();
+  renderAll();
+}
+
+function testSimulatedWorkoutSync() {
+  triggerHapticTouch();
+  const todayDay = getTodayDayName();
+  const randomKcal = Math.floor(580 + Math.random() * 200);
+  const randomSteps = Math.floor(9500 + Math.random() * 3500);
+  const randomHr = Math.floor(72 + Math.random() * 15);
+  const workoutKcal = Math.floor(380 + Math.random() * 140);
+  const workoutHr = Math.floor(142 + Math.random() * 18);
+  const testUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?syncWatch=true&workout=true&day=${encodeURIComponent(todayDay)}&kcal=${randomKcal}&steps=${randomSteps}&hr=${randomHr}&exMin=55&dist=7.9&stand=12&workoutKcal=${workoutKcal}&duration=50&avgHr=${workoutHr}&maxHr=${workoutHr + 24}`;
+  window.history.replaceState({}, document.title, testUrl);
+  checkUrlParamsForWatchSync();
+  renderAll();
 }
 
 function updateAppleWatchModalUI() {

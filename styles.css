@@ -2453,3 +2453,206 @@ body {
   margin-top: 3px;
 }
 
+/* HEALTH & WORKOUT SHORTCUT SYNC MODAL */
+.health-sync-modal-card {
+  border: 1px solid rgba(0, 122, 255, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 122, 255, 0.15);
+}
+
+.shortcut-tab-selector {
+  display: flex;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.25rem;
+  gap: 4px;
+}
+
+.shortcut-tab-btn {
+  flex: 1;
+  padding: 0.6rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.shortcut-tab-btn.active {
+  background: var(--gradient-primary);
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(56, 189, 248, 0.3);
+}
+
+.shortcut-mode-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+}
+
+.shortcut-mode-banner.workout-banner {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.shortcut-mode-banner strong {
+  display: block;
+  font-size: 0.88rem;
+  margin-bottom: 0.2rem;
+  color: var(--text-primary);
+}
+
+.shortcut-mode-banner p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  font-size: 0.78rem;
+}
+
+.shortcut-url-generator-box {
+  margin-bottom: 1rem;
+}
+
+.shortcut-url-generator-box label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.url-copy-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ios-code-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--accent-cyan);
+  font-family: monospace;
+  font-size: 0.76rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.btn-copy-action {
+  background: var(--gradient-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.btn-copy-action:hover {
+  filter: brightness(1.1);
+}
+
+.btn-copy-action.btn-copy-workout {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+}
+
+.shortcut-steps-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.shortcut-steps-card h5 {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.shortcut-guided-steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.shortcut-guided-steps li {
+  margin-bottom: 0.45rem;
+}
+
+.shortcut-guided-steps ul {
+  margin: 0.3rem 0;
+  padding-left: 1rem;
+}
+
+.modal-test-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-launch-shortcut-modal {
+  flex: 1;
+  min-width: 200px;
+  background: var(--gradient-primary);
+  color: #fff;
+  border: none;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.83rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: var(--transition);
+}
+
+.btn-launch-shortcut-modal.workout-launch-btn {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+}
+
+.btn-test-simulated-modal {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: var(--transition);
+}
+
+.btn-test-simulated-modal:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+
