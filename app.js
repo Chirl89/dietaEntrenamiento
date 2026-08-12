@@ -333,7 +333,17 @@ function renderAll() {
   renderProgressView();
   renderSettingsView();
   updateHeaderWatchBadge();
-  renderSubtabSegmentedControl('summary', 'summary-view');
+
+  const activePanel = document.querySelector(".view-panel.active");
+  const activeTabId = activePanel ? activePanel.id : "summary-view";
+  let activeCatKey = 'summary';
+  for (const [catKey, catObj] of Object.entries(NAVIGATION_CATEGORIES)) {
+    if (catObj.subtabs && catObj.subtabs.some(s => s.id === activeTabId)) {
+      activeCatKey = catKey;
+      break;
+    }
+  }
+  renderSubtabSegmentedControl(activeCatKey, activeTabId);
 }
 
 // PROFILE SWITCHER (DESKTOP & IPHONE HEADER SYNC)
@@ -826,27 +836,29 @@ function parseSmartMetricValue(val) {
   if (typeof val === 'number') return Math.round(val);
   if (Array.isArray(val)) {
     if (val.length === 0) return null;
-    const validNums = val.map(v => parseInt(v)).filter(v => !isNaN(v) && v > 0);
+    const validNums = val.map(v => parseSmartMetricValue(v)).filter(v => v !== null && v > 0);
     if (validNums.length === 0) return null;
-    return validNums[validNums.length - 1]; // Pick last valid number (today's active sample!)
+    return validNums[validNums.length - 1];
   }
   if (typeof val === 'string') {
-    const parts = val.split(',').map(s => s.trim()).filter(s => s.length > 0 && !isNaN(parseInt(s)) && parseInt(s) > 0);
-    if (parts.length > 0) {
-      return parseInt(parts[parts.length - 1]);
+    const cleanStr = val.replace(/,/g, '.').replace(/[^\d.]/g, ' ').trim();
+    const numbers = cleanStr.split(/\s+/).map(n => parseFloat(n)).filter(n => !isNaN(n) && n > 0);
+    if (numbers.length > 0) {
+      return Math.round(numbers[numbers.length - 1]);
     }
   }
-  const parsed = parseInt(val);
-  return isNaN(parsed) ? null : parsed;
+  return null;
 }
 
 function parseSmartMetricFloatValue(val) {
   if (val === null || val === undefined) return null;
   if (typeof val === 'number') return parseFloat(val.toFixed(2));
   if (typeof val === 'string') {
-    const cleaned = val.replace(',', '.').trim();
-    const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? null : parseFloat(parsed.toFixed(2));
+    const cleanStr = val.replace(/,/g, '.').replace(/[^\d.]/g, ' ').trim();
+    const numbers = cleanStr.split(/\s+/).map(n => parseFloat(n)).filter(n => !isNaN(n) && n > 0);
+    if (numbers.length > 0) {
+      return parseFloat(numbers[numbers.length - 1].toFixed(2));
+    }
   }
   return null;
 }
