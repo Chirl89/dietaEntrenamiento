@@ -1458,10 +1458,6 @@ function renderSummaryView() {
 
   const pName = p.name.split(" ")[0];
 
-  // Watch Device & Sync Time
-  const deviceEl = document.getElementById("summary-watch-device");
-  if (deviceEl) deviceEl.innerText = `${m.deviceName}`;
-
   const syncTimeEl = document.getElementById("summary-watch-sync-time");
   if (syncTimeEl) syncTimeEl.innerText = formatSyncRelativeTime(appState.appleWatch?.lastGlobalSync);
 
