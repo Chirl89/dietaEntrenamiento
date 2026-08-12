@@ -240,9 +240,8 @@ window.addEventListener("pageshow", () => {
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     addDebugLog("👁️ Evento 'visibilitychange' (Pestaña visible)", "info", { url: window.location.href });
-    sessionStorage.removeItem("fitduo_clipboard_checked");
     checkUrlParamsForWatchSync();
-    checkClipboardForWatchSync();
+    showInteractiveClipboardBanner();
   }
 });
 
@@ -252,10 +251,56 @@ window.addEventListener("popstate", () => {
 });
 
 window.addEventListener("focus", () => {
-  sessionStorage.removeItem("fitduo_clipboard_checked");
   checkUrlParamsForWatchSync();
-  checkClipboardForWatchSync();
+  showInteractiveClipboardBanner();
 });
+
+// INTERACTIVE 1-TAP CLIPBOARD SYNC BANNER ENGINE
+function showInteractiveClipboardBanner() {
+  if (document.getElementById("interactive-clipboard-banner")) return;
+
+  const banner = document.createElement("div");
+  banner.id = "interactive-clipboard-banner";
+  banner.className = "interactive-clipboard-banner";
+  banner.innerHTML = `
+    <div class="banner-content" onclick="handleInteractiveClipboardTap()">
+      <i class="fa-solid fa-clipboard-check banner-icon"></i>
+      <div class="banner-text">
+        <strong>Toca aquí para sincronizar datos del portapapeles</strong>
+        <span>Salud Apple Watch / Atajos iOS</span>
+      </div>
+      <i class="fa-solid fa-chevron-right banner-arrow"></i>
+    </div>
+    <button class="banner-close" onclick="closeInteractiveClipboardBanner(event)">×</button>
+  `;
+
+  document.body.appendChild(banner);
+
+  setTimeout(() => {
+    banner.classList.add("visible");
+  }, 100);
+
+  setTimeout(() => {
+    closeInteractiveClipboardBanner();
+  }, 9000);
+}
+
+async function handleInteractiveClipboardTap() {
+  closeInteractiveClipboardBanner();
+  await checkClipboardForWatchSync(true);
+}
+
+function closeInteractiveClipboardBanner(e) {
+  if (e) e.stopPropagation();
+  const banner = document.getElementById("interactive-clipboard-banner");
+  if (banner) {
+    banner.classList.remove("visible");
+    setTimeout(() => banner.remove(), 300);
+  }
+}
+
+window.handleInteractiveClipboardTap = handleInteractiveClipboardTap;
+window.closeInteractiveClipboardBanner = closeInteractiveClipboardBanner;
 
 // CATEGORY & SUBTAB NAVIGATION ENGINE
 const NAVIGATION_CATEGORIES = {
