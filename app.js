@@ -1199,13 +1199,15 @@ async function launchIosShortcutSync(isAuto = false, mode = 'health') {
 }
 
 function getShortcutUrl(mode = 'health') {
-  let baseUrl = window.location.origin 
-    ? (window.location.origin + window.location.pathname) 
-    : window.location.href.split('?')[0].split('#')[0];
-  
-  if (!baseUrl || baseUrl === "null" || baseUrl.startsWith("about:")) {
-    baseUrl = window.location.href.split('?')[0].split('#')[0];
-  }
+  let baseUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+  try {
+    if (window.location && window.location.href) {
+      const cleanHref = window.location.href.split('?')[0].split('#')[0];
+      if (cleanHref && cleanHref.length > 5) {
+        baseUrl = cleanHref;
+      }
+    }
+  } catch(e) {}
 
   if (mode === 'workout') {
     return `${baseUrl}?syncWatch=true&workout=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&exMin=[Minutos_Ejercicio]&dist=[Distancia_Km]&stand=[Horas_De_Pie]&workoutKcal=[Calorias_Entrenamiento]&duration=[Duracion_Minutos]&avgHr=[FC_Entrenamiento_Media]&maxHr=[FC_Entrenamiento_Max]`;
@@ -1215,14 +1217,18 @@ function getShortcutUrl(mode = 'health') {
 }
 
 function updateShortcutUrlInputs() {
-  const healthInput = document.getElementById("shortcut-url-health-input");
-  if (healthInput) {
-    healthInput.value = getShortcutUrl('health');
-  }
+  try {
+    const healthInput = document.getElementById("shortcut-url-health-input");
+    if (healthInput) {
+      healthInput.value = getShortcutUrl('health');
+    }
 
-  const workoutInput = document.getElementById("shortcut-url-workout-input");
-  if (workoutInput) {
-    workoutInput.value = getShortcutUrl('workout');
+    const workoutInput = document.getElementById("shortcut-url-workout-input");
+    if (workoutInput) {
+      workoutInput.value = getShortcutUrl('workout');
+    }
+  } catch(e) {
+    console.error("Error updating shortcut URL inputs:", e);
   }
 }
 
@@ -1285,15 +1291,15 @@ function switchShortcutTab(tabName) {
   const paneWorkout = document.getElementById("shortcut-pane-workout");
 
   if (tabName === 'health') {
-    if (btnHealth) btnHealth.classList.add("active");
-    if (btnWorkout) btnWorkout.classList.remove("active");
-    if (paneHealth) paneHealth.style.display = "block";
-    if (paneWorkout) paneWorkout.style.display = "none";
+    if (btnHealth) btnHealth.className = "shortcut-tab-btn active";
+    if (btnWorkout) btnWorkout.className = "shortcut-tab-btn";
+    if (paneHealth) paneHealth.style.cssText = "display: block !important;";
+    if (paneWorkout) paneWorkout.style.cssText = "display: none !important;";
   } else {
-    if (btnHealth) btnHealth.classList.remove("active");
-    if (btnWorkout) btnWorkout.classList.add("active");
-    if (paneHealth) paneHealth.style.display = "none";
-    if (paneWorkout) paneWorkout.style.display = "block";
+    if (btnHealth) btnHealth.className = "shortcut-tab-btn";
+    if (btnWorkout) btnWorkout.className = "shortcut-tab-btn active";
+    if (paneHealth) paneHealth.style.cssText = "display: none !important;";
+    if (paneWorkout) paneWorkout.style.cssText = "display: block !important;";
   }
 }
 
