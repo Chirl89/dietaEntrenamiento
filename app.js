@@ -1243,39 +1243,26 @@ function updateAppleWatchModalUI() {
   if (tsEl) tsEl.innerText = `Sincronizado: Hace ${timeDiffSec < 3 ? 'un instante' : timeDiffSec + ' seg'}`;
 
   // Live Metrics Grid
-  const hrEl = document.getElementById("watch-metric-hr");
-  if (hrEl) hrEl.innerHTML = `${m.hr} <small>BPM</small>`;
-
-  const stepsEl = document.getElementById("watch-metric-steps");
-  if (stepsEl) stepsEl.innerText = m.steps.toLocaleString();
-
-  const distEl = document.getElementById("watch-metric-dist");
-  if (distEl) distEl.innerHTML = `${m.distanceKm} <small>km</small>`;
-
-  const kcalEl = document.getElementById("watch-metric-kcal");
-  if (kcalEl) kcalEl.innerHTML = `${m.moveKcal} <small>kcal</small>`;
+  document.querySelectorAll("[id='watch-metric-hr']").forEach(el => el.innerHTML = `${m.hr} <small>BPM</small>`);
+  document.querySelectorAll("[id='watch-metric-steps']").forEach(el => el.innerText = m.steps.toLocaleString());
+  document.querySelectorAll("[id='watch-metric-dist']").forEach(el => el.innerHTML = `${m.distanceKm} <small>km</small>`);
+  document.querySelectorAll("[id='watch-metric-kcal']").forEach(el => el.innerHTML = `${m.moveKcal} <small>kcal</small>`);
 
   // Apple Activity Rings Calculations
-  const moveCircle = document.getElementById("ring-move-circle");
   const moveRatio = Math.min(1.2, m.moveKcal / m.moveGoal);
   const moveOffset = Math.max(0, 314 - (314 * Math.min(1, moveRatio)));
-  if (moveCircle) moveCircle.style.strokeDashoffset = moveOffset;
-  const moveValEl = document.getElementById("ring-move-val");
-  if (moveValEl) moveValEl.innerText = `${m.moveKcal} / ${m.moveGoal} kcal`;
+  document.querySelectorAll("[id='ring-move-circle']").forEach(el => el.style.strokeDashoffset = moveOffset);
+  document.querySelectorAll("[id='ring-move-val']").forEach(el => el.innerText = `${m.moveKcal} / ${m.moveGoal} kcal`);
 
-  const exCircle = document.getElementById("ring-exercise-circle");
   const exRatio = Math.min(1.2, m.exerciseMin / m.exerciseGoal);
   const exOffset = Math.max(0, 238 - (238 * Math.min(1, exRatio)));
-  if (exCircle) exCircle.style.strokeDashoffset = exOffset;
-  const exValEl = document.getElementById("ring-exercise-val");
-  if (exValEl) exValEl.innerText = `${m.exerciseMin} / ${m.exerciseGoal} min`;
+  document.querySelectorAll("[id='ring-exercise-circle']").forEach(el => el.style.strokeDashoffset = exOffset);
+  document.querySelectorAll("[id='ring-exercise-val']").forEach(el => el.innerText = `${m.exerciseMin} / ${m.exerciseGoal} min`);
 
-  const stepsCircle = document.getElementById("ring-steps-circle") || document.getElementById("ring-stand-circle");
   const stepsRatio = Math.min(1.2, m.steps / (m.stepsGoal || 10000));
   const stepsOffset = Math.max(0, 163 - (163 * Math.min(1, stepsRatio)));
-  if (stepsCircle) stepsCircle.style.strokeDashoffset = stepsOffset;
-  const stepsValEl = document.getElementById("ring-steps-val") || document.getElementById("ring-stand-val");
-  if (stepsValEl) stepsValEl.innerText = `${m.steps.toLocaleString()} / ${(m.stepsGoal || 10000).toLocaleString()} pasos`;
+  document.querySelectorAll("[id='ring-steps-circle'], [id='ring-stand-circle']").forEach(el => el.style.strokeDashoffset = stepsOffset);
+  document.querySelectorAll("[id='ring-steps-val'], [id='ring-stand-val']").forEach(el => el.innerText = `${m.steps.toLocaleString()} / ${(m.stepsGoal || 10000).toLocaleString()} pasos`);
 
   // Render Sync Logs
   const logList = document.getElementById("sync-log-list");
