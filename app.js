@@ -231,27 +231,43 @@ document.addEventListener("DOMContentLoaded", () => {
   startAppleWatchAutoSync();
 });
 
-// LISTEN FOR SAFARI TAB FOCUS, VISIBILITY & URL NAVIGATION EVENTS (PWA / SAFARI TAB RETURN)
+// LISTEN FOR CROSS-TAB STORAGE SYNC, SAFARI FOCUS, VISIBILITY & URL NAVIGATION EVENTS
+window.addEventListener("storage", (e) => {
+  if (!e.key || e.key === LOCAL_STORAGE_KEY || e.key === LAST_ACTIVE_PROFILE_KEY || e.key === DEVICE_DEFAULT_PROFILE_KEY) {
+    addDebugLog("💾 Evento 'storage' (Sincronización entre pestañas)", "info");
+    loadSavedState();
+    renderAll();
+  }
+});
+
 window.addEventListener("pageshow", () => {
   addDebugLog("👁️ Evento 'pageshow' (Retorno a la pestaña Safari)", "info", { url: window.location.href });
+  loadSavedState();
   checkUrlParamsForWatchSync();
+  renderAll();
 });
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     addDebugLog("👁️ Evento 'visibilitychange' (Pestaña visible)", "info", { url: window.location.href });
+    loadSavedState();
     checkUrlParamsForWatchSync();
+    renderAll();
     showInteractiveClipboardBanner();
   }
 });
 
 window.addEventListener("popstate", () => {
   addDebugLog("🔗 Evento 'popstate' (Navegación URL)", "info", { url: window.location.href });
+  loadSavedState();
   checkUrlParamsForWatchSync();
+  renderAll();
 });
 
 window.addEventListener("focus", () => {
+  loadSavedState();
   checkUrlParamsForWatchSync();
+  renderAll();
   showInteractiveClipboardBanner();
 });
 
