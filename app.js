@@ -177,13 +177,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.toggleAutoSync = toggleAutoSync;
   window.triggerManualSync = triggerManualSync;
   window.recordWatchWorkoutForDay = recordWatchWorkoutForDay;
-  window.handleHealthFileImport = handleHealthFileImport;
   window.connectBluetoothHR = connectBluetoothHR;
   window.forceAppRefresh = forceAppRefresh;
   window.setAppleWatchSyncMode = setAppleWatchSyncMode;
-  window.toggleCalibrationForm = toggleCalibrationForm;
-  window.saveAppleWatchRealMetricsFromForm = saveAppleWatchRealMetricsFromForm;
-  window.importFromShortcutText = importFromShortcutText;
   window.openEditWorkoutWatchModal = openEditWorkoutWatchModal;
   window.closeEditWorkoutWatchModal = closeEditWorkoutWatchModal;
   window.saveWorkoutWatchDataFromModal = saveWorkoutWatchDataFromModal;
@@ -205,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const syncedFromUrl = checkUrlParamsForWatchSync();
   if (!syncedFromUrl) {
-    checkClipboardForWatchSync();
     checkAutoLaunchShortcutOnOpen();
   }
 
@@ -254,7 +249,6 @@ document.addEventListener("visibilitychange", () => {
     loadSavedState();
     checkUrlParamsForWatchSync();
     renderAll();
-    showInteractiveClipboardBanner();
   }
 });
 
@@ -269,55 +263,7 @@ window.addEventListener("focus", () => {
   loadSavedState();
   checkUrlParamsForWatchSync();
   renderAll();
-  showInteractiveClipboardBanner();
 });
-
-// INTERACTIVE 1-TAP CLIPBOARD SYNC BANNER ENGINE
-function showInteractiveClipboardBanner() {
-  if (document.getElementById("interactive-clipboard-banner")) return;
-
-  const banner = document.createElement("div");
-  banner.id = "interactive-clipboard-banner";
-  banner.className = "interactive-clipboard-banner";
-  banner.innerHTML = `
-    <div class="banner-content" onclick="handleInteractiveClipboardTap()">
-      <i class="fa-solid fa-clipboard-check banner-icon"></i>
-      <div class="banner-text">
-        <strong>Toca aquí para sincronizar datos del portapapeles</strong>
-        <span>Salud Apple Watch / Atajos iOS</span>
-      </div>
-      <i class="fa-solid fa-chevron-right banner-arrow"></i>
-    </div>
-    <button class="banner-close" onclick="closeInteractiveClipboardBanner(event)">×</button>
-  `;
-
-  document.body.appendChild(banner);
-
-  setTimeout(() => {
-    banner.classList.add("visible");
-  }, 100);
-
-  setTimeout(() => {
-    closeInteractiveClipboardBanner();
-  }, 9000);
-}
-
-async function handleInteractiveClipboardTap() {
-  closeInteractiveClipboardBanner();
-  await checkClipboardForWatchSync(true);
-}
-
-function closeInteractiveClipboardBanner(e) {
-  if (e) e.stopPropagation();
-  const banner = document.getElementById("interactive-clipboard-banner");
-  if (banner) {
-    banner.classList.remove("visible");
-    setTimeout(() => banner.remove(), 300);
-  }
-}
-
-window.handleInteractiveClipboardTap = handleInteractiveClipboardTap;
-window.closeInteractiveClipboardBanner = closeInteractiveClipboardBanner;
 
 // CATEGORY & SUBTAB NAVIGATION ENGINE
 const NAVIGATION_CATEGORIES = {
@@ -627,257 +573,6 @@ function triggerManualSync() {
   renderAll();
 
   showIosToast(` ¡Datos de Apple Watch (${pName}) verificados! (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-solid fa-circle-check");
-}
-
-function toggleCalibrationForm() {
-  triggerHapticTouch();
-  const body = document.getElementById("calibration-form-body");
-  const icon = document.getElementById("calibration-toggle-icon");
-  if (body) {
-    const isHidden = body.style.display === "none";
-    body.style.display = isHidden ? "block" : "none";
-    if (icon) {
-      icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
-    }
-    if (isHidden) {
-      populateCalibrationForm();
-    }
-  }
-}
-
-function populateCalibrationForm() {
-  const pid = appState.activeProfileId;
-  const m = appState.appleWatch?.metrics?.[pid];
-  if (!m) return;
-
-  const deviceInput = document.getElementById("watch-input-device");
-  if (deviceInput) deviceInput.value = m.deviceName || "";
-
-  const moveKcalInput = document.getElementById("watch-input-move-kcal");
-  if (moveKcalInput) moveKcalInput.value = m.moveKcal || "";
-
-  const exMinInput = document.getElementById("watch-input-ex-min");
-  if (exMinInput) exMinInput.value = m.exerciseMin || "";
-
-  const standHoursInput = document.getElementById("watch-input-stand-hours");
-  if (standHoursInput) standHoursInput.value = m.standHours || "";
-
-  const stepsInput = document.getElementById("watch-input-steps");
-  if (stepsInput) stepsInput.value = m.steps || "";
-
-  const distInput = document.getElementById("watch-input-dist");
-  if (distInput) distInput.value = m.distanceKm || "";
-
-  const hrInput = document.getElementById("watch-input-hr");
-  if (hrInput) hrInput.value = m.hr || "";
-
-  const maxHrInput = document.getElementById("watch-input-max-hr");
-  if (maxHrInput) maxHrInput.value = m.maxHr || 165;
-}
-
-function saveAppleWatchRealMetricsFromForm(e) {
-  e.preventDefault();
-  triggerHapticTouch();
-
-  const pid = appState.activeProfileId;
-  const m = appState.appleWatch.metrics[pid];
-  const pName = appState.profiles[pid].name.split(" ")[0];
-
-  const deviceVal = document.getElementById("watch-input-device")?.value.trim();
-  const moveKcalVal = parseInt(document.getElementById("watch-input-move-kcal")?.value);
-  const exMinVal = parseInt(document.getElementById("watch-input-ex-min")?.value);
-  const standHoursVal = parseInt(document.getElementById("watch-input-stand-hours")?.value);
-  const stepsVal = parseInt(document.getElementById("watch-input-steps")?.value);
-  const distVal = parseFloat(document.getElementById("watch-input-dist")?.value);
-  const hrVal = parseInt(document.getElementById("watch-input-hr")?.value);
-  const maxHrVal = parseInt(document.getElementById("watch-input-max-hr")?.value);
-
-  if (deviceVal) m.deviceName = deviceVal;
-  if (!isNaN(moveKcalVal)) m.moveKcal = moveKcalVal;
-  if (!isNaN(exMinVal)) m.exerciseMin = exMinVal;
-  if (!isNaN(standHoursVal)) m.standHours = standHoursVal;
-  if (!isNaN(stepsVal)) m.steps = stepsVal;
-  if (!isNaN(distVal)) m.distanceKm = distVal;
-  if (!isNaN(hrVal)) m.hr = hrVal;
-  if (!isNaN(maxHrVal)) m.maxHr = maxHrVal;
-
-  appState.appleWatch.syncMode = "real";
-  appState.appleWatch.lastGlobalSync = new Date().toISOString();
-
-  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  appState.appleWatch.syncLogs.unshift({
-    timestamp: timeStr,
-    device: m.deviceName,
-    hr: m.hr,
-    kcal: m.moveKcal,
-    steps: m.steps,
-    status: "Datos Reales Calibrados"
-  });
-  if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
-
-  saveState();
-  renderAll();
-
-  showIosToast(`🎯 <strong>Datos reales de Apple Watch de ${pName} guardados:</strong> ${m.moveKcal} kcal, ${m.steps.toLocaleString()} pasos, ${m.hr} BPM.`, "fa-solid fa-circle-check");
-}
-
-async function importFromShortcutText() {
-  triggerHapticTouch();
-  let text = null;
-
-  // Try direct clipboard read on user touch gesture first
-  if (navigator.clipboard && navigator.clipboard.readText) {
-    try {
-      const clipText = await navigator.clipboard.readText();
-      if (clipText && (clipText.includes("kcal") || clipText.includes("steps") || clipText.includes("moveKcal") || clipText.includes("{"))) {
-        text = clipText;
-        addDebugLog("📋 Portapapeles leído con éxito por toque de usuario", "clipboard", { textPreview: text.substring(0, 120) });
-      }
-    } catch(e) {
-      addDebugLog("⚠️ Lectura de portapapeles denegada por navegador", "warning", e.message);
-    }
-  }
-
-  // Fallback to manual prompt if clipboard didn't return text
-  if (!text) {
-    text = prompt("Pega aquí el texto o JSON exportado desde tu Atajo de iOS (Apple Health):\n\nEjemplo: {\"kcal\": 540, \"steps\": 9840, \"hr\": 74, \"exerciseMin\": 45}");
-  }
-
-  if (!text) return;
-
-  const pid = appState.activeProfileId;
-  const m = appState.appleWatch.metrics[pid];
-
-  try {
-    const json = parseHealthTextOrUrl(text);
-    if (!json) throw new Error("No se detectaron parámetros de Salud ni JSON válido en el texto");
-
-    let updated = false;
-
-    const kcalRaw = json.kcal || json.moveKcal || json.activeCalories;
-    const kcalVal = parseSmartMetricValue(kcalRaw) ?? (json.syncWatch ? 0 : null);
-    if (kcalVal !== null) { m.moveKcal = kcalVal; updated = true; }
-
-    const stepsRaw = json.steps;
-    const stepsVal = parseSmartMetricValue(stepsRaw) ?? (json.syncWatch ? 0 : null);
-    if (stepsVal !== null) { m.steps = stepsVal; m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2)); updated = true; }
-
-    const hrRaw = json.hr || json.heartRate || json.avgHr;
-    const hrVal = parseSmartMetricValue(hrRaw) ?? (json.syncWatch ? 0 : null);
-    if (hrVal !== null) { m.hr = hrVal; updated = true; }
-
-    const maxHrRaw = json.maxHr;
-    const maxHrVal = parseSmartMetricValue(maxHrRaw);
-    if (maxHrVal !== null) { m.maxHr = maxHrVal; updated = true; }
-
-    const exMinRaw = json.exerciseMin || json.durationMin || json.exMin;
-    const exMinVal = parseSmartMetricValue(exMinRaw) ?? (json.syncWatch ? 0 : null);
-    if (exMinVal !== null) { m.exerciseMin = exMinVal; updated = true; }
-
-    if (json.deviceName) m.deviceName = json.deviceName;
-
-    const kcalArr = parseSmartMetricArray(kcalRaw);
-    const exMinArr = parseSmartMetricArray(exMinRaw);
-    const hrArr = parseSmartMetricArray(hrRaw);
-    if (kcalArr.length > 1) {
-      syncWeeklyWatchHistory(pid, kcalArr, exMinArr, hrArr);
-      updated = true;
-    }
-
-    if (updated) {
-      appState.appleWatch.syncMode = "real";
-      appState.appleWatch.lastGlobalSync = new Date().toISOString();
-
-      saveState();
-      renderAll();
-
-      const pName = appState.profiles[pid].name.split(" ")[0];
-      addDebugLog(` Datos de Salud pegados exitosamente para ${pName}`, "success", { kcal: m.moveKcal, steps: m.steps });
-      showIosToast(`📋 <strong>¡Datos de Apple Watch pegados!</strong> ${m.moveKcal} kcal y ${m.steps.toLocaleString()} pasos.`, "fa-solid fa-file-circle-check");
-    }
-  } catch(e) {
-    addDebugLog("⚠️ Error al parsear JSON pegado", "error", e.message);
-    showIosToast("⚠️ El formato pegado no es un JSON válido. Comprueba los datos.", "fa-solid fa-triangle-exclamation");
-  }
-}
-
-// SMART HEALTH DATA PARSER (ULTRA-RESILIENT MULTI-FORMAT PARSER FOR IOS SHORTCUTS)
-function parseHealthTextOrUrl(text) {
-  if (!text || typeof text !== 'string') return null;
-  text = text.trim();
-  if (text.length === 0) return null;
-
-  // Case 1: Plain JSON object e.g. {"kcal": 540, "steps": 9840}
-  if (text.startsWith("{")) {
-    try {
-      const cleanJsonStr = text.replace(/,\s*([}\]])/g, '$1');
-      return JSON.parse(cleanJsonStr);
-    } catch(e) {
-      // Extract metrics via regex if JSON parsing failed due to bracket formatting
-      const kcalMatch = text.match(/"(?:kcal|moveKcal|activeCalories)"\s*:\s*\[?([0-9.,\s]+)\]?/i);
-      const stepsMatch = text.match(/"(?:steps)"\s*:\s*\[?([0-9.,\s]+)\]?/i);
-      const hrMatch = text.match(/"(?:hr|heartRate|avgHr)"\s*:\s*\[?([0-9.,\s]+)\]?/i);
-
-      if (kcalMatch || stepsMatch || hrMatch) {
-        const obj = {};
-        if (kcalMatch) obj.kcal = kcalMatch[1];
-        if (stepsMatch) obj.steps = stepsMatch[1];
-        if (hrMatch) obj.hr = hrMatch[1];
-        return obj;
-      }
-    }
-  }
-
-  // Case 2: Array string e.g. [450, 520, 540]
-  if (text.startsWith("[")) {
-    try {
-      const arr = JSON.parse(text);
-      if (Array.isArray(arr) && arr.length > 0) {
-        return { kcal: arr };
-      }
-    } catch(e) {
-      const numbers = text.match(/\d+/g);
-      if (numbers && numbers.length > 0) {
-        return { kcal: numbers };
-      }
-    }
-  }
-
-  // Case 3: URL String e.g. https://chirl89.github.io/dietaEntrenamiento/?syncWatch=true&kcal=540&steps=9840&hr=72
-  if (text.includes("?") || text.includes("kcal=") || text.includes("steps=") || text.includes("moveKcal=")) {
-    let queryString = text;
-    if (text.includes("?")) {
-      queryString = text.substring(text.indexOf("?") + 1);
-    }
-    const params = new URLSearchParams(queryString);
-    const obj = {};
-    for (const [k, v] of params.entries()) {
-      obj[k] = v;
-    }
-    if (obj.kcal || obj.moveKcal || obj.activeCalories || obj.steps || obj.hr || obj.exerciseMin) {
-      return obj;
-    }
-  }
-
-  // Case 4: Key-value string e.g. kcal=540&steps=9840 or kcal: 540, steps: 9840
-  const kcalMatch = text.match(/(?:kcal|moveKcal|activeCalories)[:=]\s*([0-9.,\s]+)/i);
-  const stepsMatch = text.match(/(?:steps)[:=]\s*([0-9.,\s]+)/i);
-  const hrMatch = text.match(/(?:hr|heartRate|avgHr)[:=]\s*([0-9.,\s]+)/i);
-
-  if (kcalMatch || stepsMatch || hrMatch) {
-    const obj = {};
-    if (kcalMatch) obj.kcal = kcalMatch[1];
-    if (stepsMatch) obj.steps = stepsMatch[1];
-    if (hrMatch) obj.hr = hrMatch[1];
-    return obj;
-  }
-
-  // Case 5: Single plain number e.g. "540"
-  if (!isNaN(parseInt(text))) {
-    return { kcal: parseInt(text) };
-  }
-
-  return null;
 }
 
 // SMART 7-DAY METRIC PARSERS
