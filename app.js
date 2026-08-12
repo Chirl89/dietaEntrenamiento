@@ -1,9 +1,25 @@
 import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES } from './data.js?v=1.0.4';
 
-// STATE STORAGE KEY
+// STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
 const DEVICE_DEFAULT_PROFILE_KEY = "FITDUO_DEVICE_PREFERRED_PROFILE";
 const LAST_ACTIVE_PROFILE_KEY = "FITDUO_LAST_ACTIVE_PROFILE";
+const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
+
+// INITIAL FALLBACK METRICS
+let defaultWatchMetrics = {
+  he: { deviceName: "Apple Watch (Carlos)", battery: 88, hr: 74, maxHr: 165, steps: 9840, moveKcal: 540, moveGoal: 600, exerciseMin: 42, exerciseGoal: 30, standHours: 10, standGoal: 12, distanceKm: 7.2 },
+  she: { deviceName: "Apple Watch (Andrea)", battery: 92, hr: 68, maxHr: 158, steps: 11200, moveKcal: 480, moveGoal: 500, exerciseMin: 45, exerciseGoal: 30, standHours: 11, standGoal: 12, distanceKm: 8.4 }
+};
+
+try {
+  const savedLastMetrics = localStorage.getItem(LAST_REGISTERED_METRICS_KEY);
+  if (savedLastMetrics) {
+    const parsedLastMetrics = JSON.parse(savedLastMetrics);
+    if (parsedLastMetrics?.he) defaultWatchMetrics.he = { ...defaultWatchMetrics.he, ...parsedLastMetrics.he };
+    if (parsedLastMetrics?.she) defaultWatchMetrics.she = { ...defaultWatchMetrics.she, ...parsedLastMetrics.she };
+  }
+} catch (e) {}
 
 // INITIAL STATE STRUCTURE
 let appState = {
@@ -46,34 +62,7 @@ let appState = {
     autoSyncEnabled: true,
     syncIntervalSec: 6,
     lastGlobalSync: new Date().toISOString(),
-    metrics: {
-      he: {
-        deviceName: "Apple Watch (Carlos)",
-        battery: 88,
-        hr: 74,
-        steps: 9840,
-        moveKcal: 540,
-        moveGoal: 600,
-        exerciseMin: 42,
-        exerciseGoal: 30,
-        standHours: 10,
-        standGoal: 12,
-        distanceKm: 7.2
-      },
-      she: {
-        deviceName: "Apple Watch (Andrea)",
-        battery: 92,
-        hr: 68,
-        steps: 11200,
-        moveKcal: 480,
-        moveGoal: 500,
-        exerciseMin: 45,
-        exerciseGoal: 30,
-        standHours: 11,
-        standGoal: 12,
-        distanceKm: 8.4
-      }
-    },
+    metrics: defaultWatchMetrics,
     syncLogs: [
       { timestamp: new Date().toLocaleTimeString(), device: "Apple Watch (Carlos)", hr: 74, kcal: 540, steps: 9840, status: "Auto-Sync OK" }
     ]
@@ -94,6 +83,20 @@ function loadSavedState() {
       console.warn("Could not parse saved state, using defaults.");
     }
   }
+
+  // Ensure last registered metrics persist as permanent defaults
+  try {
+    const savedLastMetrics = localStorage.getItem(LAST_REGISTERED_METRICS_KEY);
+    if (savedLastMetrics) {
+      const parsedLastMetrics = JSON.parse(savedLastMetrics);
+      if (parsedLastMetrics?.he && appState.appleWatch?.metrics?.he) {
+        appState.appleWatch.metrics.he = { ...defaultWatchMetrics.he, ...parsedLastMetrics.he, ...appState.appleWatch.metrics.he };
+      }
+      if (parsedLastMetrics?.she && appState.appleWatch?.metrics?.she) {
+        appState.appleWatch.metrics.she = { ...defaultWatchMetrics.she, ...parsedLastMetrics.she, ...appState.appleWatch.metrics.she };
+      }
+    }
+  } catch(e) {}
 
   // Device-specific profile memory preference
   const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
@@ -125,14 +128,11 @@ function loadSavedState() {
   // Ensure Apple Watch structure exists
   if (!appState.appleWatch) {
     appState.appleWatch = {
-      syncMode: "real", // 'real' (Precise real data, locked) or 'demo' (Live simulation)
+      syncMode: "real",
       autoSyncEnabled: true,
       syncIntervalSec: 6,
       lastGlobalSync: new Date().toISOString(),
-      metrics: {
-        he: { deviceName: "Apple Watch (Carlos)", battery: 88, hr: 74, maxHr: 165, steps: 9840, moveKcal: 540, moveGoal: 600, exerciseMin: 42, exerciseGoal: 30, standHours: 10, standGoal: 12, distanceKm: 7.2 },
-        she: { deviceName: "Apple Watch (Andrea)", battery: 92, hr: 68, maxHr: 158, steps: 11200, moveKcal: 480, moveGoal: 500, exerciseMin: 45, exerciseGoal: 30, standHours: 11, standGoal: 12, distanceKm: 8.4 }
-      },
+      metrics: defaultWatchMetrics,
       syncLogs: []
     };
   }
@@ -144,6 +144,9 @@ function loadSavedState() {
 // SAVE STATE TO LOCALSTORAGE
 function saveState() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+  if (appState.appleWatch?.metrics) {
+    localStorage.setItem(LAST_REGISTERED_METRICS_KEY, JSON.stringify(appState.appleWatch.metrics));
+  }
 }
 
 // INITIALIZATION ON DOM READY
