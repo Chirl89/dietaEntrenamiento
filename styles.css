@@ -1713,10 +1713,10 @@ body {
   font-size: 1.1rem;
 }
 
-.metric-icon.hr-pulse { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
-.metric-icon.steps { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
-.metric-icon.dist { background: rgba(6, 182, 212, 0.2); color: var(--accent-cyan); }
-.metric-icon.kcal { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+.metric-icon.hr-pulse { background: rgba(6, 182, 212, 0.2); color: var(--accent-cyan); }
+.metric-icon.steps { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+.metric-icon.dist { background: rgba(139, 92, 246, 0.2); color: var(--accent-violet); }
+.metric-icon.kcal { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
 
 .metric-data {
   display: flex;
