@@ -1133,22 +1133,40 @@ function checkUrlParamsForWatchSync() {
   return false;
 }
 
-async function checkClipboardForWatchSync() {
-  if (!navigator.clipboard || !navigator.clipboard.readText) return false;
-  if (sessionStorage.getItem("fitduo_clipboard_checked") === "true") return false;
+async function checkClipboardForWatchSync(forceManual = false) {
+  addDebugLog("📋 Iniciando comprobación de datos de Salud desde el Portapapeles...", "info");
 
-  sessionStorage.setItem("fitduo_clipboard_checked", "true");
+  if (!navigator.clipboard || !navigator.clipboard.readText) {
+    addDebugLog("⚠️ El navegador no soporta la API navigator.clipboard.readText", "warning");
+    if (forceManual) {
+      importFromShortcutText();
+    }
+    return false;
+  }
 
   try {
     const text = await navigator.clipboard.readText();
-    addDebugLog("📥 TEXTO BRUTO LEÍDO DEL PORTAPAPELES", "clipboard", { rawText: text, length: text ? text.length : 0 });
+    addDebugLog(`📥 TEXTO BRUTO LEÍDO DEL PORTAPAPELES (${text ? text.length : 0} caracteres)`, "clipboard", { rawText: text || "(Vacío)" });
+
+    if (!text || text.trim().length === 0) {
+      addDebugLog("ℹ️ El portapapeles está completamente vacío.", "info");
+      if (forceManual) {
+        importFromShortcutText();
+      }
+      return false;
+    }
 
     const json = parseHealthTextOrUrl(text);
     if (!json) {
-      addDebugLog("⚠️ No se detectaron valores reconocibles de Salud en el portapapeles", "warning", { rawText: text });
+      addDebugLog(`⚠️ No se detectaron parámetros de Salud reconocibles en el texto del portapapeles: "${text}"`, "warning", { rawText: text });
+      if (forceManual) {
+        showIosToast("⚠️ El texto del portapapeles no tiene formato de Salud válido", "fa-triangle-exclamation");
+        importFromShortcutText(text);
+      }
       return false;
     }
-    addDebugLog("🔍 ESTRUCTURA PARSEADA DE SALUD", "health", json);
+
+    addDebugLog("🔍 ESTRUCTURA PARSEADA DE SALUD DE PORTAPAPELES", "health", json);
 
     const pid = appState.activeProfileId;
     const m = appState.appleWatch.metrics[pid];
@@ -1156,14 +1174,14 @@ async function checkClipboardForWatchSync() {
     let updated = false;
 
     const kcalRaw = json.kcal || json.moveKcal || json.activeCalories;
-    const kcalVal = parseSmartMetricValue(kcalRaw);
+    const kcalVal = parseSmartMetricValue(kcalRaw) ?? (json.syncWatch ? 0 : null);
     if (kcalVal !== null) {
       m.moveKcal = kcalVal;
       updated = true;
     }
 
     const stepsRaw = json.steps;
-    const stepsVal = parseSmartMetricValue(stepsRaw);
+    const stepsVal = parseSmartMetricValue(stepsRaw) ?? (json.syncWatch ? 0 : null);
     if (stepsVal !== null) {
       m.steps = stepsVal;
       m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
@@ -1171,7 +1189,7 @@ async function checkClipboardForWatchSync() {
     }
 
     const hrRaw = json.hr || json.heartRate || json.avgHr;
-    const hrVal = parseSmartMetricValue(hrRaw);
+    const hrVal = parseSmartMetricValue(hrRaw) ?? (json.syncWatch ? 0 : null);
     if (hrVal !== null) {
       m.hr = hrVal;
       updated = true;
@@ -1184,8 +1202,8 @@ async function checkClipboardForWatchSync() {
       updated = true;
     }
 
-    const exMinRaw = json.exerciseMin || json.durationMin;
-    const exMinVal = parseSmartMetricValue(exMinRaw);
+    const exMinRaw = json.exerciseMin || json.durationMin || json.exMin;
+    const exMinVal = parseSmartMetricValue(exMinRaw) ?? (json.syncWatch ? 0 : null);
     if (exMinVal !== null) {
       m.exerciseMin = exMinVal;
       updated = true;
@@ -1219,7 +1237,7 @@ async function checkClipboardForWatchSync() {
         lastSync: appState.appleWatch.lastGlobalSync
       });
 
-      // Clear clipboard after successfully reading health metrics so it doesn't re-trigger
+      // Clear clipboard after reading so it doesn't re-trigger
       try {
         await navigator.clipboard.writeText("");
         addDebugLog("🧹 Portapapeles limpiado automáticamente tras la sincronización", "info");
@@ -1229,7 +1247,10 @@ async function checkClipboardForWatchSync() {
       return true;
     }
   } catch(e) {
-    addDebugLog("⚠️ Error o permiso denegado leyendo portapapeles", "warning", e.message);
+    addDebugLog(`⚠️ Error o permiso denegado leyendo portapapeles: ${e.name} - ${e.message}`, "warning", { error: e.message });
+    if (forceManual) {
+      importFromShortcutText();
+    }
   }
 
   return false;
