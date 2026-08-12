@@ -821,6 +821,17 @@ function parseSmartMetricValue(val) {
   return isNaN(parsed) ? null : parsed;
 }
 
+function parseSmartMetricFloatValue(val) {
+  if (val === null || val === undefined) return null;
+  if (typeof val === 'number') return parseFloat(val.toFixed(2));
+  if (typeof val === 'string') {
+    const cleaned = val.replace(',', '.').trim();
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? null : parseFloat(parsed.toFixed(2));
+  }
+  return null;
+}
+
 function parseSmartMetricArray(val) {
   if (!val) return [];
   if (Array.isArray(val)) return val.map(v => parseInt(v)).filter(v => !isNaN(v));
@@ -924,6 +935,13 @@ function checkUrlParamsForWatchSync() {
   if (stepsVal !== null) {
     m.steps = stepsVal;
     m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+    updated = true;
+  }
+
+  const distRaw = params.get("dist") || params.get("distanceKm") || params.get("distance");
+  const distVal = parseSmartMetricFloatValue(distRaw);
+  if (distVal !== null) {
+    m.distanceKm = distVal;
     updated = true;
   }
 
@@ -1186,6 +1204,14 @@ function getShortcutUrl(mode = 'health') {
   } else {
     return `${baseUrl}?syncWatch=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&exMin=[Minutos_Ejercicio]&dist=[Distancia_Km]&stand=[Horas_De_Pie]`;
   }
+}
+
+function updateShortcutUrlInputs() {
+  const healthInput = document.getElementById("shortcut-url-health-input");
+  if (healthInput) healthInput.value = getShortcutUrl('health');
+
+  const workoutInput = document.getElementById("shortcut-url-workout-input");
+  if (workoutInput) workoutInput.value = getShortcutUrl('workout');
 }
 
 function copyShortcutUrlToClipboard(mode = 'health') {
@@ -1658,6 +1684,7 @@ function renderProfileView() {
   document.getElementById("target-carbs").innerText = `${p.carbs} g`;
   document.getElementById("target-fats").innerText = `${p.fats} g`;
 
+  updateShortcutUrlInputs();
   renderWorkoutTracker();
 }
 
