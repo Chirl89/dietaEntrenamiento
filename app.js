@@ -8,8 +8,8 @@ const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
 
 // INITIAL FALLBACK METRICS
 let defaultWatchMetrics = {
-  he: { deviceName: "Apple Watch (Carlos)", battery: 100, hr: 0, maxHr: 165, steps: 0, moveKcal: 0, moveGoal: 600, exerciseMin: 0, exerciseGoal: 30, standHours: 0, standGoal: 12, distanceKm: 0 },
-  she: { deviceName: "Apple Watch (Andrea)", battery: 100, hr: 0, maxHr: 158, steps: 0, moveKcal: 0, moveGoal: 500, exerciseMin: 0, exerciseGoal: 30, standHours: 0, standGoal: 12, distanceKm: 0 }
+  he: { deviceName: "Apple Watch (Carlos)", battery: 100, hr: 0, maxHr: 165, steps: 0, stepsGoal: 10000, moveKcal: 0, moveGoal: 600, exerciseMin: 0, exerciseGoal: 30, distanceKm: 0 },
+  she: { deviceName: "Apple Watch (Andrea)", battery: 100, hr: 0, maxHr: 158, steps: 0, stepsGoal: 10000, moveKcal: 0, moveGoal: 500, exerciseMin: 0, exerciseGoal: 30, distanceKm: 0 }
 };
 
 try {
@@ -1270,12 +1270,12 @@ function updateAppleWatchModalUI() {
   const exValEl = document.getElementById("ring-exercise-val");
   if (exValEl) exValEl.innerText = `${m.exerciseMin} / ${m.exerciseGoal} min`;
 
-  const standCircle = document.getElementById("ring-stand-circle");
-  const standRatio = Math.min(1.2, m.standHours / m.standGoal);
-  const standOffset = Math.max(0, 163 - (163 * Math.min(1, standRatio)));
-  if (standCircle) standCircle.style.strokeDashoffset = standOffset;
-  const standValEl = document.getElementById("ring-stand-val");
-  if (standValEl) standValEl.innerText = `${m.standHours} / ${m.standGoal} hrs`;
+  const stepsCircle = document.getElementById("ring-steps-circle") || document.getElementById("ring-stand-circle");
+  const stepsRatio = Math.min(1.2, m.steps / (m.stepsGoal || 10000));
+  const stepsOffset = Math.max(0, 163 - (163 * Math.min(1, stepsRatio)));
+  if (stepsCircle) stepsCircle.style.strokeDashoffset = stepsOffset;
+  const stepsValEl = document.getElementById("ring-steps-val") || document.getElementById("ring-stand-val");
+  if (stepsValEl) stepsValEl.innerText = `${m.steps.toLocaleString()} / ${(m.stepsGoal || 10000).toLocaleString()} pasos`;
 
   // Render Sync Logs
   const logList = document.getElementById("sync-log-list");
@@ -1493,12 +1493,12 @@ function renderSummaryView() {
   const exValEl = document.getElementById("summary-ring-exercise-val");
   if (exValEl) exValEl.innerText = `${m.exerciseMin} / ${m.exerciseGoal} min`;
 
-  const standCircle = document.getElementById("summary-ring-stand-circle");
-  const standRatio = Math.min(1.2, m.standHours / m.standGoal);
-  const standOffset = Math.max(0, 163 - (163 * Math.min(1, standRatio)));
-  if (standCircle) standCircle.style.strokeDashoffset = standOffset;
-  const standValEl = document.getElementById("summary-ring-stand-val");
-  if (standValEl) standValEl.innerText = `${m.standHours} / ${m.standGoal} hrs`;
+  const stepsCircle = document.getElementById("summary-ring-steps-circle") || document.getElementById("summary-ring-stand-circle");
+  const stepsRatio = Math.min(1.2, m.steps / (m.stepsGoal || 10000));
+  const stepsOffset = Math.max(0, 163 - (163 * Math.min(1, stepsRatio)));
+  if (stepsCircle) stepsCircle.style.strokeDashoffset = stepsOffset;
+  const stepsValEl = document.getElementById("summary-ring-steps-val") || document.getElementById("summary-ring-stand-val");
+  if (stepsValEl) stepsValEl.innerText = `${m.steps.toLocaleString()} / ${(m.stepsGoal || 10000).toLocaleString()} pasos`;
 
   // Nutrition targets
   const targetCalEl = document.getElementById("summary-target-calories");

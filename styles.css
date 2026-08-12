@@ -1635,7 +1635,7 @@ body {
 
 .move-bg, .move-fg { stroke: #f43f5e; }
 .exercise-bg, .exercise-fg { stroke: #10b981; }
-.stand-bg, .stand-fg { stroke: #06b6d4; }
+.steps-bg, .steps-fg, .stand-bg, .stand-fg { stroke: #f59e0b; }
 
 .rings-center-icon {
   position: absolute;
@@ -1667,7 +1667,7 @@ body {
 
 .ring-legend-item.move .legend-color-dot { background: #f43f5e; box-shadow: 0 0 6px #f43f5e; }
 .ring-legend-item.exercise .legend-color-dot { background: #10b981; box-shadow: 0 0 6px #10b981; }
-.ring-legend-item.stand .legend-color-dot { background: #06b6d4; box-shadow: 0 0 6px #06b6d4; }
+.ring-legend-item.steps .legend-color-dot, .ring-legend-item.stand .legend-color-dot { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
 
 .legend-text {
   display: flex;
