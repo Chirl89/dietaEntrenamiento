@@ -134,9 +134,20 @@
     <main class="main-content">
       
       <!-- TOP SUBTAB SEGMENTED CONTROL BAR (IOS & WEB) -->
-      <div class="ios-subtab-container" id="ios-subtab-bar">
+      <div class="ios-subtab-container" id="ios-subtab-bar" style="display: flex !important; visibility: visible !important;">
         <div class="ios-segmented-control" id="ios-segmented-control-inner">
-          <!-- Rendered dynamically by app.js -->
+          <button type="button" class="ios-segmented-btn active" onclick="showTab('summary-view')">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>📊 Resumen Diario</span>
+          </button>
+          <button type="button" class="ios-segmented-btn" onclick="showTab('logs-view')">
+            <i class="fa-solid fa-list-check"></i>
+            <span>📋 Logs & Diagnóstico</span>
+          </button>
+          <button type="button" class="ios-segmented-btn" onclick="showTab('progress-view')">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>📈 Progreso</span>
+          </button>
         </div>
       </div>
       

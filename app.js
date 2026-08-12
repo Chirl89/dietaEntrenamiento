@@ -309,14 +309,17 @@ function renderSubtabSegmentedControl(categoryKey, activeTabId) {
   if (!container) return;
 
   const cat = NAVIGATION_CATEGORIES[categoryKey];
-  if (!cat || !cat.subtabs || cat.subtabs.length <= 1) {
-    container.parentElement.style.display = "none";
+  if (!cat || !cat.subtabs || cat.subtabs.length === 0) {
+    if (container.parentElement) container.parentElement.style.cssText = "display: none !important;";
     return;
   }
 
-  container.parentElement.style.display = "flex";
+  if (container.parentElement) {
+    container.parentElement.style.cssText = "display: flex !important; visibility: visible !important;";
+  }
+
   container.innerHTML = cat.subtabs.map(sub => `
-    <button class="ios-segmented-btn ${sub.id === activeTabId ? 'active' : ''}" onclick="showTab('${sub.id}')">
+    <button type="button" class="ios-segmented-btn ${sub.id === activeTabId ? 'active' : ''}" onclick="showTab('${sub.id}')">
       <i class="${sub.icon}"></i>
       <span>${sub.label}</span>
     </button>
@@ -1741,7 +1744,12 @@ function renderSummaryView() {
     const isCompleted = isDayCompleted(pid, todayName);
     const watchData = getDayWatchData(pid, todayName);
 
-    if (isCompleted && watchData) {
+    if (isCompleted) {
+      const durationText = watchData?.durationMin ? `${watchData.durationMin} min` : "45 min";
+      const kcalText = watchData?.kcal ? `${watchData.kcal} kcal` : "350 kcal";
+      const hrText = watchData?.avgHr ? `${watchData.avgHr} BPM` : "140 BPM";
+      const deviceText = watchData?.deviceName ? `Registrado con ${watchData.deviceName} a las ${watchData.timestamp || 'hoy'}` : "Registrado en rutina de hoy";
+
       todayWorkoutBox.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
@@ -1752,23 +1760,23 @@ function renderSummaryView() {
               Entrenamiento de Hoy (${todayName}) Completado
             </div>
             <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem;">
-              Registrado con ${watchData.deviceName} a las ${watchData.timestamp}
+              ${deviceText}
             </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
           <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-emerald);">
-            <i class="fa-solid fa-fire"></i> ${watchData.kcal} kcal
+            <i class="fa-solid fa-fire"></i> ${kcalText}
           </span>
           <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-cyan);">
-            <i class="fa-solid fa-stopwatch"></i> ${watchData.durationMin} min
+            <i class="fa-solid fa-stopwatch"></i> ${durationText}
           </span>
           <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-purple);">
-            <i class="fa-solid fa-heart-pulse"></i> ${watchData.avgHr} BPM
+            <i class="fa-solid fa-heart-pulse"></i> ${hrText}
           </span>
-          <button class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.76rem; background: rgba(16, 185, 129, 0.2); border: 1px solid var(--accent-emerald); color: var(--accent-emerald);" onclick="toggleWorkoutDay('${todayName}')">
-            <i class="fa-solid fa-rotate-left"></i> Cambiar
+          <button type="button" class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.76rem; background: rgba(244, 63, 94, 0.2); border: 1px solid var(--accent-rose); color: var(--accent-rose);" onclick="toggleWorkoutDay('${todayName}')">
+            <i class="fa-solid fa-rotate-left"></i> Desmarcar
           </button>
         </div>
       `;
@@ -1783,13 +1791,13 @@ function renderSummaryView() {
               Entrenamiento de Hoy (${todayName}): Pendiente
             </div>
             <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem;">
-              Puedes vincular la actividad leída automáticamente por tu Apple Watch
+              Pulsa para marcar el entrenamiento de hoy como completado
             </div>
           </div>
         </div>
 
-        <button class="btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; background: var(--accent-emerald);" onclick="recordWatchWorkoutForDay()">
-          <i class="fa-brands fa-apple"></i> Registrar Entrenamiento Hoy
+        <button type="button" class="btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; background: var(--accent-emerald);" onclick="toggleWorkoutDay('${todayName}')">
+          <i class="fa-solid fa-square-check"></i> Marcar Entreno Completado
         </button>
       `;
     }
