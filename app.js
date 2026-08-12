@@ -200,11 +200,13 @@ function scanUrlAndStorage(context = "Init") {
   if (hasQueryParams) {
     addLog(`📥 Parámetros detectados en Query String (?):`, "url", queryParamsObj);
     inspectPayloadData(queryParamsObj);
+    normalizeAndLogHealthMetrics(queryParamsObj);
   }
 
   if (hasHashParams) {
     addLog(`📥 Parámetros detectados en Hash (#):`, "url", hashParamsObj);
     inspectPayloadData(hashParamsObj);
+    normalizeAndLogHealthMetrics(hashParamsObj);
   }
 
   if (!hasQueryParams && !hasHashParams) {
@@ -220,6 +222,32 @@ function scanUrlAndStorage(context = "Init") {
   } catch (e) {
     addLog(`⚠️ Error accediendo a SessionStorage: ${e.message}`, "warn");
   }
+}
+
+// Helper: Normalize metric value - if empty, null, NaN or invalid, defaults to 0
+function parseMetricOrZero(val, isFloat = false) {
+  if (val === null || val === undefined || val === "") return 0;
+  const cleaned = String(val).trim().replace(",", ".");
+  const num = isFloat ? parseFloat(cleaned) : parseInt(cleaned, 10);
+  return isNaN(num) ? 0 : num;
+}
+
+// Extract and normalize Health metrics (kcal, steps, hr, dist, exMin)
+function normalizeAndLogHealthMetrics(paramsObj) {
+  const metricKeys = ["kcal", "moveKcal", "activeCalories", "steps", "hr", "dist", "distance", "distanceKm", "exMin", "workoutKcal"];
+  const hasAnyMetric = metricKeys.some(k => k in paramsObj);
+
+  if (!hasAnyMetric && !paramsObj.syncWatch) return;
+
+  const normalized = {
+    kcal: parseMetricOrZero(paramsObj.kcal || paramsObj.moveKcal || paramsObj.activeCalories, true),
+    steps: parseMetricOrZero(paramsObj.steps, false),
+    hr: parseMetricOrZero(paramsObj.hr, false),
+    dist: parseMetricOrZero(paramsObj.dist || paramsObj.distance || paramsObj.distanceKm, true),
+    exMin: parseMetricOrZero(paramsObj.exMin || paramsObj.exerciseMinutes, false)
+  };
+
+  addLog(`📊 Métricas de Salud Procesadas (Campos vacíos o nulos autocompletados con 0):`, "json", normalized);
 }
 
 // Inspect if payload contains JSON strings or encoded data
