@@ -8,8 +8,8 @@ const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
 
 // INITIAL FALLBACK METRICS
 let defaultWatchMetrics = {
-  he: { deviceName: "Apple Watch (Carlos)", battery: 88, hr: 74, maxHr: 165, steps: 9840, moveKcal: 540, moveGoal: 600, exerciseMin: 42, exerciseGoal: 30, standHours: 10, standGoal: 12, distanceKm: 7.2 },
-  she: { deviceName: "Apple Watch (Andrea)", battery: 92, hr: 68, maxHr: 158, steps: 11200, moveKcal: 480, moveGoal: 500, exerciseMin: 45, exerciseGoal: 30, standHours: 11, standGoal: 12, distanceKm: 8.4 }
+  he: { deviceName: "Apple Watch (Carlos)", battery: 100, hr: 0, maxHr: 165, steps: 0, moveKcal: 0, moveGoal: 600, exerciseMin: 0, exerciseGoal: 30, standHours: 0, standGoal: 12, distanceKm: 0 },
+  she: { deviceName: "Apple Watch (Andrea)", battery: 100, hr: 0, maxHr: 158, steps: 0, moveKcal: 0, moveGoal: 500, exerciseMin: 0, exerciseGoal: 30, standHours: 0, standGoal: 12, distanceKm: 0 }
 };
 
 try {
@@ -63,9 +63,7 @@ let appState = {
     syncIntervalSec: 6,
     lastGlobalSync: new Date().toISOString(),
     metrics: defaultWatchMetrics,
-    syncLogs: [
-      { timestamp: new Date().toLocaleTimeString(), device: "Apple Watch (Carlos)", hr: 74, kcal: 540, steps: 9840, status: "Auto-Sync OK" }
-    ]
+    syncLogs: []
   }
 };
 
@@ -1127,15 +1125,6 @@ function checkUrlParamsForWatchSync() {
     updated = true;
   }
 
-  if (!updated && (params.has("syncWatch") || params.has("workout") || params.has("kcal") || params.has("steps"))) {
-    m.moveKcal = m.moveKcal || 540;
-    m.steps = m.steps || 9840;
-    m.hr = m.hr || 74;
-    m.distanceKm = m.distanceKm || 7.2;
-    m.exerciseMin = m.exerciseMin || 45;
-    updated = true;
-  }
-
   if (updated) {
     appState.appleWatch.syncMode = "real";
     appState.appleWatch.lastGlobalSync = new Date().toISOString();
@@ -2098,7 +2087,7 @@ function renderWorkoutTracker() {
 
   const profileId = appState.activeProfileId;
   const p = appState.profiles[profileId];
-  const watchMetrics = appState.appleWatch?.metrics[profileId] || { moveKcal: 540, hr: 74, steps: 9840, distanceKm: 7.2 };
+  const watchMetrics = appState.appleWatch?.metrics[profileId] || { moveKcal: 0, hr: 0, steps: 0, distanceKm: 0 };
   const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
   let completedCount = 0;
