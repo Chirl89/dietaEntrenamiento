@@ -754,23 +754,23 @@ async function importFromShortcutText() {
     let updated = false;
 
     const kcalRaw = json.kcal || json.moveKcal || json.activeCalories;
-    const kcalVal = parseSmartMetricValue(kcalRaw);
+    const kcalVal = parseSmartMetricValue(kcalRaw) ?? (json.syncWatch ? 0 : null);
     if (kcalVal !== null) { m.moveKcal = kcalVal; updated = true; }
 
     const stepsRaw = json.steps;
-    const stepsVal = parseSmartMetricValue(stepsRaw);
+    const stepsVal = parseSmartMetricValue(stepsRaw) ?? (json.syncWatch ? 0 : null);
     if (stepsVal !== null) { m.steps = stepsVal; m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2)); updated = true; }
 
     const hrRaw = json.hr || json.heartRate || json.avgHr;
-    const hrVal = parseSmartMetricValue(hrRaw);
+    const hrVal = parseSmartMetricValue(hrRaw) ?? (json.syncWatch ? 0 : null);
     if (hrVal !== null) { m.hr = hrVal; updated = true; }
 
     const maxHrRaw = json.maxHr;
     const maxHrVal = parseSmartMetricValue(maxHrRaw);
     if (maxHrVal !== null) { m.maxHr = maxHrVal; updated = true; }
 
-    const exMinRaw = json.exerciseMin || json.durationMin;
-    const exMinVal = parseSmartMetricValue(exMinRaw);
+    const exMinRaw = json.exerciseMin || json.durationMin || json.exMin;
+    const exMinVal = parseSmartMetricValue(exMinRaw) ?? (json.syncWatch ? 0 : null);
     if (exMinVal !== null) { m.exerciseMin = exMinVal; updated = true; }
 
     if (json.deviceName) m.deviceName = json.deviceName;
