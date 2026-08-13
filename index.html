@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Application CSS -->
-  <link rel="stylesheet" href="styles.css?v=0.1.3">
+  <link rel="stylesheet" href="styles.css?v=0.2.0">
   
   <!-- Chart.js for progress graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -32,7 +32,7 @@
   <header class="ios-top-bar">
     <div class="ios-header-brand">
       <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
-      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.1.3</span></span>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.2.0</span></span>
     </div>
 
     <div class="ios-header-actions">
@@ -60,7 +60,7 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div>
-            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.1.3</span></div>
+            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.2.0</span></div>
             <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
           </div>
         </div>
@@ -112,7 +112,7 @@
           <i class="fa-brands fa-apple"></i>
           <div>
             <div class="user-pill-name" id="sidebar-watch-user">Carlos (Series 9)</div>
-            <div class="user-pill-status"> Salud Conectada • v0.1.3</div>
+            <div class="user-pill-status"> Salud Conectada • v0.2.0</div>
           </div>
         </div>
       </div>
@@ -333,25 +333,59 @@
         </div>
       </section>
 
-      <!-- TAB 4: MINIMAL EQUIPMENT WORKOUTS VIEW -->
+      <!-- TAB 4 - SUBTAB 1: EJERCICIOS DE ENTRENAMIENTO -->
       <section id="workouts-view" class="view-panel">
-        <div class="header-title-group">
-          <h1 class="page-title">Tabla de Ejercicios Diaria</h1>
-          <p class="page-subtitle">Planificación semanal para entrenar juntos (Carlos & Andrea) el mismo tiempo</p>
-        </div>
+        <div class="header-title-group" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h1 class="page-title"><i class="fa-solid fa-dumbbell" style="color: var(--accent-orange);"></i> Ejercicios de Entrenamiento</h1>
+            <p class="page-subtitle">Planificación semanal para entrenar juntos (Carlos & Andrea) el mismo tiempo</p>
+          </div>
 
-        <div class="weekly-days-tabs" id="workout-days-tabs">
-          <button class="day-tab active" onclick="selectWorkoutDay('Lunes', this)">Lunes</button>
-          <button class="day-tab" onclick="selectWorkoutDay('Martes', this)">Martes</button>
-          <button class="day-tab" onclick="selectWorkoutDay('Miércoles', this)">Miércoles</button>
-          <button class="day-tab" onclick="selectWorkoutDay('Jueves', this)">Jueves</button>
-          <button class="day-tab" onclick="selectWorkoutDay('Viernes', this)">Viernes</button>
-          <button class="day-tab" onclick="selectWorkoutDay('Sábado', this)">Sábado</button>
-          <button class="day-tab" onclick="selectWorkoutDay('Domingo', this)">Domingo</button>
+          <!-- DAY SELECTOR DROPDOWN (matching Nutrition style) -->
+          <div class="nutrition-day-selector-card">
+            <label for="workout-day-select" class="selector-label"><i class="fa-solid fa-calendar-day"></i> Selección de Día:</label>
+            <select id="workout-day-select" class="custom-select" onchange="selectWorkoutDayFromDropdown(this.value)">
+              <option value="Lunes">Lunes</option>
+              <option value="Martes">Martes</option>
+              <option value="Miércoles">Miércoles</option>
+              <option value="Jueves">Jueves</option>
+              <option value="Viernes">Viernes</option>
+              <option value="Sábado">Sábado</option>
+              <option value="Domingo">Domingo</option>
+            </select>
+          </div>
         </div>
 
         <div class="routine-cards-container" id="routines-container">
           <!-- Routines render dynamically -->
+        </div>
+      </section>
+
+      <!-- TAB 4 - SUBTAB 2: ENTRENAMIENTO Y ADIESTRAMIENTO DE BOO -->
+      <section id="workouts-boo-view" class="view-panel">
+        <div class="header-title-group" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h1 class="page-title"><i class="fa-solid fa-dog" style="color: var(--accent-amber);"></i> Entrenamiento de Boo 🐾</h1>
+            <p class="page-subtitle">Adiestramiento y gestión emocional para Border Collie (Ansiedad, Paseo & Llamada)</p>
+          </div>
+
+          <!-- DAY SELECTOR DROPDOWN FOR BOO -->
+          <div class="nutrition-day-selector-card">
+            <label for="boo-day-select" class="selector-label"><i class="fa-solid fa-calendar-day"></i> Selección de Día:</label>
+            <select id="boo-day-select" class="custom-select" onchange="selectBooDayFromDropdown(this.value)">
+              <option value="Lunes">Lunes</option>
+              <option value="Martes">Martes</option>
+              <option value="Miércoles">Miércoles</option>
+              <option value="Jueves">Jueves</option>
+              <option value="Viernes">Viernes</option>
+              <option value="Sábado">Sábado</option>
+              <option value="Domingo">Domingo</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="boo-workout-container">
+          <!-- Boo Workout Content Renders Dynamically via app.js -->
         </div>
       </section>
 
@@ -877,6 +911,6 @@
   <div id="ios-toast-container" class="ios-toast-container"></div>
 
   <!-- Application Logic -->
-  <script type="module" src="app.js?v=0.1.3"></script>
+  <script type="module" src="app.js?v=0.2.0"></script>
 </body>
 </html>

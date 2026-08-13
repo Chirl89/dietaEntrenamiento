@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES } from './data.js?v=0.1.3';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE } from './data.js?v=0.2.0';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -171,6 +171,13 @@ document.addEventListener("DOMContentLoaded", () => {
   window.renderNutritionMenuView = renderNutritionMenuView;
   window.renderNutritionRecipesView = renderNutritionRecipesView;
   window.selectWorkoutDay = selectWorkoutDay;
+  window.selectWorkoutDayFromDropdown = selectWorkoutDayFromDropdown;
+  window.selectBooDayFromDropdown = selectBooDayFromDropdown;
+  window.toggleBooTask = toggleBooTask;
+  window.setBooMood = setBooMood;
+  window.saveBooSessionNotes = saveBooSessionNotes;
+  window.markBooModulePracticed = markBooModulePracticed;
+  window.renderBooWorkoutView = renderBooWorkoutView;
   window.openTodayNutrition = openTodayNutrition;
   window.openTodayWorkouts = openTodayWorkouts;
   window.toggleShoppingItem = toggleShoppingItem;
@@ -299,7 +306,8 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-workouts",
     sidebarId: "sidebar-nav-workouts",
     subtabs: [
-      { id: "workouts-view", label: "Ejercicios", icon: "fa-solid fa-dumbbell" }
+      { id: "workouts-view", label: "Ejercicios", icon: "fa-solid fa-dumbbell" },
+      { id: "workouts-boo-view", label: "Boo (Perros)", icon: "fa-solid fa-dog" }
     ]
   },
   profile: {
@@ -363,6 +371,7 @@ function renderAll() {
   renderNutritionRecipesView();
   renderShoppingView();
   renderWorkoutsView();
+  renderBooWorkoutView();
   renderProgressView();
   renderSettingsView();
   updateHeaderWatchBadge();
@@ -2343,12 +2352,72 @@ function selectWorkoutDay(dayName, btnElem) {
   renderWorkoutsView();
 }
 
+function selectWorkoutDayFromDropdown(dayName) {
+  appState.activeWorkoutDay = dayName;
+  renderWorkoutsView();
+}
+
+function selectBooDayFromDropdown(dayName) {
+  appState.activeBooDay = dayName;
+  renderBooWorkoutView();
+}
+
+function toggleBooTask(taskId, dayName) {
+  triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
+  if (!appState.booProgress.completedTasks) appState.booProgress.completedTasks = {};
+  const current = !!appState.booProgress.completedTasks[taskId];
+  appState.booProgress.completedTasks[taskId] = !current;
+  saveState();
+  renderBooWorkoutView();
+  showToast(!current ? "🐾 ¡Ejercicio de Boo registrado!" : "Ejercicio desmarcado", "success");
+}
+
+function setBooMood(dayName, mood) {
+  triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
+  if (!appState.booProgress.moodLogs) appState.booProgress.moodLogs = {};
+  appState.booProgress.moodLogs[dayName] = mood;
+  saveState();
+  renderBooWorkoutView();
+  showToast(`Estado de Boo guardado: ${mood}`, "info");
+}
+
+function saveBooSessionNotes(dayName) {
+  triggerHapticTouch();
+  const input = document.getElementById("boo-session-note-input");
+  if (!input) return;
+  const note = input.value.trim();
+  if (!appState.booProgress) appState.booProgress = {};
+  if (!appState.booProgress.sessionNotes) appState.booProgress.sessionNotes = {};
+  appState.booProgress.sessionNotes[dayName] = note;
+  saveState();
+  showToast("📝 Nota del paseo guardada", "success");
+}
+
+function markBooModulePracticed(moduleId) {
+  triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
+  if (!appState.booProgress.moduleStats) appState.booProgress.moduleStats = {};
+  const count = (appState.booProgress.moduleStats[moduleId] || 0) + 1;
+  appState.booProgress.moduleStats[moduleId] = count;
+  saveState();
+  renderBooWorkoutView();
+  showToast(`🐾 ¡Módulo practicado! Total: ${count} sesiones`, "success");
+}
+
 function renderWorkoutsView() {
   const container = document.getElementById("routines-container");
   if (!container) return;
   container.innerHTML = "";
 
-  const activeDay = appState.activeWorkoutDay || "Lunes";
+  const activeDay = appState.activeWorkoutDay || getTodayDayName();
+
+  // Sync dropdown selector state if present
+  const selectElem = document.getElementById("workout-day-select");
+  if (selectElem && selectElem.value !== activeDay) {
+    selectElem.value = activeDay;
+  }
   const routine = WEEKLY_WORKOUT_SCHEDULE[activeDay] || WEEKLY_WORKOUT_SCHEDULE["Lunes"];
   const profileId = appState.activeProfileId;
   const isDone = isDayCompleted(profileId, activeDay);
@@ -2483,6 +2552,228 @@ function renderWorkoutsView() {
 
     container.appendChild(routeCard);
   }
+}
+
+function renderBooWorkoutView() {
+  const container = document.getElementById("boo-workout-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const activeDay = appState.activeBooDay || getTodayDayName();
+  
+  // Sync dropdown selector state if present
+  const selectElem = document.getElementById("boo-day-select");
+  if (selectElem && selectElem.value !== activeDay) {
+    selectElem.value = activeDay;
+  }
+
+  if (!appState.booProgress) {
+    appState.booProgress = { completedTasks: {}, moodLogs: {}, sessionNotes: {}, moduleStats: {} };
+  }
+
+  const completedTasks = appState.booProgress.completedTasks || {};
+  const moodLogs = appState.booProgress.moodLogs || {};
+  const sessionNotes = appState.booProgress.sessionNotes || {};
+  const moduleStats = appState.booProgress.moduleStats || {};
+
+  const scheduleDay = BOO_WEEKLY_SCHEDULE[activeDay] || BOO_WEEKLY_SCHEDULE["Lunes"];
+  const currentMood = moodLogs[activeDay] || "🧘‍♂️ Calma & Enfocada";
+  const currentNote = sessionNotes[activeDay] || "";
+
+  // 1. BOO PROFILE HERO BANNER
+  const heroCard = document.createElement("div");
+  heroCard.className = "glass-card boo-hero-card";
+  heroCard.style.marginBottom = "1.5rem";
+  heroCard.innerHTML = `
+    <div class="boo-hero-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div class="boo-avatar-badge" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(16, 185, 129, 0.2)); border: 2px solid var(--accent-amber); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: var(--shadow-glow-amber);">
+          🐕
+        </div>
+        <div>
+          <h2 style="font-family: var(--font-heading); font-size: 1.35rem; color: #fff; margin-bottom: 2px;">
+            Boo <span style="font-size: 0.85rem; background: var(--bg-tertiary); color: var(--accent-amber); padding: 2px 8px; border-radius: 12px; font-weight: 500;">Border Collie • 3 años</span>
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            Plan de adiestramiento conductual y desensibilización emocional
+          </p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <span class="boo-stat-pill"><i class="fa-solid fa-bolt" style="color:var(--accent-amber);"></i> Energía: Alta</span>
+        <span class="boo-stat-pill"><i class="fa-solid fa-route" style="color:var(--accent-emerald);"></i> 75 min Paseo/Día</span>
+      </div>
+    </div>
+  `;
+  container.appendChild(heroCard);
+
+  // 2. DAILY RECOMMENDED PLAN FOR ACTIVE DAY
+  const dailyPlanCard = document.createElement("div");
+  dailyPlanCard.className = "glass-card";
+  dailyPlanCard.style.marginBottom = "1.5rem";
+
+  const totalDayTasks = scheduleDay.tasks.length;
+  const completedDayTasksCount = scheduleDay.tasks.filter(t => completedTasks[t.id]).length;
+  const progressPct = Math.round((completedDayTasksCount / totalDayTasks) * 100) || 0;
+
+  let tasksHtml = scheduleDay.tasks.map(t => {
+    const isDone = !!completedTasks[t.id];
+    return `
+      <div class="boo-task-item ${isDone ? 'completed' : ''}" onclick="toggleBooTask('${t.id}', '${activeDay}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="custom-checkbox ${isDone ? 'checked' : ''}" style="width: 22px; height: 22px; border-radius: 6px; border: 2px solid ${isDone ? 'var(--accent-emerald)' : 'var(--text-muted)'}; background: ${isDone ? 'var(--accent-emerald)' : 'transparent'}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.75rem;">
+            ${isDone ? '<i class="fa-solid fa-check"></i>' : ''}
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.92rem; color: ${isDone ? 'var(--text-muted)' : 'var(--text-primary)'}; ${isDone ? 'text-decoration: line-through;' : ''}">
+              ${t.text}
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> Duración: ${t.duration}</span>
+          </div>
+        </div>
+        <span class="btn-micro" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 12px; background: ${isDone ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)'}; color: ${isDone ? 'var(--accent-emerald)' : 'var(--text-secondary)'}; font-weight: 600;">
+          ${isDone ? '¡Completado!' : 'Marcar'}
+        </span>
+      </div>
+    `;
+  }).join("");
+
+  dailyPlanCard.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-calendar-check" style="color: var(--accent-emerald);"></i> ${scheduleDay.focusTitle}
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
+          Objetivos de adiestramiento programados para ${activeDay}
+        </p>
+      </div>
+      <div style="text-align: right;">
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-emerald);">${completedDayTasksCount} / ${totalDayTasks} completados (${progressPct}%)</span>
+        <div style="width: 140px; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; margin-top: 4px;">
+          <div style="width: ${progressPct}%; height: 100%; background: var(--accent-emerald); transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="boo-tasks-list">
+      ${tasksHtml}
+    </div>
+  `;
+  container.appendChild(dailyPlanCard);
+
+  // 3. 4 CORE BEHAVIORAL MODULES GRID
+  const modulesHeader = document.createElement("div");
+  modulesHeader.style.cssText = "margin-top: 1.5rem; margin-bottom: 1rem;";
+  modulesHeader.innerHTML = `
+    <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-graduation-cap" style="color: var(--accent-cyan);"></i> Módulos de Trabajo Conductual
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.85rem;">Guía de ejercicios paso a paso adaptados a las necesidades de Boo</p>
+  `;
+  container.appendChild(modulesHeader);
+
+  const modulesGrid = document.createElement("div");
+  modulesGrid.className = "boo-modules-grid";
+  modulesGrid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;";
+
+  BOO_TRAINING_MODULES.forEach(mod => {
+    const practiceCount = moduleStats[mod.id] || 0;
+    const modCard = document.createElement("div");
+    modCard.className = "glass-card boo-module-card";
+    modCard.style.cssText = "display: flex; flex-direction: column; justify-content: space-between;";
+
+    const stepsListHtml = mod.steps.map((step, idx) => `
+      <li style="margin-bottom: 0.4rem; font-size: 0.84rem; line-height: 1.4; color: var(--text-secondary); display: flex; gap: 0.5rem; align-items: flex-start;">
+        <span style="background: ${mod.badgeColor}; color: #000; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; margin-top: 2px;">${idx + 1}</span>
+        <span>${step}</span>
+      </li>
+    `).join("");
+
+    modCard.innerHTML = `
+      <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+          <span style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.06); color: ${mod.badgeColor}; border: 1px solid ${mod.badgeColor};">
+            <i class="${mod.icon}"></i> ${mod.category}
+          </span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">
+            Dificultad: <strong style="color: #fff;">${mod.difficulty}</strong>
+          </span>
+        </div>
+
+        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin-bottom: 0.4rem;">
+          ${mod.title}
+        </h4>
+        <p style="font-size: 0.83rem; color: var(--text-muted); margin-bottom: 0.85rem; line-height: 1.4;">
+          ${mod.summary}
+        </p>
+
+        <div style="background: var(--bg-secondary); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.85rem;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">
+            <i class="fa-solid fa-list-check"></i> Pasos y Técnica Clave:
+          </div>
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            ${stepsListHtml}
+          </ul>
+        </div>
+
+        <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--accent-amber); padding: 0.65rem 0.85rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; font-size: 0.8rem; color: var(--text-secondary);">
+          <strong style="color: var(--accent-amber);"><i class="fa-solid fa-lightbulb"></i> Consejos Collie:</strong> ${mod.proTip}
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">
+          Sesiones practicadas: <strong style="color: var(--accent-emerald); font-size: 0.9rem;">${practiceCount}</strong>
+        </span>
+        <button type="button" class="btn-primary" onclick="markBooModulePracticed('${mod.id}')" style="font-size: 0.78rem; padding: 6px 12px;">
+          <i class="fa-solid fa-plus"></i> Registrar Práctica
+        </button>
+      </div>
+    `;
+    modulesGrid.appendChild(modCard);
+  });
+  container.appendChild(modulesGrid);
+
+  // 4. BOO MOOD & WALK NOTES LOGGER
+  const moodCard = document.createElement("div");
+  moodCard.className = "glass-card";
+  moodCard.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-face-smile-wink" style="color: var(--accent-amber);"></i> Registro Emocional y Notas del Paseo (${activeDay})
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.82rem;">Registra la actitud de Boo hoy y anotaciones de su evolución</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 1.25rem;">
+      <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">
+        Estado de Ánimo Predominante de Boo Hoy:
+      </label>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        ${["🧘‍♂️ Calma & Enfocada", "⚡ Alta Excitación", "🎾 Obsesionada con Pelota", "🎯 Excelente Respuesta a Llamada"].map(m => `
+          <button type="button" class="boo-mood-btn ${currentMood === m ? 'active' : ''}" onclick="setBooMood('${activeDay}', '${m}')" style="padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; border: 1px solid ${currentMood === m ? 'var(--accent-amber)' : 'var(--border-color)'}; background: ${currentMood === m ? 'rgba(245,158,11,0.2)' : 'var(--bg-secondary)'}; color: ${currentMood === m ? 'var(--accent-amber)' : 'var(--text-secondary)'}; cursor: pointer; transition: all 0.2s ease;">
+            ${m}
+          </button>
+        `).join("")}
+      </div>
+    </div>
+
+    <div>
+      <label for="boo-session-note-input" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">
+        Observaciones o Logro Destacado del Día:
+      </label>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <input type="text" id="boo-session-note-input" class="custom-input" placeholder="Ej: ¡Hoy volvió a la primera cuando la llamé en el parque!" value="${currentNote.replace(/"/g, '&quot;')}" style="flex: 1; min-width: 250px;">
+        <button type="button" class="btn-primary" onclick="saveBooSessionNotes('${activeDay}')">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar Nota
+        </button>
+      </div>
+    </div>
+  `;
+  container.appendChild(moodCard);
 }
 
 // RENDER PROGRESS VIEW WITH CHART.JS

@@ -532,3 +532,142 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     }
   }
 };
+
+export const BOO_TRAINING_MODULES = [
+  {
+    id: "ansiedad_pelota",
+    title: "Gestión de Ansiedad & Autocontrol con Pelota",
+    category: "Autocontrol Emocional",
+    icon: "fa-solid fa-baseball",
+    badgeColor: "var(--accent-amber)",
+    difficulty: "Intermedio",
+    duration: "10-15 min/día",
+    summary: "Aprender a gestionar la frustración y fijación cuando ve una pelota, manteniendo la calma antes de liberarla.",
+    steps: [
+      "Pelota estática en la mano a la altura del pecho. Si Boo se abalanza o ladra, la pelota se oculta inmediatamente a la espalda.",
+      "Pedir orden de 'Sentado' y 'Quieto' a 2 metros de distancia antes de mostrar el estímulo.",
+      "Recompensar el contacto visual y la respiración pausada (cuerpo relajado) con voz firme y suave ('Muy bien, quieto').",
+      "Lanzar o rodar la pelota ÚNICAMENTE tras dar la palabra de liberación ('¡Ya!' / 'Ok').",
+      "Si sale corriendo sin permiso, interceptar la pelota con el pie y reiniciar la secuencia en calma."
+    ],
+    proTip: "Los Border Collie tienen un impulso de persecución muy alto. El secreto no es prohibir la pelota, sino enseñarle que la calma es la única llave que abre el juego."
+  },
+  {
+    id: "paseo_junto",
+    title: "Paseo Junto & Atención Voluntaria ('Mírame')",
+    category: "Enfoque en Guías",
+    icon: "fa-solid fa-eye",
+    badgeColor: "var(--accent-cyan)",
+    difficulty: "Básico - Continuo",
+    duration: "Durante todo el paseo",
+    summary: "Conseguir que Boo camine más cerca de Carlos y Andrea, manteniendo contacto visual espontáneo y estando pendiente.",
+    steps: [
+      "Marcar voluntariedad: Cada vez que Boo se gire a mirar al guía espontáneamente durante el paseo, decir '¡Muy bien!' y entregar un premio pequeño junto a la pierna.",
+      "Cambios de dirección impredecibles: Cuando Boo se adelante, dar media vuelta sin tirones. Al seguirnos y ponerse a la par, premiar de inmediato.",
+      "Ejercicio 'Mírame' en estático: Sostener un premio en la mano, llevarlo a los ojos del guía y al hacer contacto visual, premiar inmediatamente.",
+      "Caminar con correa floja en ritmo variado (acelerar, frenar, parar) manteniendo la atención de Boo."
+    ],
+    proTip: "Premia siempre al lado de tu muslo. Así Boo asociará que la 'zona de recompensa mágica' está justo a vuestro lado."
+  },
+  {
+    id: "llamada_positiva",
+    title: "Refuerzo Positivo de la Llamada ('Fin del Paseo Feliz')",
+    category: "Obediencia y Vínculo",
+    icon: "fa-solid fa-bullhorn",
+    badgeColor: "var(--accent-emerald)",
+    difficulty: "Crucial",
+    duration: "8 - 10 repeticiones por paseo",
+    summary: "Desacoplar la idea de que la llamada significa el fin de la diversión. A Boo no le gusta que termine el paseo, por lo que debemos negativizar esa asociación.",
+    steps: [
+      "Regla del 80/20: Realizar 8 de cada 10 llamadas durante el paseo solo para premiar con súper chuches y SOLTARLA DE NUEVO a jugar inmediatamente.",
+      "Técnica 'Engancha y Suelta': Llamar a Boo ('¡Boo, aquí!'), enganchar la correa 5 segundos mientras come un premio de alto valor (pavo, queso) y volver a soltarla con alegría.",
+      "Nunca llamar a Boo para regañarle o únicamente al final cuando hay que irse al coche/casa.",
+      "Llamada de Final de Paseo (El Jackpot): Cuando sea la llamada definitiva para volver a casa, entregar un 'Jackpot' (3-4 premios seguidos súper ricos) y caminar jugando hacia casa."
+    ],
+    proTip: "Si Boo intuye que ser llamada equivale a perder su libertad, aprenderá a ignorarte. Haz que venir hacia ti sea el momento más divertido del paseo."
+  },
+  {
+    id: "paseo_relajado",
+    title: "Caminar Tranquila Atada (Sin Tirones)",
+    category: "Paseo Estructurado",
+    icon: "fa-solid fa-dog",
+    badgeColor: "var(--accent-purple)",
+    difficulty: "Progresivo",
+    duration: "15-20 min/día",
+    summary: "Enseñar a Boo a caminar atada con la correa destensada en forma de 'U', reduciendo la excitación al salir a la calle.",
+    steps: [
+      "Técnica de la Estatua: Si la correa se prensa un solo milímetro, el guía se detiene en seco. Sin gritar ni dar tirones hacia atrás.",
+      "Esperar la destensión: Mantenerse firme hasta que Boo dé medio paso atrás, mire o afloje la correa por sí misma.",
+      "Avanzar al aflojar: En cuanto la correa vuelva a estar en curva ('U'), reanudar la marcha inmediatamente como premio.",
+      "Usar arnés ergonómico de tiro en Y (nunca collar que oprima el cuello) para un paseo cómodo y seguro."
+    ],
+    proTip: "La correa es un hilo de comunicación, no de control físico. La constancia de parar cada vez que hay tensión es la clave absoluta."
+  }
+];
+
+export const BOO_WEEKLY_SCHEDULE = {
+  Lunes: {
+    day: "Lunes",
+    focusTitle: "Lunes: Autocontrol Emocional & Correa Relajada",
+    tasks: [
+      { id: "b_lun_1", module: "ansiedad_pelota", text: "10 min de espera y quieto con pelota antes del lanzamiento", duration: "10 min" },
+      { id: "b_lun_2", module: "paseo_relajado", text: "Paseo con técnica de estatua (parar al sentir tensión en correa)", duration: "20 min" },
+      { id: "b_lun_3", module: "llamada_positiva", text: "5 llamadas intermedias durante el paseo con premio y soltado inmediato", duration: "Paseo" }
+    ]
+  },
+  Martes: {
+    day: "Martes",
+    focusTitle: "Martes: Agilidad en Parque & Refuerzo de Llamada",
+    tasks: [
+      { id: "b_mar_1", module: "llamada_positiva", text: "8 llamadas de control con 'Engancha, premia y suelta' en el parque", duration: "15 min" },
+      { id: "b_mar_2", module: "paseo_junto", text: "Paseo en parque practicando 'Mírame' con cambios de ritmo", duration: "20 min" },
+      { id: "b_mar_3", module: "ansiedad_pelota", text: "Juego de Frisbee/Pelota solo bajo orden de liberación ('¡Ya!')", duration: "10 min" }
+    ]
+  },
+  Miércoles: {
+    day: "Miércoles",
+    focusTitle: "Miércoles: Contacto Visual Voluntario & Caminata Junto",
+    tasks: [
+      { id: "b_mie_1", module: "paseo_junto", text: "Premiar 15 contactos visuales espontáneos durante el paseo urbano", duration: "20 min" },
+      { id: "b_mie_2", module: "ansiedad_pelota", text: "Sesión de autocontrol: guardar pelota tras la espalda si hay excitación", duration: "10 min" },
+      { id: "b_mie_3", module: "paseo_relajado", text: "Práctica de giros de 180º en calle tranquila", duration: "15 min" }
+    ]
+  },
+  Jueves: {
+    day: "Jueves",
+    focusTitle: "Jueves: Paseo de Olfateo Calmo & Llamadas de Juego",
+    tasks: [
+      { id: "b_jue_1", module: "paseo_relajado", text: "Paseo largo de olfateo libre a ritmo pausado (reducción de cortisol)", duration: "25 min" },
+      { id: "b_jue_2", module: "llamada_positiva", text: "Llamada con premio 'Jackpot' de pavo al finalizar el paseo", duration: "5 min" },
+      { id: "b_jue_3", module: "paseo_junto", text: "Refuerzo de posición 'Junto' a la altura del muslo", duration: "10 min" }
+    ]
+  },
+  Viernes: {
+    day: "Viernes",
+    focusTitle: "Viernes: Circuito de Calma & Desconexión de Pelota",
+    tasks: [
+      { id: "b_vie_1", module: "ansiedad_pelota", text: "Semáforo de pelota: Sentado -> Botar pelota -> Liberación calmada", duration: "15 min" },
+      { id: "b_vie_2", module: "paseo_relajado", text: "Paseo atada practicando correa floja en forma de U", duration: "20 min" },
+      { id: "b_vie_3", module: "llamada_positiva", text: "6 llamadas de prueba sin cierre de paseo", duration: "Paseo" }
+    ]
+  },
+  Sábado: {
+    day: "Sábado",
+    focusTitle: "Sábado: Trail/Monte & Llamada en Distracción Real",
+    tasks: [
+      { id: "b_sab_1", module: "llamada_positiva", text: "Práctica de llamada de retorno con alta distracción en el monte", duration: "25 min" },
+      { id: "b_sab_2", module: "paseo_junto", text: "Caminata al lado en tramos estrechos del sendero", duration: "20 min" },
+      { id: "b_sab_3", module: "ansiedad_pelota", text: "Juego de buscar la pelota en hierba alta (olfateo + autocontrol)", duration: "15 min" }
+    ]
+  },
+  Domingo: {
+    day: "Domingo",
+    focusTitle: "Domingo: Paseo en Familia & Vínculo Positivo",
+    tasks: [
+      { id: "b_dom_1", module: "llamada_positiva", text: "Llamadas lúdicas compartidas entre Carlos y Andrea", duration: "15 min" },
+      { id: "b_dom_2", module: "paseo_relajado", text: "Paseo relajado sin prisas disfrutando de la naturaleza", duration: "25 min" },
+      { id: "b_dom_3", module: "ansiedad_pelota", text: "Masaje de relajación y soltado de tensión tras los paseos", duration: "10 min" }
+    ]
+  }
+};
+
