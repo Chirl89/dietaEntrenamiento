@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.4';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.0';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -253,6 +253,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.toggleAutoSync = toggleAutoSync;
   window.triggerManualSync = triggerManualSync;
   window.recordWatchWorkoutForDay = recordWatchWorkoutForDay;
+  window.registerWorkoutAsEstimate = registerWorkoutAsEstimate;
+  window.registerWorkoutAsWatch = registerWorkoutAsWatch;
+  window.uncheckWorkoutDay = uncheckWorkoutDay;
+  window.toggleWorkoutDay = toggleWorkoutDay;
   window.connectBluetoothHR = connectBluetoothHR;
   window.forceAppRefresh = forceAppRefresh;
   window.setAppleWatchSyncMode = setAppleWatchSyncMode;
@@ -1631,18 +1635,22 @@ function renderSummaryView() {
   if (todayWorkoutBox) {
     const todayName = getTodayDayName();
     const isCompleted = isDayCompleted(pid, todayName);
-    const watchData = getDayWatchData(pid, todayName);
+    const details = getDayWorkoutDetails(pid, todayName);
+    const routine = WEEKLY_WORKOUT_SCHEDULE[todayName] || {};
+    const estimatedKcal = routine.estimatedKcal || Math.round((routine.duration || 35) * 7.5);
 
-    if (isCompleted) {
-      const durationText = watchData?.durationMin ? `${watchData.durationMin} min` : "45 min";
-      const kcalText = watchData?.kcal ? `${watchData.kcal} kcal` : "350 kcal";
-      const hrText = watchData?.avgHr ? `${watchData.avgHr} BPM` : "140 BPM";
-      const deviceText = watchData?.deviceName ? `Registrado con ${watchData.deviceName} a las ${watchData.timestamp || 'hoy'}` : "Registrado en rutina de hoy";
+    if (isCompleted && details) {
+      const durationText = `${details.durationMin || 35} min`;
+      const kcalText = `${details.kcal || estimatedKcal} kcal`;
+      const hrText = details.avgHr ? `${details.avgHr} BPM` : (details.mode === 'watch' ? "138 BPM" : "Estimado");
+      const deviceText = details.mode === 'watch'
+        ? `Registrado con ${details.deviceName || 'Apple Watch'} (${details.timestamp})`
+        : `Registrado en base a estimación teórica (~${details.kcal} kcal)`;
 
       todayWorkoutBox.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-            <i class="fa-solid fa-circle-check"></i>
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: ${details.mode === 'watch' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(16, 185, 129, 0.15)'}; color: ${details.mode === 'watch' ? 'var(--accent-purple)' : 'var(--accent-emerald)'}; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="${details.mode === 'watch' ? 'fa-brands fa-apple' : 'fa-solid fa-circle-check'}"></i>
           </div>
           <div>
             <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
@@ -1654,17 +1662,22 @@ function renderSummaryView() {
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
           <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-emerald);">
             <i class="fa-solid fa-fire"></i> ${kcalText}
           </span>
           <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-cyan);">
             <i class="fa-solid fa-stopwatch"></i> ${durationText}
           </span>
-          <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-purple);">
-            <i class="fa-solid fa-heart-pulse"></i> ${hrText}
-          </span>
-          <button type="button" class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.76rem; background: rgba(244, 63, 94, 0.2); border: 1px solid var(--accent-rose); color: var(--accent-rose);" onclick="toggleWorkoutDay('${todayName}')">
+          ${details.mode === 'watch' ? `<span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-purple);"><i class="fa-solid fa-heart-pulse"></i> ${hrText}</span>` : ''}
+          
+          ${details.mode === 'estimate' ? `
+            <button type="button" class="btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.76rem; background: rgba(168, 85, 247, 0.2); border: 1px solid var(--accent-purple); color: #fff;" onclick="registerWorkoutAsWatch('${todayName}')" title="Vincular datos de Apple Watch">
+              <i class="fa-brands fa-apple"></i> Vincular Watch
+            </button>
+          ` : ''}
+
+          <button type="button" class="btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.76rem; background: rgba(244, 63, 94, 0.2); border: 1px solid var(--accent-rose); color: var(--accent-rose);" onclick="uncheckWorkoutDay('${todayName}')">
             <i class="fa-solid fa-rotate-left"></i> Desmarcar
           </button>
         </div>
@@ -1680,14 +1693,19 @@ function renderSummaryView() {
               Entrenamiento de Hoy (${todayName}): Pendiente
             </div>
             <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem;">
-              Pulsa para marcar el entrenamiento de hoy como completado
+              Rutina: <strong>${routine.title || todayName}</strong> (${routine.duration || 35} min • ~${estimatedKcal} kcal)
             </div>
           </div>
         </div>
 
-        <button type="button" class="btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; background: var(--accent-emerald);" onclick="toggleWorkoutDay('${todayName}')">
-          <i class="fa-solid fa-square-check"></i> Marcar Entreno Completado
-        </button>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; background: var(--accent-emerald);" onclick="registerWorkoutAsEstimate('${todayName}')" title="Registrar entrenamiento con la estimación teórica">
+            <i class="fa-solid fa-square-check"></i> Check (Estimación ~${estimatedKcal} kcal)
+          </button>
+          <button type="button" class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); border: none;" onclick="registerWorkoutAsWatch('${todayName}')" title="Registrar entrenamiento con datos reales del Apple Watch">
+            <i class="fa-brands fa-apple"></i> Registrar con Apple Watch
+          </button>
+        </div>
       `;
     }
   }
@@ -2138,7 +2156,7 @@ function forceAppRefresh() {
   }, 400);
 }
 
-// WORKOUT TRACKER & APPLE WATCH SESSION ENGINE
+// WORKOUT TRACKER & DUAL REGISTRATION ENGINE (CHECK ESTIMATION VS APPLE WATCH)
 function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
   if (!val) return false;
@@ -2147,17 +2165,90 @@ function isDayCompleted(profileId, dayName) {
   return false;
 }
 
-function getDayWatchData(profileId, dayName) {
+function getDayWorkoutDetails(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
-  if (val && typeof val === 'object' && val.watchData) {
-    return val.watchData;
-  }
+  if (!val) return null;
+
+  // Case 1: Legacy boolean true
   if (val === true) {
-    const snapshot = createWatchDataSnapshot(profileId);
-    if (!appState.completedWorkouts[profileId]) appState.completedWorkouts[profileId] = {};
-    appState.completedWorkouts[profileId][dayName] = { done: true, watchData: snapshot };
-    saveState();
-    return snapshot;
+    const routine = WEEKLY_WORKOUT_SCHEDULE[dayName] || {};
+    const durationMin = routine.duration || 35;
+    const estimatedKcal = routine.estimatedKcal || Math.round(durationMin * 7.5);
+    return {
+      mode: 'estimate',
+      kcal: estimatedKcal,
+      durationMin: durationMin,
+      timestamp: 'Registrado',
+      deviceName: null,
+      avgHr: null
+    };
+  }
+
+  if (typeof val === 'object' && val.done) {
+    // Mode explicitly watch
+    if (val.mode === 'watch' && val.watchData) {
+      return {
+        mode: 'watch',
+        kcal: val.watchData.kcal || 350,
+        durationMin: val.watchData.durationMin || 45,
+        avgHr: val.watchData.avgHr || 138,
+        maxHr: val.watchData.maxHr || 160,
+        deviceName: val.watchData.deviceName || "Apple Watch",
+        timestamp: val.watchData.timestamp || "Hoy",
+        watchData: val.watchData
+      };
+    }
+    
+    // Mode explicitly estimate
+    if (val.mode === 'estimate') {
+      const routine = WEEKLY_WORKOUT_SCHEDULE[dayName] || {};
+      const durationMin = val.estimatedData?.durationMin || routine.duration || 35;
+      const estimatedKcal = val.estimatedData?.kcal || routine.estimatedKcal || Math.round(durationMin * 7.5);
+      return {
+        mode: 'estimate',
+        kcal: estimatedKcal,
+        durationMin: durationMin,
+        timestamp: val.estimatedData?.timestamp || 'Hoy',
+        deviceName: null,
+        avgHr: null
+      };
+    }
+
+    // Fallback if legacy object with watchData but no mode set
+    if (val.watchData) {
+      return {
+        mode: 'watch',
+        kcal: val.watchData.kcal || 350,
+        durationMin: val.watchData.durationMin || 45,
+        avgHr: val.watchData.avgHr || 138,
+        maxHr: val.watchData.maxHr || 160,
+        deviceName: val.watchData.deviceName || "Apple Watch",
+        timestamp: val.watchData.timestamp || "Hoy",
+        watchData: val.watchData
+      };
+    }
+
+    // Default estimate fallback
+    const routine = WEEKLY_WORKOUT_SCHEDULE[dayName] || {};
+    const durationMin = routine.duration || 35;
+    const estimatedKcal = routine.estimatedKcal || Math.round(durationMin * 7.5);
+    return {
+      mode: 'estimate',
+      kcal: estimatedKcal,
+      durationMin: durationMin,
+      timestamp: 'Hoy',
+      deviceName: null,
+      avgHr: null
+    };
+  }
+
+  return null;
+}
+
+function getDayWatchData(profileId, dayName) {
+  const details = getDayWorkoutDetails(profileId, dayName);
+  if (details && details.mode === 'watch' && details.watchData) {
+    return details.watchData;
   }
   return null;
 }
@@ -2188,7 +2279,37 @@ function getTodayDayName() {
   return days[idx];
 }
 
-function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = true) {
+// 1. REGISTRAR CON ESTIMACIÓN (CHECK SIMPLE)
+function registerWorkoutAsEstimate(dayName = null, profileId = null) {
+  const pid = profileId || getMasterProfileId();
+  const targetDay = dayName || appState.activeWorkoutDay || getTodayDayName();
+  if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
+
+  const routine = WEEKLY_WORKOUT_SCHEDULE[targetDay] || {};
+  const durationMin = routine.duration || 35;
+  const estimatedKcal = routine.estimatedKcal || Math.round(durationMin * 7.5);
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  appState.completedWorkouts[pid][targetDay] = {
+    done: true,
+    mode: 'estimate',
+    estimatedData: {
+      kcal: estimatedKcal,
+      durationMin: durationMin,
+      title: routine.title || targetDay,
+      timestamp: timeStr
+    },
+    watchData: null
+  };
+
+  saveState();
+  renderAll();
+  const pName = appState.profiles[pid].name.split(" ")[0];
+  showIosToast(`✓ Entrenamiento de ${targetDay} registrado con estimación (~${estimatedKcal} kcal) - ${pName}`, "fa-solid fa-circle-check");
+}
+
+// 2. REGISTRAR CON APPLE WATCH (DATOS REALES)
+function registerWorkoutAsWatch(dayName = null, profileId = null, notify = true) {
   const pid = profileId || getMasterProfileId();
   const targetDay = dayName || appState.activeWorkoutDay || getTodayDayName();
   
@@ -2199,7 +2320,9 @@ function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = tru
   const snapshot = createWatchDataSnapshot(pid);
   appState.completedWorkouts[pid][targetDay] = {
     done: true,
-    watchData: snapshot
+    mode: 'watch',
+    watchData: snapshot,
+    estimatedData: null
   };
 
   saveState();
@@ -2207,32 +2330,44 @@ function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = tru
 
   if (notify) {
     const pName = appState.profiles[pid].name.split(" ")[0];
-    showIosToast(` Entrenamiento de ${targetDay} vinculado automáticamente desde Apple Watch (${pName})`, "fa-brands fa-apple");
+    showIosToast(` Entrenamiento de ${targetDay} registrado con Apple Watch (${snapshot.kcal} kcal - ${snapshot.durationMin} min - ${pName})`, "fa-brands fa-apple");
   }
 }
 
-function toggleWorkoutDay(dayName) {
+// Alias for backward compatibility
+function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = true) {
+  registerWorkoutAsWatch(dayName, profileId, notify);
+}
+
+// 3. TOGGLE REGISTRATION (CHECKBOX CLICK OR ACTION)
+function toggleWorkoutDay(dayName, mode = 'toggle') {
   const profileId = getMasterProfileId();
   if (!appState.completedWorkouts[profileId]) {
     appState.completedWorkouts[profileId] = {};
   }
 
-  const currentDone = isDayCompleted(profileId, dayName);
+  const isDone = isDayCompleted(profileId, dayName);
 
-  if (currentDone) {
-    appState.completedWorkouts[profileId][dayName] = { done: false, watchData: null };
-  } else {
-    const watchSnapshot = createWatchDataSnapshot(profileId);
-    appState.completedWorkouts[profileId][dayName] = {
-      done: true,
-      watchData: watchSnapshot
-    };
-    const pName = appState.profiles[profileId].name.split(" ")[0];
-    showIosToast(` Entrenamiento de ${dayName} registrado con Apple Watch (${pName}: ${watchSnapshot.kcal} kcal - ${watchSnapshot.durationMin} min)`, "fa-brands fa-apple");
+  if (mode === 'toggle') {
+    if (isDone) {
+      uncheckWorkoutDay(dayName, profileId);
+    } else {
+      registerWorkoutAsEstimate(dayName, profileId);
+    }
+  } else if (mode === 'estimate') {
+    registerWorkoutAsEstimate(dayName, profileId);
+  } else if (mode === 'watch') {
+    registerWorkoutAsWatch(dayName, profileId, true);
   }
+}
 
+function uncheckWorkoutDay(dayName, profileId = null) {
+  const pid = profileId || getMasterProfileId();
+  if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
+  appState.completedWorkouts[pid][dayName] = { done: false, mode: null, watchData: null, estimatedData: null };
   saveState();
   renderAll();
+  showIosToast(`Entrenamiento de ${dayName} desmarcado`, "fa-solid fa-circle-minus");
 }
 
 function resetWorkoutWeek() {
@@ -2242,15 +2377,16 @@ function resetWorkoutWeek() {
     appState.completedWorkouts[profileId] = {};
   }
   days.forEach(d => {
-    appState.completedWorkouts[profileId][d] = { done: false, watchData: null };
+    appState.completedWorkouts[profileId][d] = { done: false, mode: null, watchData: null, estimatedData: null };
   });
   saveState();
   renderAll();
+  showIosToast("Semana de entrenamientos reiniciada", "fa-solid fa-rotate-left");
 }
 
 function syncAppleWatchData() {
   triggerManualSync();
-  recordWatchWorkoutForDay(appState.activeWorkoutDay || "Lunes", getMasterProfileId(), true);
+  registerWorkoutAsWatch(appState.activeWorkoutDay || getTodayDayName(), getMasterProfileId(), true);
   openAppleWatchModal();
 }
 
@@ -2269,9 +2405,9 @@ function renderWorkoutTracker() {
   days.forEach(d => {
     if (isDayCompleted(profileId, d)) {
       completedCount++;
-      const watchData = getDayWatchData(profileId, d);
-      if (watchData && watchData.durationMin) {
-        totalMinutes += watchData.durationMin;
+      const details = getDayWorkoutDetails(profileId, d);
+      if (details && details.durationMin) {
+        totalMinutes += details.durationMin;
       } else {
         const schedule = WEEKLY_WORKOUT_SCHEDULE[d];
         if (schedule && schedule.duration) {
@@ -2293,7 +2429,7 @@ function renderWorkoutTracker() {
             Registro y Vista de Entrenamientos Semanales (${p.name})
           </h2>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
-            Sincronización en tiempo real con Apple Watch: los entrenamientos grabados en el reloj se vinculan automáticamente a su día correspondiente.
+            Registra tu entrenamiento con un <strong style="color: var(--accent-emerald);">Check (Estimación)</strong> o vincula los datos reales de tu <strong style="color: var(--accent-purple);"> Apple Watch</strong>.
           </p>
         </div>
         <button class="btn-secondary-sm" onclick="resetWorkoutWeek()" title="Reiniciar semana">
@@ -2351,36 +2487,53 @@ function renderWorkoutTracker() {
 
   days.forEach(day => {
     const isDone = isDayCompleted(profileId, day);
-    const watchData = getDayWatchData(profileId, day);
+    const details = getDayWorkoutDetails(profileId, day);
     const routine = WEEKLY_WORKOUT_SCHEDULE[day] || {};
+    const estimatedKcal = routine.estimatedKcal || Math.round((routine.duration || 35) * 7.5);
 
-    let watchBadgeHtml = "";
-    if (isDone && watchData) {
-      watchBadgeHtml = `
-        <div class="watch-day-badge">
-          <div class="watch-badge-top">
-            <span class="watch-badge-device"><i class="fa-brands fa-apple"></i> ${watchData.deviceName}</span>
-            <span class="watch-badge-time"><i class="fa-regular fa-clock"></i> ${watchData.timestamp}</span>
+    let badgeBoxHtml = "";
+    if (isDone && details) {
+      if (details.mode === 'watch') {
+        badgeBoxHtml = `
+          <div class="watch-day-badge mode-watch">
+            <div class="watch-badge-top">
+              <span class="watch-badge-device" style="color: var(--accent-purple);"><i class="fa-brands fa-apple"></i> ${details.deviceName || 'Apple Watch'}</span>
+              <span class="watch-badge-time"><i class="fa-regular fa-clock"></i> ${details.timestamp}</span>
+            </div>
+            <div class="watch-badge-metrics">
+              <span class="watch-mini-pill"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> ${details.durationMin} min</span>
+              <span class="watch-mini-pill"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> ${details.kcal} kcal</span>
+              ${details.avgHr ? `<span class="watch-mini-pill"><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> ${details.avgHr} BPM</span>` : ''}
+              <button class="btn-edit-watch-mini" onclick="event.stopPropagation(); openEditWorkoutWatchModal('${day}')" title="Calibrar datos reales de este entrenamiento"><i class="fa-solid fa-pen"></i></button>
+            </div>
           </div>
-          <div class="watch-badge-metrics">
-            <span class="watch-mini-pill"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> ${watchData.durationMin} min</span>
-            <span class="watch-mini-pill"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> ${watchData.kcal} kcal</span>
-            <span class="watch-mini-pill"><i class="fa-solid fa-heart-pulse" style="color:var(--accent-rose);"></i> ${watchData.avgHr} BPM</span>
-            <button class="btn-edit-watch-mini" onclick="event.stopPropagation(); openEditWorkoutWatchModal('${day}')" title="Calibrar datos reales de este entrenamiento"><i class="fa-solid fa-pen"></i></button>
+        `;
+      } else {
+        badgeBoxHtml = `
+          <div class="watch-day-badge mode-estimate" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.3);">
+            <div class="watch-badge-top">
+              <span class="watch-badge-device" style="color: var(--accent-emerald);"><i class="fa-solid fa-calculator"></i> Estimación Teórica</span>
+              <span class="watch-badge-time"><i class="fa-regular fa-clock"></i> ${details.timestamp}</span>
+            </div>
+            <div class="watch-badge-metrics">
+              <span class="watch-mini-pill"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> ${details.durationMin} min</span>
+              <span class="watch-mini-pill"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> ~${details.kcal} kcal</span>
+              <button class="btn-edit-watch-mini" style="background: rgba(168, 85, 247, 0.2); border-color: var(--accent-purple); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.7rem;" onclick="event.stopPropagation(); registerWorkoutAsWatch('${day}');" title="Vincular datos reales de Apple Watch"><i class="fa-brands fa-apple"></i> Vincular Watch</button>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
     }
 
     html += `
-      <div class="day-workout-card ${isDone ? 'completed' : ''}" onclick="toggleWorkoutDay('${day}')">
+      <div class="day-workout-card ${isDone ? 'completed' : ''}" onclick="toggleWorkoutDay('${day}', 'toggle')">
         <div class="day-card-top">
           <div class="day-checkbox-wrapper">
-            <input type="checkbox" ${isDone ? 'checked' : ''} onclick="event.stopPropagation(); toggleWorkoutDay('${day}')">
+            <input type="checkbox" ${isDone ? 'checked' : ''} onclick="event.stopPropagation(); toggleWorkoutDay('${day}', 'toggle')">
             <span class="day-name">${day}</span>
           </div>
-          <span class="day-status-badge ${isDone ? 'done' : 'pending'}">
-            ${isDone ? (watchData ? '<i class="fa-brands fa-apple"></i> Watch OK' : '<i class="fa-solid fa-circle-check"></i> Entrenado') : '<i class="fa-regular fa-circle"></i> Pendiente'}
+          <span class="day-status-badge ${isDone ? (details?.mode === 'watch' ? 'watch-ok' : 'done') : 'pending'}">
+            ${isDone ? (details?.mode === 'watch' ? '<i class="fa-brands fa-apple"></i> Watch OK' : '<i class="fa-solid fa-circle-check"></i> Estimado') : '<i class="fa-regular fa-circle"></i> Pendiente'}
           </span>
         </div>
 
@@ -2388,6 +2541,7 @@ function renderWorkoutTracker() {
         
         <div class="day-routine-meta">
           <span><i class="fa-solid fa-clock"></i> ${routine.duration || 0} min</span>
+          <span><i class="fa-solid fa-fire"></i> ~${estimatedKcal} kcal</span>
           <span><i class="fa-solid fa-location-dot"></i> ${routine.location || 'En casa'}</span>
         </div>
 
@@ -2395,7 +2549,18 @@ function renderWorkoutTracker() {
           <strong>Enfoque:</strong> ${routine.focus || 'Actividad libre'}
         </p>
 
-        ${watchBadgeHtml}
+        <!-- ACTION BUTTONS: DUAL CHOICE (CHECK ESTIMATION VS APPLE WATCH) -->
+        <div class="workout-card-quick-actions" onclick="event.stopPropagation();" style="margin-top: 0.5rem; display: flex; gap: 0.4rem;">
+          <button class="btn-action-mini ${isDone && details?.mode === 'estimate' ? 'active-est' : ''}" style="flex: 1; padding: 0.3rem 0.4rem; font-size: 0.73rem; border-radius: 6px; border: 1px solid var(--accent-emerald); background: rgba(16, 185, 129, 0.12); color: var(--accent-emerald); display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-weight: 600;" onclick="registerWorkoutAsEstimate('${day}')" title="Registrar con estimación de tiempo y calorías">
+            <i class="fa-solid fa-square-check"></i> ${isDone && details?.mode === 'estimate' ? 'Estimado ✓' : 'Check (~' + estimatedKcal + 'k)'}
+          </button>
+          
+          <button class="btn-action-mini ${isDone && details?.mode === 'watch' ? 'active-watch' : ''}" style="flex: 1; padding: 0.3rem 0.4rem; font-size: 0.73rem; border-radius: 6px; border: 1px solid var(--accent-purple); background: rgba(168, 85, 247, 0.15); color: #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-weight: 600;" onclick="registerWorkoutAsWatch('${day}')" title="Registrar con datos reales de Apple Watch">
+            <i class="fa-brands fa-apple" style="color: var(--accent-purple);"></i> ${isDone && details?.mode === 'watch' ? 'Watch OK ' : 'Apple Watch'}
+          </button>
+        </div>
+
+        ${badgeBoxHtml}
 
         <details style="margin-top: 0.6rem; font-size: 0.78rem;" onclick="event.stopPropagation();">
           <summary style="color: var(--accent-cyan); cursor: pointer; font-weight: 600;">
