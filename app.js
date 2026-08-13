@@ -1,15 +1,15 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.3.1';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.3.2';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
-const DEVICE_DEFAULT_PROFILE_KEY = "FITDUO_DEVICE_PREFERRED_PROFILE";
 const LAST_ACTIVE_PROFILE_KEY = "FITDUO_LAST_ACTIVE_PROFILE";
+const DEVICE_DEFAULT_PROFILE_KEY = "FITDUO_DEVICE_DEFAULT_PROFILE";
 const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
 
 // INITIAL FALLBACK METRICS
 let defaultWatchMetrics = {
-  he: { deviceName: "Apple Watch (Carlos)", battery: 100, hr: 0, maxHr: 165, steps: 0, stepsGoal: 10000, moveKcal: 0, moveGoal: 600, exerciseMin: 0, exerciseGoal: 30, distanceKm: 0 },
-  she: { deviceName: "Apple Watch (Andrea)", battery: 100, hr: 0, maxHr: 158, steps: 0, stepsGoal: 10000, moveKcal: 0, moveGoal: 500, exerciseMin: 0, exerciseGoal: 30, distanceKm: 0 }
+  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, targetKcal: 600, exerciseMin: 35, targetMin: 30, steps: 8450, targetSteps: 10000, hr: 72, distanceKm: 6.2 },
+  she: { deviceName: "Apple Watch SE", moveKcal: 420, targetKcal: 500, exerciseMin: 40, targetMin: 30, steps: 9120, targetSteps: 10000, hr: 68, distanceKm: 6.8 }
 };
 
 try {
@@ -23,7 +23,8 @@ try {
 
 // INITIAL STATE STRUCTURE
 let appState = {
-  activeProfileId: "he", // 'he' (Carlos) or 'she' (Andrea)
+  masterProfileId: "he", // 'he' (Carlos) or 'she' (Andrea) - Selected in Settings
+  activeProfileId: "he", // 'he' (Carlos) or 'she' (Andrea) - Visual view mode
   profiles: JSON.parse(JSON.stringify(INITIAL_PROFILES)),
   exclusions: [], // Kept for backward safety
   completedWorkouts: {
@@ -73,6 +74,22 @@ let appState = {
 let weightChart = null;
 let autoSyncIntervalTimer = null;
 
+// HELPER: GET MASTER PROFILE ID (SELECTED IN SETTINGS FOR DATA MUTATIONS)
+function getMasterProfileId() {
+  if (appState.masterProfileId === 'he' || appState.masterProfileId === 'she') {
+    return appState.masterProfileId;
+  }
+  const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
+  if (devicePref === 'he' || devicePref === 'she') {
+    return devicePref;
+  }
+  const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
+  if (lastProfile === 'he' || lastProfile === 'she') {
+    return lastProfile;
+  }
+  return 'he';
+}
+
 // LOAD STATE FROM LOCALSTORAGE
 function loadSavedState() {
   const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -99,14 +116,20 @@ function loadSavedState() {
     }
   } catch(e) {}
 
-  // Device-specific profile memory preference
+  // Device-specific master profile memory preference
   const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
   const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
 
   if (devicePref === 'he' || devicePref === 'she') {
-    appState.activeProfileId = devicePref;
+    appState.masterProfileId = devicePref;
   } else if (lastProfile === 'he' || lastProfile === 'she') {
-    appState.activeProfileId = lastProfile;
+    appState.masterProfileId = lastProfile;
+  } else {
+    appState.masterProfileId = 'he';
+  }
+
+  if (!appState.activeProfileId) {
+    appState.activeProfileId = appState.masterProfileId;
   }
 
   // Ensure names are updated to Carlos, Andrea, and Boo
@@ -405,7 +428,7 @@ function renderAll() {
   renderSubtabSegmentedControl(activeCatKey, activeTabId);
 }
 
-// PROFILE SWITCHER (DESKTOP & IPHONE HEADER SYNC)
+// PROFILE SWITCHER (DESKTOP & IPHONE HEADER VISUAL SWITCH)
 function switchProfile(profileId) {
   triggerHapticTouch();
   appState.activeProfileId = profileId;
@@ -425,6 +448,10 @@ function switchProfile(profileId) {
   if (iosBtnShe) iosBtnShe.classList.toggle("active", profileId === "she");
 
   renderAll();
+
+  const viewName = profileId === 'he' ? 'Carlos' : 'Andrea';
+  const masterName = getMasterProfileId() === 'he' ? 'Carlos' : 'Andrea';
+  showIosToast(`👁️ Modo Vista: ${viewName} (Los registros se guardarán en Perfil Maestro: ${masterName})`, "fa-solid fa-eye");
 }
 
 // TAB NAVIGATION (DESKTOP SIDEBAR & IPHONE DOCK SYNC WITH SUBTABS)
@@ -733,16 +760,14 @@ function checkUrlParamsForWatchSync() {
   }
 
   // Profile resolution: optional URL override (&profile=he / &profile=she / &profile=carlos / &profile=andrea)
-  let pid = appState.activeProfileId;
+  let pid = getMasterProfileId();
   const profileParam = params.get("profile") || params.get("user");
   if (profileParam) {
     const pLower = profileParam.toLowerCase();
     if (pLower.includes("carlos") || pLower === "he" || pLower === "m") {
       pid = "he";
-      appState.activeProfileId = "he";
     } else if (pLower.includes("andrea") || pLower === "she" || pLower === "f") {
       pid = "she";
-      appState.activeProfileId = "she";
     }
   }
 
@@ -949,7 +974,7 @@ async function checkClipboardForWatchSync(forceManual = false) {
 
     addDebugLog("🔍 ESTRUCTURA PARSEADA DE SALUD DE PORTAPAPELES", "health", json);
 
-    const pid = appState.activeProfileId;
+    const pid = getMasterProfileId();
     const m = appState.appleWatch.metrics[pid];
 
     let updated = false;
@@ -1423,7 +1448,7 @@ function saveWorkoutWatchDataFromModal(e) {
   e.preventDefault();
   triggerHapticTouch();
 
-  const pid = appState.activeProfileId;
+  const pid = getMasterProfileId();
   const dayName = document.getElementById("edit-workout-day-name")?.value;
   if (!dayName) return;
 
@@ -1650,33 +1675,35 @@ function renderProfileView() {
   renderWorkoutTracker();
 }
 
-// DEVICE PROFILE MEMORY SETTINGS & HANDLERS
+// DEVICE PROFILE MEMORY SETTINGS & HANDLERS (SETTINGS MASTER PROFILE)
 function setDeviceDefaultProfile(mode) {
   triggerHapticTouch();
   localStorage.setItem(DEVICE_DEFAULT_PROFILE_KEY, mode);
 
   if (mode === 'he' || mode === 'she') {
-    switchProfile(mode);
+    appState.masterProfileId = mode;
   } else {
     // 'last'
     const last = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY) || 'he';
-    switchProfile(last);
+    appState.masterProfileId = last;
   }
 
-  const msg = mode === 'he'
-    ? "📱 Perfil predeterminado en este teléfono fijado a CARLOS"
-    : mode === 'she'
-    ? "📱 Perfil predeterminado en este teléfono fijado a ANDREA"
-    : "📱 Se recordará el último perfil seleccionado en este teléfono";
+  saveState();
+  renderAll();
 
-  showIosToast(msg, "fa-solid fa-mobile-screen-button");
+  const masterName = appState.masterProfileId === 'he' ? 'Carlos' : 'Andrea';
+  const msg = mode === 'he'
+    ? "📱 Perfil Maestro fijado a CARLOS. Las modificaciones se aplicarán a Carlos."
+    : mode === 'she'
+    ? "📱 Perfil Maestro fijado a ANDREA. Las modificaciones se aplicarán a Andrea."
+    : `📱 Perfil Maestro fijado a recordar último (${masterName}).`;
+
+  showIosToast(msg, "fa-solid fa-shield-halved");
 }
 
 function renderSettingsView() {
   const currentPref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
-  const activeProfile = appState.activeProfileId || 'he';
-  const p = appState.profiles?.[activeProfile] || { name: activeProfile === 'he' ? 'Él (Carlos)' : 'Ella (Andrea)' };
-  const watchMetrics = appState.appleWatch?.metrics?.[activeProfile] || {};
+  const masterPid = getMasterProfileId();
 
   const btnHe = document.getElementById("pref-btn-he");
   const btnShe = document.getElementById("pref-btn-she");
@@ -1688,19 +1715,9 @@ function renderSettingsView() {
 
   const badge = document.getElementById("settings-device-badge");
   if (badge) {
-    const rawName = p.name || (activeProfile === 'he' ? 'Carlos' : 'Andrea');
-    let label = currentPref === 'he' ? "Carlos (Siempre)" : currentPref === 'she' ? "Andrea (Siempre)" : `Último usado (${rawName})`;
+    const rawName = masterPid === 'he' ? 'Carlos' : 'Andrea';
+    let label = currentPref === 'he' ? "Carlos (Perfil Maestro)" : currentPref === 'she' ? "Andrea (Perfil Maestro)" : `Último maestro (${rawName})`;
     badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> ${label}`;
-  }
-
-  const statusProfile = document.getElementById("settings-status-profile");
-  if (statusProfile) {
-    statusProfile.innerHTML = `<i class="fa-solid ${activeProfile === 'he' ? 'fa-mars' : 'fa-venus'}" style="color: var(--accent-emerald);"></i> ${p.name || 'Perfil Activo'}`;
-  }
-
-  const statusWatch = document.getElementById("settings-status-watch");
-  if (statusWatch) {
-    statusWatch.innerHTML = `<i class="fa-brands fa-apple" style="color: var(--accent-cyan);"></i> ${watchMetrics.deviceName || 'Apple Watch'}`;
   }
 }
 
@@ -1768,7 +1785,7 @@ function getTodayDayName() {
 }
 
 function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = true) {
-  const pid = profileId || appState.activeProfileId;
+  const pid = profileId || getMasterProfileId();
   const targetDay = dayName || appState.activeWorkoutDay || getTodayDayName();
   
   if (!appState.completedWorkouts[pid]) {
@@ -1791,7 +1808,7 @@ function recordWatchWorkoutForDay(dayName = null, profileId = null, notify = tru
 }
 
 function toggleWorkoutDay(dayName) {
-  const profileId = appState.activeProfileId;
+  const profileId = getMasterProfileId();
   if (!appState.completedWorkouts[profileId]) {
     appState.completedWorkouts[profileId] = {};
   }
@@ -1815,7 +1832,7 @@ function toggleWorkoutDay(dayName) {
 }
 
 function resetWorkoutWeek() {
-  const profileId = appState.activeProfileId;
+  const profileId = getMasterProfileId();
   const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
   if (!appState.completedWorkouts[profileId]) {
     appState.completedWorkouts[profileId] = {};
@@ -1829,7 +1846,7 @@ function resetWorkoutWeek() {
 
 function syncAppleWatchData() {
   triggerManualSync();
-  recordWatchWorkoutForDay(appState.activeWorkoutDay || "Lunes", appState.activeProfileId, true);
+  recordWatchWorkoutForDay(appState.activeWorkoutDay || "Lunes", getMasterProfileId(), true);
   openAppleWatchModal();
 }
 
@@ -3003,14 +3020,17 @@ function addWeightEntry() {
   const val = parseFloat(input.value);
   if (!isNaN(val) && val > 30 && val < 250) {
     const todayStr = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-    appState.weightLogs[appState.activeProfileId].push({
+    const targetPid = getMasterProfileId();
+    if (!appState.weightLogs[targetPid]) appState.weightLogs[targetPid] = [];
+    appState.weightLogs[targetPid].push({
       date: todayStr,
       weight: val
     });
     input.value = "";
     saveState();
     renderAll();
-    alert(`¡Registro de ${val} kg guardado correctamente!`);
+    const masterName = targetPid === 'he' ? 'Carlos' : 'Andrea';
+    showIosToast(`⚖️ ¡Registro de ${val} kg guardado en Perfil Maestro (${masterName})!`, "fa-solid fa-weight-scale");
   }
 }
 
