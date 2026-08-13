@@ -1533,8 +1533,10 @@ body {
 }
 
 .modal-overlay.active {
-  display: flex;
-  opacity: 1;
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 10000 !important;
 }
 
 .glass-modal {

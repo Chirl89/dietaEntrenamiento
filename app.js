@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.2.3';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.2.4';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2575,21 +2575,34 @@ function toggleBooAccordion(accordionId) {
 }
 
 function openBooBacklogModal() {
-  triggerHapticTouch();
-  const modal = document.getElementById("boo-backlog-modal");
-  if (!modal) return;
-  renderBooBacklogModalUI();
-  modal.classList.add("active");
+  try {
+    try { triggerHapticTouch(); } catch(e){}
+    const modal = document.getElementById("boo-backlog-modal");
+    if (!modal) {
+      console.error("Modal element #boo-backlog-modal not found");
+      return;
+    }
+    renderBooBacklogModalUI();
+    modal.style.display = "flex";
+    modal.classList.add("active");
+  } catch (err) {
+    console.error("Error opening Boo backlog modal:", err);
+  }
 }
 
 function closeBooBacklogModal() {
-  triggerHapticTouch();
-  const modal = document.getElementById("boo-backlog-modal");
-  if (modal) modal.classList.remove("active");
+  try {
+    try { triggerHapticTouch(); } catch(e){}
+    const modal = document.getElementById("boo-backlog-modal");
+    if (modal) {
+      modal.classList.remove("active");
+      modal.style.display = "none";
+    }
+  } catch (err) {}
 }
 
 function closeBooBacklogModalOnBackdrop(e) {
-  if (e.target.id === "boo-backlog-modal") {
+  if (e && e.target && e.target.id === "boo-backlog-modal") {
     closeBooBacklogModal();
   }
 }
@@ -3230,3 +3243,9 @@ setInterval(() => {
     syncTimeEl.innerText = formatSyncRelativeTime(appState.appleWatch.lastGlobalSync);
   }
 }, 5000);
+
+// Global Window Exports for Boo Modal
+window.openBooBacklogModal = openBooBacklogModal;
+window.closeBooBacklogModal = closeBooBacklogModal;
+window.closeBooBacklogModalOnBackdrop = closeBooBacklogModalOnBackdrop;
+
