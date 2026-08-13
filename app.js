@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.2';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.3';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -184,20 +184,30 @@ function loadSavedState() {
   }
 }
 
-// SAVE STATE TO LOCALSTORAGE
+// SAVE STATE TO LOCALSTORAGE & PUSH TO CLOUD
 function saveState() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
   if (appState.appleWatch?.metrics) {
     localStorage.setItem(LAST_REGISTERED_METRICS_KEY, JSON.stringify(appState.appleWatch.metrics));
   }
+  pushToCloud(false);
 }
 
 // INITIALIZATION ON DOM READY
 document.addEventListener("DOMContentLoaded", () => {
   loadSavedState();
+
+  setTimeout(() => {
+    pullFromCloud(false);
+  }, 1000);
+
+  setInterval(() => {
+    pullFromCloud(false);
+  }, 15000);
   
   // Make functions available globally on window object for HTML inline onclick handlers
   window.switchProfile = switchProfile;
+  window.syncNowWithCloud = syncNowWithCloud;
   window.setDeviceDefaultProfile = setDeviceDefaultProfile;
   window.showTab = showTab;
   window.switchCategory = switchCategory;
@@ -1959,6 +1969,158 @@ function renderSettingsView() {
 
   updateUIProfileNames();
   populateSettingsInputs();
+  updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
+}
+
+// MULTI-DEVICE CLOUD SYNC ENGINE
+const CLOUD_SYNC_APP_KEY = "fitduo_v1";
+const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
+let isCloudSyncing = false;
+
+function getCloudSyncKey() {
+  return localStorage.getItem("FITDUO_CLOUD_KEY") || DEFAULT_CLOUD_KEY;
+}
+
+export async function pushToCloud(showToast = false) {
+  if (isCloudSyncing) return;
+  isCloudSyncing = true;
+  try {
+    const key = getCloudSyncKey();
+    const payload = {
+      masterProfileId: appState.masterProfileId,
+      timestamp: new Date().toISOString(),
+      profiles: {
+        he: appState.profiles?.he,
+        she: appState.profiles?.she,
+        dog: appState.profiles?.dog
+      },
+      completedWorkouts: {
+        he: appState.completedWorkouts?.he,
+        she: appState.completedWorkouts?.she
+      },
+      weightLogs: {
+        he: appState.weightLogs?.he,
+        she: appState.weightLogs?.she
+      },
+      appleWatch: {
+        metrics: appState.appleWatch?.metrics
+      }
+    };
+
+    const cleanJson = JSON.stringify(payload);
+    const encodedData = encodeURIComponent(cleanJson);
+    const url = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
+
+    const res = await fetch(url, { method: "POST" });
+    if (res.ok) {
+      appState.lastCloudSync = new Date().toISOString();
+      updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
+      if (showToast && typeof showIosToast === 'function') {
+        showIosToast("☁️ ¡Datos de ambos perfiles sincronizados en la nube!", "fa-solid fa-cloud-arrow-up");
+      }
+    }
+  } catch (e) {
+    console.warn("Cloud sync push error:", e);
+    updateCloudSyncUI("Nube en Espera (Local Guardado)", false);
+  } finally {
+    isCloudSyncing = false;
+  }
+}
+window.pushToCloud = pushToCloud;
+
+export async function pullFromCloud(showToast = false) {
+  if (isCloudSyncing) return;
+  isCloudSyncing = true;
+  try {
+    const key = getCloudSyncKey();
+    const url = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const rawText = await res.text();
+      if (rawText && rawText !== "null" && rawText.length > 5) {
+        try {
+          const decoded = decodeURIComponent(rawText);
+          const cloudData = JSON.parse(decoded);
+          
+          if (cloudData && typeof cloudData === 'object') {
+            const masterPid = getMasterProfileId();
+            const otherPid = masterPid === 'he' ? 'she' : 'he';
+
+            // Smart Merge: update OTHER profile's data from cloud without overwriting local master profile's data
+            let hasChanges = false;
+            if (cloudData.profiles?.[otherPid]) {
+              appState.profiles[otherPid] = { ...appState.profiles[otherPid], ...cloudData.profiles[otherPid] };
+              hasChanges = true;
+            }
+            if (cloudData.profiles?.dog) {
+              appState.profiles.dog = { ...appState.profiles.dog, ...cloudData.profiles.dog };
+              hasChanges = true;
+            }
+            if (cloudData.completedWorkouts?.[otherPid]) {
+              appState.completedWorkouts[otherPid] = { ...appState.completedWorkouts[otherPid], ...cloudData.completedWorkouts[otherPid] };
+              hasChanges = true;
+            }
+            if (cloudData.weightLogs?.[otherPid]) {
+              appState.weightLogs[otherPid] = cloudData.weightLogs[otherPid];
+              hasChanges = true;
+            }
+            if (cloudData.appleWatch?.metrics?.[otherPid]) {
+              appState.appleWatch.metrics[otherPid] = { ...appState.appleWatch.metrics[otherPid], ...cloudData.appleWatch.metrics[otherPid] };
+              hasChanges = true;
+            }
+
+            if (hasChanges) {
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+            }
+
+            appState.lastCloudSync = new Date().toISOString();
+            updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
+
+            if (showToast && typeof showIosToast === 'function') {
+              showIosToast("☁️ ¡Datos actualizados desde la nube!", "fa-solid fa-cloud-arrow-down");
+            }
+          }
+        } catch (e) {
+          console.warn("Could not parse cloud JSON:", e);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Cloud sync pull error:", e);
+  } finally {
+    isCloudSyncing = false;
+  }
+}
+window.pullFromCloud = pullFromCloud;
+
+export function syncNowWithCloud() {
+  triggerHapticTouch();
+  if (typeof showIosToast === 'function') {
+    showIosToast("☁️ Sincronizando datos con la nube...", "fa-solid fa-arrows-rotate");
+  }
+  pushToCloud(false).then(() => {
+    pullFromCloud(true).then(() => {
+      renderAll();
+    });
+  });
+}
+window.syncNowWithCloud = syncNowWithCloud;
+
+function updateCloudSyncUI(statusText, isConnected) {
+  const statusEl = document.getElementById("cloud-sync-status-text");
+  if (statusEl) statusEl.innerText = `Estado: ${statusText}`;
+
+  const timeEl = document.getElementById("cloud-last-sync-time");
+  if (timeEl) {
+    const timeStr = appState.lastCloudSync ? new Date(appState.lastCloudSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Reciente';
+    timeEl.innerText = `Última actualización: ${timeStr}`;
+  }
+
+  const badgeEl = document.getElementById("cloud-status-badge");
+  if (badgeEl) {
+    badgeEl.className = `cloud-status-badge ${isConnected ? '' : 'offline'}`;
+    badgeEl.innerHTML = `<i class="fa-solid ${isConnected ? 'fa-cloud' : 'fa-cloud-slash'}"></i> Nube ${isConnected ? 'Conectada' : 'Local'}`;
+  }
 }
 
 function forceAppRefresh() {
