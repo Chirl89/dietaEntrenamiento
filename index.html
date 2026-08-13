@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Application CSS -->
-  <link rel="stylesheet" href="styles.css?v=0.4.1">
+  <link rel="stylesheet" href="styles.css?v=0.5.0">
   
   <!-- Chart.js for progress graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -32,7 +32,7 @@
   <header class="ios-top-bar">
     <div class="ios-header-brand">
       <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
-      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.4.1</span></span>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.5.0</span></span>
     </div>
 
     <div class="ios-header-actions">
@@ -60,7 +60,7 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div>
-            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.4.1</span></div>
+            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.5.0</span></div>
             <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
           </div>
         </div>
@@ -112,7 +112,7 @@
           <i class="fa-brands fa-apple"></i>
           <div>
             <div class="user-pill-name" id="sidebar-watch-user">Carlos (Series 9)</div>
-            <div class="user-pill-status"> Salud Conectada • v0.4.1</div>
+            <div class="user-pill-status"> Salud Conectada • v0.5.0</div>
           </div>
         </div>
       </div>
@@ -732,6 +732,184 @@
               <span>Esta preferencia se guarda localmente en este móvil/navegador y no afecta al otro usuario.</span>
             </div>
           </div>
+
+          <!-- CUSTOMIZATION CARD: NOMBRES Y OBJETIVOS -->
+          <div class="glass-card settings-custom-card" style="margin-top: 1.5rem; padding: 1.5rem;">
+            <div class="settings-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="brand-icon-sm" style="background: rgba(147, 51, 234, 0.15); color: var(--accent-purple); border: 1px solid rgba(147, 51, 234, 0.3);">
+                  <i class="fa-solid fa-sliders"></i>
+                </div>
+                <div>
+                  <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">Personalización de Nombres & Objetivos</h3>
+                  <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--text-muted);">Personaliza los nombres de la pareja y perro, y ajusta las metas de los 3 anillos y nutrición.</p>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="saveCustomSettings()" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border: none; font-weight: 600; padding: 0.6rem 1.2rem; border-radius: var(--radius-md); font-size: 0.9rem;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar y Aplicar
+              </button>
+            </div>
+
+            <!-- SECTION 1: NOMBRES -->
+            <div style="margin-bottom: 1.5rem;">
+              <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-users"></i> Nombres de la Pareja y Mascota
+              </h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                <div class="form-group">
+                  <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+                    <i class="fa-solid fa-mars" style="color: var(--accent-cyan);"></i> Nombre Persona 1 (Él)
+                  </label>
+                  <input type="text" id="setting-name-he" class="ios-input" placeholder="Carlos" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-weight: 500;">
+                </div>
+                <div class="form-group">
+                  <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+                    <i class="fa-solid fa-venus" style="color: var(--accent-violet);"></i> Nombre Persona 2 (Ella)
+                  </label>
+                  <input type="text" id="setting-name-she" class="ios-input" placeholder="Andrea" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-weight: 500;">
+                </div>
+                <div class="form-group">
+                  <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+                    <i class="fa-solid fa-dog" style="color: var(--accent-amber);"></i> Nombre Mascota (Perro)
+                  </label>
+                  <input type="text" id="setting-name-dog" class="ios-input" placeholder="Boo" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-weight: 500;">
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: OBJETIVOS DE ANILLOS DE ACTIVIDAD -->
+            <div style="margin-bottom: 1.5rem;">
+              <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--accent-red); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-brands fa-apple"></i> Objetivos de los 3 Anillos de Actividad (Apple Watch)
+              </h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+                <!-- Ring goals Él -->
+                <div style="background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--accent-cyan); margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-mars"></i> <span id="setting-label-ring-he">Objetivos Él</span></span>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0.6rem;">
+                    <label style="font-size: 0.78rem; font-weight: 600; color: var(--accent-red); display: flex; align-items: center; gap: 0.3rem;">
+                      <i class="fa-solid fa-fire"></i> Anillo Movimiento (kcal)
+                    </label>
+                    <input type="number" id="setting-move-goal-he" class="ios-input" placeholder="600" min="100" max="3000" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary);">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0.6rem;">
+                    <label style="font-size: 0.78rem; font-weight: 600; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.3rem;">
+                      <i class="fa-solid fa-person-running"></i> Anillo Ejercicio (minutos)
+                    </label>
+                    <input type="number" id="setting-ex-goal-he" class="ios-input" placeholder="30" min="10" max="300" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary);">
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 0.78rem; font-weight: 600; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.3rem;">
+                      <i class="fa-solid fa-shoe-prints"></i> Anillo Pasos / De Pie (pasos)
+                    </label>
+                    <input type="number" id="setting-steps-goal-he" class="ios-input" placeholder="10000" min="1000" max="50000" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary);">
+                  </div>
+                </div>
+
+                <!-- Ring goals Ella -->
+                <div style="background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--accent-violet); margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-venus"></i> <span id="setting-label-ring-she">Objetivos Ella</span></span>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0.6rem;">
+                    <label style="font-size: 0.78rem; font-weight: 600; color: var(--accent-red); display: flex; align-items: center; gap: 0.3rem;">
+                      <i class="fa-solid fa-fire"></i> Anillo Movimiento (kcal)
+                    </label>
+                    <input type="number" id="setting-move-goal-she" class="ios-input" placeholder="500" min="100" max="3000" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary);">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0.6rem;">
+                    <label style="font-size: 0.78rem; font-weight: 600; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.3rem;">
+                      <i class="fa-solid fa-person-running"></i> Anillo Ejercicio (minutos)
+                    </label>
+                    <input type="number" id="setting-ex-goal-she" class="ios-input" placeholder="30" min="10" max="300" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary);">
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 0.78rem; font-weight: 600; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.3rem;">
+                      <i class="fa-solid fa-shoe-prints"></i> Anillo Pasos / De Pie (pasos)
+                    </label>
+                    <input type="number" id="setting-steps-goal-she" class="ios-input" placeholder="10000" min="1000" max="50000" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary);">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 3: OBJETIVOS NUTRICIONALES Y PERRO -->
+            <div style="margin-bottom: 1.5rem;">
+              <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--accent-emerald); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-utensils"></i> Objetivos Nutricionales & Paseo de Mascota
+              </h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+                <!-- Nutrición Él -->
+                <div style="background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                  <div style="font-weight: 700; font-size: 0.88rem; color: var(--accent-cyan); margin-bottom: 0.6rem;">
+                    <span id="setting-label-nut-he">Nutrición Él</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div>
+                      <label style="font-size: 0.72rem; color: var(--text-muted);">Calorías (kcal)</label>
+                      <input type="number" id="setting-cal-he" class="ios-input" placeholder="2150" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.72rem; color: var(--text-muted);">Proteína (g)</label>
+                      <input type="number" id="setting-prot-he" class="ios-input" placeholder="155" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.72rem; color: var(--text-muted);">Carbs (g)</label>
+                      <input type="number" id="setting-carbs-he" class="ios-input" placeholder="210" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.72rem; color: var(--text-muted);">Grasas (g)</label>
+                      <input type="number" id="setting-fats-he" class="ios-input" placeholder="65" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Nutrición Ella -->
+                <div style="background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                  <div style="font-weight: 700; font-size: 0.88rem; color: var(--accent-violet); margin-bottom: 0.6rem;">
+                    <span id="setting-label-nut-she">Nutrición Ella</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div>
+                      <label style="font-size: 0.72rem; color: var(--text-muted);">Calorías (kcal)</label>
+                      <input type="number" id="setting-cal-she" class="ios-input" placeholder="1850" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.72rem; color: var(--text-muted);">Proteína (g)</label>
+                      <input type="number" id="setting-prot-she" class="ios-input" placeholder="130" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.72rem; color: var(--text-muted);">Carbs (g)</label>
+                      <input type="number" id="setting-carbs-she" class="ios-input" placeholder="180" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.72rem; color: var(--text-muted);">Grasas (g)</label>
+                      <input type="number" id="setting-fats-she" class="ios-input" placeholder="55" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Paseo Mascota -->
+              <div style="margin-top: 1rem; background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.88rem; color: var(--accent-amber);"><i class="fa-solid fa-paw"></i> Paseo Diario de Mascota (<span id="setting-label-dog-walk">Boo</span>)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Objetivo de actividad diaria en exterior (minutos)</div>
+                </div>
+                <div style="width: 130px;">
+                  <input type="number" id="setting-dog-walk-min" class="ios-input" placeholder="75" min="15" max="300" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem;">
+                </div>
+              </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 1.25rem;">
+              <button class="btn btn-primary" onclick="saveCustomSettings()" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border: none; font-weight: 600; padding: 0.7rem 1.5rem; border-radius: var(--radius-md); font-size: 0.95rem;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar y Aplicar Cambios
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -886,6 +1064,6 @@
   <div id="ios-toast-container" class="ios-toast-container"></div>
 
   <!-- Application Logic -->
-  <script type="module" src="app.js?v=0.4.1"></script>
+  <script type="module" src="app.js?v=0.5.0"></script>
 </body>
 </html>

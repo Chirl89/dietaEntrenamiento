@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.4.1';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.0';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -8,8 +8,8 @@ const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
 
 // INITIAL FALLBACK METRICS
 let defaultWatchMetrics = {
-  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, targetKcal: 600, exerciseMin: 35, targetMin: 30, steps: 8450, targetSteps: 10000, hr: 72, distanceKm: 6.2 },
-  she: { deviceName: "Apple Watch SE", moveKcal: 420, targetKcal: 500, exerciseMin: 40, targetMin: 30, steps: 9120, targetSteps: 10000, hr: 68, distanceKm: 6.8 }
+  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2 },
+  she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8 }
 };
 
 try {
@@ -135,9 +135,25 @@ function loadSavedState() {
     appState.activeProfileId = appState.masterProfileId;
   }
 
-  // Ensure names are updated to Carlos, Andrea, and Boo
-  appState.profiles.he.name = "Él (Carlos)";
-  appState.profiles.she.name = "Ella (Andrea)";
+  // Ensure profiles structure & names exist
+  if (!appState.profiles) appState.profiles = JSON.parse(JSON.stringify(INITIAL_PROFILES));
+  if (!appState.profiles.he) appState.profiles.he = { ...INITIAL_PROFILES.he };
+  if (!appState.profiles.she) appState.profiles.she = { ...INITIAL_PROFILES.she };
+  if (!appState.profiles.dog) appState.profiles.dog = { ...INITIAL_PROFILES.dog };
+
+  if (appState.profiles.he.name === "Él (Carlos)") appState.profiles.he.name = "Carlos";
+  if (appState.profiles.she.name === "Ella (Andrea)") appState.profiles.she.name = "Andrea";
+  if (appState.profiles.dog.name === "Boo (Border Collie)") appState.profiles.dog.name = "Boo";
+
+  // Ensure ring goals in metrics
+  ['he', 'she'].forEach(pid => {
+    if (!appState.appleWatch.metrics) appState.appleWatch.metrics = defaultWatchMetrics;
+    if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = { ...defaultWatchMetrics[pid] };
+    const m = appState.appleWatch.metrics[pid];
+    if (!m.moveGoal) m.moveGoal = m.targetKcal || (pid === 'he' ? 600 : 500);
+    if (!m.exerciseGoal) m.exerciseGoal = m.targetMin || 30;
+    if (!m.stepsGoal) m.stepsGoal = m.targetSteps || 10000;
+  });
   
   if (!appState.completedWorkouts) {
     appState.completedWorkouts = {
@@ -1334,20 +1350,23 @@ function updateAppleWatchModalUI() {
   document.querySelectorAll("[id='watch-metric-kcal']").forEach(el => el.innerHTML = `${m.moveKcal} <small>kcal</small>`);
 
   // Apple Activity Rings Calculations
-  const moveRatio = Math.min(1.2, m.moveKcal / m.moveGoal);
+  const moveGoal = m.moveGoal || m.targetKcal || 600;
+  const moveRatio = Math.min(1.2, m.moveKcal / moveGoal);
   const moveOffset = Math.max(0, 314 - (314 * Math.min(1, moveRatio)));
   document.querySelectorAll("[id='ring-move-circle']").forEach(el => el.style.strokeDashoffset = moveOffset);
-  document.querySelectorAll("[id='ring-move-val']").forEach(el => el.innerText = `${m.moveKcal} / ${m.moveGoal} kcal`);
+  document.querySelectorAll("[id='ring-move-val']").forEach(el => el.innerText = `${m.moveKcal} / ${moveGoal} kcal`);
 
-  const exRatio = Math.min(1.2, m.exerciseMin / m.exerciseGoal);
+  const exGoal = m.exerciseGoal || m.targetMin || 30;
+  const exRatio = Math.min(1.2, m.exerciseMin / exGoal);
   const exOffset = Math.max(0, 238 - (238 * Math.min(1, exRatio)));
   document.querySelectorAll("[id='ring-exercise-circle']").forEach(el => el.style.strokeDashoffset = exOffset);
-  document.querySelectorAll("[id='ring-exercise-val']").forEach(el => el.innerText = `${m.exerciseMin} / ${m.exerciseGoal} min`);
+  document.querySelectorAll("[id='ring-exercise-val']").forEach(el => el.innerText = `${m.exerciseMin} / ${exGoal} min`);
 
-  const stepsRatio = Math.min(1.2, m.steps / (m.stepsGoal || 10000));
+  const stepsGoal = m.stepsGoal || m.targetSteps || 10000;
+  const stepsRatio = Math.min(1.2, m.steps / stepsGoal);
   const stepsOffset = Math.max(0, 163 - (163 * Math.min(1, stepsRatio)));
   document.querySelectorAll("[id='ring-steps-circle'], [id='ring-stand-circle']").forEach(el => el.style.strokeDashoffset = stepsOffset);
-  document.querySelectorAll("[id='ring-steps-val'], [id='ring-stand-val']").forEach(el => el.innerText = `${m.steps.toLocaleString()} / ${(m.stepsGoal || 10000).toLocaleString()} pasos`);
+  document.querySelectorAll("[id='ring-steps-val'], [id='ring-stand-val']").forEach(el => el.innerText = `${m.steps.toLocaleString()} / ${stepsGoal.toLocaleString()} pasos`);
 
   // Render Sync Logs
   const logList = document.getElementById("sync-log-list");
@@ -1563,26 +1582,29 @@ function renderSummaryView() {
   if (kcalEl) kcalEl.innerHTML = `${m.moveKcal} <small>kcal</small>`;
 
   // Rings
+  const moveGoal = m.moveGoal || m.targetKcal || 600;
   const moveCircle = document.getElementById("summary-ring-move-circle");
-  const moveRatio = Math.min(1.2, m.moveKcal / m.moveGoal);
+  const moveRatio = Math.min(1.2, m.moveKcal / moveGoal);
   const moveOffset = Math.max(0, 314 - (314 * Math.min(1, moveRatio)));
   if (moveCircle) moveCircle.style.strokeDashoffset = moveOffset;
   const moveValEl = document.getElementById("summary-ring-move-val");
-  if (moveValEl) moveValEl.innerText = `${m.moveKcal} / ${m.moveGoal} kcal`;
+  if (moveValEl) moveValEl.innerText = `${m.moveKcal} / ${moveGoal} kcal`;
 
+  const exGoal = m.exerciseGoal || m.targetMin || 30;
   const exCircle = document.getElementById("summary-ring-exercise-circle");
-  const exRatio = Math.min(1.2, m.exerciseMin / m.exerciseGoal);
+  const exRatio = Math.min(1.2, m.exerciseMin / exGoal);
   const exOffset = Math.max(0, 238 - (238 * Math.min(1, exRatio)));
   if (exCircle) exCircle.style.strokeDashoffset = exOffset;
   const exValEl = document.getElementById("summary-ring-exercise-val");
-  if (exValEl) exValEl.innerText = `${m.exerciseMin} / ${m.exerciseGoal} min`;
+  if (exValEl) exValEl.innerText = `${m.exerciseMin} / ${exGoal} min`;
 
+  const stepsGoal = m.stepsGoal || m.targetSteps || 10000;
   const stepsCircle = document.getElementById("summary-ring-steps-circle") || document.getElementById("summary-ring-stand-circle");
-  const stepsRatio = Math.min(1.2, m.steps / (m.stepsGoal || 10000));
+  const stepsRatio = Math.min(1.2, m.steps / stepsGoal);
   const stepsOffset = Math.max(0, 163 - (163 * Math.min(1, stepsRatio)));
   if (stepsCircle) stepsCircle.style.strokeDashoffset = stepsOffset;
   const stepsValEl = document.getElementById("summary-ring-steps-val") || document.getElementById("summary-ring-stand-val");
-  if (stepsValEl) stepsValEl.innerText = `${m.steps.toLocaleString()} / ${(m.stepsGoal || 10000).toLocaleString()} pasos`;
+  if (stepsValEl) stepsValEl.innerText = `${m.steps.toLocaleString()} / ${stepsGoal.toLocaleString()} pasos`;
 
   // Nutrition targets
   const targetCalEl = document.getElementById("summary-target-calories");
@@ -1710,6 +1732,207 @@ function setDeviceDefaultProfile(mode) {
   showIosToast(msg, "fa-solid fa-shield-halved");
 }
 
+// HELPER: GET SHORT PROFILE NAME
+export function getProfileShortName(pid) {
+  if (!appState || !appState.profiles) {
+    if (pid === 'he') return "Carlos";
+    if (pid === 'she') return "Andrea";
+    if (pid === 'dog') return "Boo";
+    return "Usuario";
+  }
+  if (pid === 'he') {
+    const raw = appState.profiles.he?.name || "Carlos";
+    return raw.replace(/^Él\s*\(/i, '').replace(/\)$/, '').trim() || "Carlos";
+  }
+  if (pid === 'she') {
+    const raw = appState.profiles.she?.name || "Andrea";
+    return raw.replace(/^Ella\s*\(/i, '').replace(/\)$/, '').trim() || "Andrea";
+  }
+  if (pid === 'dog') {
+    const raw = appState.profiles.dog?.name || "Boo";
+    return raw.replace(/\s*\(Border Collie\)$/i, '').trim() || "Boo";
+  }
+  return appState.profiles[pid]?.name || "Usuario";
+}
+window.getProfileShortName = getProfileShortName;
+
+// UPDATE ALL DYNAMIC UI PROFILE NAMES IN DOM
+function updateUIProfileNames() {
+  const heName = getProfileShortName('he');
+  const sheName = getProfileShortName('she');
+  const dogName = getProfileShortName('dog');
+
+  // Desktop & Header Profile Switchers
+  const btnHe = document.getElementById("btn-profile-he");
+  if (btnHe) btnHe.innerHTML = `<i class="fa-solid fa-mars"></i> ${heName}`;
+  const btnShe = document.getElementById("btn-profile-she");
+  if (btnShe) btnShe.innerHTML = `<i class="fa-solid fa-venus"></i> ${sheName}`;
+
+  // Mobile Topbar Profile Switchers
+  const iosBtnHe = document.getElementById("ios-btn-profile-he");
+  if (iosBtnHe) iosBtnHe.innerText = heName;
+  const iosBtnShe = document.getElementById("ios-btn-profile-she");
+  if (iosBtnShe) iosBtnShe.innerText = sheName;
+
+  // Settings view device memory card buttons
+  const prefBtnHe = document.querySelector("#pref-btn-he strong");
+  if (prefBtnHe) prefBtnHe.innerText = heName;
+  const prefBtnHeSpan = document.querySelector("#pref-btn-he .pref-btn-text span");
+  if (prefBtnHeSpan) prefBtnHeSpan.innerText = `Abrir siempre como ${heName} en este teléfono`;
+
+  const prefBtnShe = document.querySelector("#pref-btn-she strong");
+  if (prefBtnShe) prefBtnShe.innerText = sheName;
+  const prefBtnSheSpan = document.querySelector("#pref-btn-she .pref-btn-text span");
+  if (prefBtnSheSpan) prefBtnSheSpan.innerText = `Abrir siempre como ${sheName} en este teléfono`;
+
+  // Dynamic labels in Settings customization inputs
+  const ringLabelHe = document.getElementById("setting-label-ring-he");
+  if (ringLabelHe) ringLabelHe.innerText = `Objetivos ${heName}`;
+  const ringLabelShe = document.getElementById("setting-label-ring-she");
+  if (ringLabelShe) ringLabelShe.innerText = `Objetivos ${sheName}`;
+
+  const nutLabelHe = document.getElementById("setting-label-nut-he");
+  if (nutLabelHe) nutLabelHe.innerText = `Nutrición ${heName}`;
+  const nutLabelShe = document.getElementById("setting-label-nut-she");
+  if (nutLabelShe) nutLabelShe.innerText = `Nutrición ${sheName}`;
+
+  const dogWalkLabel = document.getElementById("setting-label-dog-walk");
+  if (dogWalkLabel) dogWalkLabel.innerText = dogName;
+}
+
+// POPULATE SETTINGS FORM INPUTS WITH CURRENT STATE
+function populateSettingsInputs() {
+  const heName = getProfileShortName('he');
+  const sheName = getProfileShortName('she');
+  const dogName = getProfileShortName('dog');
+
+  const inputNameHe = document.getElementById("setting-name-he");
+  if (inputNameHe) inputNameHe.value = heName;
+
+  const inputNameShe = document.getElementById("setting-name-she");
+  if (inputNameShe) inputNameShe.value = sheName;
+
+  const inputNameDog = document.getElementById("setting-name-dog");
+  if (inputNameDog) inputNameDog.value = dogName;
+
+  // Metrics Goals
+  const mHe = appState.appleWatch?.metrics?.he || {};
+  const mShe = appState.appleWatch?.metrics?.she || {};
+
+  const inputMoveHe = document.getElementById("setting-move-goal-he");
+  if (inputMoveHe) inputMoveHe.value = mHe.moveGoal || mHe.targetKcal || 600;
+
+  const inputExHe = document.getElementById("setting-ex-goal-he");
+  if (inputExHe) inputExHe.value = mHe.exerciseGoal || mHe.targetMin || 30;
+
+  const inputStepsHe = document.getElementById("setting-steps-goal-he");
+  if (inputStepsHe) inputStepsHe.value = mHe.stepsGoal || mHe.targetSteps || 10000;
+
+  const inputMoveShe = document.getElementById("setting-move-goal-she");
+  if (inputMoveShe) inputMoveShe.value = mShe.moveGoal || mShe.targetKcal || 500;
+
+  const inputExShe = document.getElementById("setting-ex-goal-she");
+  if (inputExShe) inputExShe.value = mShe.exerciseGoal || mShe.targetMin || 30;
+
+  const inputStepsShe = document.getElementById("setting-steps-goal-she");
+  if (inputStepsShe) inputStepsShe.value = mShe.stepsGoal || mShe.targetSteps || 10000;
+
+  // Nutrition Goals
+  const pHe = appState.profiles?.he || {};
+  const pShe = appState.profiles?.she || {};
+
+  const inputCalHe = document.getElementById("setting-cal-he");
+  if (inputCalHe) inputCalHe.value = pHe.targetCalories || 2150;
+  const inputProtHe = document.getElementById("setting-prot-he");
+  if (inputProtHe) inputProtHe.value = pHe.protein || 155;
+  const inputCarbsHe = document.getElementById("setting-carbs-he");
+  if (inputCarbsHe) inputCarbsHe.value = pHe.carbs || 210;
+  const inputFatsHe = document.getElementById("setting-fats-he");
+  if (inputFatsHe) inputFatsHe.value = pHe.fats || 65;
+
+  const inputCalShe = document.getElementById("setting-cal-she");
+  if (inputCalShe) inputCalShe.value = pShe.targetCalories || 1850;
+  const inputProtShe = document.getElementById("setting-prot-she");
+  if (inputProtShe) inputProtShe.value = pShe.protein || 130;
+  const inputCarbsShe = document.getElementById("setting-carbs-she");
+  if (inputCarbsShe) inputCarbsShe.value = pShe.carbs || 180;
+  const inputFatsShe = document.getElementById("setting-fats-she");
+  if (inputFatsShe) inputFatsShe.value = pShe.fats || 55;
+
+  // Dog walk
+  const pDog = appState.profiles?.dog || {};
+  const inputDogWalk = document.getElementById("setting-dog-walk-min");
+  if (inputDogWalk) inputDogWalk.value = pDog.dailyWalkMinutes || 75;
+}
+
+// SAVE CUSTOM SETTINGS FROM SETTINGS VIEW
+function saveCustomSettings() {
+  triggerHapticTouch();
+  const nameHe = document.getElementById("setting-name-he")?.value.trim() || "Carlos";
+  const nameShe = document.getElementById("setting-name-she")?.value.trim() || "Andrea";
+  const nameDog = document.getElementById("setting-name-dog")?.value.trim() || "Boo";
+
+  if (!appState.profiles) appState.profiles = {};
+  if (!appState.profiles.he) appState.profiles.he = {};
+  if (!appState.profiles.she) appState.profiles.she = {};
+  if (!appState.profiles.dog) appState.profiles.dog = {};
+
+  appState.profiles.he.name = nameHe;
+  appState.profiles.she.name = nameShe;
+  appState.profiles.dog.name = nameDog;
+
+  // Ring Goals
+  const moveGoalHe = parseInt(document.getElementById("setting-move-goal-he")?.value) || 600;
+  const exGoalHe = parseInt(document.getElementById("setting-ex-goal-he")?.value) || 30;
+  const stepsGoalHe = parseInt(document.getElementById("setting-steps-goal-he")?.value) || 10000;
+
+  const moveGoalShe = parseInt(document.getElementById("setting-move-goal-she")?.value) || 500;
+  const exGoalShe = parseInt(document.getElementById("setting-ex-goal-she")?.value) || 30;
+  const stepsGoalShe = parseInt(document.getElementById("setting-steps-goal-she")?.value) || 10000;
+
+  if (!appState.appleWatch) appState.appleWatch = {};
+  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
+  if (!appState.appleWatch.metrics.he) appState.appleWatch.metrics.he = {};
+  if (!appState.appleWatch.metrics.she) appState.appleWatch.metrics.she = {};
+
+  appState.appleWatch.metrics.he.moveGoal = moveGoalHe;
+  appState.appleWatch.metrics.he.targetKcal = moveGoalHe;
+  appState.appleWatch.metrics.he.exerciseGoal = exGoalHe;
+  appState.appleWatch.metrics.he.targetMin = exGoalHe;
+  appState.appleWatch.metrics.he.stepsGoal = stepsGoalHe;
+  appState.appleWatch.metrics.he.targetSteps = stepsGoalHe;
+
+  appState.appleWatch.metrics.she.moveGoal = moveGoalShe;
+  appState.appleWatch.metrics.she.targetKcal = moveGoalShe;
+  appState.appleWatch.metrics.she.exerciseGoal = exGoalShe;
+  appState.appleWatch.metrics.she.targetMin = exGoalShe;
+  appState.appleWatch.metrics.she.stepsGoal = stepsGoalShe;
+  appState.appleWatch.metrics.she.targetSteps = stepsGoalShe;
+
+  // Nutrition
+  appState.profiles.he.targetCalories = parseInt(document.getElementById("setting-cal-he")?.value) || 2150;
+  appState.profiles.he.protein = parseInt(document.getElementById("setting-prot-he")?.value) || 155;
+  appState.profiles.he.carbs = parseInt(document.getElementById("setting-carbs-he")?.value) || 210;
+  appState.profiles.he.fats = parseInt(document.getElementById("setting-fats-he")?.value) || 65;
+
+  appState.profiles.she.targetCalories = parseInt(document.getElementById("setting-cal-she")?.value) || 1850;
+  appState.profiles.she.protein = parseInt(document.getElementById("setting-prot-she")?.value) || 130;
+  appState.profiles.she.carbs = parseInt(document.getElementById("setting-carbs-she")?.value) || 180;
+  appState.profiles.she.fats = parseInt(document.getElementById("setting-fats-she")?.value) || 55;
+
+  // Dog
+  appState.profiles.dog.dailyWalkMinutes = parseInt(document.getElementById("setting-dog-walk-min")?.value) || 75;
+
+  saveAppState();
+  updateUIProfileNames();
+  renderAll();
+
+  if (typeof showIosToast === 'function') {
+    showIosToast("⚙️ ¡Ajustes y objetivos actualizados con éxito!", "fa-solid fa-check-double");
+  }
+}
+window.saveCustomSettings = saveCustomSettings;
+
 function renderSettingsView() {
   const currentPref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
   const masterPid = getMasterProfileId();
@@ -1722,12 +1945,18 @@ function renderSettingsView() {
   if (btnShe) btnShe.classList.toggle("active", currentPref === 'she');
   if (btnLast) btnLast.classList.toggle("active", currentPref === 'last');
 
+  const heName = getProfileShortName('he');
+  const sheName = getProfileShortName('she');
+
   const badge = document.getElementById("settings-device-badge");
   if (badge) {
-    const rawName = masterPid === 'he' ? 'Carlos' : 'Andrea';
-    let label = currentPref === 'he' ? "Carlos (Perfil Maestro)" : currentPref === 'she' ? "Andrea (Perfil Maestro)" : `Último maestro (${rawName})`;
+    const rawName = masterPid === 'he' ? heName : sheName;
+    let label = currentPref === 'he' ? `${heName} (Perfil Maestro)` : currentPref === 'she' ? `${sheName} (Perfil Maestro)` : `Último maestro (${rawName})`;
     badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> ${label}`;
   }
+
+  updateUIProfileNames();
+  populateSettingsInputs();
 }
 
 function forceAppRefresh() {

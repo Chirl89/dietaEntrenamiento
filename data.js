@@ -3,7 +3,7 @@
 export const INITIAL_PROFILES = {
   he: {
     id: "he",
-    name: "Él (Carlos)",
+    name: "Carlos",
     height: 182,
     weight: 78,
     activityLevel: 1.2, // Sedentario / 10 años sin hacer ejercicio
@@ -14,11 +14,14 @@ export const INITIAL_PROFILES = {
     protein: 155, // g
     carbs: 210, // g
     fats: 65, // g
+    moveGoal: 600, // kcal objetivo anillo movimiento
+    exerciseGoal: 30, // min objetivo anillo ejercicio
+    stepsGoal: 10000, // pasos objetivo anillo de pasos/de pie
     notes: "Adaptación progresiva después de 10 años. Enfoque en postura, movilidad y fuerza básica sin sobrecargar articulaciones."
   },
   she: {
     id: "she",
-    name: "Ella (Andrea)",
+    name: "Andrea",
     height: 172,
     weight: 63,
     activityLevel: 1.35, // Moderadamente activa / paseos
@@ -29,10 +32,13 @@ export const INITIAL_PROFILES = {
     protein: 130, // g
     carbs: 180, // g
     fats: 55, // g
+    moveGoal: 500, // kcal objetivo anillo movimiento
+    exerciseGoal: 30, // min objetivo anillo ejercicio
+    stepsGoal: 10000, // pasos objetivo anillo de pasos/de pie
     notes: "Tonificación general, mejora de resistencia cardio con la Border Collie (Boo) y trabajo de core/glúteos."
   },
   dog: {
-    name: "Boo (Border Collie)",
+    name: "Boo",
     breed: "Border Collie",
     age: 3,
     energyLevel: "Alta (Requiere estimular cuerpo y mente)",
