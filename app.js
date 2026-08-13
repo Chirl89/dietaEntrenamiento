@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.2.6';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.3.0';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -319,12 +319,10 @@ const NAVIGATION_CATEGORIES = {
     ]
   },
   profile: {
-    name: "Perfil & Ajustes",
+    name: "Ajustes",
     dockId: "dock-btn-profile",
     sidebarId: "sidebar-nav-profile",
     subtabs: [
-      { id: "profile-view", label: "Perfil", icon: "fa-solid fa-sliders" },
-      { id: "coach-view", label: "Coach AI", icon: "fa-solid fa-robot" },
       { id: "settings-view", label: "Ajustes", icon: "fa-solid fa-gear" }
     ]
   }
@@ -1632,14 +1630,21 @@ function renderSummaryView() {
 // RENDER PROFILE & MACROS
 function renderProfileView() {
   const p = appState.profiles[appState.activeProfileId];
+  if (!p) return;
   
-  document.getElementById("profile-subtitle").innerText = 
-    `Personalización para ${p.name} - Objetivo: Recomposición corporal (${p.height}cm, ${p.weight}kg)`;
+  const subElem = document.getElementById("profile-subtitle");
+  if (subElem) {
+    subElem.innerText = `Personalización para ${p.name} - Objetivo: Recomposición corporal (${p.height}cm, ${p.weight}kg)`;
+  }
   
-  document.getElementById("target-calories").innerText = `${p.targetCalories} kcal`;
-  document.getElementById("target-protein").innerText = `${p.protein} g`;
-  document.getElementById("target-carbs").innerText = `${p.carbs} g`;
-  document.getElementById("target-fats").innerText = `${p.fats} g`;
+  const calElem = document.getElementById("target-calories");
+  if (calElem) calElem.innerText = `${p.targetCalories} kcal`;
+  const protElem = document.getElementById("target-protein");
+  if (protElem) protElem.innerText = `${p.protein} g`;
+  const carbElem = document.getElementById("target-carbs");
+  if (carbElem) carbElem.innerText = `${p.carbs} g`;
+  const fatElem = document.getElementById("target-fats");
+  if (fatElem) fatElem.innerText = `${p.fats} g`;
 
   updateShortcutUrlInputs();
   renderWorkoutTracker();
