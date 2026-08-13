@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.2.5';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.2.6';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2577,13 +2577,32 @@ function toggleBooAccordion(accordionId) {
 function openBooBacklogModal() {
   try {
     try { triggerHapticTouch(); } catch(e){}
-    const modal = document.getElementById("boo-backlog-modal");
+    let modal = document.getElementById("boo-backlog-modal");
     if (!modal) {
-      console.error("Modal element #boo-backlog-modal not found");
-      return;
+      modal = document.createElement("div");
+      modal.id = "boo-backlog-modal";
+      modal.className = "modal-overlay";
+      modal.onclick = (e) => closeBooBacklogModalOnBackdrop(e);
+      modal.innerHTML = `
+        <div class="glass-modal" style="max-width: 620px;" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <div style="font-size: 1.8rem;">🐕</div>
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff;">Mapa de Adiestramiento de Boo 🐾</h3>
+                <p style="font-size: 0.78rem; color: var(--accent-amber);">Catálogo completo de trucos dominados y cola del backlog</p>
+              </div>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeBooBacklogModal()"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="modal-body" id="boo-backlog-modal-content" style="padding-top: 1rem;">
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     }
     renderBooBacklogModalUI();
-    modal.style.display = "flex";
+    modal.style.cssText = "display: flex !important; opacity: 1 !important; visibility: visible !important; z-index: 99999 !important;";
     modal.classList.add("active");
   } catch (err) {
     console.error("Error opening Boo backlog modal:", err);
@@ -2624,42 +2643,52 @@ function renderBooBacklogModalUI() {
   const unlearnedListHtml = unlearnedTricks.map((t, idx) => {
     const isCurrentActive = activeTrickId === t.id;
     return `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid ${isCurrentActive ? 'var(--accent-amber)' : 'var(--border-color)'}; margin-bottom: 0.6rem; transition: all 0.2s ease;">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <span style="font-weight: 700; font-size: 0.82rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">#${idx + 1}</span>
-          <div>
-            <div style="font-size: 0.92rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
-              <i class="${t.icon}" style="color: ${t.badgeColor};"></i> ${t.title}
+      <div style="padding: 0.85rem 0.95rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid ${isCurrentActive ? 'var(--accent-amber)' : 'var(--border-color)'}; margin-bottom: 0.75rem; box-shadow: ${isCurrentActive ? '0 4px 16px rgba(245, 158, 11, 0.12)' : 'none'}; transition: all 0.2s ease;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; width: 100%;">
+          <div style="display: flex; align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 0;">
+            <span style="font-weight: 700; font-size: 0.8rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.18); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;">#${idx + 1}</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.35; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
+                <i class="${t.icon}" style="color: ${t.badgeColor}; font-size: 0.9rem; margin-right: 0.35rem;"></i>${t.title}
+              </div>
             </div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${t.summary}</div>
-            <span style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px; display: inline-block;">${t.category} • Dificultad: <strong>${t.difficulty}</strong></span>
+          </div>
+          <div style="flex-shrink: 0; margin-left: 0.4rem;">
+            ${isCurrentActive ? `
+              <span style="font-size: 0.75rem; background: rgba(245,158,11,0.22); color: var(--accent-amber); padding: 4px 10px; border-radius: 12px; font-weight: 700; border: 1px solid var(--accent-amber); display: inline-block; white-space: nowrap;">
+                🎯 En Curso
+              </span>
+            ` : `
+              <button type="button" class="btn-micro" onclick="selectActiveTrickFromBacklog('${t.id}'); closeBooBacklogModal();" style="font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; border: 1px solid var(--border-color); white-space: nowrap;">
+                Fijar Hoy
+              </button>
+            `}
           </div>
         </div>
-        <div>
-          ${isCurrentActive ? `
-            <span style="font-size: 0.75rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 4px 10px; border-radius: 12px; font-weight: 600; border: 1px solid var(--accent-amber);">
-              En Curso
-            </span>
-          ` : `
-            <button type="button" class="btn-micro" onclick="selectActiveTrickFromBacklog('${t.id}'); closeBooBacklogModal();" style="font-size: 0.75rem; padding: 5px 10px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-weight: 500;">
-              Fijar Hoy
-            </button>
-          `}
+
+        <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin: 0.35rem 0 0.4rem 2.1rem;">
+          ${t.summary}
+        </div>
+
+        <div style="margin-left: 2.1rem; font-size: 0.72rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span style="background: var(--bg-tertiary); padding: 2px 8px; border-radius: 6px; color: var(--accent-cyan); font-weight: 500;">${t.category}</span>
+          <span style="color: var(--text-muted);">•</span>
+          <span>Dificultad: <strong style="color: var(--accent-amber);">${t.difficulty}</strong></span>
         </div>
       </div>
     `;
   }).join("");
 
   const masteredListHtml = masteredTricks.map(t => `
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.85rem; background: rgba(16, 185, 129, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.25); margin-bottom: 0.5rem;">
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.1rem; color: var(--accent-emerald);"><i class="fa-solid fa-medal"></i></span>
-        <div>
-          <div style="font-size: 0.9rem; font-weight: 600; color: #fff;">${t.title}</div>
-          <div style="font-size: 0.76rem; color: var(--text-muted);">${t.summary}</div>
+    <div style="padding: 0.75rem 0.95rem; background: rgba(16, 185, 129, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.25); margin-bottom: 0.5rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; width: 100%;">
+      <div style="display: flex; align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 0;">
+        <span style="font-size: 1.1rem; color: var(--accent-emerald); flex-shrink: 0; margin-top: 2px;"><i class="fa-solid fa-medal"></i></span>
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-size: 0.9rem; font-weight: 700; color: #fff; line-height: 1.3;">${t.title}</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; line-height: 1.35;">${t.summary}</div>
         </div>
       </div>
-      <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16,185,129,0.15); padding: 4px 10px; border-radius: 12px;">
+      <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16,185,129,0.15); padding: 4px 10px; border-radius: 12px; flex-shrink: 0; white-space: nowrap;">
         <i class="fa-solid fa-circle-check"></i> Dominado
       </span>
     </div>
@@ -2878,90 +2907,7 @@ function renderBooWorkoutView() {
   `;
   container.appendChild(continuousAccordionCard);
 
-  // 4. BACKLOG DE TRUCOS FUTUROS Y HISTÓRICO (ACCORDION COLAPSABLE)
-  const isBacklogOpen = accordions["backlog"] ?? false;
-  const backlogAccordionCard = document.createElement("div");
-  backlogAccordionCard.className = "glass-card boo-accordion-card";
-  backlogAccordionCard.style.marginBottom = "1.25rem";
-
-  const unlearnedTricks = BOO_TRICKS_BACKLOG.filter(t => !learnedTricks.includes(t.id));
-  const masteredTricks = BOO_TRICKS_BACKLOG.filter(t => learnedTricks.includes(t.id));
-
-  const unlearnedListHtml = unlearnedTricks.map(t => {
-    const isCurrentActive = activeTrick && activeTrick.id === t.id;
-    return `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.85rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid ${isCurrentActive ? 'var(--accent-amber)' : 'var(--border-color)'}; margin-bottom: 0.5rem;">
-        <div style="display: flex; align-items: center; gap: 0.6rem;">
-          <span style="color: ${t.badgeColor}; font-size: 1rem;"><i class="${t.icon}"></i></span>
-          <div>
-            <div style="font-size: 0.88rem; font-weight: 600; color: #fff;">${t.title}</div>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">${t.category} • ${t.difficulty}</span>
-          </div>
-        </div>
-        ${isCurrentActive ? `
-          <span style="font-size: 0.75rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 3px 8px; border-radius: 10px; font-weight: 600;">
-            Activo Hoy
-          </span>
-        ` : `
-          <button type="button" class="btn-micro" onclick="selectActiveTrickFromBacklog('${t.id}')" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-secondary);">
-            Fijar para Hoy
-          </button>
-        `}
-      </div>
-    `;
-  }).join("");
-
-  const masteredListHtml = masteredTricks.map(t => `
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; background: rgba(16, 185, 129, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom: 0.4rem;">
-      <div style="display: flex; align-items: center; gap: 0.6rem;">
-        <i class="fa-solid fa-medal" style="color: var(--accent-emerald);"></i>
-        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">${t.title}</span>
-      </div>
-      <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 600;">
-        <i class="fa-solid fa-check"></i> Dominado
-      </span>
-    </div>
-  `).join("");
-
-  backlogAccordionCard.innerHTML = `
-    <div class="boo-accordion-header" onclick="toggleBooAccordion('backlog')" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <i class="fa-solid fa-layer-group" style="font-size: 1.1rem; color: var(--accent-amber);"></i>
-        <div>
-          <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin: 0;">
-            📚 Backlog de Trucos Futuros y Dominados (${unlearnedTricks.length} pendientes / ${masteredTricks.length} aprendidos)
-          </h4>
-          <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">
-            Ver los próximos trucos programados y el historial (Pulsar para ${isBacklogOpen ? 'ocultar' : 'desplegar'})
-          </p>
-        </div>
-      </div>
-      <i class="fa-solid fa-chevron-${isBacklogOpen ? 'up' : 'down'}" style="color: var(--text-muted);"></i>
-    </div>
-
-    ${isBacklogOpen ? `
-      <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-        <div style="margin-bottom: 1.25rem;">
-          <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--accent-amber); text-transform: uppercase; margin-bottom: 0.6rem;">
-            ⏳ Próximos Trucos en Cola de Aprendizaje (${unlearnedTricks.length})
-          </h5>
-          ${unlearnedListHtml || '<p style="font-size:0.8rem; color:var(--text-muted);">¡Has completado todos los trucos del backlog!</p>'}
-        </div>
-
-        ${masteredTricks.length > 0 ? `
-          <div>
-            <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--accent-emerald); text-transform: uppercase; margin-bottom: 0.6rem;">
-              🏆 Histórico de Trucos Dominados (${masteredTricks.length})
-            </h5>
-            ${masteredListHtml}
-          </div>
-        ` : ''}
-      </div>
-    ` : ''}
-  `;
-  container.appendChild(backlogAccordionCard);
-
-  // 5. REGISTRO EMOCIONAL Y NOTAS DEL PASEO
+  // 4. REGISTRO EMOCIONAL Y NOTAS DEL PASEO
   const moodCard = document.createElement("div");
   moodCard.className = "glass-card";
   moodCard.innerHTML = `
