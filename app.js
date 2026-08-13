@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES } from './data.js?v=1.0.4';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES } from './data.js?v=1.0.6';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -413,6 +413,13 @@ function switchProfile(profileId) {
 function showTab(tabId, btnElement) {
   triggerHapticTouch();
 
+  // Migration & alias mapping for legacy / custom tab IDs
+  if (tabId === 'nutrition-view' || tabId === 'nutrition') {
+    tabId = 'nutrition-menu-view';
+  } else if (tabId === 'shopping-view') {
+    tabId = 'nutrition-shopping-view';
+  }
+
   // Find active category
   let activeCatKey = 'summary';
   for (const [catKey, catObj] of Object.entries(NAVIGATION_CATEGORIES)) {
@@ -423,8 +430,10 @@ function showTab(tabId, btnElement) {
   }
 
   document.querySelectorAll(".view-panel").forEach(panel => panel.classList.remove("active"));
-  const targetPanel = document.getElementById(tabId);
-  if (targetPanel) targetPanel.classList.add("active");
+  const targetPanel = document.getElementById(tabId) || document.getElementById("nutrition-menu-view");
+  if (targetPanel) {
+    targetPanel.classList.add("active");
+  }
 
   // Highlight Category Dock & Sidebar buttons
   const catObj = NAVIGATION_CATEGORIES[activeCatKey];
