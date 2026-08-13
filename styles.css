@@ -57,6 +57,21 @@ body {
   line-height: 1.4;
 }
 
+/* VERSION BADGE */
+.app-version-tag {
+  font-size: 0.68rem;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-left: 0.4rem;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 /* APP LAYOUT */
 #app-container {
   display: flex;
