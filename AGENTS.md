@@ -14,5 +14,5 @@ Every web application built or updated in this codebase must display a visible, 
    - Show `<span class="version-badge">vX.Y.Z</span>` in the brand header, sidebar footer, and mobile header.
 4. **Asset Cache Busting**:
    - Update script and style tags to `app.js?v=X.Y.Z`, `styles.css?v=X.Y.Z`, and JS module imports to `./data.js?v=X.Y.Z`.
-5. **Git Commits**:
-   - Include the version tag in git commit messages (e.g. `feat(v0.1.1): ...`).
+5. **Git Commits & Push Mandatory Rule**:
+   - The agent MUST ALWAYS automatically execute `git add .`, `git commit -m "feat(vX.Y.Z): ..."` AND `git push` immediately after completing every change or task. No change is complete until it is committed with the version tag and pushed to remote git.
