@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES } from './data.js?v=0.1.2';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES } from './data.js?v=0.1.3';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -281,7 +281,7 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-summary",
     sidebarId: "sidebar-nav-summary",
     subtabs: [
-      { id: "summary-view", label: "📊 Resumen Diario", icon: "fa-solid fa-gauge-high" }
+      { id: "summary-view", label: "Resumen Diario", icon: "fa-solid fa-gauge-high" }
     ]
   },
   nutrition: {
@@ -289,9 +289,9 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-nutrition",
     sidebarId: "sidebar-nav-nutrition",
     subtabs: [
-      { id: "nutrition-menu-view", label: "🍽️ Menú del Día", icon: "fa-solid fa-utensils" },
-      { id: "nutrition-recipes-view", label: "📖 Recetas", icon: "fa-solid fa-book-open" },
-      { id: "nutrition-shopping-view", label: "🛒 Lista de la Compra", icon: "fa-solid fa-cart-shopping" }
+      { id: "nutrition-menu-view", label: "Menú del Día", icon: "fa-solid fa-utensils" },
+      { id: "nutrition-recipes-view", label: "Recetas", icon: "fa-solid fa-book-open" },
+      { id: "nutrition-shopping-view", label: "Lista de la Compra", icon: "fa-solid fa-cart-shopping" }
     ]
   },
   workouts: {
@@ -299,7 +299,7 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-workouts",
     sidebarId: "sidebar-nav-workouts",
     subtabs: [
-      { id: "workouts-view", label: "💪 Ejercicios", icon: "fa-solid fa-dumbbell" }
+      { id: "workouts-view", label: "Ejercicios", icon: "fa-solid fa-dumbbell" }
     ]
   },
   profile: {
@@ -307,9 +307,9 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-profile",
     sidebarId: "sidebar-nav-profile",
     subtabs: [
-      { id: "profile-view", label: "👤 Perfil", icon: "fa-solid fa-sliders" },
-      { id: "coach-view", label: "🤖 Coach AI", icon: "fa-solid fa-robot" },
-      { id: "settings-view", label: "⚙️ Ajustes", icon: "fa-solid fa-gear" }
+      { id: "profile-view", label: "Perfil", icon: "fa-solid fa-sliders" },
+      { id: "coach-view", label: "Coach AI", icon: "fa-solid fa-robot" },
+      { id: "settings-view", label: "Ajustes", icon: "fa-solid fa-gear" }
     ]
   }
 };
