@@ -359,7 +359,8 @@ function renderSubtabSegmentedControl(categoryKey, activeTabId) {
 function renderAll() {
   renderSummaryView();
   renderProfileView();
-  renderNutritionView();
+  renderNutritionMenuView();
+  renderNutritionRecipesView();
   renderShoppingView();
   renderWorkoutsView();
   renderProgressView();
