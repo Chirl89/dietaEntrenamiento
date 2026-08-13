@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.3.2';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.3.3';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -128,7 +128,10 @@ function loadSavedState() {
     appState.masterProfileId = 'he';
   }
 
-  if (!appState.activeProfileId) {
+  // Active visual profile preference (persist last viewed profile)
+  if (lastProfile === 'he' || lastProfile === 'she') {
+    appState.activeProfileId = lastProfile;
+  } else if (!appState.activeProfileId) {
     appState.activeProfileId = appState.masterProfileId;
   }
 
@@ -395,8 +398,25 @@ function renderSubtabSegmentedControl(categoryKey, activeTabId) {
   `).join("");
 }
 
+function updateProfileSwitcherButtonsUI() {
+  const profileId = appState.activeProfileId || "he";
+
+  // Desktop buttons
+  const btnHe = document.getElementById("btn-profile-he");
+  const btnShe = document.getElementById("btn-profile-she");
+  if (btnHe) btnHe.classList.toggle("active", profileId === "he");
+  if (btnShe) btnShe.classList.toggle("active", profileId === "she");
+
+  // Mobile Header buttons
+  const iosBtnHe = document.getElementById("ios-btn-profile-he");
+  const iosBtnShe = document.getElementById("ios-btn-profile-she");
+  if (iosBtnHe) iosBtnHe.classList.toggle("active", profileId === "he");
+  if (iosBtnShe) iosBtnShe.classList.toggle("active", profileId === "she");
+}
+
 // MAIN RENDER CONTROLLER
 function renderAll() {
+  updateProfileSwitcherButtonsUI();
   renderSummaryView();
   renderProfileView();
   renderNutritionMenuView();
@@ -435,18 +455,7 @@ function switchProfile(profileId) {
   localStorage.setItem(LAST_ACTIVE_PROFILE_KEY, profileId);
   saveState();
 
-  // Desktop buttons
-  const btnHe = document.getElementById("btn-profile-he");
-  const btnShe = document.getElementById("btn-profile-she");
-  if (btnHe) btnHe.classList.toggle("active", profileId === "he");
-  if (btnShe) btnShe.classList.toggle("active", profileId === "she");
-
-  // Mobile Header buttons
-  const iosBtnHe = document.getElementById("ios-btn-profile-he");
-  const iosBtnShe = document.getElementById("ios-btn-profile-she");
-  if (iosBtnHe) iosBtnHe.classList.toggle("active", profileId === "he");
-  if (iosBtnShe) iosBtnShe.classList.toggle("active", profileId === "she");
-
+  updateProfileSwitcherButtonsUI();
   renderAll();
 
   const viewName = profileId === 'he' ? 'Carlos' : 'Andrea';
