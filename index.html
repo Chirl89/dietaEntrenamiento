@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Application CSS -->
-  <link rel="stylesheet" href="styles.css?v=0.3.3">
+  <link rel="stylesheet" href="styles.css?v=0.4.0">
   
   <!-- Chart.js for progress graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -32,7 +32,7 @@
   <header class="ios-top-bar">
     <div class="ios-header-brand">
       <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
-      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.3.3</span></span>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.4.0</span></span>
     </div>
 
     <div class="ios-header-actions">
@@ -60,7 +60,7 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div>
-            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.3.3</span></div>
+            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.4.0</span></div>
             <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
           </div>
         </div>
@@ -112,7 +112,7 @@
           <i class="fa-brands fa-apple"></i>
           <div>
             <div class="user-pill-name" id="sidebar-watch-user">Carlos (Series 9)</div>
-            <div class="user-pill-status"> Salud Conectada • v0.3.3</div>
+            <div class="user-pill-status"> Salud Conectada • v0.4.0</div>
           </div>
         </div>
       </div>
@@ -522,12 +522,16 @@
               <li>Añade las acciones de Salud:
                 <ul>
                   <li><code>Buscar muestras</code> → Calorías activas (Hoy / Suma).</li>
-                  <li><code>Buscar muestras</code> → Pasos (Hoy / Suma).</li>
+                  <li><code>Buscar muestras</code> → Pasos (Hoy / Suma / <strong>Filtro: Fuente es Apple Watch</strong>).</li>
                   <li><code>Buscar muestras</code> → Entrenamientos (Hoy / Límite 1).</li>
                 </ul>
               </li>
               <li>Añade la acción <strong>URL</strong> con la dirección de la app y <strong>Abrir URL</strong>.</li>
             </ol>
+            <div style="margin-top: 0.75rem; padding: 0.6rem 0.88rem; background: rgba(234, 179, 8, 0.12); border-left: 3px solid var(--accent-amber); border-radius: 8px; font-size: 0.8rem; line-height: 1.4; color: #cbd5e1;">
+              <strong style="color: var(--accent-amber);"><i class="fa-solid fa-lightbulb"></i> ¿Diferencia de pasos entre Salud y el Atajo?</strong><br>
+              La app Salud de iOS elimina duplicados entre iPhone y Apple Watch. En el Atajo, añade el filtro <code>Fuente es Apple Watch</code> (o <code>Fuente no es iPhone</code>) en la acción <em>Buscar muestras de Pasos</em> para evitar que se sumen los pasos del podómetro del iPhone y del reloj a la vez.
+            </div>
           </div>
         </div>
 
@@ -882,6 +886,6 @@
   <div id="ios-toast-container" class="ios-toast-container"></div>
 
   <!-- Application Logic -->
-  <script type="module" src="app.js?v=0.3.3"></script>
+  <script type="module" src="app.js?v=0.4.0"></script>
 </body>
 </html>
