@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.3';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.4';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1936,12 +1936,14 @@ function saveCustomSettings() {
   saveState();
   
   if (typeof showIosToast === 'function') {
-    showIosToast("⚙️ ¡Ajustes guardados! Aplicando cambios...", "fa-solid fa-rotate");
+    showIosToast("⚙️ ¡Ajustes guardados! Sincronizando en la nube...", "fa-solid fa-cloud-arrow-up");
   }
 
-  setTimeout(() => {
+  pushToCloud(false).then(() => {
     window.location.reload();
-  }, 300);
+  }).catch(() => {
+    window.location.reload();
+  });
 }
 window.saveCustomSettings = saveCustomSettings;
 
@@ -2011,7 +2013,7 @@ export async function pushToCloud(showToast = false) {
     const encodedData = encodeURIComponent(cleanJson);
     const url = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
 
-    const res = await fetch(url, { method: "POST" });
+    const res = await fetch(url, { method: "POST", keepalive: true });
     if (res.ok) {
       appState.lastCloudSync = new Date().toISOString();
       updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
