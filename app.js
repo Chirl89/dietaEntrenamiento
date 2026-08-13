@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.0';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.1';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1923,13 +1923,15 @@ function saveCustomSettings() {
   // Dog
   appState.profiles.dog.dailyWalkMinutes = parseInt(document.getElementById("setting-dog-walk-min")?.value) || 75;
 
-  saveAppState();
-  updateUIProfileNames();
-  renderAll();
-
+  saveState();
+  
   if (typeof showIosToast === 'function') {
-    showIosToast("⚙️ ¡Ajustes y objetivos actualizados con éxito!", "fa-solid fa-check-double");
+    showIosToast("⚙️ ¡Ajustes guardados! Aplicando cambios...", "fa-solid fa-rotate");
   }
+
+  setTimeout(() => {
+    window.location.reload();
+  }, 300);
 }
 window.saveCustomSettings = saveCustomSettings;
 
