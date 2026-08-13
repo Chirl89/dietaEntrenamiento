@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.2.2';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.2.3';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -179,6 +179,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.markTrickMastered = markTrickMastered;
   window.selectActiveTrickFromBacklog = selectActiveTrickFromBacklog;
   window.toggleBooAccordion = toggleBooAccordion;
+  window.openBooBacklogModal = openBooBacklogModal;
+  window.closeBooBacklogModal = closeBooBacklogModal;
+  window.closeBooBacklogModalOnBackdrop = closeBooBacklogModalOnBackdrop;
   window.setBooMood = setBooMood;
   window.saveBooSessionNotes = saveBooSessionNotes;
   window.markBooModulePracticed = markBooModulePracticed;
@@ -2571,6 +2574,121 @@ function toggleBooAccordion(accordionId) {
   renderBooWorkoutView();
 }
 
+function openBooBacklogModal() {
+  triggerHapticTouch();
+  const modal = document.getElementById("boo-backlog-modal");
+  if (!modal) return;
+  renderBooBacklogModalUI();
+  modal.classList.add("active");
+}
+
+function closeBooBacklogModal() {
+  triggerHapticTouch();
+  const modal = document.getElementById("boo-backlog-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+function closeBooBacklogModalOnBackdrop(e) {
+  if (e.target.id === "boo-backlog-modal") {
+    closeBooBacklogModal();
+  }
+}
+
+function renderBooBacklogModalUI() {
+  const container = document.getElementById("boo-backlog-modal-content");
+  if (!container) return;
+
+  if (!appState.booProgress) {
+    appState.booProgress = { completedContinuous: {}, learnedTricks: [], activeTrickId: null, moodLogs: {}, sessionNotes: {}, accordions: {} };
+  }
+
+  const learnedTricks = appState.booProgress.learnedTricks || [];
+  const activeTrickId = appState.booProgress.activeTrickId;
+
+  const unlearnedTricks = BOO_TRICKS_BACKLOG.filter(t => !learnedTricks.includes(t.id));
+  const masteredTricks = BOO_TRICKS_BACKLOG.filter(t => learnedTricks.includes(t.id));
+
+  const unlearnedListHtml = unlearnedTricks.map((t, idx) => {
+    const isCurrentActive = activeTrickId === t.id;
+    return `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid ${isCurrentActive ? 'var(--accent-amber)' : 'var(--border-color)'}; margin-bottom: 0.6rem; transition: all 0.2s ease;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-weight: 700; font-size: 0.82rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">#${idx + 1}</span>
+          <div>
+            <div style="font-size: 0.92rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+              <i class="${t.icon}" style="color: ${t.badgeColor};"></i> ${t.title}
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${t.summary}</div>
+            <span style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px; display: inline-block;">${t.category} • Dificultad: <strong>${t.difficulty}</strong></span>
+          </div>
+        </div>
+        <div>
+          ${isCurrentActive ? `
+            <span style="font-size: 0.75rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 4px 10px; border-radius: 12px; font-weight: 600; border: 1px solid var(--accent-amber);">
+              En Curso
+            </span>
+          ` : `
+            <button type="button" class="btn-micro" onclick="selectActiveTrickFromBacklog('${t.id}'); closeBooBacklogModal();" style="font-size: 0.75rem; padding: 5px 10px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-weight: 500;">
+              Fijar Hoy
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const masteredListHtml = masteredTricks.map(t => `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.85rem; background: rgba(16, 185, 129, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.25); margin-bottom: 0.5rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.1rem; color: var(--accent-emerald);"><i class="fa-solid fa-medal"></i></span>
+        <div>
+          <div style="font-size: 0.9rem; font-weight: 600; color: #fff;">${t.title}</div>
+          <div style="font-size: 0.76rem; color: var(--text-muted);">${t.summary}</div>
+        </div>
+      </div>
+      <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16,185,129,0.15); padding: 4px 10px; border-radius: 12px;">
+        <i class="fa-solid fa-circle-check"></i> Dominado
+      </span>
+    </div>
+  `).join("");
+
+  container.innerHTML = `
+    <!-- STATS SUMMARY HEADER -->
+    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1.25rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-graduation-cap" style="color: var(--accent-amber); font-size: 1.2rem;"></i>
+        <span style="font-size: 0.88rem; font-weight: 600; color: #fff;">Progreso Total del Backlog</span>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <span style="font-size: 0.78rem; padding: 3px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); font-weight: 700;">
+          🏆 ${masteredTricks.length} Aprendidos
+        </span>
+        <span style="font-size: 0.78rem; padding: 3px 10px; border-radius: 12px; background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 700;">
+          ⏳ ${unlearnedTricks.length} Pendientes
+        </span>
+      </div>
+    </div>
+
+    <!-- UNLEARNED QUEUE SECTION -->
+    <div style="margin-bottom: 1.5rem;">
+      <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--accent-amber); margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-list-ol"></i> Próximos Trucos en Cola de Aprendizaje (${unlearnedTricks.length})
+      </h4>
+      ${unlearnedListHtml || '<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem;">🎉 ¡Felicidades! Boo ha aprendido todos los trucos programados en el mapa.</p>'}
+    </div>
+
+    <!-- MASTERED HISTORY SECTION -->
+    ${masteredTricks.length > 0 ? `
+      <div>
+        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--accent-emerald); margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-trophy"></i> Trucos Dominados e Histórico (${masteredTricks.length})
+        </h4>
+        ${masteredListHtml}
+      </div>
+    ` : ''}
+  `;
+}
+
 function renderBooWorkoutView() {
   const container = document.getElementById("boo-workout-container");
   if (!container) return;
@@ -2624,9 +2742,12 @@ function renderBooWorkoutView() {
           </p>
         </div>
       </div>
-      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
         <span class="boo-stat-pill"><i class="fa-solid fa-trophy" style="color:var(--accent-amber);"></i> ${learnedTricks.length} Dominados</span>
         <span class="boo-stat-pill"><i class="fa-solid fa-list-check" style="color:var(--accent-cyan);"></i> ${BOO_TRICKS_BACKLOG.length - learnedTricks.length} En Cola</span>
+        <button type="button" class="btn-primary" onclick="openBooBacklogModal()" style="font-size: 0.8rem; padding: 6px 12px; background: rgba(245, 158, 11, 0.18); border: 1px solid var(--accent-amber); color: var(--accent-amber); border-radius: 20px; font-weight: 600;">
+          <i class="fa-solid fa-book-open"></i> Ver Mapa de Trucos
+        </button>
       </div>
     </div>
   `;
