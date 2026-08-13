@@ -671,3 +671,155 @@ export const BOO_WEEKLY_SCHEDULE = {
   }
 };
 
+export const BOO_CONTINUOUS_REINFORCEMENT = [
+  {
+    id: "cont_mirame",
+    title: "Contacto Visual Voluntario ('Mírame')",
+    icon: "fa-solid fa-eye",
+    color: "var(--accent-cyan)",
+    desc: "Premiar cada vez que Boo se gire a mirar a Carlos o Andrea espontáneamente durante el paseo.",
+    tip: "Entregar siempre el premio junto al muslo para reforzar la zona de paseo pegada al guía."
+  },
+  {
+    id: "cont_correa",
+    title: "Caminar Relajada con Correa Floja (Sin Tirones)",
+    icon: "fa-solid fa-dog",
+    color: "var(--accent-purple)",
+    desc: "Técnica de la estatua: Parar en seco al sentir tensión en la correa. Avanzar solo cuando la correa cuelga en curva ('U').",
+    tip: "No dar tirones hacia atrás. Mantenerse firme como un árbol enseña a Boo a buscar la flojedad por sí misma."
+  },
+  {
+    id: "cont_llamada",
+    title: "Refuerzo Positivo de la Llamada (Engancha, Premia y Suelta)",
+    icon: "fa-solid fa-bullhorn",
+    color: "var(--accent-emerald)",
+    desc: "Realizar 8 de cada 10 llamadas durante el paseo para dar una súper chuche, enganchar 5s y SOLTARLA A JUGAR de nuevo.",
+    tip: "Nunca llamar solo para regañar o únicamente al terminar el paseo. Asociar la llamada a fiesta y libertad."
+  }
+];
+
+export const BOO_TRICKS_BACKLOG = [
+  {
+    id: "trick_pelota_autocontrol",
+    title: "Gestión de Ansiedad con Pelota (Autocontrol)",
+    category: "Gestión Emocional",
+    difficulty: "Intermedio",
+    icon: "fa-solid fa-baseball",
+    badgeColor: "var(--accent-amber)",
+    summary: "Aprender a esperar en calma antes de ir a por la pelota tras la orden de liberación ('¡Ya!').",
+    steps: [
+      "Mostrar pelota estática a la altura del pecho. Si Boo salta o ladra, ocultarla tras la espalda.",
+      "Pedir 'Sentado' + 'Quieto' a 2 metros de distancia.",
+      "Recompensar mirada serena y cuerpo relajado.",
+      "Lanzar pelota SOLO tras dar la señal de liberación ('¡Ya!')."
+    ],
+    proTip: "La calma es la única llave que abre el juego de la pelota para un Border Collie."
+  },
+  {
+    id: "trick_dar_pata",
+    title: "Dar las dos patas (Izquierda y Derecha)",
+    category: "Habilidad Básica",
+    difficulty: "Fácil",
+    icon: "fa-solid fa-paw",
+    badgeColor: "var(--accent-cyan)",
+    summary: "Enseñar a Boo a dar la pata izquierda ('Pata') y la derecha ('La otra').",
+    steps: [
+      "Con Boo sentada, mostrar premio en el puño cerrado a la altura de su pecho.",
+      "Esperar a que toque la mano con la pata. En cuanto la toque, decir '¡Muy bien!' y abrir la mano.",
+      "Añadir la orden vocal según la pata levantada."
+    ],
+    proTip: "Muy útil para limpiar las patas tras paseos por la montaña o con barro de forma tranquila."
+  },
+  {
+    id: "trick_tumbado_distancia",
+    title: "Tumbado a Distancia con Señal de Mano",
+    category: "Obediencia Avanzada",
+    difficulty: "Intermedio",
+    icon: "fa-solid fa-hand",
+    badgeColor: "var(--accent-emerald)",
+    summary: "Conseguir que Boo se tumbe al ver la mano extendida hacia abajo desde 3-5 metros.",
+    steps: [
+      "Practicar orden 'Plaza/Tumbado' de cerca acompañando con movimiento llano de mano.",
+      "Dar medio paso atrás antes de hacer la señal visual.",
+      "Premiar la velocidad de respuesta en la bajada."
+    ],
+    proTip: "Fundamental para detener a Boo a distancia en parques o senderos antes de cruzar un paso."
+  },
+  {
+    id: "trick_giro_360",
+    title: "Giro 360º sobre sí misma ('Spin')",
+    category: "Propiocepción & Juego",
+    difficulty: "Fácil",
+    icon: "fa-solid fa-rotate-right",
+    badgeColor: "var(--accent-purple)",
+    summary: "Girar un círculo completo hacia la derecha ('Gira') y hacia la izquierda ('Twist').",
+    steps: [
+      "Guiar el hocico de Boo con un premio haciendo un círculo completo a su alrededor.",
+      "Marcar '¡Muy bien!' al completar el giro y entregar premio.",
+      "Ir reduciendo el gesto de la mano hasta usar solo la punta del dedo."
+    ],
+    proTip: "Excelente ejercicio de calentamiento para las articulaciones de Boo antes de correr."
+  },
+  {
+    id: "trick_slalom_piernas",
+    title: "Caminar entre las piernas (Slalom en marcha)",
+    category: "Agilidad",
+    difficulty: "Intermedio",
+    icon: "fa-solid fa-person-walking",
+    badgeColor: "var(--accent-rose)",
+    summary: "Pasar en forma de 8 entre las piernas de Carlos o Andrea mientras caminan.",
+    steps: [
+      "Dar un paso adelante con la pierna derecha y guiar a Boo a pasar por debajo con premio.",
+      "Dar un paso con la pierna izquierda y guiar el siguiente cruce.",
+      "Añadir la palabra 'Pasa' o 'Slalom'."
+    ],
+    proTip: "Mejora la coordinación y fortalece la confianza de Boo trabajando pegada al cuerpo."
+  },
+  {
+    id: "trick_traer_soltar",
+    title: "Traer objeto y entregar en la mano",
+    category: "Cobro y Juego",
+    difficulty: "Intermedio",
+    icon: "fa-solid fa-hand-holding-heart",
+    badgeColor: "var(--accent-amber)",
+    summary: "Entregar el juguete suavemente en la palma abierta en lugar de soltarlo en el suelo.",
+    steps: [
+      "Colocar la palma abierta bajo su barbilla cuando regresa con el objeto.",
+      "Decir 'Dame' o 'Suelta' intercambiando por un premio de alto valor.",
+      "Premiar solo el contacto del objeto con la palma de la mano."
+    ],
+    proTip: "Evita la persecución infructuosa y hace las sesiones de juego mucho más organizadas."
+  },
+  {
+    id: "trick_targeting_nariz",
+    title: "Tocar diana (Targeting con el hocico)",
+    category: "Adiestramiento con Marca",
+    difficulty: "Fácil",
+    icon: "fa-solid fa-bullseye",
+    badgeColor: "var(--accent-cyan)",
+    summary: "Tocar la palma de la mano o un objetivo específico con la trufa.",
+    steps: [
+      "Presentar la palma abierta a 5 cm del hocico.",
+      "Por curiosidad Boo la olerá. En cuanto toque con la nariz, marcar '¡Toca!' y premiar.",
+      "Mover la mano a diferentes alturas y posiciones."
+    ],
+    proTip: "Base excelente para guiar a Boo a su cama o subir al coche sin tirones."
+  },
+  {
+    id: "trick_rodar",
+    title: "Hacerse la muerta / Rodar ('Roll over')",
+    category: "Truco Divertido",
+    difficulty: "Avanzado",
+    icon: "fa-solid fa-arrows-spin",
+    badgeColor: "var(--accent-emerald)",
+    summary: "Desde la posición tumbada, girar sobre la espalda hasta volver a quedar tumbada.",
+    steps: [
+      "Con Boo tumbada, guiar el premio desde la nariz hacia su hombro para que incline el cuerpo.",
+      "Continuar el movimiento de la mano sobre su lomo obligándola a dar la vuelta.",
+      "Premiar el giro completo."
+    ],
+    proTip: "Practicar sobre esterilla suave para que esté cómoda al apoyar la zona lumbar."
+  }
+];
+
+

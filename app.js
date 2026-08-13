@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE } from './data.js?v=0.2.1';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.2.2';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -39,8 +39,9 @@ let appState = {
       Jueves: false, Viernes: false, Sábado: false, Domingo: false
     }
   },
-  activeDay: "Lunes",
-  activeWorkoutDay: "Lunes",
+  activeDay: getTodayDayName(),
+  activeWorkoutDay: getTodayDayName(),
+  activeBooDay: getTodayDayName(),
   recipesDaysRange: "5", // '5' (L-V) or '7' (L-D)
   shoppingDaysRange: "5", // '5' (L-V) or '7' (L-D)
   checkedShoppingItems: {}, // { "ingredientName": true/false }
@@ -174,6 +175,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.selectWorkoutDayFromDropdown = selectWorkoutDayFromDropdown;
   window.selectBooDayFromDropdown = selectBooDayFromDropdown;
   window.toggleBooTask = toggleBooTask;
+  window.toggleContinuousItem = toggleContinuousItem;
+  window.markTrickMastered = markTrickMastered;
+  window.selectActiveTrickFromBacklog = selectActiveTrickFromBacklog;
+  window.toggleBooAccordion = toggleBooAccordion;
   window.setBooMood = setBooMood;
   window.saveBooSessionNotes = saveBooSessionNotes;
   window.markBooModulePracticed = markBooModulePracticed;
@@ -327,11 +332,14 @@ function switchCategory(categoryKey, targetTabId = null, btnElement = null) {
   const cat = NAVIGATION_CATEGORIES[categoryKey];
   if (!cat) return;
 
-  if (categoryKey === 'nutrition') {
+  if (categoryKey === 'workouts') {
     const today = getTodayDayName();
-    appState.activeDay = today;
-    const selectElem = document.getElementById("nutrition-day-select");
+    appState.activeWorkoutDay = today;
+    appState.activeBooDay = today;
+    const selectElem = document.getElementById("workout-day-select");
     if (selectElem) selectElem.value = today;
+    const booSelect = document.getElementById("boo-day-select");
+    if (booSelect) booSelect.value = today;
   }
 
   let tabToOpen = cat.subtabs[0].id;
@@ -2514,44 +2522,53 @@ function renderWorkoutsView() {
   `;
 
   container.appendChild(card);
+}
 
-  // Render integrated outdoor route & Boo activity details if available for the day
-  if (routine.routeDetails) {
-    const routeCard = document.createElement("div");
-    routeCard.className = "glass-card route-card";
-    routeCard.style.marginTop = "1.25rem";
+function toggleContinuousItem(itemId, dayName) {
+  triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
+  if (!appState.booProgress.completedContinuous) appState.booProgress.completedContinuous = {};
+  const key = `${dayName}_${itemId}`;
+  const current = !!appState.booProgress.completedContinuous[key];
+  appState.booProgress.completedContinuous[key] = !current;
+  saveState();
+  renderBooWorkoutView();
+  showToast(!current ? "🐾 ¡Hábito de Boo reforzado hoy!" : "Desmarcado", "success");
+}
 
-    const stepsHtml = routine.routeDetails.breakdown.map(b => `
-      <div class="route-step-item">
-        <span class="step-time">${b.step}</span>
-        <span style="font-size: 0.9rem; color: var(--text-main);">${b.activity}</span>
-      </div>
-    `).join("");
-
-    routeCard.innerHTML = `
-      <div class="routine-header-box" style="margin-bottom: 0.75rem;">
-        <div>
-          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fa-solid fa-dog"></i> ${routine.routeDetails.title}
-          </h3>
-          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">${routine.routeDetails.description}</p>
-        </div>
-      </div>
-
-      <div class="route-step-list">
-        ${stepsHtml}
-      </div>
-
-      <div class="collie-tip-box" style="margin-top: 1rem;">
-        <i class="fa-solid fa-paw" style="font-size: 1.2rem; color: var(--accent-cyan);"></i>
-        <div>
-          <strong style="color: var(--accent-cyan);">Consejo Border Collie:</strong> ${routine.routeDetails.collieTips}
-        </div>
-      </div>
-    `;
-
-    container.appendChild(routeCard);
+function markTrickMastered(trickId) {
+  triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
+  if (!appState.booProgress.learnedTricks) appState.booProgress.learnedTricks = [];
+  if (!appState.booProgress.learnedTricks.includes(trickId)) {
+    appState.booProgress.learnedTricks.push(trickId);
   }
+  // Find next unlearned trick in backlog
+  const nextTrick = BOO_TRICKS_BACKLOG.find(t => !appState.booProgress.learnedTricks.includes(t.id));
+  appState.booProgress.activeTrickId = nextTrick ? nextTrick.id : null;
+
+  saveState();
+  renderBooWorkoutView();
+  showToast("🎉 ¡Enhorabuena! Boo ha dominado un nuevo truco. Desbloqueado el siguiente.", "success");
+}
+
+function selectActiveTrickFromBacklog(trickId) {
+  triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
+  appState.booProgress.activeTrickId = trickId;
+  saveState();
+  renderBooWorkoutView();
+  showToast("🎯 Truco seleccionado para trabajar hoy.", "info");
+}
+
+function toggleBooAccordion(accordionId) {
+  triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
+  if (!appState.booProgress.accordions) appState.booProgress.accordions = {};
+  const current = !!appState.booProgress.accordions[accordionId];
+  appState.booProgress.accordions[accordionId] = !current;
+  saveState();
+  renderBooWorkoutView();
 }
 
 function renderBooWorkoutView() {
@@ -2568,193 +2585,268 @@ function renderBooWorkoutView() {
   }
 
   if (!appState.booProgress) {
-    appState.booProgress = { completedTasks: {}, moodLogs: {}, sessionNotes: {}, moduleStats: {} };
+    appState.booProgress = { completedContinuous: {}, learnedTricks: [], activeTrickId: null, moodLogs: {}, sessionNotes: {}, accordions: {} };
   }
 
-  const completedTasks = appState.booProgress.completedTasks || {};
+  const completedContinuous = appState.booProgress.completedContinuous || {};
+  const learnedTricks = appState.booProgress.learnedTricks || [];
   const moodLogs = appState.booProgress.moodLogs || {};
   const sessionNotes = appState.booProgress.sessionNotes || {};
-  const moduleStats = appState.booProgress.moduleStats || {};
+  const accordions = appState.booProgress.accordions || {};
 
-  const scheduleDay = BOO_WEEKLY_SCHEDULE[activeDay] || BOO_WEEKLY_SCHEDULE["Lunes"];
+  // Determine Active Trick for Today
+  let activeTrick = BOO_TRICKS_BACKLOG.find(t => t.id === appState.booProgress.activeTrickId);
+  if (!activeTrick || learnedTricks.includes(activeTrick.id)) {
+    // Pick first unlearned trick from backlog
+    activeTrick = BOO_TRICKS_BACKLOG.find(t => !learnedTricks.includes(t.id)) || BOO_TRICKS_BACKLOG[0];
+    appState.booProgress.activeTrickId = activeTrick ? activeTrick.id : null;
+  }
+
   const currentMood = moodLogs[activeDay] || "🧘‍♂️ Calma & Enfocada";
   const currentNote = sessionNotes[activeDay] || "";
 
-  // 1. BOO PROFILE HERO BANNER
+  // 1. BOO COMPACT HERO BANNER
   const heroCard = document.createElement("div");
   heroCard.className = "glass-card boo-hero-card";
-  heroCard.style.marginBottom = "1.5rem";
+  heroCard.style.marginBottom = "1.25rem";
   heroCard.innerHTML = `
     <div class="boo-hero-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
       <div style="display: flex; align-items: center; gap: 1rem;">
-        <div class="boo-avatar-badge" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(16, 185, 129, 0.2)); border: 2px solid var(--accent-amber); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: var(--shadow-glow-amber);">
+        <div class="boo-avatar-badge" style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(16, 185, 129, 0.25)); border: 2px solid var(--accent-amber); display: flex; align-items: center; justify-content: center; font-size: 1.7rem; box-shadow: var(--shadow-glow-amber);">
           🐕
         </div>
         <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.35rem; color: #fff; margin-bottom: 2px;">
-            Boo <span style="font-size: 0.85rem; background: var(--bg-tertiary); color: var(--accent-amber); padding: 2px 8px; border-radius: 12px; font-weight: 500;">Border Collie • 3 años</span>
+          <h2 style="font-family: var(--font-heading); font-size: 1.25rem; color: #fff; margin-bottom: 2px;">
+            Boo <span style="font-size: 0.8rem; background: var(--bg-tertiary); color: var(--accent-amber); padding: 2px 8px; border-radius: 12px; font-weight: 500;">Border Collie • 3 años</span>
           </h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">
-            Plan de adiestramiento conductual y desensibilización emocional
+          <p style="color: var(--text-muted); font-size: 0.82rem;">
+            Plan de adiestramiento conductual y backlog evolutivo de trucos
           </p>
         </div>
       </div>
-      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <span class="boo-stat-pill"><i class="fa-solid fa-bolt" style="color:var(--accent-amber);"></i> Energía: Alta</span>
-        <span class="boo-stat-pill"><i class="fa-solid fa-route" style="color:var(--accent-emerald);"></i> 75 min Paseo/Día</span>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <span class="boo-stat-pill"><i class="fa-solid fa-trophy" style="color:var(--accent-amber);"></i> ${learnedTricks.length} Dominados</span>
+        <span class="boo-stat-pill"><i class="fa-solid fa-list-check" style="color:var(--accent-cyan);"></i> ${BOO_TRICKS_BACKLOG.length - learnedTricks.length} En Cola</span>
       </div>
     </div>
   `;
   container.appendChild(heroCard);
 
-  // 2. DAILY RECOMMENDED PLAN FOR ACTIVE DAY
-  const dailyPlanCard = document.createElement("div");
-  dailyPlanCard.className = "glass-card";
-  dailyPlanCard.style.marginBottom = "1.5rem";
+  // 2. OBJETIVO DE APRENDIZAJE DE HOY (1 TRUCO ACTIVO A LA VEZ)
+  if (activeTrick) {
+    const isMastered = learnedTricks.includes(activeTrick.id);
+    const activeTrickCard = document.createElement("div");
+    activeTrickCard.className = "glass-card boo-active-trick-card";
+    activeTrickCard.style.cssText = "margin-bottom: 1.25rem; border: 1px solid var(--accent-amber); background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(19,26,42,0.95));";
 
-  const totalDayTasks = scheduleDay.tasks.length;
-  const completedDayTasksCount = scheduleDay.tasks.filter(t => completedTasks[t.id]).length;
-  const progressPct = Math.round((completedDayTasksCount / totalDayTasks) * 100) || 0;
+    const stepsListHtml = activeTrick.steps.map((step, idx) => `
+      <li style="margin-bottom: 0.45rem; font-size: 0.85rem; line-height: 1.4; color: var(--text-secondary); display: flex; gap: 0.5rem; align-items: flex-start;">
+        <span style="background: ${activeTrick.badgeColor}; color: #000; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; flex-shrink: 0; margin-top: 2px;">${idx + 1}</span>
+        <span>${step}</span>
+      </li>
+    `).join("");
 
-  let tasksHtml = scheduleDay.tasks.map(t => {
-    const isDone = !!completedTasks[t.id];
+    activeTrickCard.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 12px; background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid var(--accent-amber);">
+            <i class="fa-solid fa-bullseye"></i> OBJETIVO DE APRENDIZAJE DE HOY
+          </span>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Dificultad: <strong style="color:#fff;">${activeTrick.difficulty}</strong></span>
+        </div>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--accent-cyan); background: var(--bg-tertiary); padding: 4px 10px; border-radius: 12px;">
+          <i class="${activeTrick.icon}"></i> ${activeTrick.category}
+        </span>
+      </div>
+
+      <h3 style="font-family: var(--font-heading); font-size: 1.3rem; color: #fff; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
+        ${activeTrick.title}
+      </h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+        ${activeTrick.summary}
+      </p>
+
+      <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 0.6rem; letter-spacing: 0.5px;">
+          <i class="fa-solid fa-shoe-prints"></i> Paso a Paso para Entrenar Hoy:
+        </div>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          ${stepsListHtml}
+        </ul>
+      </div>
+
+      <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--accent-amber); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--text-secondary);">
+        <strong style="color: var(--accent-amber);"><i class="fa-solid fa-lightbulb"></i> Consejo Collie:</strong> ${activeTrick.proTip}
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border-color);">
+        <span style="font-size: 0.82rem; color: var(--text-muted);">
+          Estado: <strong style="color: ${isMastered ? 'var(--accent-emerald)' : 'var(--accent-amber)'};">${isMastered ? '¡Ya Dominado!' : 'En Proceso de Aprendizaje'}</strong>
+        </span>
+        <button type="button" class="btn-primary" onclick="markTrickMastered('${activeTrick.id}')" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 0.88rem; padding: 8px 16px;">
+          <i class="fa-solid fa-circle-check"></i> ¡Dominado / Ya lo sabe! ✅ (Siguiente Truco)
+        </button>
+      </div>
+    `;
+    container.appendChild(activeTrickCard);
+  }
+
+  // 3. REFUERZO CONTINUO DEL PASEO (ACCORDION COLAPSABLE)
+  const isContinuousOpen = accordions["continuous"] ?? false;
+  const continuousAccordionCard = document.createElement("div");
+  continuousAccordionCard.className = "glass-card boo-accordion-card";
+  continuousAccordionCard.style.marginBottom = "1.25rem";
+
+  const continuousItemsHtml = BOO_CONTINUOUS_REINFORCEMENT.map(item => {
+    const key = `${activeDay}_${item.id}`;
+    const isDone = !!completedContinuous[key];
     return `
-      <div class="boo-task-item ${isDone ? 'completed' : ''}" onclick="toggleBooTask('${t.id}', '${activeDay}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
+      <div class="boo-task-item ${isDone ? 'completed' : ''}" onclick="toggleContinuousItem('${item.id}', '${activeDay}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <div class="custom-checkbox ${isDone ? 'checked' : ''}" style="width: 22px; height: 22px; border-radius: 6px; border: 2px solid ${isDone ? 'var(--accent-emerald)' : 'var(--text-muted)'}; background: ${isDone ? 'var(--accent-emerald)' : 'transparent'}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.75rem;">
             ${isDone ? '<i class="fa-solid fa-check"></i>' : ''}
           </div>
           <div>
             <div style="font-weight: 600; font-size: 0.92rem; color: ${isDone ? 'var(--text-muted)' : 'var(--text-primary)'}; ${isDone ? 'text-decoration: line-through;' : ''}">
-              ${t.text}
+              <i class="${item.icon}" style="color: ${item.color};"></i> ${item.title}
             </div>
-            <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> Duración: ${t.duration}</span>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${item.desc}</div>
           </div>
         </div>
         <span class="btn-micro" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 12px; background: ${isDone ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)'}; color: ${isDone ? 'var(--accent-emerald)' : 'var(--text-secondary)'}; font-weight: 600;">
-          ${isDone ? '¡Completado!' : 'Marcar'}
+          ${isDone ? '¡Reforzado!' : 'Practicado hoy'}
         </span>
       </div>
     `;
   }).join("");
 
-  dailyPlanCard.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-      <div>
-        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
-          <i class="fa-solid fa-calendar-check" style="color: var(--accent-emerald);"></i> ${scheduleDay.focusTitle}
-        </h3>
-        <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
-          Objetivos de adiestramiento programados para ${activeDay}
-        </p>
-      </div>
-      <div style="text-align: right;">
-        <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-emerald);">${completedDayTasksCount} / ${totalDayTasks} completados (${progressPct}%)</span>
-        <div style="width: 140px; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; margin-top: 4px;">
-          <div style="width: ${progressPct}%; height: 100%; background: var(--accent-emerald); transition: width 0.3s ease;"></div>
+  continuousAccordionCard.innerHTML = `
+    <div class="boo-accordion-header" onclick="toggleBooAccordion('continuous')" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <i class="fa-solid fa-arrows-rotate" style="font-size: 1.1rem; color: var(--accent-cyan);"></i>
+        <div>
+          <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin: 0;">
+            🔄 Refuerzo Continuo del Paseo (${activeDay})
+          </h4>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">
+            Hábitos permanentes que se trabajan a diario durante las salidas (Pulsar para ${isContinuousOpen ? 'ocultar' : 'desplegar'})
+          </p>
         </div>
       </div>
+      <i class="fa-solid fa-chevron-${isContinuousOpen ? 'up' : 'down'}" style="color: var(--text-muted);"></i>
     </div>
 
-    <div class="boo-tasks-list">
-      ${tasksHtml}
-    </div>
+    ${isContinuousOpen ? `
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        ${continuousItemsHtml}
+      </div>
+    ` : ''}
   `;
-  container.appendChild(dailyPlanCard);
+  container.appendChild(continuousAccordionCard);
 
-  // 3. 4 CORE BEHAVIORAL MODULES GRID
-  const modulesHeader = document.createElement("div");
-  modulesHeader.style.cssText = "margin-top: 1.5rem; margin-bottom: 1rem;";
-  modulesHeader.innerHTML = `
-    <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
-      <i class="fa-solid fa-graduation-cap" style="color: var(--accent-cyan);"></i> Módulos de Trabajo Conductual
-    </h3>
-    <p style="color: var(--text-muted); font-size: 0.85rem;">Guía de ejercicios paso a paso adaptados a las necesidades de Boo</p>
-  `;
-  container.appendChild(modulesHeader);
+  // 4. BACKLOG DE TRUCOS FUTUROS Y HISTÓRICO (ACCORDION COLAPSABLE)
+  const isBacklogOpen = accordions["backlog"] ?? false;
+  const backlogAccordionCard = document.createElement("div");
+  backlogAccordionCard.className = "glass-card boo-accordion-card";
+  backlogAccordionCard.style.marginBottom = "1.25rem";
 
-  const modulesGrid = document.createElement("div");
-  modulesGrid.className = "boo-modules-grid";
-  modulesGrid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;";
+  const unlearnedTricks = BOO_TRICKS_BACKLOG.filter(t => !learnedTricks.includes(t.id));
+  const masteredTricks = BOO_TRICKS_BACKLOG.filter(t => learnedTricks.includes(t.id));
 
-  BOO_TRAINING_MODULES.forEach(mod => {
-    const practiceCount = moduleStats[mod.id] || 0;
-    const modCard = document.createElement("div");
-    modCard.className = "glass-card boo-module-card";
-    modCard.style.cssText = "display: flex; flex-direction: column; justify-content: space-between;";
-
-    const stepsListHtml = mod.steps.map((step, idx) => `
-      <li style="margin-bottom: 0.4rem; font-size: 0.84rem; line-height: 1.4; color: var(--text-secondary); display: flex; gap: 0.5rem; align-items: flex-start;">
-        <span style="background: ${mod.badgeColor}; color: #000; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; margin-top: 2px;">${idx + 1}</span>
-        <span>${step}</span>
-      </li>
-    `).join("");
-
-    modCard.innerHTML = `
-      <div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-          <span style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.06); color: ${mod.badgeColor}; border: 1px solid ${mod.badgeColor};">
-            <i class="${mod.icon}"></i> ${mod.category}
-          </span>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">
-            Dificultad: <strong style="color: #fff;">${mod.difficulty}</strong>
-          </span>
-        </div>
-
-        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin-bottom: 0.4rem;">
-          ${mod.title}
-        </h4>
-        <p style="font-size: 0.83rem; color: var(--text-muted); margin-bottom: 0.85rem; line-height: 1.4;">
-          ${mod.summary}
-        </p>
-
-        <div style="background: var(--bg-secondary); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.85rem;">
-          <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">
-            <i class="fa-solid fa-list-check"></i> Pasos y Técnica Clave:
+  const unlearnedListHtml = unlearnedTricks.map(t => {
+    const isCurrentActive = activeTrick && activeTrick.id === t.id;
+    return `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.85rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid ${isCurrentActive ? 'var(--accent-amber)' : 'var(--border-color)'}; margin-bottom: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="color: ${t.badgeColor}; font-size: 1rem;"><i class="${t.icon}"></i></span>
+          <div>
+            <div style="font-size: 0.88rem; font-weight: 600; color: #fff;">${t.title}</div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">${t.category} • ${t.difficulty}</span>
           </div>
-          <ul style="list-style: none; padding: 0; margin: 0;">
-            ${stepsListHtml}
-          </ul>
         </div>
-
-        <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--accent-amber); padding: 0.65rem 0.85rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; font-size: 0.8rem; color: var(--text-secondary);">
-          <strong style="color: var(--accent-amber);"><i class="fa-solid fa-lightbulb"></i> Consejos Collie:</strong> ${mod.proTip}
-        </div>
-      </div>
-
-      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
-        <span style="font-size: 0.8rem; color: var(--text-muted);">
-          Sesiones practicadas: <strong style="color: var(--accent-emerald); font-size: 0.9rem;">${practiceCount}</strong>
-        </span>
-        <button type="button" class="btn-primary" onclick="markBooModulePracticed('${mod.id}')" style="font-size: 0.78rem; padding: 6px 12px;">
-          <i class="fa-solid fa-plus"></i> Registrar Práctica
-        </button>
+        ${isCurrentActive ? `
+          <span style="font-size: 0.75rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 3px 8px; border-radius: 10px; font-weight: 600;">
+            Activo Hoy
+          </span>
+        ` : `
+          <button type="button" class="btn-micro" onclick="selectActiveTrickFromBacklog('${t.id}')" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-secondary);">
+            Fijar para Hoy
+          </button>
+        `}
       </div>
     `;
-    modulesGrid.appendChild(modCard);
-  });
-  container.appendChild(modulesGrid);
+  }).join("");
 
-  // 4. BOO MOOD & WALK NOTES LOGGER
+  const masteredListHtml = masteredTricks.map(t => `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; background: rgba(16, 185, 129, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom: 0.4rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <i class="fa-solid fa-medal" style="color: var(--accent-emerald);"></i>
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">${t.title}</span>
+      </div>
+      <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 600;">
+        <i class="fa-solid fa-check"></i> Dominado
+      </span>
+    </div>
+  `).join("");
+
+  backlogAccordionCard.innerHTML = `
+    <div class="boo-accordion-header" onclick="toggleBooAccordion('backlog')" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <i class="fa-solid fa-layer-group" style="font-size: 1.1rem; color: var(--accent-amber);"></i>
+        <div>
+          <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin: 0;">
+            📚 Backlog de Trucos Futuros y Dominados (${unlearnedTricks.length} pendientes / ${masteredTricks.length} aprendidos)
+          </h4>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">
+            Ver los próximos trucos programados y el historial (Pulsar para ${isBacklogOpen ? 'ocultar' : 'desplegar'})
+          </p>
+        </div>
+      </div>
+      <i class="fa-solid fa-chevron-${isBacklogOpen ? 'up' : 'down'}" style="color: var(--text-muted);"></i>
+    </div>
+
+    ${isBacklogOpen ? `
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <div style="margin-bottom: 1.25rem;">
+          <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--accent-amber); text-transform: uppercase; margin-bottom: 0.6rem;">
+            ⏳ Próximos Trucos en Cola de Aprendizaje (${unlearnedTricks.length})
+          </h5>
+          ${unlearnedListHtml || '<p style="font-size:0.8rem; color:var(--text-muted);">¡Has completado todos los trucos del backlog!</p>'}
+        </div>
+
+        ${masteredTricks.length > 0 ? `
+          <div>
+            <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--accent-emerald); text-transform: uppercase; margin-bottom: 0.6rem;">
+              🏆 Histórico de Trucos Dominados (${masteredTricks.length})
+            </h5>
+            ${masteredListHtml}
+          </div>
+        ` : ''}
+      </div>
+    ` : ''}
+  `;
+  container.appendChild(backlogAccordionCard);
+
+  // 5. REGISTRO EMOCIONAL Y NOTAS DEL PASEO
   const moodCard = document.createElement("div");
   moodCard.className = "glass-card";
   moodCard.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem;">
       <div>
-        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
           <i class="fa-solid fa-face-smile-wink" style="color: var(--accent-amber);"></i> Registro Emocional y Notas del Paseo (${activeDay})
         </h3>
-        <p style="color: var(--text-muted); font-size: 0.82rem;">Registra la actitud de Boo hoy y anotaciones de su evolución</p>
+        <p style="color: var(--text-muted); font-size: 0.8rem;">Registra la actitud de Boo hoy y anotaciones de su evolución</p>
       </div>
     </div>
 
-    <div style="margin-bottom: 1.25rem;">
-      <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">
+    <div style="margin-bottom: 1rem;">
+      <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
         Estado de Ánimo Predominante de Boo Hoy:
       </label>
       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
         ${["🧘‍♂️ Calma & Enfocada", "⚡ Alta Excitación", "🎾 Obsesionada con Pelota", "🎯 Excelente Respuesta a Llamada"].map(m => `
-          <button type="button" class="boo-mood-btn ${currentMood === m ? 'active' : ''}" onclick="setBooMood('${activeDay}', '${m}')" style="padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; border: 1px solid ${currentMood === m ? 'var(--accent-amber)' : 'var(--border-color)'}; background: ${currentMood === m ? 'rgba(245,158,11,0.2)' : 'var(--bg-secondary)'}; color: ${currentMood === m ? 'var(--accent-amber)' : 'var(--text-secondary)'}; cursor: pointer; transition: all 0.2s ease;">
+          <button type="button" class="boo-mood-btn ${currentMood === m ? 'active' : ''}" onclick="setBooMood('${activeDay}', '${m}')" style="padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; border: 1px solid ${currentMood === m ? 'var(--accent-amber)' : 'var(--border-color)'}; background: ${currentMood === m ? 'rgba(245,158,11,0.2)' : 'var(--bg-secondary)'}; color: ${currentMood === m ? 'var(--accent-amber)' : 'var(--text-secondary)'}; cursor: pointer; transition: all 0.2s ease;">
             ${m}
           </button>
         `).join("")}
@@ -2762,12 +2854,12 @@ function renderBooWorkoutView() {
     </div>
 
     <div>
-      <label for="boo-session-note-input" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">
+      <label for="boo-session-note-input" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
         Observaciones o Logro Destacado del Día:
       </label>
       <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <input type="text" id="boo-session-note-input" class="custom-input" placeholder="Ej: ¡Hoy volvió a la primera cuando la llamé en el parque!" value="${currentNote.replace(/"/g, '&quot;')}" style="flex: 1; min-width: 250px;">
-        <button type="button" class="btn-primary" onclick="saveBooSessionNotes('${activeDay}')">
+        <input type="text" id="boo-session-note-input" class="custom-input" placeholder="Ej: ¡Hoy volvió a la primera cuando la llamé en el parque!" value="${currentNote.replace(/"/g, '&quot;')}" style="flex: 1; min-width: 240px; font-size: 0.85rem;">
+        <button type="button" class="btn-primary" onclick="saveBooSessionNotes('${activeDay}')" style="font-size: 0.82rem;">
           <i class="fa-solid fa-floppy-disk"></i> Guardar Nota
         </button>
       </div>
