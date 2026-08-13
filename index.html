@@ -121,6 +121,13 @@
     <!-- MAIN CONTENT VIEW AREA -->
     <main class="main-content">
       
+      <!-- TOP SUBTAB SEGMENTED CONTROL BAR (IOS & WEB) -->
+      <div class="ios-subtab-container" id="ios-subtab-bar" style="display: flex !important; visibility: visible !important; margin-bottom: 1.25rem;">
+        <div class="ios-segmented-control" id="ios-segmented-control-inner">
+          <!-- Subtabs render dynamically by app.js -->
+        </div>
+      </div>
+
       <!-- TAB 1: MAIN SUMMARY & APPLE WATCH LIVE DASHBOARD -->
       <section id="summary-view" class="view-panel active">
         <!-- SUMMARY HERO CARD -->
@@ -246,38 +253,81 @@
         </div>
       </section>
 
-      <!-- TAB 2: NUTRITION & MEALS VIEW -->
-      <section id="nutrition-view" class="view-panel">
-        <div class="header-title-group">
-          <h1 class="page-title">Menú Semanal Equilibrado</h1>
-          <p class="page-subtitle">Plan de alimentación rico en proteínas y saciante ajustado a vuestros gustos</p>
+      <!-- SUBTAB 1: MENU DEL DIA -->
+      <section id="nutrition-menu-view" class="view-panel">
+        <div class="header-title-group" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h1 class="page-title"><i class="fa-solid fa-utensils" style="color: var(--accent-emerald);"></i> Menú del Día</h1>
+            <p class="page-subtitle">Plan de alimentación alto en proteína y saciante ajustado a vuestro objetivo</p>
+          </div>
+          
+          <!-- DAY SELECTOR DROPDOWN -->
+          <div class="nutrition-day-selector-card">
+            <label for="nutrition-day-select" class="selector-label"><i class="fa-solid fa-calendar-day"></i> Selección de Día:</label>
+            <select id="nutrition-day-select" class="custom-select" onchange="selectDayFromDropdown(this.value)">
+              <option value="Lunes">Lunes</option>
+              <option value="Martes">Martes</option>
+              <option value="Miércoles">Miércoles</option>
+              <option value="Jueves">Jueves</option>
+              <option value="Viernes">Viernes</option>
+              <option value="Sábado">Sábado</option>
+              <option value="Domingo">Domingo</option>
+            </select>
+          </div>
         </div>
 
-        <div class="weekly-days-tabs" id="days-tabs">
-          <button class="day-tab active" onclick="selectDay('Lunes', this)">Lunes</button>
-          <button class="day-tab" onclick="selectDay('Martes', this)">Martes</button>
-          <button class="day-tab" onclick="selectDay('Miércoles', this)">Miércoles</button>
-          <button class="day-tab" onclick="selectDay('Jueves', this)">Jueves</button>
-          <button class="day-tab" onclick="selectDay('Viernes', this)">Viernes</button>
-          <button class="day-tab" onclick="selectDay('Sábado', this)">Sábado</button>
-          <button class="day-tab" onclick="selectDay('Domingo', this)">Domingo</button>
-        </div>
-
-        <div class="meal-cards-grid" id="meal-cards-container">
-          <!-- Meal Cards Render Dynamically -->
+        <div class="vertical-meal-stack" id="meal-cards-container">
+          <!-- 5 Vertical Meal Cards Render Dynamically (Desayuno, Snack 1, Comida, Snack 2, Cena) -->
         </div>
       </section>
 
-      <!-- TAB 3: SMART SHOPPING LIST VIEW -->
-      <section id="shopping-view" class="view-panel">
-        <div class="shopping-header">
+      <!-- SUBTAB 2: RECETAS BATCH COOKING -->
+      <section id="nutrition-recipes-view" class="view-panel">
+        <div class="header-title-group" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
           <div>
-            <h1 class="page-title">Lista de la Compra Inteligente</h1>
-            <p class="page-subtitle">Agrupada por secciones para los 7 días de la semana</p>
+            <h1 class="page-title"><i class="fa-solid fa-book-open" style="color: var(--accent-cyan);"></i> Recetas y Batch Cooking</h1>
+            <p class="page-subtitle">Prepara la comida del domingo y ahorra tiempo durante la semana</p>
           </div>
-          <button class="btn-primary" onclick="copyShoppingList()">
-            <i class="fa-solid fa-copy"></i> Copiar al Portapapeles
-          </button>
+
+          <!-- PERIOD TOGGLE (5 DAYS VS 7 DAYS) -->
+          <div class="range-toggle-group">
+            <button type="button" class="range-toggle-btn active" id="recipes-range-5" onclick="setRecipesRange('5')">
+              <i class="fa-solid fa-calendar-week"></i> Lunes a Viernes (5 días)
+            </button>
+            <button type="button" class="range-toggle-btn" id="recipes-range-7" onclick="setRecipesRange('7')">
+              <i class="fa-solid fa-calendar-days"></i> Lunes a Domingo (7 días)
+            </button>
+          </div>
+        </div>
+
+        <div id="recipes-cards-container" class="recipes-grid">
+          <!-- Recipes List Renders Dynamically -->
+        </div>
+      </section>
+
+      <!-- SUBTAB 3: LISTA DE LA COMPRA -->
+      <section id="nutrition-shopping-view" class="view-panel">
+        <div class="shopping-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h1 class="page-title"><i class="fa-solid fa-cart-shopping" style="color: var(--accent-amber);"></i> Lista de la Compra Inteligente</h1>
+            <p class="page-subtitle">Ingredientes agrupados por secciones con cantidades exactas</p>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <!-- PERIOD TOGGLE (5 DAYS VS 7 DAYS) -->
+            <div class="range-toggle-group">
+              <button type="button" class="range-toggle-btn active" id="shopping-range-5" onclick="setShoppingRange('5')">
+                <i class="fa-solid fa-calendar-week"></i> Lunes a Viernes
+              </button>
+              <button type="button" class="range-toggle-btn" id="shopping-range-7" onclick="setShoppingRange('7')">
+                <i class="fa-solid fa-calendar-days"></i> Lunes a Domingo
+              </button>
+            </div>
+
+            <button type="button" class="btn-primary" onclick="copyShoppingList()">
+              <i class="fa-solid fa-copy"></i> Copiar Lista
+            </button>
+          </div>
         </div>
 
         <div id="shopping-categories-container">

@@ -320,6 +320,70 @@ export const RECIPES_DATABASE = [
       "Sirve el queso batido en una taza o bol.",
       "Añade las almendras enteras o picadas y un fino hilo de miel."
     ]
+  },
+  {
+    id: "s3",
+    name: "Batido Proteico de Plátano y Copos de Avena",
+    type: "snack",
+    prepTime: 3,
+    calories: 260,
+    protein: 22,
+    carbs: 34,
+    fats: 4,
+    tags: ["post-entreno", "energético", "rápido"],
+    ingredients: [
+      { name: "Plátano maduro", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Proteína de suero o queso 0%", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Leche o bebida vegetal sin azúcar", amount: 200, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Copos de avena", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS }
+    ],
+    instructions: [
+      "Vierte la leche y la proteína en el vaso batidor.",
+      "Añade el plátano troceado y los copos de avena.",
+      "Tritura durante 30 segundos hasta obtener un batido cremoso."
+    ]
+  },
+  {
+    id: "s4",
+    name: "Tostada Integrales con Pechuga de Pavo y Tomate",
+    type: "snack",
+    prepTime: 4,
+    calories: 190,
+    protein: 15,
+    carbs: 24,
+    fats: 3,
+    tags: ["salado", "proteína magra", "rápido"],
+    ingredients: [
+      { name: "Pan integral de masa madre", amount: 45, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pavo 90%+", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Tomate en rodajas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra", amount: 3, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "Tuesta la rebanada de pan integral.",
+      "Pinta con unas gotas de AOVE y coloca las rodajas de tomate.",
+      "Cubre con las lonchas de pechuga de pavo."
+    ]
+  },
+  {
+    id: "s5",
+    name: "Tortitas de Arroz con Mantequilla de Almendras y Frutos Rojos",
+    type: "snack",
+    prepTime: 3,
+    calories: 200,
+    protein: 7,
+    carbs: 25,
+    fats: 8,
+    tags: ["crujiente", "ligero", "dulce"],
+    ingredients: [
+      { name: "Tortitas de arroz integral", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Mantequilla de almendra 100%", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Arándanos o frambuesas", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
+    ],
+    instructions: [
+      "Unta la mantequilla de almendra sobre las tortitas.",
+      "Decora con los frutos rojos frescos por encima."
+    ]
   }
 ];
 
