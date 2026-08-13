@@ -326,7 +326,10 @@ function switchCategory(categoryKey, targetTabId = null, btnElement = null) {
     if (selectElem) selectElem.value = today;
   }
 
-  const tabToOpen = targetTabId || cat.subtabs[0].id;
+  let tabToOpen = cat.subtabs[0].id;
+  if (targetTabId && cat.subtabs.some(s => s.id === targetTabId)) {
+    tabToOpen = targetTabId;
+  }
   showTab(tabToOpen);
 }
 
