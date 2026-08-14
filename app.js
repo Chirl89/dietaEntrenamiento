@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.16';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.17';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2010,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.16)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.17)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2238,33 +2238,41 @@ export async function pushToCloud(showToast = false) {
 
     addSyncConsoleLog(`📤 Enviando datos de ${authorName} (${masterPid.toUpperCase()}): ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos...`, "info");
     
-    // Send ONLY author's profile data (never send partner defaults)
-    const payload = {
+    // Send compact payload to guarantee GET URL length < 700 chars for keyvalue GET endpoint
+    const compactPayload = {
       authorProfileId: masterPid,
       masterProfileId: masterPid,
       timestamp: new Date().toISOString(),
       profiles: {
-        [masterPid]: appState.profiles?.[masterPid],
+        [masterPid]: {
+          targetCalories: p.targetCalories || 2000,
+          protein: p.protein,
+          carbs: p.carbs,
+          fats: p.fats
+        },
         dog: appState.profiles?.dog
       },
       completedWorkouts: {
-        [masterPid]: appState.completedWorkouts?.[masterPid]
+        [masterPid]: appState.completedWorkouts?.[masterPid] || {}
       },
       weightLogs: {
-        [masterPid]: appState.weightLogs?.[masterPid]
+        [masterPid]: (appState.weightLogs?.[masterPid] || []).slice(-5)
       },
       appleWatch: {
         metrics: {
-          [masterPid]: appState.appleWatch?.metrics?.[masterPid]
+          [masterPid]: {
+            steps: m.steps || 0,
+            moveKcal: m.moveKcal || 0,
+            exerciseMin: m.exerciseMin || 0,
+            targetCalories: m.targetCalories || 2000,
+            targetMin: m.targetMin || 30,
+            stepsGoal: m.stepsGoal || 10000
+          }
         }
-      },
-      checkedShoppingItems: appState.checkedShoppingItems || {},
-      exclusions: appState.exclusions || [],
-      recipesDaysRange: appState.recipesDaysRange || "5",
-      shoppingDaysRange: appState.shoppingDaysRange || "5"
+      }
     };
 
-    const cleanJson = JSON.stringify(payload);
+    const cleanJson = JSON.stringify(compactPayload);
     const b64Data = btoa(encodeURIComponent(cleanJson));
     const encodedData = encodeURIComponent(b64Data);
     let pushSuccess = false;
