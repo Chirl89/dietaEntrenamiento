@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.2';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.3';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -592,7 +592,16 @@ function showIosToast(message, iconClass = "fa-brands fa-apple") {
 
 function startAppleWatchAutoSync() {
   if (autoSyncIntervalTimer) clearInterval(autoSyncIntervalTimer);
-  // Auto-sync periodic background interval loop completely disabled per user preference!
+  // Auto-sync periodic background cloud polling loop (every 10 seconds)
+  autoSyncIntervalTimer = setInterval(() => {
+    if (!document.hidden && !isCloudSyncing) {
+      pullFromCloud(false).then(hasChanges => {
+        if (hasChanges) {
+          renderAll();
+        }
+      });
+    }
+  }, 10000);
 }
 
 function performAutoSyncTick() {
@@ -1987,7 +1996,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.2)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.3)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2056,40 +2065,51 @@ function cleanAndParseJsonFromCloud(rawText) {
 function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
   let hasChanges = false;
+  const author = cloudData.authorProfileId || 'he';
 
-  // 1. Profiles (he, she, dog)
+  // 1. Profiles: Update author profile and dog
   ['he', 'she', 'dog'].forEach(pid => {
     if (cloudData.profiles?.[pid]) {
       if (!appState.profiles) appState.profiles = {};
-      appState.profiles[pid] = { ...appState.profiles[pid], ...cloudData.profiles[pid] };
-      hasChanges = true;
+      // If profile belongs to payload author or dog, accept cloud updates
+      if (pid === author || pid === 'dog' || !appState.profiles[pid]) {
+        appState.profiles[pid] = { ...appState.profiles[pid], ...cloudData.profiles[pid] };
+        hasChanges = true;
+      }
     }
   });
 
-  // 2. Completed Workouts
+  // 2. Completed Workouts: Update author workouts and merge non-conflicting partner workouts
   ['he', 'she'].forEach(pid => {
     if (cloudData.completedWorkouts?.[pid]) {
       if (!appState.completedWorkouts) appState.completedWorkouts = {};
       if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
-      const cloudW = cloudData.completedWorkouts[pid];
-      const localW = appState.completedWorkouts[pid];
       
-      const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-      days.forEach(day => {
-        const cVal = cloudW[day];
-        const lVal = localW[day];
-        if (cVal && typeof cVal === 'object' && cVal.done) {
-          localW[day] = cVal;
-          hasChanges = true;
-        } else if (cVal === true && (!lVal || lVal === false)) {
-          localW[day] = true;
-          hasChanges = true;
-        }
-      });
+      if (pid === author) {
+        // Authoritative update for the author's own workouts
+        appState.completedWorkouts[pid] = { ...appState.completedWorkouts[pid], ...cloudData.completedWorkouts[pid] };
+        hasChanges = true;
+      } else {
+        // Non-destructive merge for partner workouts (only accept done = true if local is missing or false)
+        const cloudW = cloudData.completedWorkouts[pid];
+        const localW = appState.completedWorkouts[pid];
+        const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        days.forEach(day => {
+          const cVal = cloudW[day];
+          const lVal = localW[day];
+          if (cVal && typeof cVal === 'object' && cVal.done) {
+            localW[day] = cVal;
+            hasChanges = true;
+          } else if (cVal === true && (!lVal || lVal === false)) {
+            localW[day] = true;
+            hasChanges = true;
+          }
+        });
+      }
     }
   });
 
-  // 3. Weight Logs
+  // 3. Weight Logs: Union and deduplicate for both profiles
   ['he', 'she'].forEach(pid => {
     if (Array.isArray(cloudData.weightLogs?.[pid])) {
       const cloudLogs = cloudData.weightLogs[pid];
@@ -2103,7 +2123,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
-  // 4. Apple Watch Metrics
+  // 4. Apple Watch Metrics: Update author metrics
   ['he', 'she'].forEach(pid => {
     if (cloudData.appleWatch?.metrics?.[pid]) {
       const cM = cloudData.appleWatch.metrics[pid];
@@ -2112,25 +2132,25 @@ function mergeCloudDataIntoAppState(cloudData) {
       if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = {};
       const lM = appState.appleWatch.metrics[pid];
       
-      if (cM.moveKcal) lM.moveKcal = Math.max(lM.moveKcal || 0, cM.moveKcal || 0);
-      if (cM.exerciseMin) lM.exerciseMin = Math.max(lM.exerciseMin || 0, cM.exerciseMin || 0);
-      if (cM.steps) lM.steps = Math.max(lM.steps || 0, cM.steps || 0);
-      if (cM.deviceName) lM.deviceName = cM.deviceName;
-      if (cM.moveGoal) lM.moveGoal = cM.moveGoal;
-      if (cM.exerciseGoal) lM.exerciseGoal = cM.exerciseGoal;
-      if (cM.stepsGoal) lM.stepsGoal = cM.stepsGoal;
-      if (cM.hr) lM.hr = cM.hr;
-      if (cM.distanceKm) lM.distanceKm = cM.distanceKm;
-      hasChanges = true;
+      if (pid === author) {
+        appState.appleWatch.metrics[pid] = { ...lM, ...cM };
+        hasChanges = true;
+      } else {
+        if (cM.moveKcal) lM.moveKcal = Math.max(lM.moveKcal || 0, cM.moveKcal || 0);
+        if (cM.exerciseMin) lM.exerciseMin = Math.max(lM.exerciseMin || 0, cM.exerciseMin || 0);
+        if (cM.steps) lM.steps = Math.max(lM.steps || 0, cM.steps || 0);
+        if (cM.deviceName) lM.deviceName = cM.deviceName;
+        hasChanges = true;
+      }
     }
   });
 
-  // 5. Checked Shopping Items
+  // 5. Checked Shopping Items: Exact state sync
   if (cloudData.checkedShoppingItems && typeof cloudData.checkedShoppingItems === 'object') {
     if (!appState.checkedShoppingItems) appState.checkedShoppingItems = {};
     Object.keys(cloudData.checkedShoppingItems).forEach(k => {
-      if (cloudData.checkedShoppingItems[k]) {
-        appState.checkedShoppingItems[k] = true;
+      if (cloudData.checkedShoppingItems[k] !== undefined) {
+        appState.checkedShoppingItems[k] = cloudData.checkedShoppingItems[k];
         hasChanges = true;
       }
     });
@@ -2169,8 +2189,10 @@ export async function pushToCloud(showToast = false) {
     addSyncConsoleLog(`☁️ Enviando datos a la nube (Clave: ${key})...`, "info");
     
     // Streamlined payload: essential user data only for minimum URL size
+    const masterPid = getMasterProfileId();
     const payload = {
-      masterProfileId: appState.masterProfileId,
+      authorProfileId: masterPid,
+      masterProfileId: masterPid,
       timestamp: new Date().toISOString(),
       profiles: {
         he: { name: appState.profiles?.he?.name, targetCalories: appState.profiles?.he?.targetCalories, protein: appState.profiles?.he?.protein, carbs: appState.profiles?.he?.carbs, fats: appState.profiles?.he?.fats },
