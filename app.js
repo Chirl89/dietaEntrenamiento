@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.35';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.36';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.35)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.36)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2299,60 +2299,97 @@ export async function pushToCloud(showToast = false) {
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Primary Cloud: Ntfy Cloud Channel (mode: "no-cors" bypasses Safari ITP CORS blocks)
+    // 1. Primary Cloud: Ntfy Cloud Channel (navigator.sendBeacon + text/plain CORS-safelisted)
     try {
       const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
       addSyncConsoleLog(`📡 POST [Ntfy Nube] (${masterPid.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 6000);
-      await fetch(channelUrl, {
-        method: "POST",
-        mode: "no-cors",
-        body: urlSafeData,
-        signal: controller.signal
-      });
-      clearTimeout(tId);
-      pushSuccess = true;
-      addSyncConsoleLog(`✅ Nube Ntfy (${authorName.toUpperCase()} enviada sin bloqueos)`, "success");
+      
+      let sentNtfy = false;
+      if (navigator && typeof navigator.sendBeacon === 'function') {
+        sentNtfy = navigator.sendBeacon(channelUrl, urlSafeData);
+      }
+
+      if (!sentNtfy) {
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(channelUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: urlSafeData,
+          signal: controller.signal
+        });
+        clearTimeout(tId);
+        if (res.ok) sentNtfy = true;
+      }
+
+      if (sentNtfy) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Nube Ntfy (${authorName.toUpperCase()} transmitida por Apple sendBeacon)`, "success");
+      }
     } catch (eCh) {
       addSyncConsoleLog(`⚠️ Nube Ntfy error: ${eCh.name} - ${eCh.message}`, "warn");
     }
 
-    // 2. Channel B: KeyValue Cloud Service (mode: "no-cors")
+    // 2. Channel B: KeyValue Cloud Service (navigator.sendBeacon)
     try {
       const appToken = "fitduo_v2026";
       const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${appToken}/${key}_${masterPid}/${urlSafeData}`;
       addSyncConsoleLog(`📡 POST [KeyValue] (${masterPid.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      await fetch(kvUrl, {
-        method: "POST",
-        mode: "no-cors",
-        signal: controller.signal
-      });
-      clearTimeout(tId);
-      pushSuccess = true;
-      addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} enviada sin bloqueos)`, "success");
+      
+      let sentKv = false;
+      if (navigator && typeof navigator.sendBeacon === 'function') {
+        sentKv = navigator.sendBeacon(kvUrl, "1");
+      }
+
+      if (!sentKv) {
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(kvUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: "1",
+          signal: controller.signal
+        });
+        clearTimeout(tId);
+        if (res.ok) sentKv = true;
+      }
+
+      if (sentKv) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} transmitida por Apple sendBeacon)`, "success");
+      }
     } catch (eKv) {}
 
-    // 3. Channel C: Dedicated Webhook Engine (mode: "no-cors")
+    // 3. Channel C: Dedicated Webhook Engine (navigator.sendBeacon)
     try {
       const whToken = masterPid === 'he' 
         ? '1c3631c8-fd98-4b82-8084-a46d3eacf382' 
         : 'c675e20a-42d2-49aa-a17f-4bd2c87d57fa';
       const whUrl = `https://webhook.site/${whToken}`;
       addSyncConsoleLog(`📡 POST [Webhook Engine] (${masterPid.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      await fetch(whUrl, {
-        method: "POST",
-        mode: "no-cors",
-        body: urlSafeData,
-        signal: controller.signal
-      });
-      clearTimeout(tId);
-      pushSuccess = true;
-      addSyncConsoleLog(`✅ Nube Webhook Engine (${authorName.toUpperCase()} enviada sin bloqueos)`, "success");
+      
+      let sentWh = false;
+      if (navigator && typeof navigator.sendBeacon === 'function') {
+        sentWh = navigator.sendBeacon(whUrl, urlSafeData);
+      }
+
+      if (!sentWh) {
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(whUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: urlSafeData,
+          signal: controller.signal
+        });
+        clearTimeout(tId);
+        if (res.ok) sentWh = true;
+      }
+
+      if (sentWh) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Nube Webhook Engine (${authorName.toUpperCase()} transmitida por Apple sendBeacon)`, "success");
+      }
     } catch (eWhPush) {}
 
     if (pushSuccess) {
