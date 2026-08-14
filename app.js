@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.12';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.13';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2010,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.12)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.13)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2087,22 +2087,6 @@ async function cleanAndParseJsonFromCloud(rawText) {
     const parsed = JSON.parse(text);
     if (parsed && typeof parsed === 'object') return parsed;
   } catch (eJson) {}
-
-  return null;
-}
-  } catch (e) {}
-
-  // 2. Direct URI / JSON fallback
-  try {
-    let t = decodeURIComponent(text);
-    if (t.startsWith('"') && t.endsWith('"')) t = t.slice(1, -1);
-    let parsed = JSON.parse(t);
-    if (typeof parsed === 'string') {
-      if (parsed.startsWith('"') && parsed.endsWith('"')) parsed = parsed.slice(1, -1);
-      parsed = JSON.parse(parsed);
-    }
-    if (parsed && typeof parsed === 'object') return parsed;
-  } catch (e) {}
 
   return null;
 }
