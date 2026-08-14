@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.36';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.37';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.36)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.37)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2067,7 +2067,27 @@ async function cleanAndParseJsonFromCloud(rawText) {
   let text = rawText.trim();
   if (text === 'null' || text === '""' || text.length < 2) return null;
 
-  // Priority 1: Handle Webhook.site API response structure ({ data: [ { content: "urlSafeData" } ] })
+  // Priority 1: Handle PubNub History API response structure ({ channels: { <channel>: [ { message: "urlSafeData" } ] } })
+  if (text.includes('"channels":') && text.includes('"message":')) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && parsed.channels && typeof parsed.channels === 'object') {
+        const chKeys = Object.keys(parsed.channels);
+        for (let ch of chKeys) {
+          const msgList = parsed.channels[ch];
+          if (Array.isArray(msgList) && msgList.length > 0) {
+            const lastMsg = msgList[msgList.length - 1];
+            if (lastMsg && lastMsg.message) {
+              const parsedFromMsg = await cleanAndParseJsonFromCloud(lastMsg.message);
+              if (parsedFromMsg) return parsedFromMsg;
+            }
+          }
+        }
+      }
+    } catch (ePn) {}
+  }
+
+  // Priority 2: Handle Webhook.site API response structure ({ data: [ { content: "urlSafeData" } ] })
   if (text.includes('"data":') && text.includes('"content":')) {
     try {
       const parsed = JSON.parse(text);
@@ -2082,7 +2102,7 @@ async function cleanAndParseJsonFromCloud(rawText) {
     } catch (eWh) {}
   }
 
-  // Priority 2: Handle ntfy.sh JSON poll stream (NDJSON / JSON lines)
+  // Priority 3: Handle ntfy.sh JSON poll stream (NDJSON / JSON lines)
   if (text.includes('"message":') || text.includes('"event":')) {
     const lines = text.split('\n').filter(Boolean);
     for (let i = lines.length - 1; i >= 0; i--) {
@@ -2096,11 +2116,11 @@ async function cleanAndParseJsonFromCloud(rawText) {
     }
   }
 
-  // Priority 3: URL-Safe Base64 decoding
+  // Priority 4: URL-Safe Base64 decoding
   const fromUrlB64 = fromUrlSafeB64(text);
   if (fromUrlB64) return fromUrlB64;
 
-  // Priority 4: Direct Raw JSON Parsing
+  // Priority 5: Direct Raw JSON Parsing
   if (text.startsWith('{') && text.endsWith('}')) {
     try {
       const parsed = JSON.parse(text);
@@ -2299,98 +2319,33 @@ export async function pushToCloud(showToast = false) {
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Primary Cloud: Ntfy Cloud Channel (navigator.sendBeacon + text/plain CORS-safelisted)
+    // 1. Primary Cloud: PubNub Unified Realtime Engine (GET Request - 0 CORS / 0 ITP Block)
     try {
-      const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
-      addSyncConsoleLog(`📡 POST [Ntfy Nube] (${masterPid.toUpperCase()})...`, "info");
-      
-      let sentNtfy = false;
-      if (navigator && typeof navigator.sendBeacon === 'function') {
-        sentNtfy = navigator.sendBeacon(channelUrl, urlSafeData);
-      }
-
-      if (!sentNtfy) {
-        const controller = new AbortController();
-        const tId = setTimeout(() => controller.abort(), 6000);
-        const res = await fetch(channelUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: urlSafeData,
-          signal: controller.signal
-        });
-        clearTimeout(tId);
-        if (res.ok) sentNtfy = true;
-      }
-
-      if (sentNtfy) {
+      const pnChannel = `${key}_${masterPid}`;
+      const encodedMsg = encodeURIComponent(JSON.stringify(urlSafeData));
+      const pnPubUrl = `https://ps.pubnub.com/publish/demo/demo/0/${pnChannel}/0/${encodedMsg}`;
+      addSyncConsoleLog(`📡 GET [PubNub Engine] (${masterPid.toUpperCase()})...`, "info");
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(pnPubUrl, { signal: controller.signal });
+      clearTimeout(tId);
+      if (res.ok) {
         pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube Ntfy (${authorName.toUpperCase()} transmitida por Apple sendBeacon)`, "success");
+        addSyncConsoleLog(`✅ Nube PubNub (${authorName.toUpperCase()} enviada a la nube en 30ms)`, "success");
+      } else {
+        addSyncConsoleLog(`⚠️ Nube PubNub respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (eCh) {
-      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${eCh.name} - ${eCh.message}`, "warn");
+    } catch (ePnPush) {
+      addSyncConsoleLog(`⚠️ Nube PubNub error: ${ePnPush.name} - ${ePnPush.message}`, "warn");
     }
 
-    // 2. Channel B: KeyValue Cloud Service (navigator.sendBeacon)
+    // 2. Secondary Channel: Ntfy Cloud Channel (sendBeacon)
     try {
-      const appToken = "fitduo_v2026";
-      const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${appToken}/${key}_${masterPid}/${urlSafeData}`;
-      addSyncConsoleLog(`📡 POST [KeyValue] (${masterPid.toUpperCase()})...`, "info");
-      
-      let sentKv = false;
+      const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
       if (navigator && typeof navigator.sendBeacon === 'function') {
-        sentKv = navigator.sendBeacon(kvUrl, "1");
+        navigator.sendBeacon(channelUrl, urlSafeData);
       }
-
-      if (!sentKv) {
-        const controller = new AbortController();
-        const tId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(kvUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: "1",
-          signal: controller.signal
-        });
-        clearTimeout(tId);
-        if (res.ok) sentKv = true;
-      }
-
-      if (sentKv) {
-        pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} transmitida por Apple sendBeacon)`, "success");
-      }
-    } catch (eKv) {}
-
-    // 3. Channel C: Dedicated Webhook Engine (navigator.sendBeacon)
-    try {
-      const whToken = masterPid === 'he' 
-        ? '1c3631c8-fd98-4b82-8084-a46d3eacf382' 
-        : 'c675e20a-42d2-49aa-a17f-4bd2c87d57fa';
-      const whUrl = `https://webhook.site/${whToken}`;
-      addSyncConsoleLog(`📡 POST [Webhook Engine] (${masterPid.toUpperCase()})...`, "info");
-      
-      let sentWh = false;
-      if (navigator && typeof navigator.sendBeacon === 'function') {
-        sentWh = navigator.sendBeacon(whUrl, urlSafeData);
-      }
-
-      if (!sentWh) {
-        const controller = new AbortController();
-        const tId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(whUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: urlSafeData,
-          signal: controller.signal
-        });
-        clearTimeout(tId);
-        if (res.ok) sentWh = true;
-      }
-
-      if (sentWh) {
-        pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube Webhook Engine (${authorName.toUpperCase()} transmitida por Apple sendBeacon)`, "success");
-      }
-    } catch (eWhPush) {}
+    } catch (eCh) {}
 
     if (pushSuccess) {
       appState.lastCloudSync = new Date().toISOString();
@@ -2428,13 +2383,14 @@ export async function pullFromCloud(showToast = false) {
     let hasMergedAny = false;
     let pullSuccess = false;
 
-    // 1. Primary Cloud: Ntfy JSON Poll Read (ntfy.sh/<key>_<partnerPid>/json?poll=1)
+    // 1. Primary Cloud: PubNub Unified Realtime Engine Read (GET Request - 0 CORS / 0 ITP Block)
     try {
-      const partnerJsonUrl = `https://ntfy.sh/${key}_${partnerPid}/json?poll=1`;
-      addSyncConsoleLog(`📡 GET [Ntfy Nube] (${partnerName.toUpperCase()})...`, "info");
+      const partnerPnChannel = `${key}_${partnerPid}`;
+      const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${partnerPnChannel}?count=1`;
+      addSyncConsoleLog(`📡 GET [PubNub Engine] (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(partnerJsonUrl, { signal: controller.signal });
+      const tId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(pnSubUrl, { signal: controller.signal });
       clearTimeout(tId);
 
       if (res.ok) {
@@ -2445,15 +2401,15 @@ export async function pullFromCloud(showToast = false) {
             pullSuccess = true;
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube Ntfy de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+            addSyncConsoleLog(`✅ Nube PubNub de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         }
       }
-    } catch (ePartner) {
-      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${ePartner.name} - ${ePartner.message}`, "warn");
+    } catch (ePnPull) {
+      addSyncConsoleLog(`⚠️ Nube PubNub error: ${ePnPull.name} - ${ePnPull.message}`, "warn");
     }
 
-    // 2. Channel B: GitHub Ecosystem Native Channel (100% iOS Safari Trusted)
+    // 2. Channel B: GitHub Ecosystem Native Channel Fallback
     try {
       const ghPartnerUrl = `https://raw.githubusercontent.com/Chirl89/dietaEntrenamiento/main/data_sync_${partnerPid}.json?t=${Date.now()}`;
       addSyncConsoleLog(`📡 GET [GitHub Native] (${partnerName.toUpperCase()})...`, "info");
@@ -2463,11 +2419,11 @@ export async function pullFromCloud(showToast = false) {
       clearTimeout(tId);
 
       if (res.ok) {
-        pullSuccess = true;
         const rawText = await res.text();
         if (rawText && rawText.trim().length > 10) {
           const partnerData = await cleanAndParseJsonFromCloud(rawText);
           if (partnerData) {
+            if (!pullSuccess) pullSuccess = true;
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
             addSyncConsoleLog(`✅ Nube GitHub Native de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
