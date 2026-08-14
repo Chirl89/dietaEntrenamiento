@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.1';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.2';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1987,7 +1987,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.1)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.2)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2010,7 +2010,21 @@ function cleanAndParseJsonFromCloud(rawText) {
   if (!rawText || typeof rawText !== 'string') return null;
   let text = rawText.trim();
   if (text === 'null' || text === '""' || text.length < 2) return null;
-  
+
+  // Handle ntfy.sh JSON stream
+  if (text.includes('"message":')) {
+    const lines = text.split('\n').filter(Boolean);
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        const item = JSON.parse(lines[i]);
+        if (item && item.message && typeof item.message === 'string') {
+          const parsedFromMsg = cleanAndParseJsonFromCloud(item.message);
+          if (parsedFromMsg) return parsedFromMsg;
+        }
+      } catch (e) {}
+    }
+  }
+
   if (text.startsWith('"') && text.endsWith('"')) {
     text = text.slice(1, -1);
   }
@@ -2175,26 +2189,46 @@ export async function pushToCloud(showToast = false) {
     const cleanJson = JSON.stringify(payload);
     const b64Data = btoa(encodeURIComponent(cleanJson));
     const encodedData = encodeURIComponent(b64Data);
-    const url = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
 
-    // Simple CORS POST request (no custom headers/keepalive to prevent WebKit preflight 'Load failed' error)
-    let res = null;
+    let pushSuccess = false;
+
+    // PRIMARY CLOUD ENDPOINT: ntfy.sh (Full CORS enabled, 100% web compatible)
     try {
-      res = await fetch(url, { method: "POST" });
-    } catch (e1) {
-      // Fallback try simple GET if POST failed
-      res = await fetch(url);
+      const ntfyUrl = `https://ntfy.sh/${key}`;
+      const ntfyRes = await fetch(ntfyUrl, {
+        method: "POST",
+        body: b64Data
+      });
+      if (ntfyRes.ok) {
+        pushSuccess = true;
+        addSyncConsoleLog("✅ Guardado en Nube Primaria (ntfy.sh OK - HTTP 200)", "success");
+      }
+    } catch (ePrimary) {
+      addSyncConsoleLog(`⚠️ Nube primaria con aviso: ${ePrimary.message}`, "warn");
     }
 
-    if (res && res.ok) {
+    // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co
+    if (!pushSuccess) {
+      try {
+        const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
+        const kvRes = await fetch(kvUrl, { method: "POST" });
+        if (kvRes && kvRes.ok) {
+          pushSuccess = true;
+          addSyncConsoleLog("✅ Guardado en Nube Secundaria (keyvalue OK)", "success");
+        }
+      } catch (eFallback) {
+        addSyncConsoleLog(`⚠️ Nube secundaria con aviso: ${eFallback.message}`, "warn");
+      }
+    }
+
+    if (pushSuccess) {
       appState.lastCloudSync = new Date().toISOString();
       updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
-      addSyncConsoleLog("✅ Guardado en la nube completado con éxito (HTTP 200 OK)", "success");
       if (showToast && typeof showIosToast === 'function') {
         showIosToast("☁️ ¡Datos sincronizados en la nube!", "fa-solid fa-cloud-arrow-up");
       }
     } else {
-      addSyncConsoleLog(`⚠️ Nube respondió status: ${res ? res.status : 'error'}`, "warn");
+      addSyncConsoleLog("❌ No se pudo contactar con los servidores en la nube", "error");
       updateCloudSyncUI("Nube en Espera (Local Guardado)", false);
     }
   } catch (e) {
@@ -2219,26 +2253,52 @@ export async function pullFromCloud(showToast = false) {
   try {
     const key = getCloudSyncKey();
     addSyncConsoleLog(`☁️ Descargando datos de la nube (Clave: ${key})...`, "info");
-    const url = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const rawText = await res.text();
-      const cloudData = cleanAndParseJsonFromCloud(rawText);
+    
+    let cloudData = null;
 
-      if (cloudData) {
-        const hasChanges = mergeCloudDataIntoAppState(cloudData);
-        appState.lastCloudSync = new Date().toISOString();
-        updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
-        addSyncConsoleLog(`✅ Datos recibidos y fusionados ${hasChanges ? '(Nuevos cambios aplicados)' : '(Sin cambios nuevos)'}`, "success");
-        
-        if (showToast && typeof showIosToast === 'function') {
-          showIosToast(hasChanges ? "☁️ ¡Datos actualizados desde la nube!" : "☁️ Nube al día (Sin datos nuevos)", "fa-solid fa-cloud-arrow-down");
+    // PRIMARY CLOUD ENDPOINT: ntfy.sh
+    try {
+      const ntfyUrl = `https://ntfy.sh/${key}/json?poll=1`;
+      const res = await fetch(ntfyUrl);
+      if (res.ok) {
+        const rawText = await res.text();
+        cloudData = cleanAndParseJsonFromCloud(rawText);
+        if (cloudData) {
+          addSyncConsoleLog("✅ Datos obtenidos de Nube Primaria (ntfy.sh)", "success");
         }
-      } else {
-        addSyncConsoleLog("ℹ️ Respuesta de la nube vacía o sin formato JSON válido", "info");
+      }
+    } catch (ePrimary) {
+      addSyncConsoleLog(`⚠️ Error al leer de Nube Primaria: ${ePrimary.message}`, "warn");
+    }
+
+    // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co
+    if (!cloudData) {
+      try {
+        const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}`;
+        const res = await fetch(kvUrl);
+        if (res.ok) {
+          const rawText = await res.text();
+          cloudData = cleanAndParseJsonFromCloud(rawText);
+          if (cloudData) {
+            addSyncConsoleLog("✅ Datos obtenidos de Nube Secundaria (keyvalue)", "success");
+          }
+        }
+      } catch (eFallback) {
+        addSyncConsoleLog(`⚠️ Error al leer de Nube Secundaria: ${eFallback.message}`, "warn");
+      }
+    }
+
+    if (cloudData) {
+      const hasChanges = mergeCloudDataIntoAppState(cloudData);
+      appState.lastCloudSync = new Date().toISOString();
+      updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
+      addSyncConsoleLog(`✅ Datos recibidos y fusionados ${hasChanges ? '(Nuevos cambios aplicados)' : '(Sin cambios nuevos)'}`, "success");
+      
+      if (showToast && typeof showIosToast === 'function') {
+        showIosToast(hasChanges ? "☁️ ¡Datos actualizados desde la nube!" : "☁️ Nube al día (Sin datos nuevos)", "fa-solid fa-cloud-arrow-down");
       }
     } else {
-      addSyncConsoleLog(`⚠️ Error al leer de nube HTTP: ${res.status}`, "warn");
+      addSyncConsoleLog("ℹ️ Nube sin datos registrados o sin formato válido", "info");
     }
   } catch (e) {
     console.warn("Cloud sync pull error:", e);
