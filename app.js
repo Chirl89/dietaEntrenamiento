@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.26';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.27';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.26)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.27)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2301,27 +2301,36 @@ export async function pushToCloud(showToast = false) {
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Primary Cloud: Firebase REST API (Google Cloud Infrastructure)
+    // 1. Primary Cloud: JSONBlob Public REST API (https://jsonblob.com/api/jsonBlob/...)
     try {
-      const fbUrl = `https://fitduo-sync-v1-default-rtdb.firebaseio.com/sync/${key}/${masterPid}.json`;
-      addSyncConsoleLog(`📡 PUT Nube Firebase (${masterPid.toUpperCase()})...`, "info");
+      const blobId = masterPid === 'he' ? '1398726543210987654' : '1398726543210987655';
+      const blobUrl = `https://jsonblob.com/api/jsonBlob/${blobId}`;
+      addSyncConsoleLog(`📡 PUT Nube JSONBlob (${masterPid.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(fbUrl, {
+      const tId = setTimeout(() => controller.abort(), 6000);
+      let res = await fetch(blobUrl, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: cleanJson,
         signal: controller.signal
       });
-      clearTimeout(tId);
-      if (res.ok) {
-        pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube Firebase (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
-      } else {
-        addSyncConsoleLog(`⚠️ Nube Firebase respuesta: HTTP ${res.status}`, "warn");
+      if (res.status === 404) {
+        res = await fetch(`https://jsonblob.com/api/jsonBlob`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: cleanJson,
+          signal: controller.signal
+        });
       }
-    } catch (eFb) {
-      addSyncConsoleLog(`⚠️ Nube Firebase error: ${eFb.name} - ${eFb.message}`, "warn");
+      clearTimeout(tId);
+      if (res.ok || res.status === 201 || res.status === 200) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Nube JSONBlob (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+      } else {
+        addSyncConsoleLog(`⚠️ Nube JSONBlob respuesta: HTTP ${res.status}`, "warn");
+      }
+    } catch (eBlob) {
+      addSyncConsoleLog(`⚠️ Nube JSONBlob error: ${eBlob.name} - ${eBlob.message}`, "warn");
     }
 
     // 2. Channel B: Ntfy Dedicated Channel (Fallback POST)
@@ -2382,32 +2391,36 @@ export async function pullFromCloud(showToast = false) {
     addSyncConsoleLog(`☁️ Descargando datos de ${partnerName.toUpperCase()} en este móvil de ${myName.toUpperCase()}...`, "info");
     let hasMergedAny = false;
 
-    // 1. Primary Cloud: Firebase REST API Read (Google Cloud Infrastructure)
+    // 1. Primary Cloud: JSONBlob REST Read
     try {
-      const fbPartnerUrl = `https://fitduo-sync-v1-default-rtdb.firebaseio.com/sync/${key}/${partnerPid}.json`;
-      addSyncConsoleLog(`📡 GET Nube Firebase (${partnerName.toUpperCase()})...`, "info");
+      const partnerBlobId = partnerPid === 'he' ? '1398726543210987654' : '1398726543210987655';
+      const partnerBlobUrl = `https://jsonblob.com/api/jsonBlob/${partnerBlobId}`;
+      addSyncConsoleLog(`📡 GET Nube JSONBlob (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(fbPartnerUrl, { signal: controller.signal });
+      const tId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(partnerBlobUrl, {
+        headers: { "Accept": "application/json" },
+        signal: controller.signal
+      });
       clearTimeout(tId);
 
       if (res.ok) {
         const rawText = await res.text();
-        if (rawText && rawText.trim().length > 10 && rawText !== 'null') {
+        if (rawText && rawText.trim().length > 10) {
           const partnerData = await cleanAndParseJsonFromCloud(rawText);
           if (partnerData) {
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube Firebase de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+            addSyncConsoleLog(`✅ Nube JSONBlob de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         } else {
-          addSyncConsoleLog(`ℹ️ Nube Firebase de ${partnerName.toUpperCase()} aún sin publicaciones`, "info");
+          addSyncConsoleLog(`ℹ️ Nube JSONBlob de ${partnerName.toUpperCase()} aún sin publicaciones`, "info");
         }
       } else {
-        addSyncConsoleLog(`⚠️ Nube Firebase respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube JSONBlob respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (eFbPull) {
-      addSyncConsoleLog(`⚠️ Nube Firebase error: ${eFbPull.name} - ${eFbPull.message}`, "warn");
+    } catch (eBlobPull) {
+      addSyncConsoleLog(`⚠️ Nube JSONBlob error: ${eBlobPull.name} - ${eBlobPull.message}`, "warn");
     }
 
     // 2. Channel B: Ntfy JSON Poll Read (ntfy.sh/<key>_<partnerPid>/json?poll=1)
