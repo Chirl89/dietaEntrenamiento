@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.2';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.3';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -74,20 +74,13 @@ let appState = {
 let weightChart = null;
 let autoSyncIntervalTimer = null;
 
-// HELPER: GET MASTER PROFILE ID (SELECTED IN SETTINGS FOR DATA MUTATIONS)
+// HELPER: GET MASTER PROFILE ID (LOCKED TO THIS SPECIFIC PHYSICAL DEVICE)
 function getMasterProfileId() {
-  if (appState.masterProfileId === 'he' || appState.masterProfileId === 'she') {
-    return appState.masterProfileId;
-  }
-  const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
+  const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
   if (devicePref === 'he' || devicePref === 'she') {
     return devicePref;
   }
-  const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
-  if (lastProfile === 'he' || lastProfile === 'she') {
-    return lastProfile;
-  }
-  return 'he';
+  return appState.masterProfileId === 'she' ? 'she' : 'he';
 }
 
 // LOAD STATE FROM LOCALSTORAGE
@@ -116,19 +109,16 @@ function loadSavedState() {
     }
   } catch(e) {}
 
-  // Device-specific master profile memory preference
-  const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY) || 'last';
-  const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
-
+  // Device-specific master profile memory preference (Fixed to physical device)
+  const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
   if (devicePref === 'he' || devicePref === 'she') {
     appState.masterProfileId = devicePref;
-  } else if (lastProfile === 'he' || lastProfile === 'she') {
-    appState.masterProfileId = lastProfile;
   } else {
-    appState.masterProfileId = 'he';
+    if (!appState.masterProfileId) appState.masterProfileId = 'he';
   }
 
   // Active visual profile preference (persist last viewed profile)
+  const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
   if (lastProfile === 'he' || lastProfile === 'she') {
     appState.activeProfileId = lastProfile;
   } else if (!appState.activeProfileId) {
@@ -1737,27 +1727,15 @@ function renderProfileView() {
 // DEVICE PROFILE MEMORY SETTINGS & HANDLERS (SETTINGS MASTER PROFILE)
 function setDeviceDefaultProfile(mode) {
   triggerHapticTouch();
-  localStorage.setItem(DEVICE_DEFAULT_PROFILE_KEY, mode);
-
   if (mode === 'he' || mode === 'she') {
+    localStorage.setItem(DEVICE_DEFAULT_PROFILE_KEY, mode);
     appState.masterProfileId = mode;
-  } else {
-    // 'last'
-    const last = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY) || 'he';
-    appState.masterProfileId = last;
   }
-
   saveState();
   renderAll();
 
   const masterName = appState.masterProfileId === 'he' ? 'Carlos' : 'Andrea';
-  const msg = mode === 'he'
-    ? "📱 Perfil Maestro fijado a CARLOS. Las modificaciones se aplicarán a Carlos."
-    : mode === 'she'
-    ? "📱 Perfil Maestro fijado a ANDREA. Las modificaciones se aplicarán a Andrea."
-    : `📱 Perfil Maestro fijado a recordar último (${masterName}).`;
-
-  showIosToast(msg, "fa-solid fa-shield-halved");
+  showIosToast(`📱 Perfil Maestro de este móvil fijado a: ${masterName.toUpperCase()}`, "fa-solid fa-shield-halved");
 }
 
 // HELPER: GET SHORT PROFILE NAME
@@ -1996,7 +1974,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.7.2)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.7.3)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
