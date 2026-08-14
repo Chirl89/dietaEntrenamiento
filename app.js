@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.3';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.4';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1596,6 +1596,77 @@ function renderSummaryView() {
   const syncTimeEl = document.getElementById("summary-watch-sync-time");
   if (syncTimeEl) syncTimeEl.innerText = formatSyncRelativeTime(appState.appleWatch?.lastGlobalSync);
 
+  // Dual Pareja Live Widget in Summary View
+  const duoContainer = document.getElementById("summary-duo-live-widget");
+  if (duoContainer) {
+    const todayName = getTodayDayName();
+    const heName = getProfileShortName('he');
+    const sheName = getProfileShortName('she');
+
+    const mHe = appState.appleWatch?.metrics?.he || {};
+    const mShe = appState.appleWatch?.metrics?.she || {};
+
+    const isDoneHe = isDayCompleted('he', todayName);
+    const isDoneShe = isDayCompleted('she', todayName);
+
+    const wDataHe = getDayWatchData('he', todayName);
+    const wDataShe = getDayWatchData('she', todayName);
+
+    const isHeActive = appState.activeProfileId === 'he';
+    const isSheActive = appState.activeProfileId === 'she';
+
+    duoContainer.innerHTML = `
+      <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.9rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div style="font-weight: 700; font-size: 0.92rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-people-roof"></i> Resumen Pareja FitDuo en Tiempo Real (${todayName})
+          </div>
+          <span style="font-size: 0.72rem; color: var(--accent-emerald); font-weight: 600; display: flex; align-items: center; gap: 0.3rem;">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Sincronizado en vivo
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.85rem;">
+          <!-- CARLOS CARD -->
+          <div style="background: ${isHeActive ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-primary)'}; border: 1.5px solid ${isHeActive ? 'var(--accent-blue)' : 'var(--border-color)'}; border-radius: var(--radius-md); padding: 0.85rem; cursor: pointer; transition: all 0.2s ease;" onclick="switchProfile('he')">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <span style="font-weight: 700; font-size: 0.92rem; color: var(--accent-blue); display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-mars"></i> ${heName} ${isHeActive ? '<small style="font-size:0.7rem; color:var(--accent-blue);">(Viendo)</small>' : ''}
+              </span>
+              <span style="font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 12px; font-weight: 600; ${isDoneHe ? 'background: rgba(16,185,129,0.2); color: var(--accent-emerald);' : 'background: rgba(245,158,11,0.2); color: var(--accent-orange);'}">
+                ${isDoneHe ? '<i class="fa-solid fa-circle-check"></i> Entreno Listo' : '<i class="fa-solid fa-clock"></i> Pendiente'}
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.3rem;">
+              <span><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> ${mHe.moveKcal || 0} kcal</span>
+              <span><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> ${mHe.exerciseMin || 0} min</span>
+              <span><i class="fa-solid fa-shoe-prints" style="color:var(--accent-amber);"></i> ${(mHe.steps || 0).toLocaleString()} pasos</span>
+            </div>
+            ${wDataHe ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.4rem; padding-top: 0.3rem; border-top: 1px dashed rgba(255,255,255,0.08);"><i class="fa-brands fa-apple"></i> Apple Watch: ${wDataHe.durationMin}min • ${wDataHe.kcal}kcal</div>` : ''}
+          </div>
+
+          <!-- ANDREA CARD -->
+          <div style="background: ${isSheActive ? 'rgba(236, 72, 153, 0.15)' : 'var(--bg-primary)'}; border: 1.5px solid ${isSheActive ? 'var(--accent-rose)' : 'var(--border-color)'}; border-radius: var(--radius-md); padding: 0.85rem; cursor: pointer; transition: all 0.2s ease;" onclick="switchProfile('she')">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <span style="font-weight: 700; font-size: 0.92rem; color: var(--accent-rose); display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-venus"></i> ${sheName} ${isSheActive ? '<small style="font-size:0.7rem; color:var(--accent-rose);">(Viendo)</small>' : ''}
+              </span>
+              <span style="font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 12px; font-weight: 600; ${isDoneShe ? 'background: rgba(16,185,129,0.2); color: var(--accent-emerald);' : 'background: rgba(245,158,11,0.2); color: var(--accent-orange);'}">
+                ${isDoneShe ? '<i class="fa-solid fa-circle-check"></i> Entreno Listo' : '<i class="fa-solid fa-clock"></i> Pendiente'}
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.3rem;">
+              <span><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> ${mShe.moveKcal || 0} kcal</span>
+              <span><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> ${mShe.exerciseMin || 0} min</span>
+              <span><i class="fa-solid fa-shoe-prints" style="color:var(--accent-amber);"></i> ${(mShe.steps || 0).toLocaleString()} pasos</span>
+            </div>
+            ${wDataShe ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.4rem; padding-top: 0.3rem; border-top: 1px dashed rgba(255,255,255,0.08);"><i class="fa-brands fa-apple"></i> Apple Watch: ${wDataShe.durationMin}min • ${wDataShe.kcal}kcal</div>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   // Live Metrics
   const hrEl = document.getElementById("summary-metric-hr");
   if (hrEl) hrEl.innerHTML = `${m.hr} <small>BPM</small>`;
@@ -1996,7 +2067,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.3)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.4)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -3204,6 +3275,47 @@ function renderWorkoutsView() {
   container.innerHTML = "";
 
   const activeDay = appState.activeWorkoutDay || getTodayDayName();
+
+  // Dual Pareja Live Workout Widget
+  const duoWorkoutContainer = document.getElementById("workouts-duo-live-widget");
+  if (duoWorkoutContainer) {
+    const heName = getProfileShortName('he');
+    const sheName = getProfileShortName('she');
+    const isDoneHe = isDayCompleted('he', activeDay);
+    const isDoneShe = isDayCompleted('she', activeDay);
+    const wDataHe = getDayWatchData('he', activeDay);
+    const wDataShe = getDayWatchData('she', activeDay);
+
+    duoWorkoutContainer.innerHTML = `
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem; margin-bottom: 1rem;">
+        <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+          <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-orange);"></i> Estado Entrenamientos Pareja (${activeDay}):</span>
+          <span style="font-size:0.72rem; color:var(--text-muted);">Toca para alternar vista</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.65rem;">
+          <div style="padding: 0.6rem 0.8rem; background: var(--bg-primary); border-radius: 8px; border: 1.5px solid ${appState.activeProfileId === 'he' ? 'var(--accent-blue)' : 'var(--border-color)'}; cursor: pointer;" onclick="switchProfile('he')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; font-size: 0.85rem; color: var(--accent-blue);"><i class="fa-solid fa-mars"></i> ${heName}</span>
+              <span style="font-size: 0.72rem; font-weight: 600; ${isDoneHe ? 'color: var(--accent-emerald);' : 'color: var(--accent-orange);'}">
+                ${isDoneHe ? '✅ Completado' : '⏳ Pendiente'}
+              </span>
+            </div>
+            ${wDataHe ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;"> ${wDataHe.durationMin}min • ${wDataHe.kcal}kcal</div>` : ''}
+          </div>
+
+          <div style="padding: 0.6rem 0.8rem; background: var(--bg-primary); border-radius: 8px; border: 1.5px solid ${appState.activeProfileId === 'she' ? 'var(--accent-rose)' : 'var(--border-color)'}; cursor: pointer;" onclick="switchProfile('she')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; font-size: 0.85rem; color: var(--accent-rose);"><i class="fa-solid fa-venus"></i> ${sheName}</span>
+              <span style="font-size: 0.72rem; font-weight: 600; ${isDoneShe ? 'color: var(--accent-emerald);' : 'color: var(--accent-orange);'}">
+                ${isDoneShe ? '✅ Completado' : '⏳ Pendiente'}
+              </span>
+            </div>
+            ${wDataShe ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;"> ${wDataShe.durationMin}min • ${wDataShe.kcal}kcal</div>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   // Sync dropdown selector state if present
   const selectElem = document.getElementById("workout-day-select");
