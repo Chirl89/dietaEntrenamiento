@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.18';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.19';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2010,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.18)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.19)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2302,25 +2302,7 @@ export async function pushToCloud(showToast = false) {
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Channel A: KeyValue Cloud (keyvalue.immanuel.co with URL-Safe Alphanumeric String)
-    try {
-      const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}_${masterPid}/${urlSafeData}`;
-      addSyncConsoleLog(`📡 GET keyvalue.immanuel.co (${masterPid.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(kvUrl, { method: "GET", signal: controller.signal });
-      clearTimeout(tId);
-      if (res.ok) {
-        pushSuccess = true;
-        addSyncConsoleLog(`✅ Canal KeyValue (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
-      } else {
-        addSyncConsoleLog(`⚠️ Canal KeyValue falló: HTTP ${res.status}`, "warn");
-      }
-    } catch (eKv) {
-      addSyncConsoleLog(`⚠️ Canal KeyValue error: ${eKv.name} - ${eKv.message}`, "warn");
-    }
-
-    // 2. Channel B: Ntfy Cloud (ntfy.sh/<key>_<masterPid>)
+    // 1. Channel A: Ntfy Dedicated Channel (Simple POST with urlSafeData)
     try {
       const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
       addSyncConsoleLog(`📡 POST ntfy.sh (${masterPid.toUpperCase()})...`, "info");
@@ -2328,18 +2310,58 @@ export async function pushToCloud(showToast = false) {
       const tId = setTimeout(() => controller.abort(), 8000);
       const res = await fetch(channelUrl, {
         method: "POST",
-        body: b64Data,
+        body: urlSafeData,
         signal: controller.signal
       });
       clearTimeout(tId);
       if (res.ok) {
         pushSuccess = true;
-        addSyncConsoleLog(`✅ Canal Ntfy (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+        addSyncConsoleLog(`✅ Nube Ntfy (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
       } else {
-        addSyncConsoleLog(`⚠️ Canal Ntfy falló: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube Ntfy respuesta: HTTP ${res.status}`, "warn");
       }
     } catch (eCh) {
-      addSyncConsoleLog(`⚠️ Canal Ntfy error: ${eCh.name} - ${eCh.message}`, "warn");
+      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${eCh.name} - ${eCh.message}`, "warn");
+    }
+
+    // 2. Channel B: KeyValue Cloud (POST to keyvalue.immanuel.co)
+    try {
+      const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}_${masterPid}/${urlSafeData}`;
+      addSyncConsoleLog(`📡 POST keyvalue.immanuel.co (${masterPid.toUpperCase()})...`, "info");
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(kvUrl, { method: "POST", signal: controller.signal });
+      clearTimeout(tId);
+      if (res.ok) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+      } else {
+        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
+      }
+    } catch (eKv) {
+      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKv.name} - ${eKv.message}`, "warn");
+    }
+
+    // 3. Channel C: Ntfy Backup Channel
+    try {
+      const bakUrl = `https://ntfy.sh/${key}_${masterPid}_bak`;
+      addSyncConsoleLog(`📡 POST ntfy.sh backup (${masterPid.toUpperCase()})...`, "info");
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(bakUrl, {
+        method: "POST",
+        body: urlSafeData,
+        signal: controller.signal
+      });
+      clearTimeout(tId);
+      if (res.ok) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Nube Ntfy Backup (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+      } else {
+        addSyncConsoleLog(`⚠️ Nube Ntfy Backup respuesta: HTTP ${res.status}`, "warn");
+      }
+    } catch (eBak) {
+      addSyncConsoleLog(`⚠️ Nube Ntfy Backup error: ${eBak.name} - ${eBak.message}`, "warn");
     }
 
     if (pushSuccess) {
