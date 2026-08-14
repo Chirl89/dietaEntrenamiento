@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.13';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.14';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2010,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.13)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.14)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2239,14 +2239,13 @@ export async function pushToCloud(showToast = false) {
     const cleanJson = JSON.stringify(payload);
     let pushSuccess = false;
 
-    // 1. Channel A: Dedicated Profile Channel (ntfy.sh/<key>_<masterPid>)
+    // 1. Channel A: Dedicated Profile Channel (Simple Request POST without headers)
     try {
       const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 4000);
       const res = await fetch(channelUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: cleanJson,
         signal: controller.signal
       });
@@ -2254,20 +2253,35 @@ export async function pushToCloud(showToast = false) {
       if (res.ok) pushSuccess = true;
     } catch (eCh) {}
 
-    // 2. Channel B: Shared Broadcast Channel (ntfy.sh/<key>)
+    // 2. Channel B: Secondary Cloud Endpoint (kvdb.io)
     try {
-      const mainUrl = `https://ntfy.sh/${key}`;
+      const kvUrl = `https://kvdb.io/4Yy8r6a1z7q2p8x9/fitduo_${key}_${masterPid}`;
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 4000);
-      const res = await fetch(mainUrl, {
+      const res = await fetch(kvUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: cleanJson,
         signal: controller.signal
       });
       clearTimeout(tId);
       if (res.ok) pushSuccess = true;
-    } catch (eMain) {}
+    } catch (eKv) {}
+
+    // 3. Channel C: Shared Broadcast Channel
+    if (!pushSuccess) {
+      try {
+        const mainUrl = `https://ntfy.sh/${key}`;
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(mainUrl, {
+          method: "POST",
+          body: cleanJson,
+          signal: controller.signal
+        });
+        clearTimeout(tId);
+        if (res.ok) pushSuccess = true;
+      } catch (eMain) {}
+    }
 
     if (pushSuccess) {
       appState.lastCloudSync = new Date().toISOString();
@@ -2320,11 +2334,32 @@ export async function pullFromCloud(showToast = false) {
           if (partnerData) {
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Canal directo de ${partnerName.toUpperCase()} leído correctamente`, "success");
+            addSyncConsoleLog(`✅ Nube Primaria de ${partnerName.toUpperCase()} leída correctamente`, "success");
           }
         }
       }
     } catch (ePartner) {}
+
+    // 2. SECONDARY CLOUD READ: Fetch partner's JSON from kvdb.io
+    try {
+      const kvPartnerUrl = `https://kvdb.io/4Yy8r6a1z7q2p8x9/fitduo_${key}_${partnerPid}`;
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(kvPartnerUrl, { signal: controller.signal });
+      clearTimeout(tId);
+
+      if (res.ok) {
+        const rawText = await res.text();
+        if (rawText && rawText.trim().length > 10) {
+          const partnerData = await cleanAndParseJsonFromCloud(rawText);
+          if (partnerData) {
+            const changed = mergeCloudDataIntoAppState(partnerData);
+            if (changed) hasMergedAny = true;
+            addSyncConsoleLog(`✅ Nube Secundaria de ${partnerName.toUpperCase()} leída correctamente`, "success");
+          }
+        }
+      }
+    } catch (eKvPull) {}
 
     // 2. BROADCAST CHANNEL READ: Fetch latest messages from ntfy.sh/<key>/json?poll=1
     try {
