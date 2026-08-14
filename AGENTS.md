@@ -9,7 +9,8 @@ Every web application built or updated in this codebase must display a visible, 
 1. **Conversation Level (Minor Version)**:
    - Each NEW conversation opened by the user increments the minor version (`v0.1`, `v0.2`, `v0.3`...).
 2. **Iteration Level (Patch Version)**:
-   - Each edit/commit within the SAME conversation increments the patch version (`v0.1.0` -> `v0.1.1` -> `v0.1.2`...).
+   - Each edit/commit within the SAME conversation increments ONLY the patch version (`v0.6.9` -> `v0.6.10` -> `v0.6.11`...).
+   - CRITICAL: NEVER bump the minor version (e.g. from `v0.6.9` to `v0.7.0`) during patch iterations. When patch reaches `.9`, ALWAYS continue with `.10`, `.11`, `.12`, etc. The minor version (`v0.6` -> `v0.7`) is ONLY incremented when a NEW conversation is started.
 3. **UI Display**:
    - Show `<span class="version-badge">vX.Y.Z</span>` in the brand header, sidebar footer, and mobile header.
 4. **Asset Cache Busting**:
