@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.0';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.1';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1996,7 +1996,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.7.0)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.7.1)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2169,13 +2169,15 @@ function mergeCloudDataIntoAppState(cloudData) {
   return hasChanges;
 }
 
+let isPushSyncing = false;
+let isPullSyncing = false;
+
 export async function pushToCloud(showToast = false) {
-  if (isCloudSyncing) {
-    addSyncConsoleLog("⏳ Operación en nube ya en curso, omitiendo push paralelo", "warn");
+  if (isPushSyncing) {
+    addSyncConsoleLog("⏳ Envío a la nube ya en proceso, omitiendo push paralelo", "warn");
     return;
   }
-  isCloudSyncing = true;
-  const syncTimeout = setTimeout(() => { isCloudSyncing = false; }, 8000);
+  isPushSyncing = true;
 
   try {
     const key = getCloudSyncKey();
@@ -2190,7 +2192,7 @@ export async function pushToCloud(showToast = false) {
       ? weightLogs[weightLogs.length - 1].weight 
       : 'N/A';
 
-    addSyncConsoleLog(`📤 Enviando datos de ${authorName}: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg, meta ${p.targetCalories || 'N/A'} kcal...`, "info");
+    addSyncConsoleLog(`📤 Enviando datos de ${authorName}: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg...`, "info");
     
     // Send ONLY the author's own master profile data and shared items (NEVER send partner defaults)
     const payload = {
@@ -2224,32 +2226,39 @@ export async function pushToCloud(showToast = false) {
 
     let pushSuccess = false;
 
-    // PRIMARY CLOUD ENDPOINT: ntfy.sh (Full CORS enabled, 100% web compatible)
+    // PRIMARY CLOUD ENDPOINT: ntfy.sh with 6-second timeout
     try {
       const ntfyUrl = `https://ntfy.sh/${key}`;
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 6000);
       const ntfyRes = await fetch(ntfyUrl, {
         method: "POST",
-        body: b64Data
+        body: b64Data,
+        signal: controller.signal
       });
+      clearTimeout(tId);
       if (ntfyRes.ok) {
         pushSuccess = true;
         addSyncConsoleLog("✅ Guardado en Nube Primaria (ntfy.sh OK - HTTP 200)", "success");
       }
     } catch (ePrimary) {
-      addSyncConsoleLog(`⚠️ Nube primaria con aviso: ${ePrimary.message}`, "warn");
+      addSyncConsoleLog(`⚠️ Nube primaria (${ePrimary.name === 'AbortError' ? 'Timeout 6s' : ePrimary.message})`, "warn");
     }
 
     // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co
     if (!pushSuccess) {
       try {
         const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
-        const kvRes = await fetch(kvUrl, { method: "POST" });
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 6000);
+        const kvRes = await fetch(kvUrl, { method: "POST", signal: controller.signal });
+        clearTimeout(tId);
         if (kvRes && kvRes.ok) {
           pushSuccess = true;
           addSyncConsoleLog("✅ Guardado en Nube Secundaria (keyvalue OK)", "success");
         }
       } catch (eFallback) {
-        addSyncConsoleLog(`⚠️ Nube secundaria con aviso: ${eFallback.message}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube secundaria (${eFallback.name === 'AbortError' ? 'Timeout 6s' : eFallback.message})`, "warn");
       }
     }
 
@@ -2268,19 +2277,17 @@ export async function pushToCloud(showToast = false) {
     addSyncConsoleLog(`❌ Error al guardar en nube: ${e.message}`, "error");
     updateCloudSyncUI("Nube sin conexión (Modo Offline)", false);
   } finally {
-    clearTimeout(syncTimeout);
-    isCloudSyncing = false;
+    isPushSyncing = false;
   }
 }
 window.pushToCloud = pushToCloud;
 
 export async function pullFromCloud(showToast = false) {
-  if (isCloudSyncing) {
-    addSyncConsoleLog("⏳ Operación en nube ya en curso, omitiendo pull paralelo", "warn");
+  if (isPullSyncing) {
+    console.log("Pull operation already in progress, skipping parallel pull");
     return;
   }
-  isCloudSyncing = true;
-  const syncTimeout = setTimeout(() => { isCloudSyncing = false; }, 8000);
+  isPullSyncing = true;
 
   try {
     const key = getCloudSyncKey();
@@ -2288,10 +2295,14 @@ export async function pullFromCloud(showToast = false) {
     
     let hasMergedAny = false;
 
-    // PRIMARY CLOUD ENDPOINT: ntfy.sh
+    // PRIMARY CLOUD ENDPOINT: ntfy.sh with 6-second AbortController timeout
     try {
       const ntfyUrl = `https://ntfy.sh/${key}/json?poll=1`;
-      const res = await fetch(ntfyUrl);
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(ntfyUrl, { signal: controller.signal });
+      clearTimeout(tId);
+
       addSyncConsoleLog(`📡 GET ntfy.sh respuesta: HTTP ${res.status}`, res.ok ? "info" : "warn");
       if (res.ok) {
         const rawText = await res.text();
@@ -2321,14 +2332,18 @@ export async function pullFromCloud(showToast = false) {
         addSyncConsoleLog("✅ Proceso de lectura de Nube Primaria completado", "success");
       }
     } catch (ePrimary) {
-      addSyncConsoleLog(`⚠️ Error al leer de Nube Primaria: ${ePrimary.message}`, "warn");
+      const isTimeout = ePrimary.name === 'AbortError';
+      addSyncConsoleLog(`⚠️ Nube Primaria: ${isTimeout ? 'Tiempo de espera agotado (6s timeout)' : ePrimary.message}`, "warn");
     }
 
     // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co
     if (!hasMergedAny) {
       try {
         const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}`;
-        const res = await fetch(kvUrl);
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(kvUrl, { signal: controller.signal });
+        clearTimeout(tId);
         if (res.ok) {
           const rawText = await res.text();
           const cloudData = await cleanAndParseJsonFromCloud(rawText);
@@ -2340,7 +2355,7 @@ export async function pullFromCloud(showToast = false) {
           }
         }
       } catch (eFallback) {
-        addSyncConsoleLog(`⚠️ Error al leer de Nube Secundaria: ${eFallback.message}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube Secundaria: ${eFallback.message}`, "warn");
       }
     }
 
@@ -2358,8 +2373,7 @@ export async function pullFromCloud(showToast = false) {
     console.warn("Cloud sync pull error:", e);
     addSyncConsoleLog(`❌ Error al descargar de nube: ${e.message}`, "error");
   } finally {
-    clearTimeout(syncTimeout);
-    isCloudSyncing = false;
+    isPullSyncing = false;
   }
 }
 window.pullFromCloud = pullFromCloud;
