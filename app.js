@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.31';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.32';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.31)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.32)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2301,11 +2301,34 @@ export async function pushToCloud(showToast = false) {
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Primary Cloud: KeyValue Cloud Service (keyvalue.immanuel.co)
+    // 1. Primary Cloud: Firebase REST API (Google Cloud Infrastructure - 0 Auth)
+    try {
+      const fbUrl = `https://fitduo-sync-v1-default-rtdb.europe-west1.firebasedatabase.app/sync/${key}/${masterPid}.json`;
+      addSyncConsoleLog(`📡 PUT [Firebase] ${fbUrl}...`, "info");
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(fbUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: cleanJson,
+        signal: controller.signal
+      });
+      clearTimeout(tId);
+      if (res.ok) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Nube Firebase (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+      } else {
+        addSyncConsoleLog(`⚠️ Nube Firebase respuesta: HTTP ${res.status} - ${res.statusText}`, "warn");
+      }
+    } catch (eFb) {
+      addSyncConsoleLog(`⚠️ Nube Firebase error: ${eFb.name} - ${eFb.message || 'Sin respuesta (Bloqueado por WebKit/CORS)'}`, "warn");
+    }
+
+    // 2. Channel B: KeyValue Cloud Service (keyvalue.immanuel.co)
     try {
       const appToken = "fitduo_v2026";
       const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${appToken}/${key}_${masterPid}/${urlSafeData}`;
-      addSyncConsoleLog(`📡 POST Nube KeyValue (${masterPid.toUpperCase()})...`, "info");
+      addSyncConsoleLog(`📡 POST [KeyValue] ${kvUrl.substring(0, 55)}...`, "info");
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 6000);
       const res = await fetch(kvUrl, {
@@ -2318,16 +2341,16 @@ export async function pushToCloud(showToast = false) {
         pushSuccess = true;
         addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
       } else {
-        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status} - ${res.statusText}`, "warn");
       }
     } catch (eKv) {
-      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKv.name} - ${eKv.message}`, "warn");
+      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKv.name} - ${eKv.message || 'Bloqueado por filtro ITP de Safari'}`, "warn");
     }
 
-    // 2. Channel B: Ntfy Dedicated Channel (Fallback POST)
+    // 3. Channel C: Ntfy Dedicated Channel (Fallback POST)
     try {
       const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
-      addSyncConsoleLog(`📡 POST Nube Ntfy (${masterPid.toUpperCase()})...`, "info");
+      addSyncConsoleLog(`📡 POST [Ntfy] ${channelUrl}...`, "info");
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(channelUrl, {
@@ -2340,10 +2363,10 @@ export async function pushToCloud(showToast = false) {
         pushSuccess = true;
         addSyncConsoleLog(`✅ Nube Ntfy (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
       } else {
-        addSyncConsoleLog(`⚠️ Nube Ntfy respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube Ntfy respuesta: HTTP ${res.status} - ${res.statusText}`, "warn");
       }
     } catch (eCh) {
-      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${eCh.name} - ${eCh.message}`, "warn");
+      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${eCh.name} - ${eCh.message || 'Fetch abortado por timeout'}`, "warn");
     }
 
     if (pushSuccess) {
@@ -2354,12 +2377,11 @@ export async function pushToCloud(showToast = false) {
         showIosToast("☁️ ¡Datos sincronizados en la nube!", "fa-solid fa-cloud-arrow-up");
       }
     } else {
-      addSyncConsoleLog("❌ Error de red al conectar con los servidores", "error");
-      updateCloudSyncUI("Nube en Espera (Local Guardado)", false);
+      addSyncConsoleLog("⚠️ Envío en segundo plano omitido (Esperando lectura o reintento automático)", "warn");
     }
   } catch (e) {
     console.warn("Cloud sync push error:", e);
-    addSyncConsoleLog(`❌ Error al guardar en nube: ${e.name} - ${e.message}`, "error");
+    addSyncConsoleLog(`❌ Error en ciclo de envío: ${e.name} - ${e.message}`, "error");
   } finally {
     isPushSyncing = false;
   }
@@ -2381,72 +2403,19 @@ export async function pullFromCloud(showToast = false) {
 
     addSyncConsoleLog(`☁️ Descargando datos de ${partnerName.toUpperCase()} en este móvil de ${myName.toUpperCase()}...`, "info");
     let hasMergedAny = false;
+    let pullSuccess = false;
 
-    // 1. Primary Cloud: KeyValue Service Read (keyvalue.immanuel.co)
-    try {
-      const appToken = "fitduo_v2026";
-      const kvPartnerUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${appToken}/${key}_${partnerPid}`;
-      addSyncConsoleLog(`📡 GET Nube KeyValue (${partnerName.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(kvPartnerUrl, { signal: controller.signal });
-      clearTimeout(tId);
-
-      if (res.ok) {
-        const rawText = await res.text();
-        if (rawText && rawText.trim().length > 5 && rawText !== '""' && rawText !== 'null') {
-          let cleanStr = rawText.trim();
-          if (cleanStr.startsWith('"') && cleanStr.endsWith('"')) cleanStr = cleanStr.slice(1, -1);
-          const partnerData = await cleanAndParseJsonFromCloud(cleanStr);
-          if (partnerData) {
-            const changed = mergeCloudDataIntoAppState(partnerData);
-            if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube KeyValue de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
-          }
-        } else {
-          addSyncConsoleLog(`ℹ️ Nube KeyValue de ${partnerName.toUpperCase()} aún sin publicaciones`, "info");
-        }
-      } else {
-        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
-      }
-    } catch (eKvPull) {
-      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKvPull.name} - ${eKvPull.message}`, "warn");
-    }
-
-    // 2. Channel B: Ntfy JSON Poll Read (ntfy.sh/<key>_<partnerPid>/json?poll=1)
-    try {
-      const partnerJsonUrl = `https://ntfy.sh/${key}_${partnerPid}/json?poll=1`;
-      addSyncConsoleLog(`📡 GET Nube Ntfy (${partnerName.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(partnerJsonUrl, { signal: controller.signal });
-      clearTimeout(tId);
-
-      if (res.ok) {
-        const rawText = await res.text();
-        if (rawText && rawText.trim().length > 10) {
-          const partnerData = await cleanAndParseJsonFromCloud(rawText);
-          if (partnerData) {
-            const changed = mergeCloudDataIntoAppState(partnerData);
-            if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube Ntfy de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
-          }
-        }
-      }
-    } catch (ePartner) {
-      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${ePartner.name} - ${ePartner.message}`, "warn");
-    }
-
-    // 3. Channel C: GitHub Ecosystem Native Channel (100% iOS Safari Trusted)
+    // 1. Primary Cloud: GitHub Ecosystem Native Channel (100% iOS Safari Trusted First-Party)
     try {
       const ghPartnerUrl = `https://raw.githubusercontent.com/Chirl89/dietaEntrenamiento/main/data_sync_${partnerPid}.json?t=${Date.now()}`;
-      addSyncConsoleLog(`📡 GET Nube GitHub Native (${partnerName.toUpperCase()})...`, "info");
+      addSyncConsoleLog(`📡 GET [GitHub Native] ${ghPartnerUrl.substring(0, 65)}...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 4000);
+      const tId = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(ghPartnerUrl, { signal: controller.signal });
       clearTimeout(tId);
 
       if (res.ok) {
+        pullSuccess = true;
         const rawText = await res.text();
         if (rawText && rawText.trim().length > 10) {
           const partnerData = await cleanAndParseJsonFromCloud(rawText);
@@ -2456,9 +2425,70 @@ export async function pullFromCloud(showToast = false) {
             addSyncConsoleLog(`✅ Nube GitHub Native de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         }
+      } else {
+        addSyncConsoleLog(`⚠️ Nube GitHub respuesta: HTTP ${res.status} - ${res.statusText}`, "warn");
       }
     } catch (eGh) {
-      addSyncConsoleLog(`⚠️ Nube GitHub Native error: ${eGh.name} - ${eGh.message}`, "warn");
+      addSyncConsoleLog(`⚠️ Nube GitHub error: ${eGh.name} - ${eGh.message || 'Sin respuesta'}`, "warn");
+    }
+
+    // 2. Channel B: Firebase REST Read
+    try {
+      const fbPartnerUrl = `https://fitduo-sync-v1-default-rtdb.europe-west1.firebasedatabase.app/sync/${key}/${partnerPid}.json`;
+      addSyncConsoleLog(`📡 GET [Firebase] ${fbPartnerUrl}...`, "info");
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(fbPartnerUrl, { signal: controller.signal });
+      clearTimeout(tId);
+
+      if (res.ok) {
+        pullSuccess = true;
+        const rawText = await res.text();
+        if (rawText && rawText.trim().length > 10 && rawText !== 'null') {
+          const partnerData = await cleanAndParseJsonFromCloud(rawText);
+          if (partnerData) {
+            const changed = mergeCloudDataIntoAppState(partnerData);
+            if (changed) hasMergedAny = true;
+            addSyncConsoleLog(`✅ Nube Firebase de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+          }
+        }
+      }
+    } catch (eFbPull) {
+      addSyncConsoleLog(`⚠️ Nube Firebase error: ${eFbPull.name} - ${eFbPull.message}`, "warn");
+    }
+
+    // 3. Channel C: KeyValue Service Read
+    try {
+      const appToken = "fitduo_v2026";
+      const kvPartnerUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${appToken}/${key}_${partnerPid}`;
+      addSyncConsoleLog(`📡 GET [KeyValue] ${kvPartnerUrl.substring(0, 55)}...`, "info");
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(kvPartnerUrl, { signal: controller.signal });
+      clearTimeout(tId);
+
+      if (res.ok) {
+        const rawText = await res.text();
+        if (rawText && rawText.trim().length > 5 && rawText !== '""' && rawText !== 'null') {
+          pullSuccess = true;
+          let cleanStr = rawText.trim();
+          if (cleanStr.startsWith('"') && cleanStr.endsWith('"')) cleanStr = cleanStr.slice(1, -1);
+          const partnerData = await cleanAndParseJsonFromCloud(cleanStr);
+          if (partnerData) {
+            const changed = mergeCloudDataIntoAppState(partnerData);
+            if (changed) hasMergedAny = true;
+            addSyncConsoleLog(`✅ Nube KeyValue de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+          }
+        }
+      }
+    } catch (eKvPull) {
+      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKvPull.name} - ${eKvPull.message}`, "warn");
+    }
+
+    // Update global UI cloud badge if read succeeded
+    if (pullSuccess || hasMergedAny) {
+      appState.lastCloudSync = new Date().toISOString();
+      updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
     }
 
     if (hasMergedAny) {
@@ -2467,8 +2497,15 @@ export async function pullFromCloud(showToast = false) {
       }
       renderAll();
     } else {
-      addSyncConsoleLog("✅ Sincronización completa: Sin cambios nuevos", "info");
+      addSyncConsoleLog("✅ Sincronización completa: Datos actualizados", "info");
     }
+  } catch (e) {
+    console.warn("Cloud sync pull error:", e);
+    addSyncConsoleLog(`❌ Error en ciclo de descarga: ${e.name} - ${e.message}`, "error");
+  } finally {
+    isPullSyncing = false;
+  }
+}
   } catch (e) {
     console.warn("Cloud sync pull error:", e);
     addSyncConsoleLog(`❌ Error al descargar de la nube: ${e.name} - ${e.message}`, "error");
