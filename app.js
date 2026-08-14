@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.33';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.34';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.33)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.34)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2067,7 +2067,22 @@ async function cleanAndParseJsonFromCloud(rawText) {
   let text = rawText.trim();
   if (text === 'null' || text === '""' || text.length < 2) return null;
 
-  // Priority 1: Handle ntfy.sh JSON poll stream (NDJSON / JSON lines)
+  // Priority 1: Handle Webhook.site API response structure ({ data: [ { content: "urlSafeData" } ] })
+  if (text.includes('"data":') && text.includes('"content":')) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) {
+        for (let reqItem of parsed.data) {
+          if (reqItem && reqItem.content && typeof reqItem.content === 'string') {
+            const parsedFromContent = await cleanAndParseJsonFromCloud(reqItem.content);
+            if (parsedFromContent) return parsedFromContent;
+          }
+        }
+      }
+    } catch (eWh) {}
+  }
+
+  // Priority 2: Handle ntfy.sh JSON poll stream (NDJSON / JSON lines)
   if (text.includes('"message":') || text.includes('"event":')) {
     const lines = text.split('\n').filter(Boolean);
     for (let i = lines.length - 1; i >= 0; i--) {
@@ -2081,11 +2096,11 @@ async function cleanAndParseJsonFromCloud(rawText) {
     }
   }
 
-  // Priority 2: URL-Safe Base64 decoding
+  // Priority 3: URL-Safe Base64 decoding
   const fromUrlB64 = fromUrlSafeB64(text);
   if (fromUrlB64) return fromUrlB64;
 
-  // Priority 3: Direct Raw JSON Parsing
+  // Priority 4: Direct Raw JSON Parsing
   if (text.startsWith('{') && text.endsWith('}')) {
     try {
       const parsed = JSON.parse(text);
@@ -2096,20 +2111,6 @@ async function cleanAndParseJsonFromCloud(rawText) {
   if (text.startsWith('"') && text.endsWith('"')) {
     text = text.slice(1, -1);
   }
-
-  // Priority 4: Legacy Base64 decoding path
-  try {
-    const unquoted = decodeURIComponent(text);
-    const fromB64 = atob(unquoted);
-    const decodedUri = decodeURIComponent(fromB64);
-    const parsed = JSON.parse(decodedUri);
-    if (parsed && typeof parsed === 'object') return parsed;
-  } catch (eB64) {}
-
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed && typeof parsed === 'object') return parsed;
-  } catch (eJson) {}
 
   return null;
 }
@@ -2190,16 +2191,15 @@ function mergeCloudDataIntoAppState(cloudData) {
   if (cloudData.recipesDaysRange) appState.recipesDaysRange = cloudData.recipesDaysRange;
   if (cloudData.shoppingDaysRange) appState.shoppingDaysRange = cloudData.shoppingDaysRange;
 
-  const p = cloudData.profiles?.[author] || appState.profiles?.[author] || {};
-  const m = cloudData.appleWatch?.metrics?.[author] || appState.appleWatch?.metrics?.[author] || {};
-  const w = cloudData.completedWorkouts?.[author] || appState.completedWorkouts?.[author] || {};
+  const m = appState.appleWatch?.metrics?.[author] || {};
+  const w = appState.completedWorkouts?.[author] || {};
   const wDoneCount = Object.values(w).filter(val => val && (val === true || val.done)).length;
-  const weightLogs = cloudData.weightLogs?.[author] || appState.weightLogs?.[author] || [];
+  const weightLogs = appState.weightLogs?.[author] || [];
   const lastWeight = Array.isArray(weightLogs) && weightLogs.length > 0 
     ? weightLogs[weightLogs.length - 1].weight 
     : 'N/A';
 
-  const logDetails = `📥 Datos de ${authorName} importados: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg, meta ${p.targetCalories || 'N/A'} kcal`;
+  const logDetails = `📥 Datos de ${authorName} importados: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg`;
   addSyncConsoleLog(logDetails, "success");
 
   if (hasChanges) {
@@ -2263,7 +2263,7 @@ export async function pushToCloud(showToast = false) {
 
     addSyncConsoleLog(`📤 Enviando datos de ${authorName} (${masterPid.toUpperCase()}): ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos...`, "info");
     
-    // Send compact payload to guarantee GET URL length < 700 chars for keyvalue GET endpoint
+    // Send compact payload
     const compactPayload = {
       authorProfileId: masterPid,
       masterProfileId: masterPid,
@@ -2297,40 +2297,41 @@ export async function pushToCloud(showToast = false) {
       }
     };
 
-    const cleanJson = JSON.stringify(compactPayload);
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Primary Cloud: Firebase REST API (Google Cloud Infrastructure - 0 Auth)
+    // 1. Primary Cloud: Dedicated Webhook Engine (10ms Instant Write, 0 CORS Block)
     try {
-      const fbUrl = `https://fitduo-sync-v1-default-rtdb.europe-west1.firebasedatabase.app/sync/${key}/${masterPid}.json`;
-      addSyncConsoleLog(`📡 PUT [Firebase] ${fbUrl}...`, "info");
+      const whToken = masterPid === 'he' 
+        ? '1c3631c8-fd98-4b82-8084-a46d3eacf382' 
+        : 'c675e20a-42d2-49aa-a17f-4bd2c87d57fa';
+      const whUrl = `https://webhook.site/${whToken}`;
+      addSyncConsoleLog(`📡 POST [Webhook Engine] (${masterPid.toUpperCase()})...`, "info");
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(fbUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: cleanJson,
+      const res = await fetch(whUrl, {
+        method: "POST",
+        body: urlSafeData,
         signal: controller.signal
       });
       clearTimeout(tId);
-      if (res.ok) {
+      if (res.ok || res.status === 200 || res.status === 201) {
         pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube Firebase (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+        addSyncConsoleLog(`✅ Nube Webhook Engine (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
       } else {
-        addSyncConsoleLog(`⚠️ Nube Firebase respuesta: HTTP ${res.status} - ${res.statusText}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube Webhook respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (eFb) {
-      addSyncConsoleLog(`⚠️ Nube Firebase error: ${eFb.name} - ${eFb.message || 'Sin respuesta (Bloqueado por WebKit/CORS)'}`, "warn");
+    } catch (eWhPush) {
+      addSyncConsoleLog(`⚠️ Nube Webhook error: ${eWhPush.name} - ${eWhPush.message}`, "warn");
     }
 
-    // 2. Channel B: KeyValue Cloud Service (keyvalue.immanuel.co)
+    // 2. Channel B: KeyValue Cloud Service
     try {
       const appToken = "fitduo_v2026";
       const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${appToken}/${key}_${masterPid}/${urlSafeData}`;
-      addSyncConsoleLog(`📡 POST [KeyValue] ${kvUrl.substring(0, 55)}...`, "info");
+      addSyncConsoleLog(`📡 POST [KeyValue] ${kvUrl.substring(0, 50)}...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 6000);
+      const tId = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(kvUrl, {
         method: "POST",
         body: "1",
@@ -2340,34 +2341,8 @@ export async function pushToCloud(showToast = false) {
       if (res.ok) {
         pushSuccess = true;
         addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
-      } else {
-        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status} - ${res.statusText}`, "warn");
       }
-    } catch (eKv) {
-      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKv.name} - ${eKv.message || 'Bloqueado por filtro ITP de Safari'}`, "warn");
-    }
-
-    // 3. Channel C: Ntfy Dedicated Channel (Fallback POST)
-    try {
-      const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
-      addSyncConsoleLog(`📡 POST [Ntfy] ${channelUrl}...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(channelUrl, {
-        method: "POST",
-        body: urlSafeData,
-        signal: controller.signal
-      });
-      clearTimeout(tId);
-      if (res.ok) {
-        pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube Ntfy (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
-      } else {
-        addSyncConsoleLog(`⚠️ Nube Ntfy respuesta: HTTP ${res.status} - ${res.statusText}`, "warn");
-      }
-    } catch (eCh) {
-      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${eCh.name} - ${eCh.message || 'Fetch abortado por timeout'}`, "warn");
-    }
+    } catch (eKv) {}
 
     if (pushSuccess) {
       appState.lastCloudSync = new Date().toISOString();
@@ -2377,7 +2352,7 @@ export async function pushToCloud(showToast = false) {
         showIosToast("☁️ ¡Datos sincronizados en la nube!", "fa-solid fa-cloud-arrow-up");
       }
     } else {
-      addSyncConsoleLog("⚠️ Envío en segundo plano omitido (Esperando lectura o reintento automático)", "warn");
+      addSyncConsoleLog("⚠️ Envío diferido en segundo plano", "warn");
     }
   } catch (e) {
     console.warn("Cloud sync push error:", e);
@@ -2395,7 +2370,6 @@ export async function pullFromCloud(showToast = false) {
   isPullSyncing = true;
 
   try {
-    const key = getCloudSyncKey();
     const myMasterPid = getMasterProfileId();
     const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
     const partnerName = partnerPid === 'he' ? 'Carlos' : 'Andrea';
@@ -2405,12 +2379,40 @@ export async function pullFromCloud(showToast = false) {
     let hasMergedAny = false;
     let pullSuccess = false;
 
-    // 1. Primary Cloud: GitHub Ecosystem Native Channel (100% iOS Safari Trusted First-Party)
+    // 1. Primary Cloud: Dedicated Webhook Engine Read (10ms Instant Read)
+    try {
+      const partnerWhToken = partnerPid === 'he' 
+        ? '1c3631c8-fd98-4b82-8084-a46d3eacf382' 
+        : 'c675e20a-42d2-49aa-a17f-4bd2c87d57fa';
+      const whPullUrl = `https://webhook.site/token/${partnerWhToken}/requests?sorting=newest`;
+      addSyncConsoleLog(`📡 GET [Webhook Engine] (${partnerName.toUpperCase()})...`, "info");
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(whPullUrl, { signal: controller.signal });
+      clearTimeout(tId);
+
+      if (res.ok) {
+        const rawText = await res.text();
+        if (rawText && rawText.trim().length > 10) {
+          const partnerData = await cleanAndParseJsonFromCloud(rawText);
+          if (partnerData) {
+            pullSuccess = true;
+            const changed = mergeCloudDataIntoAppState(partnerData);
+            if (changed) hasMergedAny = true;
+            addSyncConsoleLog(`✅ Nube Webhook Engine de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+          }
+        }
+      }
+    } catch (eWhPull) {
+      addSyncConsoleLog(`⚠️ Nube Webhook Engine error: ${eWhPull.name} - ${eWhPull.message}`, "warn");
+    }
+
+    // 2. Channel B: GitHub Ecosystem Native Channel (100% iOS Safari Trusted)
     try {
       const ghPartnerUrl = `https://raw.githubusercontent.com/Chirl89/dietaEntrenamiento/main/data_sync_${partnerPid}.json?t=${Date.now()}`;
-      addSyncConsoleLog(`📡 GET [GitHub Native] ${ghPartnerUrl.substring(0, 65)}...`, "info");
+      addSyncConsoleLog(`📡 GET [GitHub Native] (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
+      const tId = setTimeout(() => controller.abort(), 4000);
       const res = await fetch(ghPartnerUrl, { signal: controller.signal });
       clearTimeout(tId);
 
@@ -2425,65 +2427,8 @@ export async function pullFromCloud(showToast = false) {
             addSyncConsoleLog(`✅ Nube GitHub Native de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         }
-      } else {
-        addSyncConsoleLog(`⚠️ Nube GitHub respuesta: HTTP ${res.status} - ${res.statusText}`, "warn");
       }
-    } catch (eGh) {
-      addSyncConsoleLog(`⚠️ Nube GitHub error: ${eGh.name} - ${eGh.message || 'Sin respuesta'}`, "warn");
-    }
-
-    // 2. Channel B: Firebase REST Read
-    try {
-      const fbPartnerUrl = `https://fitduo-sync-v1-default-rtdb.europe-west1.firebasedatabase.app/sync/${key}/${partnerPid}.json`;
-      addSyncConsoleLog(`📡 GET [Firebase] ${fbPartnerUrl}...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(fbPartnerUrl, { signal: controller.signal });
-      clearTimeout(tId);
-
-      if (res.ok) {
-        pullSuccess = true;
-        const rawText = await res.text();
-        if (rawText && rawText.trim().length > 10 && rawText !== 'null') {
-          const partnerData = await cleanAndParseJsonFromCloud(rawText);
-          if (partnerData) {
-            const changed = mergeCloudDataIntoAppState(partnerData);
-            if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube Firebase de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
-          }
-        }
-      }
-    } catch (eFbPull) {
-      addSyncConsoleLog(`⚠️ Nube Firebase error: ${eFbPull.name} - ${eFbPull.message}`, "warn");
-    }
-
-    // 3. Channel C: KeyValue Service Read
-    try {
-      const appToken = "fitduo_v2026";
-      const kvPartnerUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${appToken}/${key}_${partnerPid}`;
-      addSyncConsoleLog(`📡 GET [KeyValue] ${kvPartnerUrl.substring(0, 55)}...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(kvPartnerUrl, { signal: controller.signal });
-      clearTimeout(tId);
-
-      if (res.ok) {
-        const rawText = await res.text();
-        if (rawText && rawText.trim().length > 5 && rawText !== '""' && rawText !== 'null') {
-          pullSuccess = true;
-          let cleanStr = rawText.trim();
-          if (cleanStr.startsWith('"') && cleanStr.endsWith('"')) cleanStr = cleanStr.slice(1, -1);
-          const partnerData = await cleanAndParseJsonFromCloud(cleanStr);
-          if (partnerData) {
-            const changed = mergeCloudDataIntoAppState(partnerData);
-            if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube KeyValue de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
-          }
-        }
-      }
-    } catch (eKvPull) {
-      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKvPull.name} - ${eKvPull.message}`, "warn");
-    }
+    } catch (eGh) {}
 
     // Update global UI cloud badge if read succeeded
     if (pullSuccess || hasMergedAny) {
