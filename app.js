@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.11';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.12';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2010,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.11)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.12)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2034,7 +2034,15 @@ async function cleanAndParseJsonFromCloud(rawText) {
   let text = rawText.trim();
   if (text === 'null' || text === '""' || text.length < 2) return null;
 
-  // Handle ntfy.sh JSON stream (NDJSON)
+  // Priority 1: Direct Raw JSON Parsing
+  if (text.startsWith('{') && text.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch (eDirect) {}
+  }
+
+  // Priority 2: Handle ntfy.sh JSON stream (NDJSON)
   if (text.includes('"message":') || text.includes('"attachment":')) {
     const lines = text.split('\n').filter(Boolean);
     for (let i = lines.length - 1; i >= 0; i--) {
@@ -2066,13 +2074,22 @@ async function cleanAndParseJsonFromCloud(rawText) {
     text = text.slice(1, -1);
   }
 
-  // 1. Primary Base64 decoding path (URL safe & UTF-8 safe)
+  // Priority 3: Legacy Base64 decoding path (Fallback for legacy payloads)
   try {
     const unquoted = decodeURIComponent(text);
     const fromB64 = atob(unquoted);
     const decodedUri = decodeURIComponent(fromB64);
     const parsed = JSON.parse(decodedUri);
     if (parsed && typeof parsed === 'object') return parsed;
+  } catch (eB64) {}
+
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch (eJson) {}
+
+  return null;
+}
   } catch (e) {}
 
   // 2. Direct URI / JSON fallback
@@ -2207,9 +2224,9 @@ export async function pushToCloud(showToast = false) {
       ? weightLogs[weightLogs.length - 1].weight 
       : 'N/A';
 
-    addSyncConsoleLog(`📤 Enviando datos de ${authorName}: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg...`, "info");
+    addSyncConsoleLog(`📤 Enviando datos de ${authorName} (${masterPid.toUpperCase()}): ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos...`, "info");
     
-    // Send ONLY the author's own master profile data and shared items (NEVER send partner defaults)
+    // Send ONLY author's profile data (never send partner defaults)
     const payload = {
       authorProfileId: masterPid,
       masterProfileId: masterPid,
@@ -2236,62 +2253,52 @@ export async function pushToCloud(showToast = false) {
     };
 
     const cleanJson = JSON.stringify(payload);
-    const b64Data = btoa(encodeURIComponent(cleanJson));
-    const encodedData = encodeURIComponent(b64Data);
-
     let pushSuccess = false;
 
-    // PRIMARY CLOUD ENDPOINT: ntfy.sh with 4-second timeout and text/plain header
+    // 1. Channel A: Dedicated Profile Channel (ntfy.sh/<key>_<masterPid>)
     try {
-      const ntfyUrl = `https://ntfy.sh/${key}`;
+      const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 4000);
-      const ntfyRes = await fetch(ntfyUrl, {
+      const res = await fetch(channelUrl, {
         method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: b64Data,
+        headers: { "Content-Type": "application/json" },
+        body: cleanJson,
         signal: controller.signal
       });
       clearTimeout(tId);
-      if (ntfyRes.ok) {
-        pushSuccess = true;
-        addSyncConsoleLog("✅ Guardado en Nube Primaria (ntfy.sh OK - HTTP 200)", "success");
-      }
-    } catch (ePrimary) {
-      addSyncConsoleLog(`⚠️ Nube primaria (${ePrimary.name === 'AbortError' ? 'Timeout 4s' : ePrimary.message})`, "warn");
-    }
+      if (res.ok) pushSuccess = true;
+    } catch (eCh) {}
 
-    // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co (Using GET for simple CORS compatibility)
-    if (!pushSuccess) {
-      try {
-        const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
-        const controller = new AbortController();
-        const tId = setTimeout(() => controller.abort(), 4000);
-        const kvRes = await fetch(kvUrl, { method: "GET", signal: controller.signal });
-        clearTimeout(tId);
-        if (kvRes && kvRes.ok) {
-          pushSuccess = true;
-          addSyncConsoleLog("✅ Guardado en Nube Secundaria (keyvalue OK)", "success");
-        }
-      } catch (eFallback) {
-        addSyncConsoleLog(`⚠️ Nube secundaria (${eFallback.name === 'AbortError' ? 'Timeout 4s' : eFallback.message})`, "warn");
-      }
-    }
+    // 2. Channel B: Shared Broadcast Channel (ntfy.sh/<key>)
+    try {
+      const mainUrl = `https://ntfy.sh/${key}`;
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(mainUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: cleanJson,
+        signal: controller.signal
+      });
+      clearTimeout(tId);
+      if (res.ok) pushSuccess = true;
+    } catch (eMain) {}
 
     if (pushSuccess) {
       appState.lastCloudSync = new Date().toISOString();
       updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
+      addSyncConsoleLog(`✅ Publicado correctamente en la nube como ${authorName.toUpperCase()}`, "success");
       if (showToast && typeof showIosToast === 'function') {
         showIosToast("☁️ ¡Datos sincronizados en la nube!", "fa-solid fa-cloud-arrow-up");
       }
     } else {
-      addSyncConsoleLog("❌ No se pudo contactar con los servidores en la nube", "error");
+      addSyncConsoleLog("❌ Error de red al conectar con los servidores", "error");
       updateCloudSyncUI("Nube en Espera (Local Guardado)", false);
     }
   } catch (e) {
     console.warn("Cloud sync push error:", e);
     addSyncConsoleLog(`❌ Error al guardar en nube: ${e.message}`, "error");
-    updateCloudSyncUI("Nube sin conexión (Modo Offline)", false);
   } finally {
     isPushSyncing = false;
   }
@@ -2300,84 +2307,67 @@ window.pushToCloud = pushToCloud;
 
 export async function pullFromCloud(showToast = false) {
   if (isPullSyncing) {
-    console.log("Pull operation already in progress, skipping parallel pull");
     return;
   }
   isPullSyncing = true;
 
   try {
     const key = getCloudSyncKey();
-    addSyncConsoleLog(`☁️ Descargando datos de la nube (Clave: ${key})...`, "info");
-    
+    const myMasterPid = getMasterProfileId();
+    const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
+    const partnerName = partnerPid === 'he' ? 'Carlos' : 'Andrea';
+    const myName = myMasterPid === 'he' ? 'Carlos' : 'Andrea';
+
+    addSyncConsoleLog(`☁️ Descargando datos de ${partnerName.toUpperCase()} en este móvil de ${myName.toUpperCase()}...`, "info");
     let hasMergedAny = false;
 
-    // PRIMARY CLOUD ENDPOINT: ntfy.sh with 3-second AbortController timeout for fast fallback
+    // 1. DUAL-CHANNEL INSTANT READ: Fetch partner's raw JSON from ntfy.sh/<key>_<partnerPid>/raw
     try {
-      const ntfyUrl = `https://ntfy.sh/${key}/json?poll=1`;
+      const partnerRawUrl = `https://ntfy.sh/${key}_${partnerPid}/raw`;
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 3000);
-      const res = await fetch(ntfyUrl, { signal: controller.signal });
+      const tId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(partnerRawUrl, { signal: controller.signal });
       clearTimeout(tId);
 
-      addSyncConsoleLog(`📡 GET ntfy.sh respuesta: HTTP ${res.status}`, res.ok ? "info" : "warn");
       if (res.ok) {
         const rawText = await res.text();
-        addSyncConsoleLog(`📄 Servidor devolvió ${rawText ? rawText.length : 0} bytes de datos`, "info");
+        if (rawText && rawText.trim().length > 10) {
+          const partnerData = await cleanAndParseJsonFromCloud(rawText);
+          if (partnerData) {
+            const changed = mergeCloudDataIntoAppState(partnerData);
+            if (changed) hasMergedAny = true;
+            addSyncConsoleLog(`✅ Canal directo de ${partnerName.toUpperCase()} leído correctamente`, "success");
+          }
+        }
+      }
+    } catch (ePartner) {}
+
+    // 2. BROADCAST CHANNEL READ: Fetch latest messages from ntfy.sh/<key>/json?poll=1
+    try {
+      const broadcastUrl = `https://ntfy.sh/${key}/json?poll=1`;
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(broadcastUrl, { signal: controller.signal });
+      clearTimeout(tId);
+
+      if (res.ok) {
+        const rawText = await res.text();
         if (rawText && rawText.includes('"message":')) {
           const lines = rawText.split('\n').filter(Boolean);
-          addSyncConsoleLog(`🔍 Analizando ${lines.length} registros en el historial...`, "info");
           for (let i = 0; i < lines.length; i++) {
             const parsed = await cleanAndParseJsonFromCloud(lines[i]);
-            if (parsed) {
-              const authorName = parsed.authorProfileId === 'he' ? 'Carlos' : parsed.authorProfileId === 'she' ? 'Andrea' : (parsed.authorProfileId || 'Desconocido');
-              addSyncConsoleLog(`📦 Paquete #${i+1} decodificado (Autor: ${authorName})`, "info");
+            if (parsed && parsed.authorProfileId === partnerPid) {
               const changed = mergeCloudDataIntoAppState(parsed);
               if (changed) hasMergedAny = true;
-            } else {
-              addSyncConsoleLog(`⚠️ Paquete #${i+1} no se pudo decodificar`, "warn");
-            }
-          }
-        } else {
-          const cloudData = await cleanAndParseJsonFromCloud(rawText);
-          if (cloudData) {
-            hasMergedAny = mergeCloudDataIntoAppState(cloudData);
-          } else {
-            addSyncConsoleLog("⚠️ Nube sin mensajes en formato reconocible", "warn");
-          }
-        }
-        addSyncConsoleLog("✅ Proceso de lectura de Nube Primaria completado", "success");
-      }
-    } catch (ePrimary) {
-      const isTimeout = ePrimary.name === 'AbortError';
-      addSyncConsoleLog(`⚠️ Nube Primaria: ${isTimeout ? 'Tiempo de espera agotado (6s timeout)' : ePrimary.message}`, "warn");
-    }
-
-    // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co
-    if (!hasMergedAny) {
-      try {
-        const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}`;
-        const controller = new AbortController();
-        const tId = setTimeout(() => controller.abort(), 6000);
-        const res = await fetch(kvUrl, { signal: controller.signal });
-        clearTimeout(tId);
-        if (res.ok) {
-          const rawText = await res.text();
-          const cloudData = await cleanAndParseJsonFromCloud(rawText);
-          if (cloudData) {
-            hasMergedAny = mergeCloudDataIntoAppState(cloudData);
-            if (hasMergedAny) {
-              addSyncConsoleLog("✅ Datos obtenidos de Nube Secundaria (keyvalue)", "success");
             }
           }
         }
-      } catch (eFallback) {
-        addSyncConsoleLog(`⚠️ Nube Secundaria: ${eFallback.message}`, "warn");
       }
-    }
+    } catch (eBroad) {}
 
     appState.lastCloudSync = new Date().toISOString();
     updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
-    addSyncConsoleLog(`✅ Datos recibidos y fusionados ${hasMergedAny ? '(Nuevos cambios aplicados)' : '(Sin cambios nuevos)'}`, "success");
+    addSyncConsoleLog(`✅ Proceso completado: ${hasMergedAny ? '¡Nuevos datos aplicados!' : 'Sin cambios nuevos'}`, "success");
     
     if (hasMergedAny) {
       renderAll();
