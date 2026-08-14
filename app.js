@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.23';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.24';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.23)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.24)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2067,42 +2067,30 @@ async function cleanAndParseJsonFromCloud(rawText) {
   let text = rawText.trim();
   if (text === 'null' || text === '""' || text.length < 2) return null;
 
-  // Priority 1: URL-Safe Base64 decoding
+  // Priority 1: Handle ntfy.sh JSON poll stream (NDJSON / JSON lines)
+  if (text.includes('"message":') || text.includes('"event":')) {
+    const lines = text.split('\n').filter(Boolean);
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        const item = JSON.parse(lines[i]);
+        if (item && item.message && typeof item.message === 'string') {
+          const parsedFromMsg = await cleanAndParseJsonFromCloud(item.message);
+          if (parsedFromMsg) return parsedFromMsg;
+        }
+      } catch (e) {}
+    }
+  }
+
+  // Priority 2: URL-Safe Base64 decoding
   const fromUrlB64 = fromUrlSafeB64(text);
   if (fromUrlB64) return fromUrlB64;
 
-  // Priority 2: Direct Raw JSON Parsing
+  // Priority 3: Direct Raw JSON Parsing
   if (text.startsWith('{') && text.endsWith('}')) {
     try {
       const parsed = JSON.parse(text);
       if (parsed && typeof parsed === 'object') return parsed;
     } catch (eDirect) {}
-  }
-
-  // Priority 3: Handle ntfy.sh JSON stream (NDJSON)
-  if (text.includes('"message":') || text.includes('"attachment":')) {
-    const lines = text.split('\n').filter(Boolean);
-    for (let i = lines.length - 1; i >= 0; i--) {
-      try {
-        const item = JSON.parse(lines[i]);
-        if (item && item.event === "message") {
-          if (item.attachment && item.attachment.url) {
-            try {
-              const fileRes = await fetch(item.attachment.url);
-              if (fileRes.ok) {
-                const fileText = await fileRes.text();
-                const parsedFromFile = await cleanAndParseJsonFromCloud(fileText);
-                if (parsedFromFile) return parsedFromFile;
-              }
-            } catch (eFile) {}
-          }
-          if (item.message && typeof item.message === 'string' && !item.message.startsWith("You received a file:")) {
-            const parsedFromMsg = await cleanAndParseJsonFromCloud(item.message);
-            if (parsedFromMsg) return parsedFromMsg;
-          }
-        }
-      } catch (e) {}
-    }
   }
 
   if (text.startsWith('"') && text.endsWith('"')) {
