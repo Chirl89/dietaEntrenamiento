@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.6';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.7';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -488,14 +488,14 @@ function switchProfile(profileId) {
   triggerHapticTouch();
   appState.activeProfileId = profileId;
   localStorage.setItem(LAST_ACTIVE_PROFILE_KEY, profileId);
-  saveState();
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
 
   updateProfileSwitcherButtonsUI();
   renderAll();
 
   const viewName = profileId === 'he' ? 'Carlos' : 'Andrea';
   const masterName = getMasterProfileId() === 'he' ? 'Carlos' : 'Andrea';
-  showIosToast(`👁️ Modo Vista: ${viewName} (Los registros se guardarán en Perfil Maestro: ${masterName})`, "fa-solid fa-eye");
+  showIosToast(`👁️ Visualizando a ${viewName}`, "fa-solid fa-eye");
 }
 
 // TAB NAVIGATION (DESKTOP SIDEBAR & IPHONE DOCK SYNC WITH SUBTABS)
@@ -1996,7 +1996,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.6)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.7)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2079,51 +2079,47 @@ async function cleanAndParseJsonFromCloud(rawText) {
 function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
   let hasChanges = false;
-  const author = cloudData.authorProfileId || 'he';
+  const myMasterId = getMasterProfileId();
+  const partnerId = myMasterId === 'he' ? 'she' : 'he';
 
-  // 1. Profiles: Update author profile and dog
-  ['he', 'she', 'dog'].forEach(pid => {
-    if (cloudData.profiles?.[pid]) {
-      if (!appState.profiles) appState.profiles = {};
-      // If profile belongs to payload author or dog, accept cloud updates
-      if (pid === author || pid === 'dog' || !appState.profiles[pid]) {
-        appState.profiles[pid] = { ...appState.profiles[pid], ...cloudData.profiles[pid] };
+  // 1. PARTNER PROFILE (Always update partner profile from cloud so Carlos sees Andrea's actual weight/targets and Andrea sees Carlos's)
+  if (cloudData.profiles?.[partnerId]) {
+    if (!appState.profiles) appState.profiles = {};
+    appState.profiles[partnerId] = { ...appState.profiles[partnerId], ...cloudData.profiles[partnerId] };
+    hasChanges = true;
+  }
+  // Dog profile
+  if (cloudData.profiles?.dog) {
+    if (!appState.profiles) appState.profiles = {};
+    appState.profiles.dog = { ...appState.profiles.dog, ...cloudData.profiles.dog };
+    hasChanges = true;
+  }
+
+  // 2. PARTNER COMPLETED WORKOUTS (Always update partner's workouts from cloud)
+  if (cloudData.completedWorkouts?.[partnerId]) {
+    if (!appState.completedWorkouts) appState.completedWorkouts = {};
+    appState.completedWorkouts[partnerId] = { ...appState.completedWorkouts[partnerId], ...cloudData.completedWorkouts[partnerId] };
+    hasChanges = true;
+  }
+
+  // OWN COMPLETED WORKOUTS (Only accept done = true if local is false/missing so local workout completions are never erased)
+  if (cloudData.completedWorkouts?.[myMasterId]) {
+    if (!appState.completedWorkouts) appState.completedWorkouts = {};
+    if (!appState.completedWorkouts[myMasterId]) appState.completedWorkouts[myMasterId] = {};
+    const cloudW = cloudData.completedWorkouts[myMasterId];
+    const localW = appState.completedWorkouts[myMasterId];
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    days.forEach(day => {
+      const cVal = cloudW[day];
+      const lVal = localW[day];
+      if (cVal && typeof cVal === 'object' && cVal.done && (!lVal || !lVal.done)) {
+        localW[day] = cVal;
         hasChanges = true;
       }
-    }
-  });
+    });
+  }
 
-  // 2. Completed Workouts: Update author workouts and merge non-conflicting partner workouts
-  ['he', 'she'].forEach(pid => {
-    if (cloudData.completedWorkouts?.[pid]) {
-      if (!appState.completedWorkouts) appState.completedWorkouts = {};
-      if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
-      
-      if (pid === author) {
-        // Authoritative update for the author's own workouts
-        appState.completedWorkouts[pid] = { ...appState.completedWorkouts[pid], ...cloudData.completedWorkouts[pid] };
-        hasChanges = true;
-      } else {
-        // Non-destructive merge for partner workouts (only accept done = true if local is missing or false)
-        const cloudW = cloudData.completedWorkouts[pid];
-        const localW = appState.completedWorkouts[pid];
-        const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-        days.forEach(day => {
-          const cVal = cloudW[day];
-          const lVal = localW[day];
-          if (cVal && typeof cVal === 'object' && cVal.done) {
-            localW[day] = cVal;
-            hasChanges = true;
-          } else if (cVal === true && (!lVal || lVal === false)) {
-            localW[day] = true;
-            hasChanges = true;
-          }
-        });
-      }
-    }
-  });
-
-  // 3. Weight Logs: Union and deduplicate for both profiles
+  // 3. WEIGHT LOGS (Union and deduplicate for BOTH profiles so all weight logs show for both)
   ['he', 'she'].forEach(pid => {
     if (Array.isArray(cloudData.weightLogs?.[pid])) {
       const cloudLogs = cloudData.weightLogs[pid];
@@ -2137,29 +2133,16 @@ function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
-  // 4. Apple Watch Metrics: Update author metrics
-  ['he', 'she'].forEach(pid => {
-    if (cloudData.appleWatch?.metrics?.[pid]) {
-      const cM = cloudData.appleWatch.metrics[pid];
-      if (!appState.appleWatch) appState.appleWatch = {};
-      if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
-      if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = {};
-      const lM = appState.appleWatch.metrics[pid];
-      
-      if (pid === author) {
-        appState.appleWatch.metrics[pid] = { ...lM, ...cM };
-        hasChanges = true;
-      } else {
-        if (cM.moveKcal) lM.moveKcal = Math.max(lM.moveKcal || 0, cM.moveKcal || 0);
-        if (cM.exerciseMin) lM.exerciseMin = Math.max(lM.exerciseMin || 0, cM.exerciseMin || 0);
-        if (cM.steps) lM.steps = Math.max(lM.steps || 0, cM.steps || 0);
-        if (cM.deviceName) lM.deviceName = cM.deviceName;
-        hasChanges = true;
-      }
-    }
-  });
+  // 4. PARTNER APPLE WATCH METRICS (Always update partner's metrics from cloud)
+  if (cloudData.appleWatch?.metrics?.[partnerId]) {
+    const cM = cloudData.appleWatch.metrics[partnerId];
+    if (!appState.appleWatch) appState.appleWatch = {};
+    if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
+    appState.appleWatch.metrics[partnerId] = { ...appState.appleWatch.metrics[partnerId], ...cM };
+    hasChanges = true;
+  }
 
-  // 5. Checked Shopping Items: Exact state sync
+  // 5. CHECKED SHOPPING ITEMS (Exact state sync)
   if (cloudData.checkedShoppingItems && typeof cloudData.checkedShoppingItems === 'object') {
     if (!appState.checkedShoppingItems) appState.checkedShoppingItems = {};
     Object.keys(cloudData.checkedShoppingItems).forEach(k => {
@@ -2170,7 +2153,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     });
   }
 
-  // 6. Exclusions
+  // 6. EXCLUSIONS
   if (Array.isArray(cloudData.exclusions)) {
     if (!appState.exclusions) appState.exclusions = [];
     cloudData.exclusions.forEach(ex => {
@@ -2202,16 +2185,15 @@ export async function pushToCloud(showToast = false) {
     const key = getCloudSyncKey();
     addSyncConsoleLog(`☁️ Enviando datos a la nube (Clave: ${key})...`, "info");
     
-    // Streamlined payload: essential user data only for minimum URL size
     const masterPid = getMasterProfileId();
     const payload = {
       authorProfileId: masterPid,
       masterProfileId: masterPid,
       timestamp: new Date().toISOString(),
       profiles: {
-        he: { name: appState.profiles?.he?.name, targetCalories: appState.profiles?.he?.targetCalories, protein: appState.profiles?.he?.protein, carbs: appState.profiles?.he?.carbs, fats: appState.profiles?.he?.fats },
-        she: { name: appState.profiles?.she?.name, targetCalories: appState.profiles?.she?.targetCalories, protein: appState.profiles?.she?.protein, carbs: appState.profiles?.she?.carbs, fats: appState.profiles?.she?.fats },
-        dog: { name: appState.profiles?.dog?.name, dailyWalkMinutes: appState.profiles?.dog?.dailyWalkMinutes }
+        he: appState.profiles?.he,
+        she: appState.profiles?.she,
+        dog: appState.profiles?.dog
       },
       completedWorkouts: appState.completedWorkouts,
       weightLogs: appState.weightLogs,
@@ -2290,7 +2272,7 @@ export async function pullFromCloud(showToast = false) {
     const key = getCloudSyncKey();
     addSyncConsoleLog(`☁️ Descargando datos de la nube (Clave: ${key})...`, "info");
     
-    let cloudData = null;
+    let hasMergedAny = false;
 
     // PRIMARY CLOUD ENDPOINT: ntfy.sh
     try {
@@ -2298,25 +2280,40 @@ export async function pullFromCloud(showToast = false) {
       const res = await fetch(ntfyUrl);
       if (res.ok) {
         const rawText = await res.text();
-        cloudData = await cleanAndParseJsonFromCloud(rawText);
-        if (cloudData) {
-          addSyncConsoleLog("✅ Datos obtenidos de Nube Primaria (ntfy.sh)", "success");
+        if (rawText && rawText.includes('"message":')) {
+          const lines = rawText.split('\n').filter(Boolean);
+          for (let i = 0; i < lines.length; i++) {
+            const parsed = await cleanAndParseJsonFromCloud(lines[i]);
+            if (parsed) {
+              const changed = mergeCloudDataIntoAppState(parsed);
+              if (changed) hasMergedAny = true;
+            }
+          }
+        } else {
+          const cloudData = await cleanAndParseJsonFromCloud(rawText);
+          if (cloudData) {
+            hasMergedAny = mergeCloudDataIntoAppState(cloudData);
+          }
         }
+        addSyncConsoleLog("✅ Datos procesados de Nube Primaria (ntfy.sh)", "success");
       }
     } catch (ePrimary) {
       addSyncConsoleLog(`⚠️ Error al leer de Nube Primaria: ${ePrimary.message}`, "warn");
     }
 
     // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co
-    if (!cloudData) {
+    if (!hasMergedAny) {
       try {
         const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}`;
         const res = await fetch(kvUrl);
         if (res.ok) {
           const rawText = await res.text();
-          cloudData = await cleanAndParseJsonFromCloud(rawText);
+          const cloudData = await cleanAndParseJsonFromCloud(rawText);
           if (cloudData) {
-            addSyncConsoleLog("✅ Datos obtenidos de Nube Secundaria (keyvalue)", "success");
+            hasMergedAny = mergeCloudDataIntoAppState(cloudData);
+            if (hasMergedAny) {
+              addSyncConsoleLog("✅ Datos obtenidos de Nube Secundaria (keyvalue)", "success");
+            }
           }
         }
       } catch (eFallback) {
@@ -2324,17 +2321,15 @@ export async function pullFromCloud(showToast = false) {
       }
     }
 
-    if (cloudData) {
-      const hasChanges = mergeCloudDataIntoAppState(cloudData);
-      appState.lastCloudSync = new Date().toISOString();
-      updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
-      addSyncConsoleLog(`✅ Datos recibidos y fusionados ${hasChanges ? '(Nuevos cambios aplicados)' : '(Sin cambios nuevos)'}`, "success");
-      
+    appState.lastCloudSync = new Date().toISOString();
+    updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
+    addSyncConsoleLog(`✅ Datos recibidos y fusionados ${hasMergedAny ? '(Nuevos cambios aplicados)' : '(Sin cambios nuevos)'}`, "success");
+    
+    if (hasMergedAny) {
+      renderAll();
       if (showToast && typeof showIosToast === 'function') {
-        showIosToast(hasChanges ? "☁️ ¡Datos actualizados desde la nube!" : "☁️ Nube al día (Sin datos nuevos)", "fa-solid fa-cloud-arrow-down");
+        showIosToast("☁️ ¡Datos actualizados desde la nube!", "fa-solid fa-cloud-arrow-down");
       }
-    } else {
-      addSyncConsoleLog("ℹ️ Nube sin datos registrados o sin formato válido", "info");
     }
   } catch (e) {
     console.warn("Cloud sync pull error:", e);
