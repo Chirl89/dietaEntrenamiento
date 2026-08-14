@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.7';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.8';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1996,7 +1996,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.7)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.8)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2079,49 +2079,31 @@ async function cleanAndParseJsonFromCloud(rawText) {
 function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
   let hasChanges = false;
-  const myMasterId = getMasterProfileId();
-  const partnerId = myMasterId === 'he' ? 'she' : 'he';
+  const author = cloudData.authorProfileId || cloudData.masterProfileId || 'he';
 
-  // 1. PARTNER PROFILE (Always update partner profile from cloud so Carlos sees Andrea's actual weight/targets and Andrea sees Carlos's)
-  if (cloudData.profiles?.[partnerId]) {
-    if (!appState.profiles) appState.profiles = {};
-    appState.profiles[partnerId] = { ...appState.profiles[partnerId], ...cloudData.profiles[partnerId] };
-    hasChanges = true;
-  }
-  // Dog profile
-  if (cloudData.profiles?.dog) {
-    if (!appState.profiles) appState.profiles = {};
-    appState.profiles.dog = { ...appState.profiles.dog, ...cloudData.profiles.dog };
-    hasChanges = true;
-  }
-
-  // 2. PARTNER COMPLETED WORKOUTS (Always update partner's workouts from cloud)
-  if (cloudData.completedWorkouts?.[partnerId]) {
-    if (!appState.completedWorkouts) appState.completedWorkouts = {};
-    appState.completedWorkouts[partnerId] = { ...appState.completedWorkouts[partnerId], ...cloudData.completedWorkouts[partnerId] };
-    hasChanges = true;
-  }
-
-  // OWN COMPLETED WORKOUTS (Only accept done = true if local is false/missing so local workout completions are never erased)
-  if (cloudData.completedWorkouts?.[myMasterId]) {
-    if (!appState.completedWorkouts) appState.completedWorkouts = {};
-    if (!appState.completedWorkouts[myMasterId]) appState.completedWorkouts[myMasterId] = {};
-    const cloudW = cloudData.completedWorkouts[myMasterId];
-    const localW = appState.completedWorkouts[myMasterId];
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    days.forEach(day => {
-      const cVal = cloudW[day];
-      const lVal = localW[day];
-      if (cVal && typeof cVal === 'object' && cVal.done && (!lVal || !lVal.done)) {
-        localW[day] = cVal;
+  // 1. PROFILES: Update profile data for author and dog
+  ['he', 'she', 'dog'].forEach(pid => {
+    if (cloudData.profiles?.[pid]) {
+      if (!appState.profiles) appState.profiles = {};
+      if (pid === author || pid === 'dog') {
+        appState.profiles[pid] = { ...appState.profiles[pid], ...cloudData.profiles[pid] };
         hasChanges = true;
       }
-    });
-  }
+    }
+  });
 
-  // 3. WEIGHT LOGS (Union and deduplicate for BOTH profiles so all weight logs show for both)
+  // 2. COMPLETED WORKOUTS: Update workouts for author
   ['he', 'she'].forEach(pid => {
-    if (Array.isArray(cloudData.weightLogs?.[pid])) {
+    if (cloudData.completedWorkouts?.[pid] && pid === author) {
+      if (!appState.completedWorkouts) appState.completedWorkouts = {};
+      appState.completedWorkouts[pid] = { ...appState.completedWorkouts[pid], ...cloudData.completedWorkouts[pid] };
+      hasChanges = true;
+    }
+  });
+
+  // 3. WEIGHT LOGS: Union and deduplicate for author profile
+  ['he', 'she'].forEach(pid => {
+    if (Array.isArray(cloudData.weightLogs?.[pid]) && pid === author) {
       const cloudLogs = cloudData.weightLogs[pid];
       const localLogs = appState.weightLogs?.[pid] || [];
       const logMap = new Map();
@@ -2133,16 +2115,18 @@ function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
-  // 4. PARTNER APPLE WATCH METRICS (Always update partner's metrics from cloud)
-  if (cloudData.appleWatch?.metrics?.[partnerId]) {
-    const cM = cloudData.appleWatch.metrics[partnerId];
-    if (!appState.appleWatch) appState.appleWatch = {};
-    if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
-    appState.appleWatch.metrics[partnerId] = { ...appState.appleWatch.metrics[partnerId], ...cM };
-    hasChanges = true;
-  }
+  // 4. APPLE WATCH METRICS: Update metrics for author
+  ['he', 'she'].forEach(pid => {
+    if (cloudData.appleWatch?.metrics?.[pid] && pid === author) {
+      const cM = cloudData.appleWatch.metrics[pid];
+      if (!appState.appleWatch) appState.appleWatch = {};
+      if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
+      appState.appleWatch.metrics[pid] = { ...appState.appleWatch.metrics[pid], ...cM };
+      hasChanges = true;
+    }
+  });
 
-  // 5. CHECKED SHOPPING ITEMS (Exact state sync)
+  // 5. CHECKED SHOPPING ITEMS
   if (cloudData.checkedShoppingItems && typeof cloudData.checkedShoppingItems === 'object') {
     if (!appState.checkedShoppingItems) appState.checkedShoppingItems = {};
     Object.keys(cloudData.checkedShoppingItems).forEach(k => {
@@ -2183,21 +2167,29 @@ export async function pushToCloud(showToast = false) {
 
   try {
     const key = getCloudSyncKey();
-    addSyncConsoleLog(`☁️ Enviando datos a la nube (Clave: ${key})...`, "info");
-    
     const masterPid = getMasterProfileId();
+    addSyncConsoleLog(`☁️ Enviando datos de (${masterPid === 'he' ? 'Carlos' : 'Andrea'}) a la nube (Clave: ${key})...`, "info");
+    
+    // Send ONLY the author's own master profile data and shared items (NEVER send partner defaults)
     const payload = {
       authorProfileId: masterPid,
       masterProfileId: masterPid,
       timestamp: new Date().toISOString(),
       profiles: {
-        he: appState.profiles?.he,
-        she: appState.profiles?.she,
+        [masterPid]: appState.profiles?.[masterPid],
         dog: appState.profiles?.dog
       },
-      completedWorkouts: appState.completedWorkouts,
-      weightLogs: appState.weightLogs,
-      appleWatch: { metrics: appState.appleWatch?.metrics },
+      completedWorkouts: {
+        [masterPid]: appState.completedWorkouts?.[masterPid]
+      },
+      weightLogs: {
+        [masterPid]: appState.weightLogs?.[masterPid]
+      },
+      appleWatch: {
+        metrics: {
+          [masterPid]: appState.appleWatch?.metrics?.[masterPid]
+        }
+      },
       checkedShoppingItems: appState.checkedShoppingItems || {},
       exclusions: appState.exclusions || [],
       recipesDaysRange: appState.recipesDaysRange || "5",
