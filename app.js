@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.21';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.22';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setInterval(() => {
     pullFromCloud(false);
-  }, 15000);
+  }, 45000);
   
   // Make functions available globally on window object for HTML inline onclick handlers
   window.switchProfile = switchProfile;
@@ -2010,9 +2010,9 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.21)
-const CLOUD_SYNC_APP_KEY = "fitduo_v1";
-const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.22)
+const CLOUD_SYNC_APP_KEY = "fitduo_v2";
+const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
 
 function getCloudSyncKey() {
