@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.30';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.31';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.30)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.31)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2465,7 +2465,7 @@ export async function pullFromCloud(showToast = false) {
       if (showToast && typeof showIosToast === 'function') {
         showIosToast(`☁️ ¡Datos de ${partnerName} actualizados!`, "fa-solid fa-cloud-arrow-down");
       }
-      renderAllViews();
+      renderAll();
     } else {
       addSyncConsoleLog("✅ Sincronización completa: Sin cambios nuevos", "info");
     }
