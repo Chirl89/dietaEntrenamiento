@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.1';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.2';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1996,7 +1996,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.7.1)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.7.2)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2080,6 +2080,7 @@ function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
   let hasChanges = false;
   const author = cloudData.authorProfileId || cloudData.masterProfileId || 'he';
+  const authorName = author === 'he' ? 'Carlos' : author === 'she' ? 'Andrea' : author;
 
   // 1. PROFILES: Update profile data for author and dog
   ['he', 'she', 'dog'].forEach(pid => {
@@ -2295,11 +2296,11 @@ export async function pullFromCloud(showToast = false) {
     
     let hasMergedAny = false;
 
-    // PRIMARY CLOUD ENDPOINT: ntfy.sh with 6-second AbortController timeout
+    // PRIMARY CLOUD ENDPOINT: ntfy.sh with 3-second AbortController timeout for fast fallback
     try {
       const ntfyUrl = `https://ntfy.sh/${key}/json?poll=1`;
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 6000);
+      const tId = setTimeout(() => controller.abort(), 3000);
       const res = await fetch(ntfyUrl, { signal: controller.signal });
       clearTimeout(tId);
 
