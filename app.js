@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.22';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.23';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -174,13 +174,22 @@ function loadSavedState() {
   }
 }
 
+let pushDebounceTimer = null;
+
+function debouncedPushToCloud(delay = 1500) {
+  if (pushDebounceTimer) clearTimeout(pushDebounceTimer);
+  pushDebounceTimer = setTimeout(() => {
+    pushToCloud(false);
+  }, delay);
+}
+
 // SAVE STATE TO LOCALSTORAGE & PUSH TO CLOUD
 function saveState() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
   if (appState.appleWatch?.metrics) {
     localStorage.setItem(LAST_REGISTERED_METRICS_KEY, JSON.stringify(appState.appleWatch.metrics));
   }
-  pushToCloud(false);
+  debouncedPushToCloud(1500);
 }
 
 // INITIALIZATION ON DOM READY
@@ -2010,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.22)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.23)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2244,7 +2253,9 @@ let isPullSyncing = false;
 
 export async function pushToCloud(showToast = false) {
   if (isPushSyncing) {
-    addSyncConsoleLog("⏳ Envío a la nube ya en proceso, omitiendo push paralelo", "warn");
+    if (showToast) {
+      addSyncConsoleLog("⏳ Envío a la nube ya en proceso, omitiendo push paralelo", "warn");
+    }
     return;
   }
   isPushSyncing = true;
