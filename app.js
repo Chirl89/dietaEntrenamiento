@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.17';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.18';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2010,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.17)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.18)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2029,12 +2029,40 @@ function addSyncConsoleLog(message, type = "info") {
   console.log(`[SYNC CONSOLE ${type.toUpperCase()}] ${message}`);
 }
 
+function toUrlSafeB64(jsonObj) {
+  try {
+    const str = JSON.stringify(jsonObj);
+    const b64 = btoa(unescape(encodeURIComponent(str)));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  } catch (e) {
+    return "";
+  }
+}
+
+function fromUrlSafeB64(b64Str) {
+  try {
+    if (!b64Str || typeof b64Str !== 'string') return null;
+    let base64 = b64Str.trim().replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const jsonStr = decodeURIComponent(escape(atob(base64)));
+    const parsed = JSON.parse(jsonStr);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch (e) {}
+  return null;
+}
+
 async function cleanAndParseJsonFromCloud(rawText) {
   if (!rawText || typeof rawText !== 'string') return null;
   let text = rawText.trim();
   if (text === 'null' || text === '""' || text.length < 2) return null;
 
-  // Priority 1: Direct Raw JSON Parsing
+  // Priority 1: URL-Safe Base64 decoding
+  const fromUrlB64 = fromUrlSafeB64(text);
+  if (fromUrlB64) return fromUrlB64;
+
+  // Priority 2: Direct Raw JSON Parsing
   if (text.startsWith('{') && text.endsWith('}')) {
     try {
       const parsed = JSON.parse(text);
@@ -2042,14 +2070,13 @@ async function cleanAndParseJsonFromCloud(rawText) {
     } catch (eDirect) {}
   }
 
-  // Priority 2: Handle ntfy.sh JSON stream (NDJSON)
+  // Priority 3: Handle ntfy.sh JSON stream (NDJSON)
   if (text.includes('"message":') || text.includes('"attachment":')) {
     const lines = text.split('\n').filter(Boolean);
     for (let i = lines.length - 1; i >= 0; i--) {
       try {
         const item = JSON.parse(lines[i]);
         if (item && item.event === "message") {
-          // Priority 1: Fetch attachment URL if ntfy saved payload as file
           if (item.attachment && item.attachment.url) {
             try {
               const fileRes = await fetch(item.attachment.url);
@@ -2060,7 +2087,6 @@ async function cleanAndParseJsonFromCloud(rawText) {
               }
             } catch (eFile) {}
           }
-          // Priority 2: Direct message body
           if (item.message && typeof item.message === 'string' && !item.message.startsWith("You received a file:")) {
             const parsedFromMsg = await cleanAndParseJsonFromCloud(item.message);
             if (parsedFromMsg) return parsedFromMsg;
@@ -2074,7 +2100,7 @@ async function cleanAndParseJsonFromCloud(rawText) {
     text = text.slice(1, -1);
   }
 
-  // Priority 3: Legacy Base64 decoding path (Fallback for legacy payloads)
+  // Priority 4: Legacy Base64 decoding path
   try {
     const unquoted = decodeURIComponent(text);
     const fromB64 = atob(unquoted);
@@ -2273,13 +2299,12 @@ export async function pushToCloud(showToast = false) {
     };
 
     const cleanJson = JSON.stringify(compactPayload);
-    const b64Data = btoa(encodeURIComponent(cleanJson));
-    const encodedData = encodeURIComponent(b64Data);
+    const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Channel A: KeyValue Cloud (keyvalue.immanuel.co - Auto-creating Dedicated Profile Key)
+    // 1. Channel A: KeyValue Cloud (keyvalue.immanuel.co with URL-Safe Alphanumeric String)
     try {
-      const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}_${masterPid}/${encodedData}`;
+      const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}_${masterPid}/${urlSafeData}`;
       addSyncConsoleLog(`📡 GET keyvalue.immanuel.co (${masterPid.toUpperCase()})...`, "info");
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 8000);
