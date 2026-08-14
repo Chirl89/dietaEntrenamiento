@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.4';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.5';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2067,7 +2067,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.4)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.5)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2086,20 +2086,34 @@ function addSyncConsoleLog(message, type = "info") {
   console.log(`[SYNC CONSOLE ${type.toUpperCase()}] ${message}`);
 }
 
-function cleanAndParseJsonFromCloud(rawText) {
+async function cleanAndParseJsonFromCloud(rawText) {
   if (!rawText || typeof rawText !== 'string') return null;
   let text = rawText.trim();
   if (text === 'null' || text === '""' || text.length < 2) return null;
 
-  // Handle ntfy.sh JSON stream
-  if (text.includes('"message":')) {
+  // Handle ntfy.sh JSON stream (NDJSON)
+  if (text.includes('"message":') || text.includes('"attachment":')) {
     const lines = text.split('\n').filter(Boolean);
     for (let i = lines.length - 1; i >= 0; i--) {
       try {
         const item = JSON.parse(lines[i]);
-        if (item && item.message && typeof item.message === 'string') {
-          const parsedFromMsg = cleanAndParseJsonFromCloud(item.message);
-          if (parsedFromMsg) return parsedFromMsg;
+        if (item && item.event === "message") {
+          // Priority 1: Fetch attachment URL if ntfy saved payload as file
+          if (item.attachment && item.attachment.url) {
+            try {
+              const fileRes = await fetch(item.attachment.url);
+              if (fileRes.ok) {
+                const fileText = await fileRes.text();
+                const parsedFromFile = await cleanAndParseJsonFromCloud(fileText);
+                if (parsedFromFile) return parsedFromFile;
+              }
+            } catch (eFile) {}
+          }
+          // Priority 2: Direct message body
+          if (item.message && typeof item.message === 'string' && !item.message.startsWith("You received a file:")) {
+            const parsedFromMsg = await cleanAndParseJsonFromCloud(item.message);
+            if (parsedFromMsg) return parsedFromMsg;
+          }
         }
       } catch (e) {}
     }
@@ -2355,7 +2369,7 @@ export async function pullFromCloud(showToast = false) {
       const res = await fetch(ntfyUrl);
       if (res.ok) {
         const rawText = await res.text();
-        cloudData = cleanAndParseJsonFromCloud(rawText);
+        cloudData = await cleanAndParseJsonFromCloud(rawText);
         if (cloudData) {
           addSyncConsoleLog("✅ Datos obtenidos de Nube Primaria (ntfy.sh)", "success");
         }
@@ -2371,7 +2385,7 @@ export async function pullFromCloud(showToast = false) {
         const res = await fetch(kvUrl);
         if (res.ok) {
           const rawText = await res.text();
-          cloudData = cleanAndParseJsonFromCloud(rawText);
+          cloudData = await cleanAndParseJsonFromCloud(rawText);
           if (cloudData) {
             addSyncConsoleLog("✅ Datos obtenidos de Nube Secundaria (keyvalue)", "success");
           }
