@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.8';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.9';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1996,7 +1996,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.8)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.9)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2153,6 +2153,19 @@ function mergeCloudDataIntoAppState(cloudData) {
 
   if (hasChanges) {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+
+    const authorName = author === 'he' ? 'Carlos' : author === 'she' ? 'Andrea' : author;
+    const p = cloudData.profiles?.[author] || appState.profiles?.[author] || {};
+    const m = cloudData.appleWatch?.metrics?.[author] || appState.appleWatch?.metrics?.[author] || {};
+    const w = cloudData.completedWorkouts?.[author] || appState.completedWorkouts?.[author] || {};
+    const wDoneCount = Object.values(w).filter(val => val && (val === true || val.done)).length;
+    const weightLogs = cloudData.weightLogs?.[author] || appState.weightLogs?.[author] || [];
+    const lastWeight = Array.isArray(weightLogs) && weightLogs.length > 0 
+      ? weightLogs[weightLogs.length - 1].weight 
+      : 'N/A';
+
+    const logDetails = `📥 Datos de ${authorName} importados: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg, meta ${p.targetCalories || 'N/A'} kcal`;
+    addSyncConsoleLog(logDetails, "success");
   }
   return hasChanges;
 }
@@ -2168,7 +2181,17 @@ export async function pushToCloud(showToast = false) {
   try {
     const key = getCloudSyncKey();
     const masterPid = getMasterProfileId();
-    addSyncConsoleLog(`☁️ Enviando datos de (${masterPid === 'he' ? 'Carlos' : 'Andrea'}) a la nube (Clave: ${key})...`, "info");
+    const authorName = masterPid === 'he' ? 'Carlos' : 'Andrea';
+    const p = appState.profiles?.[masterPid] || {};
+    const m = appState.appleWatch?.metrics?.[masterPid] || {};
+    const w = appState.completedWorkouts?.[masterPid] || {};
+    const wDoneCount = Object.values(w).filter(val => val && (val === true || val.done)).length;
+    const weightLogs = appState.weightLogs?.[masterPid] || [];
+    const lastWeight = Array.isArray(weightLogs) && weightLogs.length > 0 
+      ? weightLogs[weightLogs.length - 1].weight 
+      : 'N/A';
+
+    addSyncConsoleLog(`📤 Enviando datos de ${authorName}: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg, meta ${p.targetCalories || 'N/A'} kcal...`, "info");
     
     // Send ONLY the author's own master profile data and shared items (NEVER send partner defaults)
     const payload = {
