@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.0';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.1';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1987,7 +1987,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.0)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.1)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2154,10 +2154,15 @@ export async function pushToCloud(showToast = false) {
     const key = getCloudSyncKey();
     addSyncConsoleLog(`☁️ Enviando datos a la nube (Clave: ${key})...`, "info");
     
+    // Streamlined payload: essential user data only for minimum URL size
     const payload = {
       masterProfileId: appState.masterProfileId,
       timestamp: new Date().toISOString(),
-      profiles: appState.profiles,
+      profiles: {
+        he: { name: appState.profiles?.he?.name, targetCalories: appState.profiles?.he?.targetCalories, protein: appState.profiles?.he?.protein, carbs: appState.profiles?.he?.carbs, fats: appState.profiles?.he?.fats },
+        she: { name: appState.profiles?.she?.name, targetCalories: appState.profiles?.she?.targetCalories, protein: appState.profiles?.she?.protein, carbs: appState.profiles?.she?.carbs, fats: appState.profiles?.she?.fats },
+        dog: { name: appState.profiles?.dog?.name, dailyWalkMinutes: appState.profiles?.dog?.dailyWalkMinutes }
+      },
       completedWorkouts: appState.completedWorkouts,
       weightLogs: appState.weightLogs,
       appleWatch: { metrics: appState.appleWatch?.metrics },
@@ -2172,8 +2177,16 @@ export async function pushToCloud(showToast = false) {
     const encodedData = encodeURIComponent(b64Data);
     const url = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
 
-    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain" }, keepalive: true });
-    if (res.ok) {
+    // Simple CORS POST request (no custom headers/keepalive to prevent WebKit preflight 'Load failed' error)
+    let res = null;
+    try {
+      res = await fetch(url, { method: "POST" });
+    } catch (e1) {
+      // Fallback try simple GET if POST failed
+      res = await fetch(url);
+    }
+
+    if (res && res.ok) {
       appState.lastCloudSync = new Date().toISOString();
       updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
       addSyncConsoleLog("✅ Guardado en la nube completado con éxito (HTTP 200 OK)", "success");
@@ -2181,7 +2194,7 @@ export async function pushToCloud(showToast = false) {
         showIosToast("☁️ ¡Datos sincronizados en la nube!", "fa-solid fa-cloud-arrow-up");
       }
     } else {
-      addSyncConsoleLog(`⚠️ Nube respondió status: ${res.status}`, "warn");
+      addSyncConsoleLog(`⚠️ Nube respondió status: ${res ? res.status : 'error'}`, "warn");
       updateCloudSyncUI("Nube en Espera (Local Guardado)", false);
     }
   } catch (e) {
