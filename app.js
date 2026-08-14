@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.37';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.38';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.37)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.38)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2407,31 +2407,6 @@ export async function pullFromCloud(showToast = false) {
       }
     } catch (ePnPull) {
       addSyncConsoleLog(`⚠️ Nube PubNub error: ${ePnPull.name} - ${ePnPull.message}`, "warn");
-    }
-
-    // 2. Channel B: GitHub Ecosystem Native Channel Fallback
-    try {
-      const ghPartnerUrl = `https://raw.githubusercontent.com/Chirl89/dietaEntrenamiento/main/data_sync_${partnerPid}.json?t=${Date.now()}`;
-      addSyncConsoleLog(`📡 GET [GitHub Native] (${partnerName.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 4000);
-      const res = await fetch(ghPartnerUrl, { signal: controller.signal });
-      clearTimeout(tId);
-
-      if (res.ok) {
-        const rawText = await res.text();
-        if (rawText && rawText.trim().length > 10) {
-          const partnerData = await cleanAndParseJsonFromCloud(rawText);
-          if (partnerData) {
-            if (!pullSuccess) pullSuccess = true;
-            const changed = mergeCloudDataIntoAppState(partnerData);
-            if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube GitHub Native de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
-          }
-        }
-      }
-    } catch (eGh) {}
-
     // Update global UI cloud badge if read succeeded
     if (pullSuccess || hasMergedAny) {
       appState.lastCloudSync = new Date().toISOString();
