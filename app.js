@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.27';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.28';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.27)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.28)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2301,36 +2301,27 @@ export async function pushToCloud(showToast = false) {
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Primary Cloud: JSONBlob Public REST API (https://jsonblob.com/api/jsonBlob/...)
+    // 1. Primary Cloud: KeyValue Cloud Service (keyvalue.immanuel.co)
     try {
-      const blobId = masterPid === 'he' ? '1398726543210987654' : '1398726543210987655';
-      const blobUrl = `https://jsonblob.com/api/jsonBlob/${blobId}`;
-      addSyncConsoleLog(`📡 PUT Nube JSONBlob (${masterPid.toUpperCase()})...`, "info");
+      const appToken = "fitduo_v2026";
+      const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${appToken}/${key}_${masterPid}/${urlSafeData}`;
+      addSyncConsoleLog(`📡 POST Nube KeyValue (${masterPid.toUpperCase()})...`, "info");
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 6000);
-      let res = await fetch(blobUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: cleanJson,
+      const res = await fetch(kvUrl, {
+        method: "POST",
+        body: "",
         signal: controller.signal
       });
-      if (res.status === 404) {
-        res = await fetch(`https://jsonblob.com/api/jsonBlob`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Accept": "application/json" },
-          body: cleanJson,
-          signal: controller.signal
-        });
-      }
       clearTimeout(tId);
-      if (res.ok || res.status === 201 || res.status === 200) {
+      if (res.ok) {
         pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube JSONBlob (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+        addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
       } else {
-        addSyncConsoleLog(`⚠️ Nube JSONBlob respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (eBlob) {
-      addSyncConsoleLog(`⚠️ Nube JSONBlob error: ${eBlob.name} - ${eBlob.message}`, "warn");
+    } catch (eKv) {
+      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKv.name} - ${eKv.message}`, "warn");
     }
 
     // 2. Channel B: Ntfy Dedicated Channel (Fallback POST)
@@ -2391,36 +2382,35 @@ export async function pullFromCloud(showToast = false) {
     addSyncConsoleLog(`☁️ Descargando datos de ${partnerName.toUpperCase()} en este móvil de ${myName.toUpperCase()}...`, "info");
     let hasMergedAny = false;
 
-    // 1. Primary Cloud: JSONBlob REST Read
+    // 1. Primary Cloud: KeyValue Service Read (keyvalue.immanuel.co)
     try {
-      const partnerBlobId = partnerPid === 'he' ? '1398726543210987654' : '1398726543210987655';
-      const partnerBlobUrl = `https://jsonblob.com/api/jsonBlob/${partnerBlobId}`;
-      addSyncConsoleLog(`📡 GET Nube JSONBlob (${partnerName.toUpperCase()})...`, "info");
+      const appToken = "fitduo_v2026";
+      const kvPartnerUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${appToken}/${key}_${partnerPid}`;
+      addSyncConsoleLog(`📡 GET Nube KeyValue (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(partnerBlobUrl, {
-        headers: { "Accept": "application/json" },
-        signal: controller.signal
-      });
+      const res = await fetch(kvPartnerUrl, { signal: controller.signal });
       clearTimeout(tId);
 
       if (res.ok) {
         const rawText = await res.text();
-        if (rawText && rawText.trim().length > 10) {
-          const partnerData = await cleanAndParseJsonFromCloud(rawText);
+        if (rawText && rawText.trim().length > 5 && rawText !== '""' && rawText !== 'null') {
+          let cleanStr = rawText.trim();
+          if (cleanStr.startsWith('"') && cleanStr.endsWith('"')) cleanStr = cleanStr.slice(1, -1);
+          const partnerData = await cleanAndParseJsonFromCloud(cleanStr);
           if (partnerData) {
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube JSONBlob de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+            addSyncConsoleLog(`✅ Nube KeyValue de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         } else {
-          addSyncConsoleLog(`ℹ️ Nube JSONBlob de ${partnerName.toUpperCase()} aún sin publicaciones`, "info");
+          addSyncConsoleLog(`ℹ️ Nube KeyValue de ${partnerName.toUpperCase()} aún sin publicaciones`, "info");
         }
       } else {
-        addSyncConsoleLog(`⚠️ Nube JSONBlob respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (eBlobPull) {
-      addSyncConsoleLog(`⚠️ Nube JSONBlob error: ${eBlobPull.name} - ${eBlobPull.message}`, "warn");
+    } catch (eKvPull) {
+      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKvPull.name} - ${eKvPull.message}`, "warn");
     }
 
     // 2. Channel B: Ntfy JSON Poll Read (ntfy.sh/<key>_<partnerPid>/json?poll=1)
