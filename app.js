@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.9';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.0';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1996,7 +1996,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.9)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.7.0)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2151,21 +2151,20 @@ function mergeCloudDataIntoAppState(cloudData) {
   if (cloudData.recipesDaysRange) appState.recipesDaysRange = cloudData.recipesDaysRange;
   if (cloudData.shoppingDaysRange) appState.shoppingDaysRange = cloudData.shoppingDaysRange;
 
+  const p = cloudData.profiles?.[author] || appState.profiles?.[author] || {};
+  const m = cloudData.appleWatch?.metrics?.[author] || appState.appleWatch?.metrics?.[author] || {};
+  const w = cloudData.completedWorkouts?.[author] || appState.completedWorkouts?.[author] || {};
+  const wDoneCount = Object.values(w).filter(val => val && (val === true || val.done)).length;
+  const weightLogs = cloudData.weightLogs?.[author] || appState.weightLogs?.[author] || [];
+  const lastWeight = Array.isArray(weightLogs) && weightLogs.length > 0 
+    ? weightLogs[weightLogs.length - 1].weight 
+    : 'N/A';
+
+  const logDetails = `📥 Datos de ${authorName} importados: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg, meta ${p.targetCalories || 'N/A'} kcal`;
+  addSyncConsoleLog(logDetails, "success");
+
   if (hasChanges) {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
-
-    const authorName = author === 'he' ? 'Carlos' : author === 'she' ? 'Andrea' : author;
-    const p = cloudData.profiles?.[author] || appState.profiles?.[author] || {};
-    const m = cloudData.appleWatch?.metrics?.[author] || appState.appleWatch?.metrics?.[author] || {};
-    const w = cloudData.completedWorkouts?.[author] || appState.completedWorkouts?.[author] || {};
-    const wDoneCount = Object.values(w).filter(val => val && (val === true || val.done)).length;
-    const weightLogs = cloudData.weightLogs?.[author] || appState.weightLogs?.[author] || [];
-    const lastWeight = Array.isArray(weightLogs) && weightLogs.length > 0 
-      ? weightLogs[weightLogs.length - 1].weight 
-      : 'N/A';
-
-    const logDetails = `📥 Datos de ${authorName} importados: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg, meta ${p.targetCalories || 'N/A'} kcal`;
-    addSyncConsoleLog(logDetails, "success");
   }
   return hasChanges;
 }
@@ -2293,24 +2292,33 @@ export async function pullFromCloud(showToast = false) {
     try {
       const ntfyUrl = `https://ntfy.sh/${key}/json?poll=1`;
       const res = await fetch(ntfyUrl);
+      addSyncConsoleLog(`📡 GET ntfy.sh respuesta: HTTP ${res.status}`, res.ok ? "info" : "warn");
       if (res.ok) {
         const rawText = await res.text();
+        addSyncConsoleLog(`📄 Servidor devolvió ${rawText ? rawText.length : 0} bytes de datos`, "info");
         if (rawText && rawText.includes('"message":')) {
           const lines = rawText.split('\n').filter(Boolean);
+          addSyncConsoleLog(`🔍 Analizando ${lines.length} registros en el historial...`, "info");
           for (let i = 0; i < lines.length; i++) {
             const parsed = await cleanAndParseJsonFromCloud(lines[i]);
             if (parsed) {
+              const authorName = parsed.authorProfileId === 'he' ? 'Carlos' : parsed.authorProfileId === 'she' ? 'Andrea' : (parsed.authorProfileId || 'Desconocido');
+              addSyncConsoleLog(`📦 Paquete #${i+1} decodificado (Autor: ${authorName})`, "info");
               const changed = mergeCloudDataIntoAppState(parsed);
               if (changed) hasMergedAny = true;
+            } else {
+              addSyncConsoleLog(`⚠️ Paquete #${i+1} no se pudo decodificar`, "warn");
             }
           }
         } else {
           const cloudData = await cleanAndParseJsonFromCloud(rawText);
           if (cloudData) {
             hasMergedAny = mergeCloudDataIntoAppState(cloudData);
+          } else {
+            addSyncConsoleLog("⚠️ Nube sin mensajes en formato reconocible", "warn");
           }
         }
-        addSyncConsoleLog("✅ Datos procesados de Nube Primaria (ntfy.sh)", "success");
+        addSyncConsoleLog("✅ Proceso de lectura de Nube Primaria completado", "success");
       }
     } catch (ePrimary) {
       addSyncConsoleLog(`⚠️ Error al leer de Nube Primaria: ${ePrimary.message}`, "warn");
