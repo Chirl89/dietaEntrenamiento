@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.24';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.25';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.24)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.25)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2301,12 +2301,30 @@ export async function pushToCloud(showToast = false) {
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Channel A: Primary Ntfy Dedicated Channel (Simple POST with urlSafeData)
+    // 1. Channel A: KeyValue Cloud (keyvalue.immanuel.co GET UpdateValue)
+    try {
+      const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}_${masterPid}/${urlSafeData}`;
+      addSyncConsoleLog(`📡 GET Nube KeyValue (${masterPid.toUpperCase()})...`, "info");
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(kvUrl, { method: "GET", signal: controller.signal });
+      clearTimeout(tId);
+      if (res.ok) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+      } else {
+        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
+      }
+    } catch (eKv) {
+      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKv.name} - ${eKv.message}`, "warn");
+    }
+
+    // 2. Channel B: Ntfy Dedicated Channel (Simple POST with urlSafeData)
     try {
       const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
-      addSyncConsoleLog(`📡 POST Nube Primaria (${masterPid.toUpperCase()})...`, "info");
+      addSyncConsoleLog(`📡 POST Nube Ntfy (${masterPid.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 8000);
+      const tId = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(channelUrl, {
         method: "POST",
         body: urlSafeData,
@@ -2315,34 +2333,12 @@ export async function pushToCloud(showToast = false) {
       clearTimeout(tId);
       if (res.ok) {
         pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube Primaria (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+        addSyncConsoleLog(`✅ Nube Ntfy (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
       } else {
-        addSyncConsoleLog(`⚠️ Nube Primaria respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube Ntfy respuesta: HTTP ${res.status}`, "warn");
       }
     } catch (eCh) {
-      addSyncConsoleLog(`⚠️ Nube Primaria error: ${eCh.name} - ${eCh.message}`, "warn");
-    }
-
-    // 2. Channel B: Backup Ntfy Dedicated Channel
-    try {
-      const bakUrl = `https://ntfy.sh/${key}_${masterPid}_bak`;
-      addSyncConsoleLog(`📡 POST Nube Secundaria (${masterPid.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(bakUrl, {
-        method: "POST",
-        body: urlSafeData,
-        signal: controller.signal
-      });
-      clearTimeout(tId);
-      if (res.ok) {
-        pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube Secundaria (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
-      } else {
-        addSyncConsoleLog(`⚠️ Nube Secundaria respuesta: HTTP ${res.status}`, "warn");
-      }
-    } catch (eBak) {
-      addSyncConsoleLog(`⚠️ Nube Secundaria error: ${eBak.name} - ${eBak.message}`, "warn");
+      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${eCh.name} - ${eCh.message}`, "warn");
     }
 
     if (pushSuccess) {
@@ -2381,41 +2377,43 @@ export async function pullFromCloud(showToast = false) {
     addSyncConsoleLog(`☁️ Descargando datos de ${partnerName.toUpperCase()} en este móvil de ${myName.toUpperCase()}...`, "info");
     let hasMergedAny = false;
 
-    // 1. Channel A: Primary Ntfy Raw Read (ntfy.sh/<key>_<partnerPid>/raw?poll=1)
+    // 1. Channel A: KeyValue Cloud Read (keyvalue.immanuel.co GET GetValue)
     try {
-      const partnerRawUrl = `https://ntfy.sh/${key}_${partnerPid}/raw?poll=1`;
-      addSyncConsoleLog(`📡 GET Nube Primaria (${partnerName.toUpperCase()})...`, "info");
+      const kvPartnerUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}_${partnerPid}`;
+      addSyncConsoleLog(`📡 GET Nube KeyValue (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(partnerRawUrl, { signal: controller.signal });
+      const tId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(kvPartnerUrl, { signal: controller.signal });
       clearTimeout(tId);
 
       if (res.ok) {
         const rawText = await res.text();
-        if (rawText && rawText.trim().length > 10) {
-          const partnerData = await cleanAndParseJsonFromCloud(rawText);
+        if (rawText && rawText.trim().length > 10 && rawText !== 'null' && !rawText.includes('"Value":"null"')) {
+          let cleanStr = rawText.trim();
+          if (cleanStr.startsWith('"') && cleanStr.endsWith('"')) cleanStr = cleanStr.slice(1, -1);
+          const partnerData = await cleanAndParseJsonFromCloud(cleanStr);
           if (partnerData) {
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube Primaria de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+            addSyncConsoleLog(`✅ Nube KeyValue de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         } else {
-          addSyncConsoleLog(`ℹ️ Nube Primaria de ${partnerName.toUpperCase()} aún sin publicaciones`, "info");
+          addSyncConsoleLog(`ℹ️ Nube KeyValue de ${partnerName.toUpperCase()} aún sin datos`, "info");
         }
       } else {
-        addSyncConsoleLog(`⚠️ Nube Primaria respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (ePartner) {
-      addSyncConsoleLog(`⚠️ Nube Primaria error: ${ePartner.name} - ${ePartner.message}`, "warn");
+    } catch (eKvPull) {
+      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKvPull.name} - ${eKvPull.message}`, "warn");
     }
 
-    // 2. Channel B: Backup Ntfy Raw Read (ntfy.sh/<key>_<partnerPid>_bak/raw?poll=1)
+    // 2. Channel B: Primary Ntfy JSON Poll Read (ntfy.sh/<key>_<partnerPid>/json?poll=1)
     try {
-      const partnerBakUrl = `https://ntfy.sh/${key}_${partnerPid}_bak/raw?poll=1`;
-      addSyncConsoleLog(`📡 GET Nube Secundaria (${partnerName.toUpperCase()})...`, "info");
+      const partnerJsonUrl = `https://ntfy.sh/${key}_${partnerPid}/json?poll=1`;
+      addSyncConsoleLog(`📡 GET Nube Ntfy (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(partnerBakUrl, { signal: controller.signal });
+      const tId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(partnerJsonUrl, { signal: controller.signal });
       clearTimeout(tId);
 
       if (res.ok) {
@@ -2425,12 +2423,12 @@ export async function pullFromCloud(showToast = false) {
           if (partnerData) {
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube Secundaria de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+            addSyncConsoleLog(`✅ Nube Ntfy de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         }
       }
-    } catch (eBak) {
-      addSyncConsoleLog(`⚠️ Nube Secundaria error: ${eBak.name} - ${eBak.message}`, "warn");
+    } catch (ePartner) {
+      addSyncConsoleLog(`⚠️ Nube Ntfy error: ${ePartner.name} - ${ePartner.message}`, "warn");
     }
 
     if (hasMergedAny) {
