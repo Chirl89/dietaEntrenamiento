@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.14';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.15';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2010,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.14)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.15)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2185,6 +2185,34 @@ function mergeCloudDataIntoAppState(cloudData) {
   return hasChanges;
 }
 
+export function copyDiagnosticLogs() {
+  const consoleEl = document.getElementById("sync-diagnostic-console");
+  const logsText = consoleEl ? consoleEl.textContent : "";
+  if (!logsText) {
+    if (typeof showIosToast === 'function') showIosToast("⚠️ Consola de logs vacía", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(logsText).then(() => {
+      if (typeof showIosToast === 'function') showIosToast("📋 ¡Logs copiados al portapapeles!", "fa-solid fa-copy");
+    }).catch(() => fallbackCopyText(logsText));
+  } else {
+    fallbackCopyText(logsText);
+  }
+}
+function fallbackCopyText(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.select();
+  try {
+    document.execCommand("copy");
+    if (typeof showIosToast === 'function') showIosToast("📋 ¡Logs copiados al portapapeles!", "fa-solid fa-copy");
+  } catch (err) {}
+  document.body.removeChild(textArea);
+}
+window.copyDiagnosticLogs = copyDiagnosticLogs;
+
 let isPushSyncing = false;
 let isPullSyncing = false;
 
@@ -2250,8 +2278,15 @@ export async function pushToCloud(showToast = false) {
         signal: controller.signal
       });
       clearTimeout(tId);
-      if (res.ok) pushSuccess = true;
-    } catch (eCh) {}
+      if (res.ok) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Canal A (ntfy.sh OK - HTTP ${res.status})`, "success");
+      } else {
+        addSyncConsoleLog(`⚠️ Canal A falló: HTTP ${res.status}`, "warn");
+      }
+    } catch (eCh) {
+      addSyncConsoleLog(`⚠️ Canal A error: ${eCh.name} - ${eCh.message}`, "warn");
+    }
 
     // 2. Channel B: Secondary Cloud Endpoint (kvdb.io)
     try {
@@ -2264,8 +2299,15 @@ export async function pushToCloud(showToast = false) {
         signal: controller.signal
       });
       clearTimeout(tId);
-      if (res.ok) pushSuccess = true;
-    } catch (eKv) {}
+      if (res.ok) {
+        pushSuccess = true;
+        addSyncConsoleLog(`✅ Canal B (kvdb.io OK - HTTP ${res.status})`, "success");
+      } else {
+        addSyncConsoleLog(`⚠️ Canal B falló: HTTP ${res.status}`, "warn");
+      }
+    } catch (eKv) {
+      addSyncConsoleLog(`⚠️ Canal B error: ${eKv.name} - ${eKv.message}`, "warn");
+    }
 
     // 3. Channel C: Shared Broadcast Channel
     if (!pushSuccess) {
@@ -2279,8 +2321,15 @@ export async function pushToCloud(showToast = false) {
           signal: controller.signal
         });
         clearTimeout(tId);
-        if (res.ok) pushSuccess = true;
-      } catch (eMain) {}
+        if (res.ok) {
+          pushSuccess = true;
+          addSyncConsoleLog(`✅ Canal C (ntfy broadcast OK - HTTP ${res.status})`, "success");
+        } else {
+          addSyncConsoleLog(`⚠️ Canal C falló: HTTP ${res.status}`, "warn");
+        }
+      } catch (eMain) {
+        addSyncConsoleLog(`⚠️ Canal C error: ${eMain.name} - ${eMain.message}`, "warn");
+      }
     }
 
     if (pushSuccess) {
@@ -2296,7 +2345,7 @@ export async function pushToCloud(showToast = false) {
     }
   } catch (e) {
     console.warn("Cloud sync push error:", e);
-    addSyncConsoleLog(`❌ Error al guardar en nube: ${e.message}`, "error");
+    addSyncConsoleLog(`❌ Error al guardar en nube: ${e.name} - ${e.message}`, "error");
   } finally {
     isPushSyncing = false;
   }
@@ -2334,11 +2383,17 @@ export async function pullFromCloud(showToast = false) {
           if (partnerData) {
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube Primaria de ${partnerName.toUpperCase()} leída correctamente`, "success");
+            addSyncConsoleLog(`✅ Nube Primaria de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
+        } else {
+          addSyncConsoleLog(`ℹ️ Nube Primaria de ${partnerName.toUpperCase()} vacía aún (HTTP ${res.status})`, "info");
         }
+      } else {
+        addSyncConsoleLog(`⚠️ Nube Primaria respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (ePartner) {}
+    } catch (ePartner) {
+      addSyncConsoleLog(`⚠️ Nube Primaria error: ${ePartner.name} - ${ePartner.message}`, "warn");
+    }
 
     // 2. SECONDARY CLOUD READ: Fetch partner's JSON from kvdb.io
     try {
@@ -2355,11 +2410,17 @@ export async function pullFromCloud(showToast = false) {
           if (partnerData) {
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube Secundaria de ${partnerName.toUpperCase()} leída correctamente`, "success");
+            addSyncConsoleLog(`✅ Nube Secundaria de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
+        } else {
+          addSyncConsoleLog(`ℹ️ Nube Secundaria de ${partnerName.toUpperCase()} vacía aún (HTTP ${res.status})`, "info");
         }
+      } else {
+        addSyncConsoleLog(`⚠️ Nube Secundaria respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (eKvPull) {}
+    } catch (eKvPull) {
+      addSyncConsoleLog(`⚠️ Nube Secundaria error: ${eKvPull.name} - ${eKvPull.message}`, "warn");
+    }
 
     // 2. BROADCAST CHANNEL READ: Fetch latest messages from ntfy.sh/<key>/json?poll=1
     try {
