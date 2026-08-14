@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.2';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.3';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2452,9 +2452,14 @@ function renderWorkoutTracker() {
             <p class="apple-watch-subtitle">Última sync: ${watchMetrics.steps.toLocaleString()} pasos • ${watchMetrics.moveKcal} kcal • ${watchMetrics.hr} BPM (${watchMetrics.distanceKm} km con Boo)</p>
           </div>
         </div>
-        <button class="btn-apple-sync" onclick="syncAppleWatchData();">
-          <i class="fa-brands fa-apple"></i> Sincronizar
-        </button>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn-apple-sync" onclick="syncAppleWatchData();">
+            <i class="fa-brands fa-apple"></i> Sincronizar
+          </button>
+          <button class="btn-apple-sync" style="background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);" onclick="copyShortcutUrlToClipboard('workout');" title="Copiar la URL completa con parámetros para tu Atajo de Entrenamiento">
+            <i class="fa-solid fa-copy"></i> Copiar URL Atajo Entreno
+          </button>
+        </div>
       </div>
 
       <!-- PROGRESS SUMMARY BAR -->
