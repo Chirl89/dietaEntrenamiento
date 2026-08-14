@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.20';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.21';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2010,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.20)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.21)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2382,12 +2382,12 @@ export async function pullFromCloud(showToast = false) {
     addSyncConsoleLog(`☁️ Descargando datos de ${partnerName.toUpperCase()} en este móvil de ${myName.toUpperCase()}...`, "info");
     let hasMergedAny = false;
 
-    // 1. Channel A: Primary Ntfy Raw Read (ntfy.sh/<key>_<partnerPid>/raw)
+    // 1. Channel A: Primary Ntfy Raw Read (ntfy.sh/<key>_<partnerPid>/raw?poll=1)
     try {
-      const partnerRawUrl = `https://ntfy.sh/${key}_${partnerPid}/raw`;
+      const partnerRawUrl = `https://ntfy.sh/${key}_${partnerPid}/raw?poll=1`;
       addSyncConsoleLog(`📡 GET Nube Primaria (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 8000);
+      const tId = setTimeout(() => controller.abort(), 3500);
       const res = await fetch(partnerRawUrl, { signal: controller.signal });
       clearTimeout(tId);
 
@@ -2401,7 +2401,7 @@ export async function pullFromCloud(showToast = false) {
             addSyncConsoleLog(`✅ Nube Primaria de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         } else {
-          addSyncConsoleLog(`ℹ️ Nube Primaria de ${partnerName.toUpperCase()} sin publicaciones de ${partnerName.toUpperCase()} aún`, "info");
+          addSyncConsoleLog(`ℹ️ Nube Primaria de ${partnerName.toUpperCase()} aún sin publicaciones`, "info");
         }
       } else {
         addSyncConsoleLog(`⚠️ Nube Primaria respuesta: HTTP ${res.status}`, "warn");
@@ -2410,12 +2410,12 @@ export async function pullFromCloud(showToast = false) {
       addSyncConsoleLog(`⚠️ Nube Primaria error: ${ePartner.name} - ${ePartner.message}`, "warn");
     }
 
-    // 2. Channel B: Backup Ntfy Raw Read (ntfy.sh/<key>_<partnerPid>_bak/raw)
+    // 2. Channel B: Backup Ntfy Raw Read (ntfy.sh/<key>_<partnerPid>_bak/raw?poll=1)
     try {
-      const partnerBakUrl = `https://ntfy.sh/${key}_${partnerPid}_bak/raw`;
+      const partnerBakUrl = `https://ntfy.sh/${key}_${partnerPid}_bak/raw?poll=1`;
       addSyncConsoleLog(`📡 GET Nube Secundaria (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 8000);
+      const tId = setTimeout(() => controller.abort(), 3500);
       const res = await fetch(partnerBakUrl, { signal: controller.signal });
       clearTimeout(tId);
 
