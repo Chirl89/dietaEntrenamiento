@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.10';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.11';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -186,6 +186,7 @@ function saveState() {
 // INITIALIZATION ON DOM READY
 document.addEventListener("DOMContentLoaded", () => {
   loadSavedState();
+  checkDeviceIdentityBanner();
 
   setTimeout(() => {
     pullFromCloud(false);
@@ -1738,6 +1739,41 @@ function setDeviceDefaultProfile(mode) {
   showIosToast(`📱 Perfil Maestro de este móvil fijado a: ${masterName.toUpperCase()}`, "fa-solid fa-shield-halved");
 }
 
+function checkDeviceIdentityBanner() {
+  const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
+  let banner = document.getElementById("device-identity-setup-banner");
+  
+  if (!devicePref) {
+    if (!banner) {
+      banner = document.createElement("div");
+      banner.id = "device-identity-setup-banner";
+      banner.style.cssText = "position: fixed; top: 0; left: 0; right: 0; z-index: 999999; background: linear-gradient(135deg, #1e1b4b, #311b92); color: #fff; padding: 0.9rem 1rem; border-bottom: 2px solid var(--accent-cyan); box-shadow: 0 8px 32px rgba(0,0,0,0.5); text-align: center; font-family: system-ui, -apple-system, sans-serif;";
+      banner.innerHTML = `
+        <div style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.6rem;">
+          <div style="font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; color: #a5f3fc;">
+            <i class="fa-solid fa-mobile-screen-button" style="color: var(--accent-cyan);"></i> Configuración Inicial: ¿De quién es este teléfono?
+          </div>
+          <div style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 0.2rem;">
+            Selecciona el dueño de este dispositivo para la sincronización en nube.
+          </div>
+          <div style="display: flex; gap: 0.75rem; width: 100%; justify-content: center; flex-wrap: wrap;">
+            <button onclick="window.setDeviceDefaultProfile('he'); if(document.getElementById('device-identity-setup-banner')) document.getElementById('device-identity-setup-banner').remove();" style="flex: 1; min-width: 140px; padding: 0.7rem 1rem; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);">
+              👦 Es el móvil de Carlos
+            </button>
+            <button onclick="window.setDeviceDefaultProfile('she'); if(document.getElementById('device-identity-setup-banner')) document.getElementById('device-identity-setup-banner').remove();" style="flex: 1; min-width: 140px; padding: 0.7rem 1rem; background: #ec4899; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);">
+              👧 Es el móvil de Andrea
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.prepend(banner);
+    }
+  } else if (banner) {
+    banner.remove();
+  }
+}
+window.checkDeviceIdentityBanner = checkDeviceIdentityBanner;
+
 // HELPER: GET SHORT PROFILE NAME
 export function getProfileShortName(pid) {
   if (!appState || !appState.profiles) {
@@ -1974,7 +2010,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.10)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.11)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -2205,13 +2241,14 @@ export async function pushToCloud(showToast = false) {
 
     let pushSuccess = false;
 
-    // PRIMARY CLOUD ENDPOINT: ntfy.sh with 6-second timeout
+    // PRIMARY CLOUD ENDPOINT: ntfy.sh with 4-second timeout and text/plain header
     try {
       const ntfyUrl = `https://ntfy.sh/${key}`;
       const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 6000);
+      const tId = setTimeout(() => controller.abort(), 4000);
       const ntfyRes = await fetch(ntfyUrl, {
         method: "POST",
+        headers: { "Content-Type": "text/plain" },
         body: b64Data,
         signal: controller.signal
       });
@@ -2221,23 +2258,23 @@ export async function pushToCloud(showToast = false) {
         addSyncConsoleLog("✅ Guardado en Nube Primaria (ntfy.sh OK - HTTP 200)", "success");
       }
     } catch (ePrimary) {
-      addSyncConsoleLog(`⚠️ Nube primaria (${ePrimary.name === 'AbortError' ? 'Timeout 6s' : ePrimary.message})`, "warn");
+      addSyncConsoleLog(`⚠️ Nube primaria (${ePrimary.name === 'AbortError' ? 'Timeout 4s' : ePrimary.message})`, "warn");
     }
 
-    // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co
+    // FALLBACK CLOUD ENDPOINT: keyvalue.immanuel.co (Using GET for simple CORS compatibility)
     if (!pushSuccess) {
       try {
         const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
         const controller = new AbortController();
-        const tId = setTimeout(() => controller.abort(), 6000);
-        const kvRes = await fetch(kvUrl, { method: "POST", signal: controller.signal });
+        const tId = setTimeout(() => controller.abort(), 4000);
+        const kvRes = await fetch(kvUrl, { method: "GET", signal: controller.signal });
         clearTimeout(tId);
         if (kvRes && kvRes.ok) {
           pushSuccess = true;
           addSyncConsoleLog("✅ Guardado en Nube Secundaria (keyvalue OK)", "success");
         }
       } catch (eFallback) {
-        addSyncConsoleLog(`⚠️ Nube secundaria (${eFallback.name === 'AbortError' ? 'Timeout 6s' : eFallback.message})`, "warn");
+        addSyncConsoleLog(`⚠️ Nube secundaria (${eFallback.name === 'AbortError' ? 'Timeout 4s' : eFallback.message})`, "warn");
       }
     }
 
