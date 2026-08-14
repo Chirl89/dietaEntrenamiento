@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.5.4';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.0';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -272,6 +272,15 @@ document.addEventListener("DOMContentLoaded", () => {
   window.clearDebugLogs = clearDebugLogs;
   window.copyDebugLogsToClipboard = copyDebugLogsToClipboard;
   window.renderDebugLogsView = renderDebugLogsView;
+
+  // Cloud Multi-Device Pairing Handlers
+  window.saveCustomCloudKeyFromInput = saveCustomCloudKeyFromInput;
+  window.resetDefaultCloudKey = resetDefaultCloudKey;
+  window.exportSyncToken = exportSyncToken;
+  window.promptImportSyncToken = promptImportSyncToken;
+  window.exportBackupJson = exportBackupJson;
+  window.triggerImportBackupJson = triggerImportBackupJson;
+  window.handleBackupFileSelect = handleBackupFileSelect;
 
   addDebugLog("⚡ App FitDuo arrancada (DOMContentLoaded)", "info", { url: window.location.href, userAgent: navigator.userAgent });
 
@@ -1873,6 +1882,10 @@ function populateSettingsInputs() {
   const pDog = appState.profiles?.dog || {};
   const inputDogWalk = document.getElementById("setting-dog-walk-min");
   if (inputDogWalk) inputDogWalk.value = pDog.dailyWalkMinutes || 75;
+
+  // Cloud Key Input
+  const inputCloudKey = document.getElementById("setting-cloud-key-input");
+  if (inputCloudKey) inputCloudKey.value = getCloudSyncKey();
 }
 
 // SAVE CUSTOM SETTINGS FROM SETTINGS VIEW
@@ -1974,7 +1987,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.0)
 const CLOUD_SYNC_APP_KEY = "fitduo_v1";
 const DEFAULT_CLOUD_KEY = "fitduo_carlos_andrea_v1";
 let isCloudSyncing = false;
@@ -1983,113 +1996,242 @@ function getCloudSyncKey() {
   return localStorage.getItem("FITDUO_CLOUD_KEY") || DEFAULT_CLOUD_KEY;
 }
 
+function addSyncConsoleLog(message, type = "info") {
+  const consoleEl = document.getElementById("sync-diagnostic-console");
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const logLine = `[${timeStr}] ${message}\n`;
+  if (consoleEl) {
+    consoleEl.textContent = logLine + consoleEl.textContent.slice(0, 1000);
+  }
+  console.log(`[SYNC CONSOLE ${type.toUpperCase()}] ${message}`);
+}
+
+function cleanAndParseJsonFromCloud(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null;
+  let text = rawText.trim();
+  if (text === 'null' || text === '""' || text.length < 2) return null;
+  
+  if (text.startsWith('"') && text.endsWith('"')) {
+    text = text.slice(1, -1);
+  }
+
+  // 1. Primary Base64 decoding path (URL safe & UTF-8 safe)
+  try {
+    const unquoted = decodeURIComponent(text);
+    const fromB64 = atob(unquoted);
+    const decodedUri = decodeURIComponent(fromB64);
+    const parsed = JSON.parse(decodedUri);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch (e) {}
+
+  // 2. Direct URI / JSON fallback
+  try {
+    let t = decodeURIComponent(text);
+    if (t.startsWith('"') && t.endsWith('"')) t = t.slice(1, -1);
+    let parsed = JSON.parse(t);
+    if (typeof parsed === 'string') {
+      if (parsed.startsWith('"') && parsed.endsWith('"')) parsed = parsed.slice(1, -1);
+      parsed = JSON.parse(parsed);
+    }
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch (e) {}
+
+  return null;
+}
+
+function mergeCloudDataIntoAppState(cloudData) {
+  if (!cloudData || typeof cloudData !== 'object') return false;
+  let hasChanges = false;
+
+  // 1. Profiles (he, she, dog)
+  ['he', 'she', 'dog'].forEach(pid => {
+    if (cloudData.profiles?.[pid]) {
+      if (!appState.profiles) appState.profiles = {};
+      appState.profiles[pid] = { ...appState.profiles[pid], ...cloudData.profiles[pid] };
+      hasChanges = true;
+    }
+  });
+
+  // 2. Completed Workouts
+  ['he', 'she'].forEach(pid => {
+    if (cloudData.completedWorkouts?.[pid]) {
+      if (!appState.completedWorkouts) appState.completedWorkouts = {};
+      if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
+      const cloudW = cloudData.completedWorkouts[pid];
+      const localW = appState.completedWorkouts[pid];
+      
+      const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      days.forEach(day => {
+        const cVal = cloudW[day];
+        const lVal = localW[day];
+        if (cVal && typeof cVal === 'object' && cVal.done) {
+          localW[day] = cVal;
+          hasChanges = true;
+        } else if (cVal === true && (!lVal || lVal === false)) {
+          localW[day] = true;
+          hasChanges = true;
+        }
+      });
+    }
+  });
+
+  // 3. Weight Logs
+  ['he', 'she'].forEach(pid => {
+    if (Array.isArray(cloudData.weightLogs?.[pid])) {
+      const cloudLogs = cloudData.weightLogs[pid];
+      const localLogs = appState.weightLogs?.[pid] || [];
+      const logMap = new Map();
+      localLogs.forEach(entry => { if (entry && entry.date) logMap.set(entry.date, entry); });
+      cloudLogs.forEach(entry => { if (entry && entry.date) logMap.set(entry.date, entry); });
+      if (!appState.weightLogs) appState.weightLogs = {};
+      appState.weightLogs[pid] = Array.from(logMap.values());
+      hasChanges = true;
+    }
+  });
+
+  // 4. Apple Watch Metrics
+  ['he', 'she'].forEach(pid => {
+    if (cloudData.appleWatch?.metrics?.[pid]) {
+      const cM = cloudData.appleWatch.metrics[pid];
+      if (!appState.appleWatch) appState.appleWatch = {};
+      if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
+      if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = {};
+      const lM = appState.appleWatch.metrics[pid];
+      
+      if (cM.moveKcal) lM.moveKcal = Math.max(lM.moveKcal || 0, cM.moveKcal || 0);
+      if (cM.exerciseMin) lM.exerciseMin = Math.max(lM.exerciseMin || 0, cM.exerciseMin || 0);
+      if (cM.steps) lM.steps = Math.max(lM.steps || 0, cM.steps || 0);
+      if (cM.deviceName) lM.deviceName = cM.deviceName;
+      if (cM.moveGoal) lM.moveGoal = cM.moveGoal;
+      if (cM.exerciseGoal) lM.exerciseGoal = cM.exerciseGoal;
+      if (cM.stepsGoal) lM.stepsGoal = cM.stepsGoal;
+      if (cM.hr) lM.hr = cM.hr;
+      if (cM.distanceKm) lM.distanceKm = cM.distanceKm;
+      hasChanges = true;
+    }
+  });
+
+  // 5. Checked Shopping Items
+  if (cloudData.checkedShoppingItems && typeof cloudData.checkedShoppingItems === 'object') {
+    if (!appState.checkedShoppingItems) appState.checkedShoppingItems = {};
+    Object.keys(cloudData.checkedShoppingItems).forEach(k => {
+      if (cloudData.checkedShoppingItems[k]) {
+        appState.checkedShoppingItems[k] = true;
+        hasChanges = true;
+      }
+    });
+  }
+
+  // 6. Exclusions
+  if (Array.isArray(cloudData.exclusions)) {
+    if (!appState.exclusions) appState.exclusions = [];
+    cloudData.exclusions.forEach(ex => {
+      if (!appState.exclusions.includes(ex)) {
+        appState.exclusions.push(ex);
+        hasChanges = true;
+      }
+    });
+  }
+
+  if (cloudData.recipesDaysRange) appState.recipesDaysRange = cloudData.recipesDaysRange;
+  if (cloudData.shoppingDaysRange) appState.shoppingDaysRange = cloudData.shoppingDaysRange;
+
+  if (hasChanges) {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+  }
+  return hasChanges;
+}
+
 export async function pushToCloud(showToast = false) {
-  if (isCloudSyncing) return;
+  if (isCloudSyncing) {
+    addSyncConsoleLog("⏳ Operación en nube ya en curso, omitiendo push paralelo", "warn");
+    return;
+  }
   isCloudSyncing = true;
+  const syncTimeout = setTimeout(() => { isCloudSyncing = false; }, 8000);
+
   try {
     const key = getCloudSyncKey();
+    addSyncConsoleLog(`☁️ Enviando datos a la nube (Clave: ${key})...`, "info");
+    
     const payload = {
       masterProfileId: appState.masterProfileId,
       timestamp: new Date().toISOString(),
-      profiles: {
-        he: appState.profiles?.he,
-        she: appState.profiles?.she,
-        dog: appState.profiles?.dog
-      },
-      completedWorkouts: {
-        he: appState.completedWorkouts?.he,
-        she: appState.completedWorkouts?.she
-      },
-      weightLogs: {
-        he: appState.weightLogs?.he,
-        she: appState.weightLogs?.she
-      },
-      appleWatch: {
-        metrics: appState.appleWatch?.metrics
-      }
+      profiles: appState.profiles,
+      completedWorkouts: appState.completedWorkouts,
+      weightLogs: appState.weightLogs,
+      appleWatch: { metrics: appState.appleWatch?.metrics },
+      checkedShoppingItems: appState.checkedShoppingItems || {},
+      exclusions: appState.exclusions || [],
+      recipesDaysRange: appState.recipesDaysRange || "5",
+      shoppingDaysRange: appState.shoppingDaysRange || "5"
     };
 
     const cleanJson = JSON.stringify(payload);
-    const encodedData = encodeURIComponent(cleanJson);
+    const b64Data = btoa(encodeURIComponent(cleanJson));
+    const encodedData = encodeURIComponent(b64Data);
     const url = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}/${encodedData}`;
 
-    const res = await fetch(url, { method: "POST", keepalive: true });
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain" }, keepalive: true });
     if (res.ok) {
       appState.lastCloudSync = new Date().toISOString();
       updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
+      addSyncConsoleLog("✅ Guardado en la nube completado con éxito (HTTP 200 OK)", "success");
       if (showToast && typeof showIosToast === 'function') {
-        showIosToast("☁️ ¡Datos de ambos perfiles sincronizados en la nube!", "fa-solid fa-cloud-arrow-up");
+        showIosToast("☁️ ¡Datos sincronizados en la nube!", "fa-solid fa-cloud-arrow-up");
       }
+    } else {
+      addSyncConsoleLog(`⚠️ Nube respondió status: ${res.status}`, "warn");
+      updateCloudSyncUI("Nube en Espera (Local Guardado)", false);
     }
   } catch (e) {
     console.warn("Cloud sync push error:", e);
-    updateCloudSyncUI("Nube en Espera (Local Guardado)", false);
+    addSyncConsoleLog(`❌ Error al guardar en nube: ${e.message}`, "error");
+    updateCloudSyncUI("Nube sin conexión (Modo Offline)", false);
   } finally {
+    clearTimeout(syncTimeout);
     isCloudSyncing = false;
   }
 }
 window.pushToCloud = pushToCloud;
 
 export async function pullFromCloud(showToast = false) {
-  if (isCloudSyncing) return;
+  if (isCloudSyncing) {
+    addSyncConsoleLog("⏳ Operación en nube ya en curso, omitiendo pull paralelo", "warn");
+    return;
+  }
   isCloudSyncing = true;
+  const syncTimeout = setTimeout(() => { isCloudSyncing = false; }, 8000);
+
   try {
     const key = getCloudSyncKey();
+    addSyncConsoleLog(`☁️ Descargando datos de la nube (Clave: ${key})...`, "info");
     const url = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}`;
     const res = await fetch(url);
     if (res.ok) {
       const rawText = await res.text();
-      if (rawText && rawText !== "null" && rawText.length > 5) {
-        try {
-          const decoded = decodeURIComponent(rawText);
-          const cloudData = JSON.parse(decoded);
-          
-          if (cloudData && typeof cloudData === 'object') {
-            const masterPid = getMasterProfileId();
-            const otherPid = masterPid === 'he' ? 'she' : 'he';
+      const cloudData = cleanAndParseJsonFromCloud(rawText);
 
-            // Smart Merge: update OTHER profile's data from cloud without overwriting local master profile's data
-            let hasChanges = false;
-            if (cloudData.profiles?.[otherPid]) {
-              appState.profiles[otherPid] = { ...appState.profiles[otherPid], ...cloudData.profiles[otherPid] };
-              hasChanges = true;
-            }
-            if (cloudData.profiles?.dog) {
-              appState.profiles.dog = { ...appState.profiles.dog, ...cloudData.profiles.dog };
-              hasChanges = true;
-            }
-            if (cloudData.completedWorkouts?.[otherPid]) {
-              appState.completedWorkouts[otherPid] = { ...appState.completedWorkouts[otherPid], ...cloudData.completedWorkouts[otherPid] };
-              hasChanges = true;
-            }
-            if (cloudData.weightLogs?.[otherPid]) {
-              appState.weightLogs[otherPid] = cloudData.weightLogs[otherPid];
-              hasChanges = true;
-            }
-            if (cloudData.appleWatch?.metrics?.[otherPid]) {
-              appState.appleWatch.metrics[otherPid] = { ...appState.appleWatch.metrics[otherPid], ...cloudData.appleWatch.metrics[otherPid] };
-              hasChanges = true;
-            }
-
-            if (hasChanges) {
-              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
-            }
-
-            appState.lastCloudSync = new Date().toISOString();
-            updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
-
-            if (showToast && typeof showIosToast === 'function') {
-              showIosToast("☁️ ¡Datos actualizados desde la nube!", "fa-solid fa-cloud-arrow-down");
-            }
-          }
-        } catch (e) {
-          console.warn("Could not parse cloud JSON:", e);
+      if (cloudData) {
+        const hasChanges = mergeCloudDataIntoAppState(cloudData);
+        appState.lastCloudSync = new Date().toISOString();
+        updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
+        addSyncConsoleLog(`✅ Datos recibidos y fusionados ${hasChanges ? '(Nuevos cambios aplicados)' : '(Sin cambios nuevos)'}`, "success");
+        
+        if (showToast && typeof showIosToast === 'function') {
+          showIosToast(hasChanges ? "☁️ ¡Datos actualizados desde la nube!" : "☁️ Nube al día (Sin datos nuevos)", "fa-solid fa-cloud-arrow-down");
         }
+      } else {
+        addSyncConsoleLog("ℹ️ Respuesta de la nube vacía o sin formato JSON válido", "info");
       }
+    } else {
+      addSyncConsoleLog(`⚠️ Error al leer de nube HTTP: ${res.status}`, "warn");
     }
   } catch (e) {
     console.warn("Cloud sync pull error:", e);
+    addSyncConsoleLog(`❌ Error al descargar de nube: ${e.message}`, "error");
   } finally {
+    clearTimeout(syncTimeout);
     isCloudSyncing = false;
   }
 }
@@ -2097,6 +2239,7 @@ window.pullFromCloud = pullFromCloud;
 
 export function syncNowWithCloud() {
   triggerHapticTouch();
+  addSyncConsoleLog("🔄 Iniciando ciclo de sincronización completo (Push -> Pull)...", "info");
   if (typeof showIosToast === 'function') {
     showIosToast("☁️ Sincronizando datos con la nube...", "fa-solid fa-arrows-rotate");
   }
@@ -2107,6 +2250,123 @@ export function syncNowWithCloud() {
   });
 }
 window.syncNowWithCloud = syncNowWithCloud;
+
+function saveCustomCloudKeyFromInput() {
+  const input = document.getElementById("setting-cloud-key-input");
+  if (!input) return;
+  const keyVal = input.value.trim();
+  if (keyVal.length < 3) {
+    if (typeof showIosToast === 'function') showIosToast("⚠️ La clave debe tener al menos 3 caracteres", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+  localStorage.setItem("FITDUO_CLOUD_KEY", keyVal);
+  addSyncConsoleLog(`🔑 Clave de Pareja actualizada a: "${keyVal}"`, "info");
+  if (typeof showIosToast === 'function') showIosToast(`🔑 Clave guardada: ${keyVal}`, "fa-solid fa-key");
+  syncNowWithCloud();
+}
+window.saveCustomCloudKeyFromInput = saveCustomCloudKeyFromInput;
+
+function resetDefaultCloudKey() {
+  localStorage.removeItem("FITDUO_CLOUD_KEY");
+  const input = document.getElementById("setting-cloud-key-input");
+  if (input) input.value = DEFAULT_CLOUD_KEY;
+  addSyncConsoleLog(`🔑 Clave por defecto restablecida: "${DEFAULT_CLOUD_KEY}"`, "info");
+  if (typeof showIosToast === 'function') showIosToast("🔑 Clave de pareja por defecto restablecida", "fa-solid fa-rotate-left");
+  syncNowWithCloud();
+}
+window.resetDefaultCloudKey = resetDefaultCloudKey;
+
+function exportSyncToken() {
+  triggerHapticTouch();
+  try {
+    const payload = {
+      masterProfileId: appState.masterProfileId,
+      timestamp: new Date().toISOString(),
+      profiles: appState.profiles,
+      completedWorkouts: appState.completedWorkouts,
+      weightLogs: appState.weightLogs,
+      appleWatch: appState.appleWatch,
+      checkedShoppingItems: appState.checkedShoppingItems,
+      exclusions: appState.exclusions
+    };
+    const jsonStr = JSON.stringify(payload);
+    const token = btoa(encodeURIComponent(jsonStr));
+    navigator.clipboard.writeText(token).then(() => {
+      if (typeof showIosToast === 'function') showIosToast("📋 ¡Código de sincronización copiado!", "fa-solid fa-copy");
+      addSyncConsoleLog("📋 Código de emparejamiento copiado al portapapeles", "info");
+    }).catch(() => {
+      prompt("Copia este código de sincronización para pegarlo en el otro dispositivo:", token);
+    });
+  } catch(e) {
+    console.error("Export sync token error:", e);
+  }
+}
+window.exportSyncToken = exportSyncToken;
+
+function promptImportSyncToken() {
+  triggerHapticTouch();
+  const token = prompt("Pega aquí el Código de Sincronización copiado desde el otro teléfono:");
+  if (!token || !token.trim()) return;
+  try {
+    const jsonStr = decodeURIComponent(atob(token.trim()));
+    const cloudData = JSON.parse(jsonStr);
+    const hasMerged = mergeCloudDataIntoAppState(cloudData);
+    if (hasMerged) {
+      renderAll();
+      if (typeof showIosToast === 'function') showIosToast("⚡ ¡Datos fusionados desde el código!", "fa-solid fa-bolt");
+      addSyncConsoleLog("📥 Código de sincronización importado y fusionado", "success");
+    } else {
+      if (typeof showIosToast === 'function') showIosToast("ℹ️ Sin datos nuevos en el código introducido", "fa-solid fa-info");
+    }
+  } catch(e) {
+    if (typeof showIosToast === 'function') showIosToast("❌ Código de sincronización inválido", "fa-solid fa-triangle-exclamation");
+    addSyncConsoleLog("❌ Error al procesar código de sincronización", "error");
+  }
+}
+window.promptImportSyncToken = promptImportSyncToken;
+
+function exportBackupJson() {
+  triggerHapticTouch();
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `fitduo_backup_${new Date().toISOString().slice(0, 10)}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+  if (typeof showIosToast === 'function') showIosToast("💾 Copia de seguridad JSON descargada", "fa-solid fa-download");
+  addSyncConsoleLog("💾 Copia de seguridad JSON exportada", "info");
+}
+window.exportBackupJson = exportBackupJson;
+
+function triggerImportBackupJson() {
+  triggerHapticTouch();
+  const fileInput = document.getElementById("json-backup-file-input");
+  if (fileInput) fileInput.click();
+}
+window.triggerImportBackupJson = triggerImportBackupJson;
+
+function handleBackupFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedState = JSON.parse(e.target.result);
+      if (importedState && typeof importedState === 'object') {
+        const hasMerged = mergeCloudDataIntoAppState(importedState);
+        renderAll();
+        if (typeof showIosToast === 'function') showIosToast("📂 Copia cargada y fusionada", "fa-solid fa-file-circle-check");
+        addSyncConsoleLog("📂 Archivo de copia JSON importado", "success");
+      }
+    } catch(err) {
+      if (typeof showIosToast === 'function') showIosToast("❌ Archivo JSON no válido", "fa-solid fa-circle-exclamation");
+      addSyncConsoleLog("❌ Error al leer el archivo JSON", "error");
+    }
+  };
+  reader.readAsText(file);
+}
+window.handleBackupFileSelect = handleBackupFileSelect;
 
 function updateCloudSyncUI(statusText, isConnected) {
   const statusEl = document.getElementById("cloud-sync-status-text");
