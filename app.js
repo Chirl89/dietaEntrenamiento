@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.25';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.26';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -2019,7 +2019,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.25)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.26)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2301,25 +2301,30 @@ export async function pushToCloud(showToast = false) {
     const urlSafeData = toUrlSafeB64(compactPayload);
     let pushSuccess = false;
 
-    // 1. Channel A: KeyValue Cloud (keyvalue.immanuel.co GET UpdateValue)
+    // 1. Primary Cloud: Firebase REST API (Google Cloud Infrastructure)
     try {
-      const kvUrl = `https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${CLOUD_SYNC_APP_KEY}/${key}_${masterPid}/${urlSafeData}`;
-      addSyncConsoleLog(`📡 GET Nube KeyValue (${masterPid.toUpperCase()})...`, "info");
+      const fbUrl = `https://fitduo-sync-v1-default-rtdb.firebaseio.com/sync/${key}/${masterPid}.json`;
+      addSyncConsoleLog(`📡 PUT Nube Firebase (${masterPid.toUpperCase()})...`, "info");
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(kvUrl, { method: "GET", signal: controller.signal });
+      const res = await fetch(fbUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: cleanJson,
+        signal: controller.signal
+      });
       clearTimeout(tId);
       if (res.ok) {
         pushSuccess = true;
-        addSyncConsoleLog(`✅ Nube KeyValue (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
+        addSyncConsoleLog(`✅ Nube Firebase (${authorName.toUpperCase()} OK - HTTP ${res.status})`, "success");
       } else {
-        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube Firebase respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (eKv) {
-      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKv.name} - ${eKv.message}`, "warn");
+    } catch (eFb) {
+      addSyncConsoleLog(`⚠️ Nube Firebase error: ${eFb.name} - ${eFb.message}`, "warn");
     }
 
-    // 2. Channel B: Ntfy Dedicated Channel (Simple POST with urlSafeData)
+    // 2. Channel B: Ntfy Dedicated Channel (Fallback POST)
     try {
       const channelUrl = `https://ntfy.sh/${key}_${masterPid}`;
       addSyncConsoleLog(`📡 POST Nube Ntfy (${masterPid.toUpperCase()})...`, "info");
@@ -2377,37 +2382,35 @@ export async function pullFromCloud(showToast = false) {
     addSyncConsoleLog(`☁️ Descargando datos de ${partnerName.toUpperCase()} en este móvil de ${myName.toUpperCase()}...`, "info");
     let hasMergedAny = false;
 
-    // 1. Channel A: KeyValue Cloud Read (keyvalue.immanuel.co GET GetValue)
+    // 1. Primary Cloud: Firebase REST API Read (Google Cloud Infrastructure)
     try {
-      const kvPartnerUrl = `https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_SYNC_APP_KEY}/${key}_${partnerPid}`;
-      addSyncConsoleLog(`📡 GET Nube KeyValue (${partnerName.toUpperCase()})...`, "info");
+      const fbPartnerUrl = `https://fitduo-sync-v1-default-rtdb.firebaseio.com/sync/${key}/${partnerPid}.json`;
+      addSyncConsoleLog(`📡 GET Nube Firebase (${partnerName.toUpperCase()})...`, "info");
       const controller = new AbortController();
       const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(kvPartnerUrl, { signal: controller.signal });
+      const res = await fetch(fbPartnerUrl, { signal: controller.signal });
       clearTimeout(tId);
 
       if (res.ok) {
         const rawText = await res.text();
-        if (rawText && rawText.trim().length > 10 && rawText !== 'null' && !rawText.includes('"Value":"null"')) {
-          let cleanStr = rawText.trim();
-          if (cleanStr.startsWith('"') && cleanStr.endsWith('"')) cleanStr = cleanStr.slice(1, -1);
-          const partnerData = await cleanAndParseJsonFromCloud(cleanStr);
+        if (rawText && rawText.trim().length > 10 && rawText !== 'null') {
+          const partnerData = await cleanAndParseJsonFromCloud(rawText);
           if (partnerData) {
             const changed = mergeCloudDataIntoAppState(partnerData);
             if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube KeyValue de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+            addSyncConsoleLog(`✅ Nube Firebase de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
           }
         } else {
-          addSyncConsoleLog(`ℹ️ Nube KeyValue de ${partnerName.toUpperCase()} aún sin datos`, "info");
+          addSyncConsoleLog(`ℹ️ Nube Firebase de ${partnerName.toUpperCase()} aún sin publicaciones`, "info");
         }
       } else {
-        addSyncConsoleLog(`⚠️ Nube KeyValue respuesta: HTTP ${res.status}`, "warn");
+        addSyncConsoleLog(`⚠️ Nube Firebase respuesta: HTTP ${res.status}`, "warn");
       }
-    } catch (eKvPull) {
-      addSyncConsoleLog(`⚠️ Nube KeyValue error: ${eKvPull.name} - ${eKvPull.message}`, "warn");
+    } catch (eFbPull) {
+      addSyncConsoleLog(`⚠️ Nube Firebase error: ${eFbPull.name} - ${eFbPull.message}`, "warn");
     }
 
-    // 2. Channel B: Primary Ntfy JSON Poll Read (ntfy.sh/<key>_<partnerPid>/json?poll=1)
+    // 2. Channel B: Ntfy JSON Poll Read (ntfy.sh/<key>_<partnerPid>/json?poll=1)
     try {
       const partnerJsonUrl = `https://ntfy.sh/${key}_${partnerPid}/json?poll=1`;
       addSyncConsoleLog(`📡 GET Nube Ntfy (${partnerName.toUpperCase()})...`, "info");
