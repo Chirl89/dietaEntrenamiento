@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.6';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.7';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -107,20 +107,6 @@ function loadSavedState() {
       console.warn("Could not parse saved state, using defaults.");
     }
   }
-
-  // Ensure last registered metrics persist as permanent defaults
-  try {
-    const savedLastMetrics = localStorage.getItem(LAST_REGISTERED_METRICS_KEY);
-    if (savedLastMetrics) {
-      const parsedLastMetrics = JSON.parse(savedLastMetrics);
-      if (parsedLastMetrics?.he && appState.appleWatch?.metrics?.he) {
-        appState.appleWatch.metrics.he = { ...defaultWatchMetrics.he, ...parsedLastMetrics.he, ...appState.appleWatch.metrics.he };
-      }
-      if (parsedLastMetrics?.she && appState.appleWatch?.metrics?.she) {
-        appState.appleWatch.metrics.she = { ...defaultWatchMetrics.she, ...parsedLastMetrics.she, ...appState.appleWatch.metrics.she };
-      }
-    }
-  } catch(e) {}
 
   // Device-specific master profile memory preference (Fixed to physical device)
   const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
@@ -1012,7 +998,9 @@ function checkUrlParamsForWatchSync() {
     });
     if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
 
+    appState.appleWatch.lastLocalSyncTimestamp = Date.now();
     saveState();
+    pushToCloud(false);
     renderAll();
 
     // Clean query params from browser location bar without reloading
@@ -2886,9 +2874,10 @@ export async function pullFromCloud(showToast = false) {
     const key = getCloudSyncKey();
     const myMasterPid = getMasterProfileId();
     const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
+    const isRecentLocalSync = (Date.now() - (appState.appleWatch?.lastLocalSyncTimestamp || 0)) < 25000;
     const channelsToPoll = [
       { pid: partnerPid, name: partnerPid === 'he' ? 'Carlos' : 'Andrea', isPartner: true },
-      { pid: myMasterPid, name: myMasterPid === 'he' ? 'Carlos' : 'Andrea', isPartner: false }
+      ...(!isRecentLocalSync ? [{ pid: myMasterPid, name: myMasterPid === 'he' ? 'Carlos' : 'Andrea', isPartner: false }] : [])
     ];
 
     let hasMergedAny = false;
