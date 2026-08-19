@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.4';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.5';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1334,22 +1334,6 @@ function closeHealthSyncModal() {
 }
 window.closeHealthSyncModal = closeHealthSyncModal;
 
-function switchShortcutMethodTab(methodName) {
-  try { triggerHapticTouch(); } catch(e) {}
-  updateShortcutUrlInputs();
-
-  const btnCloud = document.getElementById("shortcut-method-btn-cloud");
-  const btnSafari = document.getElementById("shortcut-method-btn-safari");
-  const paneCloud = document.getElementById("shortcut-method-pane-cloud");
-  const paneSafari = document.getElementById("shortcut-method-pane-safari");
-
-  if (methodName === 'cloud') {
-    if (btnCloud) {
-      btnCloud.className = "shortcut-tab-btn active";
-      btnCloud.style.background = "linear-gradient(135deg, var(--accent-cyan), #2563eb)";
-      btnCloud.style.color = "#ffffff";
-    }
-    if (btnSafari) {
 function applyReplicaToPrimary(customPid = null) {
   try { triggerHapticTouch(); } catch(e) {}
   const pid = customPid || appState.activeProfileId || 'he';
