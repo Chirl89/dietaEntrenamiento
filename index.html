@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Application CSS -->
-  <link rel="stylesheet" href="styles.css?v=0.7.9">
+  <link rel="stylesheet" href="styles.css?v=0.7.10">
   
   <!-- Chart.js for progress graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -32,7 +32,7 @@
   <header class="ios-top-bar">
     <div class="ios-header-brand">
       <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
-      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.7.9</span></span>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.7.10</span></span>
     </div>
 
     <div class="ios-header-actions">
@@ -60,7 +60,7 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div>
-            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.7.9</span></div>
+            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.7.10</span></div>
             <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
           </div>
         </div>
@@ -113,7 +113,7 @@
           <div>
             <div class="user-pill-name" id="sidebar-watch-user">Carlos (Series 9)</div>
             <div class="user-pill-status" style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-              <span> Salud • v0.7.9</span>
+              <span> Salud • v0.7.10</span>
               <span id="cloud-status-badge" class="cloud-status-badge"><i class="fa-solid fa-cloud"></i> Nube Conectada</span>
             </div>
           </div>
@@ -974,6 +974,34 @@
               </div>
             </div>
 
+            <!-- SHORTCUT CLOUD URL & DIRECT COPY ACTIONS -->
+            <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid rgba(56, 189, 248, 0.3); margin-bottom: 1.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="font-weight: 700; font-size: 0.95rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Atajo de iOS (SubirSaludNubeFitDuo)
+                </div>
+                <button type="button" class="btn-secondary-sm" onclick="showTab('apple-watch-view')" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.3rem;">
+                  <i class="fa-brands fa-apple"></i> Ver Guía Completa de Atajos
+                </button>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">
+                Copia la URL exacta para pegar en la acción <strong>"Obtener contenido de la URL"</strong> de tu atajo en el iPhone:
+              </p>
+              
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                <button type="button" class="btn-primary" onclick="copyShortcutCloudUrlToClipboard('health')" style="padding: 0.55rem 0.9rem; font-size: 0.82rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-cyan), #2563eb); border: none; border-radius: var(--radius-sm); color: #fff; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fa-solid fa-copy"></i> Copiar URL Nube (Solo Salud)
+                </button>
+                <button type="button" class="btn-secondary" onclick="copyShortcutCloudUrlToClipboard('workout')" style="padding: 0.55rem 0.9rem; font-size: 0.82rem; font-weight: 600; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); color: var(--accent-rose); border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fa-solid fa-dumbbell"></i> Copiar URL Nube (Entreno + Salud)
+                </button>
+              </div>
+
+              <div class="url-copy-input-wrapper">
+                <input type="text" id="settings-shortcut-cloud-url-input" class="ios-code-input" readonly style="font-size: 0.75rem; background: var(--bg-tertiary); color: var(--text-secondary); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); width: 100%; font-family: monospace;">
+              </div>
+            </div>
+
             <!-- MANUAL CLOUD CONTROLS -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
               <button type="button" class="btn-primary" onclick="syncNowWithCloud()" style="padding: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-cyan), #2563eb); border: none; border-radius: var(--radius-sm); color: #fff; cursor: pointer;">
@@ -1026,10 +1054,10 @@
                 </div>
               </div>
               <div id="cloud-sync-status-text" style="font-size: 0.82rem; font-weight: 600; color: var(--accent-emerald); margin-bottom: 0.5rem;">
-                Estado: Conectado a la Nube (v0.7.9)
+                Estado: Conectado a la Nube (v0.7.10)
               </div>
               <div id="sync-diagnostic-console" style="font-family: monospace; font-size: 0.75rem; color: #a3e635; background: #090d16; padding: 0.6rem; border-radius: 6px; max-height: 120px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); white-space: pre-wrap;">
-⚡ fitduo_v2 sync engine v0.7.9 listo.
+⚡ fitduo_v2 sync engine v0.7.10 listo.
               </div>
             </div>
           </div>
@@ -1446,6 +1474,6 @@
   <div id="ios-toast-container" class="ios-toast-container"></div>
 
   <!-- Application Logic -->
-  <script type="module" src="app.js?v=0.7.9"></script>
+  <script type="module" src="app.js?v=0.7.10"></script>
 </body>
 </html>

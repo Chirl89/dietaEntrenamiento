@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.9';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.10';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -367,7 +367,8 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-summary",
     sidebarId: "sidebar-nav-summary",
     subtabs: [
-      { id: "summary-view", label: "Resumen Diario", icon: "fa-solid fa-gauge-high" }
+      { id: "summary-view", label: "Resumen Diario", icon: "fa-solid fa-gauge-high" },
+      { id: "summary-replica-view", label: "Réplica Nube", icon: "fa-solid fa-cloud" }
     ]
   },
   nutrition: {
@@ -394,7 +395,8 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-profile",
     sidebarId: "sidebar-nav-profile",
     subtabs: [
-      { id: "settings-view", label: "Ajustes", icon: "fa-solid fa-gear" }
+      { id: "settings-view", label: "Ajustes & Nube", icon: "fa-solid fa-gear" },
+      { id: "apple-watch-view", label: "Atajos de Salud", icon: "fa-brands fa-apple" }
     ]
   }
 };
@@ -1260,6 +1262,11 @@ function updateShortcutUrlInputs() {
     const cloudWorkoutInput = document.getElementById("shortcut-cloud-url-workout-input");
     if (cloudWorkoutInput) {
       cloudWorkoutInput.value = getShortcutCloudUrl('workout');
+    }
+
+    const settingsCloudInput = document.getElementById("settings-shortcut-cloud-url-input");
+    if (settingsCloudInput) {
+      settingsCloudInput.value = getShortcutCloudUrl('health');
     }
   } catch(e) {
     console.error("Error updating shortcut URL inputs:", e);
