@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.5';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.6';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -740,13 +740,16 @@ function parseSmartMetricValue(val) {
     return validNums[validNums.length - 1];
   }
   if (typeof val === 'string') {
-    const cleanStr = val.replace(/,/g, '.').replace(/[^\d.]/g, ' ').trim();
-    if (cleanStr === '' || cleanStr === '0') return 0;
+    const trimmed = val.trim();
+    if (trimmed === '0') return 0;
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null; // Placeholder text not replaced by iOS Shortcuts
+    const cleanStr = trimmed.replace(/,/g, '.').replace(/[^\d.]/g, ' ').trim();
+    if (cleanStr === '') return null;
     const numbers = cleanStr.split(/\s+/).map(n => parseFloat(n)).filter(n => !isNaN(n) && n >= 0);
     if (numbers.length > 0) {
       return Math.round(numbers[numbers.length - 1]);
     }
-    return 0;
+    return null;
   }
   return null;
 }
@@ -755,13 +758,16 @@ function parseSmartMetricFloatValue(val) {
   if (val === null || val === undefined) return null;
   if (typeof val === 'number') return parseFloat(val.toFixed(2));
   if (typeof val === 'string') {
-    const cleanStr = val.replace(/,/g, '.').replace(/[^\d.]/g, ' ').trim();
-    if (cleanStr === '' || cleanStr === '0') return 0;
+    const trimmed = val.trim();
+    if (trimmed === '0' || trimmed === '0.0' || trimmed === '0.00') return 0;
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null; // Placeholder text not replaced by iOS Shortcuts
+    const cleanStr = trimmed.replace(/,/g, '.').replace(/[^\d.]/g, ' ').trim();
+    if (cleanStr === '') return null;
     const numbers = cleanStr.split(/\s+/).map(n => parseFloat(n)).filter(n => !isNaN(n) && n >= 0);
     if (numbers.length > 0) {
       return parseFloat(numbers[numbers.length - 1].toFixed(2));
     }
-    return 0;
+    return null;
   }
   return null;
 }
@@ -778,24 +784,16 @@ function parseSmartMetricArray(val) {
 
 // Helper to sync weekly history array (7 days) across past days of the week
 function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], hrArr = []) {
-  if (!kcalArr || kcalArr.length === 0) return;
+  if (!Array.isArray(kcalArr) || kcalArr.length === 0) return;
+  const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const todayIdx = (new Date().getDay() + 6) % 7;
 
-  const daysOfWeek = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-  const todayIdx = new Date().getDay(); // 0 (Domingo) to 6 (Sábado)
-
-  // Align 7 days leading up to today
-  // arr[6] = today, arr[5] = yesterday, arr[4] = 2 days ago, etc.
   for (let i = 0; i < kcalArr.length; i++) {
-    const offsetFromToday = (kcalArr.length - 1) - i;
-    if (offsetFromToday >= 7) continue;
-
-    let targetDayIdx = todayIdx - offsetFromToday;
-    if (targetDayIdx < 0) targetDayIdx += 7;
-    const targetDayName = daysOfWeek[targetDayIdx];
-
+    const pastDayIdx = (todayIdx - (kcalArr.length - 1 - i) + 7) % 7;
+    const targetDayName = days[pastDayIdx];
     const kcalVal = kcalArr[i];
-    const durVal = exMinArr[i] || 45;
-    const hrVal = hrArr[i] || 138;
+    const durVal = (exMinArr && exMinArr[i]) ? exMinArr[i] : 45;
+    const hrVal = (hrArr && hrArr[i]) ? hrArr[i] : 138;
 
     if (kcalVal && kcalVal > 150) {
       if (!appState.completedWorkouts[profileId]) appState.completedWorkouts[profileId] = {};
@@ -836,7 +834,7 @@ function checkUrlParamsForWatchSync() {
   }
 
   // Profile resolution: optional URL override (&profile=he / &profile=she / &profile=carlos / &profile=andrea)
-  let pid = getMasterProfileId();
+  let pid = appState.activeProfileId || getMasterProfileId();
   const profileParam = params.get("profile") || params.get("user");
   if (profileParam) {
     const pLower = profileParam.toLowerCase();
@@ -845,10 +843,15 @@ function checkUrlParamsForWatchSync() {
     } else if (pLower.includes("andrea") || pLower === "she" || pLower === "f") {
       pid = "she";
     }
+    appState.activeProfileId = pid;
+    localStorage.setItem(LAST_ACTIVE_PROFILE_KEY, pid);
   }
 
-  const m = appState.appleWatch?.metrics?.[pid];
-  if (!m) return false;
+  if (!appState.appleWatch) appState.appleWatch = {};
+  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = defaultWatchMetrics;
+  if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = { ...defaultWatchMetrics[pid] };
+
+  const m = appState.appleWatch.metrics[pid];
 
   addDebugLog("🔗 Parámetros de URL/Acceso Directo detectados al cargar la app", "url", Object.fromEntries(params));
 
@@ -861,8 +864,10 @@ function checkUrlParamsForWatchSync() {
     m.moveKcal = kcalVal;
     updated = true;
   } else if (params.has("syncWatch") || params.has("kcal")) {
-    m.moveKcal = 0;
-    updated = true;
+    if (kcalRaw === "0" || kcalRaw === "") {
+      m.moveKcal = 0;
+      updated = true;
+    }
   }
 
   const stepsRaw = params.get("steps");
@@ -872,17 +877,17 @@ function checkUrlParamsForWatchSync() {
     m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
     updated = true;
   } else if (params.has("syncWatch") || params.has("steps")) {
-    m.steps = 0;
-    updated = true;
+    if (stepsRaw === "0" || stepsRaw === "") {
+      m.steps = 0;
+      m.distanceKm = 0;
+      updated = true;
+    }
   }
 
   const distRaw = params.get("dist") || params.get("distanceKm") || params.get("distance");
   const distVal = parseSmartMetricFloatValue(distRaw);
   if (distVal !== null) {
     m.distanceKm = distVal;
-    updated = true;
-  } else if ((params.has("syncWatch") || params.has("dist")) && stepsVal === null) {
-    m.distanceKm = 0;
     updated = true;
   }
 
@@ -892,8 +897,10 @@ function checkUrlParamsForWatchSync() {
     m.hr = hrVal;
     updated = true;
   } else if (params.has("syncWatch") || params.has("hr")) {
-    m.hr = 0;
-    updated = true;
+    if (hrRaw === "0" || hrRaw === "") {
+      m.hr = 0;
+      updated = true;
+    }
   }
 
   const maxHrRaw = params.get("maxHr");
@@ -909,8 +916,10 @@ function checkUrlParamsForWatchSync() {
     m.exerciseMin = exMinVal;
     updated = true;
   } else if (params.has("syncWatch") || params.has("exMin")) {
-    m.exerciseMin = 0;
-    updated = true;
+    if (exMinRaw === "0" || exMinRaw === "") {
+      m.exerciseMin = 0;
+      updated = true;
+    }
   }
 
   const standHoursRaw = params.get("standHours") || params.get("stand");
@@ -939,7 +948,7 @@ function checkUrlParamsForWatchSync() {
   // 2. Workout specific metrics (if this is a post-workout sync)
   const isWorkoutSync = params.has("workout") || params.get("syncWorkout") === "true" || params.has("workoutKcal") || (params.has("duration") && params.has("avgHr"));
   let targetDay = params.get("day");
-  if (!targetDay) {
+  if (!targetDay || targetDay === "Hoy" || targetDay === "today" || targetDay.toLowerCase() === "today" || targetDay.toLowerCase() === "hoy") {
     targetDay = getTodayDayName();
   }
 
@@ -955,6 +964,7 @@ function checkUrlParamsForWatchSync() {
     const maxH = workoutMaxHrVal !== null ? workoutMaxHrVal : (m.maxHr || (avgH + 20));
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
 
+    if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
 
     appState.completedWorkouts[pid][targetDay] = {
@@ -969,12 +979,24 @@ function checkUrlParamsForWatchSync() {
         autoSync: true
       }
     };
+    appState.activeWorkoutDay = targetDay;
     updated = true;
   }
 
   if (updated) {
     appState.appleWatch.syncMode = "real";
     appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
+    // Also update cloudReplica
+    if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = defaultCloudReplica;
+    if (!appState.appleWatch.cloudReplica[pid]) appState.appleWatch.cloudReplica[pid] = { ...defaultCloudReplica[pid] };
+    const rep = appState.appleWatch.cloudReplica[pid];
+    rep.moveKcal = m.moveKcal;
+    rep.steps = m.steps;
+    rep.distanceKm = m.distanceKm;
+    rep.hr = m.hr;
+    rep.exerciseMin = m.exerciseMin;
+    rep.lastSync = new Date().toISOString();
 
     const pName = appState.profiles[pid].name.split(" ")[0];
     addDebugLog(` Datos de Salud actualizados vía URL para ${pName}`, "success", { moveKcal: m.moveKcal, steps: m.steps, hr: m.hr, exerciseMin: m.exerciseMin });
