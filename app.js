@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.3';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.4';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1551,6 +1551,19 @@ function testSimulatedWorkoutSync() {
   checkUrlParamsForWatchSync();
   renderAll();
 }
+
+function resetMetricsToZeroUsingUrlShortcut(customPid = null) {
+  try { triggerHapticTouch(); } catch(e) {}
+  const pid = customPid || appState.activeProfileId || 'he';
+  const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
+  const testUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?syncWatch=true&profile=${pid}&kcal=0&steps=0&hr=0&dist=0&exMin=0`;
+  window.history.replaceState({}, document.title, testUrl);
+  checkUrlParamsForWatchSync();
+  saveState();
+  renderAll();
+  showIosToast(`🔄 <strong>Métricas de ${authorName} cargadas a vacío (0)</strong> vía método URL de Atajo.`, "fa-solid fa-rotate-left");
+}
+window.resetMetricsToZeroUsingUrlShortcut = resetMetricsToZeroUsingUrlShortcut;
 
 async function testSimulatedBackgroundCloudSync() {
   triggerHapticTouch();
