@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.6.39';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.0';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -265,9 +265,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.openHealthSyncModal = openHealthSyncModal;
   window.closeHealthSyncModal = closeHealthSyncModal;
   window.switchShortcutTab = switchShortcutTab;
+  window.switchShortcutMethodTab = switchShortcutMethodTab;
   window.copyShortcutUrlToClipboard = copyShortcutUrlToClipboard;
+  window.copyShortcutCloudUrlToClipboard = copyShortcutCloudUrlToClipboard;
   window.testSimulatedHealthSync = testSimulatedHealthSync;
   window.testSimulatedWorkoutSync = testSimulatedWorkoutSync;
+  window.testSimulatedBackgroundCloudSync = testSimulatedBackgroundCloudSync;
   window.addDebugLog = addDebugLog;
   window.clearDebugLogs = clearDebugLogs;
   window.copyDebugLogsToClipboard = copyDebugLogsToClipboard;
@@ -325,6 +328,7 @@ window.addEventListener("pageshow", () => {
   addDebugLog("👁️ Evento 'pageshow' (Retorno a la pestaña Safari)", "info", { url: window.location.href });
   loadSavedState();
   checkUrlParamsForWatchSync();
+  pullFromCloud(false);
   renderAll();
 });
 
@@ -333,6 +337,7 @@ document.addEventListener("visibilitychange", () => {
     addDebugLog("👁️ Evento 'visibilitychange' (Pestaña visible)", "info", { url: window.location.href });
     loadSavedState();
     checkUrlParamsForWatchSync();
+    pullFromCloud(false);
     renderAll();
   }
 });
@@ -341,12 +346,14 @@ window.addEventListener("popstate", () => {
   addDebugLog("🔗 Evento 'popstate' (Navegación URL)", "info", { url: window.location.href });
   loadSavedState();
   checkUrlParamsForWatchSync();
+  pullFromCloud(false);
   renderAll();
 });
 
 window.addEventListener("focus", () => {
   loadSavedState();
   checkUrlParamsForWatchSync();
+  pullFromCloud(false);
   renderAll();
 });
 
@@ -1165,6 +1172,20 @@ function getShortcutUrl(mode = 'health') {
   }
 }
 
+function getShortcutCloudUrl(mode = 'health', customPid = null) {
+  const key = getCloudSyncKey();
+  const pid = customPid || getMasterProfileId();
+  const channel = `${key}_${pid}`;
+
+  if (mode === 'workout') {
+    const payload = `{"author":"${pid}","workout":true,"workoutKcal":[Calorias_Entreno],"duration":[Duracion_Minutos],"avgHr":[FC_Entreno_Media],"maxHr":[FC_Entreno_Max],"steps":[Pasos],"kcal":[Calorias_Activas],"exerciseMin":[Minutos_Ejercicio],"hr":[Pulso_Promedio],"day":"Hoy"}`;
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/${encodeURIComponent(payload)}`;
+  } else {
+    const payload = `{"author":"${pid}","steps":[Pasos],"kcal":[Calorias_Activas],"exerciseMin":[Minutos_Ejercicio],"hr":[Pulso_Promedio]}`;
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/${encodeURIComponent(payload)}`;
+  }
+}
+
 function updateShortcutUrlInputs() {
   try {
     const healthInput = document.getElementById("shortcut-url-health-input");
@@ -1175,6 +1196,16 @@ function updateShortcutUrlInputs() {
     const workoutInput = document.getElementById("shortcut-url-workout-input");
     if (workoutInput) {
       workoutInput.value = getShortcutUrl('workout');
+    }
+
+    const cloudHealthInput = document.getElementById("shortcut-cloud-url-health-input");
+    if (cloudHealthInput) {
+      cloudHealthInput.value = getShortcutCloudUrl('health');
+    }
+
+    const cloudWorkoutInput = document.getElementById("shortcut-cloud-url-workout-input");
+    if (cloudWorkoutInput) {
+      cloudWorkoutInput.value = getShortcutCloudUrl('workout');
     }
   } catch(e) {
     console.error("Error updating shortcut URL inputs:", e);
@@ -1194,11 +1225,11 @@ function copyShortcutUrlToClipboard(mode = 'health') {
     inputEl.setSelectionRange(0, 99999);
   }
 
-  const label = mode === 'workout' ? 'Entrenamiento + Salud' : 'Solo Salud';
+  const label = mode === 'workout' ? 'Entrenamiento + Salud (Safari)' : 'Solo Salud (Safari)';
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url).then(() => {
-      showIosToast(`📋 <strong>URL del Atajo (${label}) copiada al portapapeles</strong>. Pégala en la acción "Abrir URL" de Atajos iOS.`, "fa-solid fa-copy");
+      showIosToast(`📋 <strong>URL del Atajo (${label}) copiada</strong>. Pégala en "Abrir URL" de Atajos iOS.`, "fa-solid fa-copy");
     }).catch(() => {
       try {
         document.execCommand('copy');
@@ -1210,13 +1241,50 @@ function copyShortcutUrlToClipboard(mode = 'health') {
   } else {
     try {
       document.execCommand('copy');
-      showIosToast(`📋 <strong>URL del Atajo (${label}) copiada al portapapeles</strong>.`, "fa-solid fa-copy");
+      showIosToast(`📋 <strong>URL del Atajo (${label}) copiada</strong>.`, "fa-solid fa-copy");
     } catch(err) {
       showIosToast("📋 Texto seleccionado. Mantén pulsado el cuadro y selecciona 'Copiar'.", "fa-solid fa-copy");
     }
   }
 }
 window.copyShortcutUrlToClipboard = copyShortcutUrlToClipboard;
+
+function copyShortcutCloudUrlToClipboard(mode = 'health') {
+  try { triggerHapticTouch(); } catch(e) {}
+  const url = getShortcutCloudUrl(mode);
+  
+  const inputId = mode === 'workout' ? 'shortcut-cloud-url-workout-input' : 'shortcut-cloud-url-health-input';
+  const inputEl = document.getElementById(inputId);
+  if (inputEl) {
+    inputEl.value = url;
+    inputEl.focus();
+    inputEl.select();
+    inputEl.setSelectionRange(0, 99999);
+  }
+
+  const label = mode === 'workout' ? 'Entrenamiento en 2º Plano (Nube)' : 'Salud en 2º Plano (Nube)';
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showIosToast(`☁️ <strong>URL de Subida Nube en 2º Plano (${label}) copiada</strong>. Pégala en "Obtener contenido de URL" de Atajos iOS.`, "fa-solid fa-cloud-arrow-up");
+    }).catch(() => {
+      try {
+        document.execCommand('copy');
+        showIosToast(`☁️ <strong>URL de Subida Nube (${label}) copiada</strong>.`, "fa-solid fa-copy");
+      } catch(err) {
+        showIosToast("📋 Texto seleccionado. Mantén pulsado el cuadro y selecciona 'Copiar'.", "fa-solid fa-copy");
+      }
+    });
+  } else {
+    try {
+      document.execCommand('copy');
+      showIosToast(`☁️ <strong>URL de Subida Nube (${label}) copiada</strong>.`, "fa-solid fa-copy");
+    } catch(err) {
+      showIosToast("📋 Texto seleccionado. Mantén pulsado el cuadro y selecciona 'Copiar'.", "fa-solid fa-copy");
+    }
+  }
+}
+window.copyShortcutCloudUrlToClipboard = copyShortcutCloudUrlToClipboard;
 
 function fallbackCopyTextToClipboard(text, mode) {
   const inputId = mode === 'workout' ? 'shortcut-url-workout-input' : 'shortcut-url-health-input';
@@ -1249,6 +1317,45 @@ function closeHealthSyncModal() {
   if (modal) modal.classList.remove("active");
 }
 window.closeHealthSyncModal = closeHealthSyncModal;
+
+function switchShortcutMethodTab(methodName) {
+  try { triggerHapticTouch(); } catch(e) {}
+  updateShortcutUrlInputs();
+
+  const btnCloud = document.getElementById("shortcut-method-btn-cloud");
+  const btnSafari = document.getElementById("shortcut-method-btn-safari");
+  const paneCloud = document.getElementById("shortcut-method-pane-cloud");
+  const paneSafari = document.getElementById("shortcut-method-pane-safari");
+
+  if (methodName === 'cloud') {
+    if (btnCloud) {
+      btnCloud.className = "shortcut-tab-btn active";
+      btnCloud.style.background = "linear-gradient(135deg, var(--accent-cyan), #2563eb)";
+      btnCloud.style.color = "#ffffff";
+    }
+    if (btnSafari) {
+      btnSafari.className = "shortcut-tab-btn";
+      btnSafari.style.background = "transparent";
+      btnSafari.style.color = "var(--text-secondary)";
+    }
+    if (paneCloud) paneCloud.style.display = "block";
+    if (paneSafari) paneSafari.style.display = "none";
+  } else {
+    if (btnCloud) {
+      btnCloud.className = "shortcut-tab-btn";
+      btnCloud.style.background = "transparent";
+      btnCloud.style.color = "var(--text-secondary)";
+    }
+    if (btnSafari) {
+      btnSafari.className = "shortcut-tab-btn active";
+      btnSafari.style.background = "var(--gradient-primary)";
+      btnSafari.style.color = "#ffffff";
+    }
+    if (paneCloud) paneCloud.style.display = "none";
+    if (paneSafari) paneSafari.style.display = "block";
+  }
+}
+window.switchShortcutMethodTab = switchShortcutMethodTab;
 
 function switchShortcutTab(tabName) {
   try { triggerHapticTouch(); } catch(e) {}
@@ -1321,6 +1428,58 @@ function testSimulatedWorkoutSync() {
   checkUrlParamsForWatchSync();
   renderAll();
 }
+
+async function testSimulatedBackgroundCloudSync() {
+  triggerHapticTouch();
+  const key = getCloudSyncKey();
+  const masterPid = getMasterProfileId();
+  const authorName = masterPid === 'he' ? 'Carlos' : 'Andrea';
+  const todayDay = getTodayDayName();
+
+  const randomKcal = Math.floor(520 + Math.random() * 220);
+  const randomSteps = Math.floor(8800 + Math.random() * 3800);
+  const randomHr = Math.floor(70 + Math.random() * 16);
+  const randomExMin = Math.floor(35 + Math.random() * 25);
+  const workoutKcal = Math.floor(390 + Math.random() * 120);
+  const workoutHr = Math.floor(140 + Math.random() * 16);
+
+  addSyncConsoleLog(`🧪 [SIMULADOR ATAJO EN 2º PLANO] Enviando telemetría HTTP de Salud de ${authorName} a la Nube...`, "info");
+  if (typeof showIosToast === 'function') {
+    showIosToast(`🧪 <strong>Simulando Atajo en 2º Plano:</strong> Enviando datos a la nube...`, "fa-solid fa-cloud-arrow-up");
+  }
+
+  const payload = {
+    author: masterPid,
+    authorProfileId: masterPid,
+    workout: true,
+    day: todayDay,
+    steps: randomSteps,
+    kcal: randomKcal,
+    exerciseMin: randomExMin,
+    hr: randomHr,
+    workoutKcal: workoutKcal,
+    duration: randomExMin,
+    avgHr: workoutHr,
+    maxHr: workoutHr + 22,
+    timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs"
+  };
+
+  try {
+    const pnChannel = `${key}_${masterPid}`;
+    const encodedMsg = encodeURIComponent(JSON.stringify(payload));
+    const pnPubUrl = `https://ps.pubnub.com/publish/demo/demo/0/${pnChannel}/0/${encodedMsg}`;
+    const res = await fetch(pnPubUrl);
+    if (res.ok) {
+      addSyncConsoleLog(`✅ Simulador: Mensaje de Atajo en 2º Plano inyectado en la Nube (${pnChannel})`, "success");
+      setTimeout(() => {
+        pullFromCloud(true);
+      }, 500);
+    }
+  } catch (e) {
+    addSyncConsoleLog(`⚠️ Simulador error: ${e.message}`, "warn");
+  }
+}
+window.testSimulatedBackgroundCloudSync = testSimulatedBackgroundCloudSync;
 
 function updateAppleWatchModalUI() {
   const pid = appState.activeProfileId;
@@ -2019,7 +2178,7 @@ function renderSettingsView() {
   updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
 }
 
-// MULTI-DEVICE CLOUD SYNC ENGINE (v0.6.39)
+// MULTI-DEVICE CLOUD SYNC ENGINE (v0.7.0)
 const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
 let isCloudSyncing = false;
@@ -2067,7 +2226,7 @@ async function cleanAndParseJsonFromCloud(rawText) {
   let text = rawText.trim();
   if (text === 'null' || text === '""' || text.length < 2) return null;
 
-  // Priority 1: Handle PubNub History API response structure ({ channels: { <channel>: [ { message: "urlSafeData" } ] } })
+  // Priority 1: Handle PubNub History API response structure ({ channels: { <channel>: [ { message: ... } ] } })
   if (text.includes('"channels":') && text.includes('"message":')) {
     try {
       const parsed = JSON.parse(text);
@@ -2078,7 +2237,9 @@ async function cleanAndParseJsonFromCloud(rawText) {
           if (Array.isArray(msgList) && msgList.length > 0) {
             const lastMsg = msgList[msgList.length - 1];
             if (lastMsg && lastMsg.message) {
-              const parsedFromMsg = await cleanAndParseJsonFromCloud(lastMsg.message);
+              const parsedFromMsg = await cleanAndParseJsonFromCloud(
+                typeof lastMsg.message === 'string' ? lastMsg.message : JSON.stringify(lastMsg.message)
+              );
               if (parsedFromMsg) return parsedFromMsg;
             }
           }
@@ -2116,20 +2277,53 @@ async function cleanAndParseJsonFromCloud(rawText) {
     }
   }
 
-  // Priority 4: URL-Safe Base64 decoding
+  // Priority 4: URL-Encoded strings (e.g. %7B%22author%22...)
+  if (text.includes("%7B") || text.includes("%7b") || text.includes("%22")) {
+    try {
+      const decoded = decodeURIComponent(text);
+      const parsedDecoded = await cleanAndParseJsonFromCloud(decoded);
+      if (parsedDecoded) return parsedDecoded;
+    } catch (eDec) {}
+  }
+
+  // Priority 5: URL query parameters (e.g. "kcal=500&steps=8400&author=he" or "?syncWatch=true&...")
+  if (text.includes("=") && (text.includes("kcal=") || text.includes("steps=") || text.includes("author=") || text.includes("syncWatch="))) {
+    try {
+      const cleanParamsText = text.startsWith("?") ? text.slice(1) : text;
+      const qParams = new URLSearchParams(cleanParamsText);
+      const resObj = {};
+      for (const [k, v] of qParams.entries()) {
+        resObj[k] = v;
+      }
+      if (Object.keys(resObj).length > 0) {
+        return resObj;
+      }
+    } catch (eQ) {}
+  }
+
+  // Priority 6: URL-Safe Base64 decoding
   const fromUrlB64 = fromUrlSafeB64(text);
   if (fromUrlB64) return fromUrlB64;
 
-  // Priority 5: Direct Raw JSON Parsing
-  if (text.startsWith('{') && text.endsWith('}')) {
+  // Priority 7: Direct Raw JSON Parsing
+  if ((text.startsWith('{') && text.endsWith('}')) || (text.startsWith('[') && text.endsWith(']'))) {
     try {
       const parsed = JSON.parse(text);
       if (parsed && typeof parsed === 'object') return parsed;
     } catch (eDirect) {}
   }
 
+  // Priority 8: Escaped JSON string (e.g. "\"{\\\"author\\\":...}\"")
   if (text.startsWith('"') && text.endsWith('"')) {
-    text = text.slice(1, -1);
+    try {
+      const unquoted = JSON.parse(text);
+      if (typeof unquoted === 'string') {
+        const parsedInner = await cleanAndParseJsonFromCloud(unquoted);
+        if (parsedInner) return parsedInner;
+      } else if (typeof unquoted === 'object' && unquoted !== null) {
+        return unquoted;
+      }
+    } catch (eUnquote) {}
   }
 
   return null;
@@ -2138,10 +2332,117 @@ async function cleanAndParseJsonFromCloud(rawText) {
 function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
   let hasChanges = false;
-  const author = cloudData.authorProfileId || cloudData.masterProfileId || 'he';
+  const author = cloudData.authorProfileId || cloudData.masterProfileId || cloudData.author || cloudData.pid || 'he';
   const authorName = author === 'he' ? 'Carlos' : author === 'she' ? 'Andrea' : author;
 
-  // 1. PROFILES: Update profile data for author and dog
+  if (!appState.appleWatch) appState.appleWatch = {};
+  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = defaultWatchMetrics;
+  if (!appState.appleWatch.metrics[author]) appState.appleWatch.metrics[author] = { ...defaultWatchMetrics[author] };
+
+  const m = appState.appleWatch.metrics[author];
+
+  // 1. Direct Apple Watch Metrics (Background Shortcuts / Cloud REST API)
+  let directMetricsUpdated = false;
+  const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories);
+  if (kcalVal !== null) {
+    m.moveKcal = kcalVal;
+    directMetricsUpdated = true;
+  }
+
+  const stepsVal = parseSmartMetricValue(cloudData.steps);
+  if (stepsVal !== null) {
+    m.steps = stepsVal;
+    m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+    directMetricsUpdated = true;
+  }
+
+  const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.heartRate ?? cloudData.avgHr);
+  if (hrVal !== null) {
+    m.hr = hrVal;
+    directMetricsUpdated = true;
+  }
+
+  const exMinVal = parseSmartMetricValue(cloudData.exerciseMin ?? cloudData.durationMin ?? cloudData.exMin);
+  if (exMinVal !== null) {
+    m.exerciseMin = exMinVal;
+    directMetricsUpdated = true;
+  }
+
+  const maxHrVal = parseSmartMetricValue(cloudData.maxHr);
+  if (maxHrVal !== null) {
+    m.maxHr = maxHrVal;
+    directMetricsUpdated = true;
+  }
+
+  if (cloudData.deviceName) {
+    m.deviceName = cloudData.deviceName;
+    directMetricsUpdated = true;
+  }
+
+  // Direct Weight log from cloud
+  const weightVal = parseSmartMetricValue(cloudData.weight ?? cloudData.peso);
+  if (weightVal !== null && weightVal > 30 && weightVal < 250) {
+    if (!appState.weightLogs) appState.weightLogs = {};
+    if (!appState.weightLogs[author]) appState.weightLogs[author] = [];
+    const todayStr = "Hoy";
+    const existingIdx = appState.weightLogs[author].findIndex(w => w && w.date === todayStr);
+    if (existingIdx >= 0) {
+      appState.weightLogs[author][existingIdx].weight = weightVal;
+    } else {
+      appState.weightLogs[author].push({ date: todayStr, weight: weightVal });
+    }
+    hasChanges = true;
+  }
+
+  // Direct Workout Sync from cloud
+  const isWorkoutSync = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === "true" || cloudData.workoutKcal !== undefined || (cloudData.duration !== undefined && cloudData.avgHr !== undefined);
+  if (isWorkoutSync) {
+    let targetDay = cloudData.day;
+    if (!targetDay || targetDay === "Hoy" || targetDay === "today" || targetDay.toLowerCase() === "today") {
+      targetDay = getTodayDayName();
+    }
+    const wDur = parseSmartMetricValue(cloudData.workoutDuration ?? cloudData.duration ?? cloudData.dur) ?? (exMinVal || 45);
+    const wKcal = parseSmartMetricValue(cloudData.workoutKcal ?? cloudData.wKcal) ?? (kcalVal || 350);
+    const wAvgHr = parseSmartMetricValue(cloudData.workoutAvgHr ?? cloudData.avgHr) ?? (hrVal || 140);
+    const wMaxHr = parseSmartMetricValue(cloudData.workoutMaxHr ?? cloudData.maxHr) ?? (m.maxHr || (wAvgHr + 20));
+    const timeStr = cloudData.timeStr || (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
+
+    if (!appState.completedWorkouts) appState.completedWorkouts = {};
+    if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+    
+    appState.completedWorkouts[author][targetDay] = {
+      done: true,
+      watchData: {
+        deviceName: m.deviceName || `Apple Watch (${authorName})`,
+        durationMin: wDur,
+        kcal: wKcal,
+        avgHr: wAvgHr,
+        maxHr: wMaxHr,
+        timestamp: timeStr,
+        autoSync: true
+      }
+    };
+    directMetricsUpdated = true;
+  }
+
+  if (directMetricsUpdated) {
+    hasChanges = true;
+    appState.appleWatch.syncMode = "real";
+    appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    appState.appleWatch.syncLogs.unshift({
+      timestamp: timeStr,
+      device: m.deviceName || `Apple Watch (${authorName})`,
+      hr: m.hr,
+      kcal: m.moveKcal,
+      steps: m.steps,
+      status: isWorkoutSync ? `Entrenamiento + Salud (${authorName}) en 2º Plano (Nube)` : `Salud de ${authorName} en 2º Plano (Nube)`
+    });
+    if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
+  }
+
+  // 2. PROFILES: Update profile data for author and dog
   ['he', 'she', 'dog'].forEach(pid => {
     if (cloudData.profiles?.[pid]) {
       if (!appState.profiles) appState.profiles = {};
@@ -2152,7 +2453,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
-  // 2. COMPLETED WORKOUTS: Update workouts for author
+  // 3. COMPLETED WORKOUTS: Update workouts for author
   ['he', 'she'].forEach(pid => {
     if (cloudData.completedWorkouts?.[pid] && pid === author) {
       if (!appState.completedWorkouts) appState.completedWorkouts = {};
@@ -2161,7 +2462,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
-  // 3. WEIGHT LOGS: Union and deduplicate for author profile
+  // 4. WEIGHT LOGS: Union and deduplicate for author profile
   ['he', 'she'].forEach(pid => {
     if (Array.isArray(cloudData.weightLogs?.[pid]) && pid === author) {
       const cloudLogs = cloudData.weightLogs[pid];
@@ -2175,7 +2476,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
-  // 4. APPLE WATCH METRICS: Update metrics for author
+  // 5. APPLE WATCH METRICS: Update metrics for author
   ['he', 'she'].forEach(pid => {
     if (cloudData.appleWatch?.metrics?.[pid] && pid === author) {
       const cM = cloudData.appleWatch.metrics[pid];
@@ -2186,7 +2487,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
-  // 5. CHECKED SHOPPING ITEMS
+  // 6. CHECKED SHOPPING ITEMS
   if (cloudData.checkedShoppingItems && typeof cloudData.checkedShoppingItems === 'object') {
     if (!appState.checkedShoppingItems) appState.checkedShoppingItems = {};
     Object.keys(cloudData.checkedShoppingItems).forEach(k => {
@@ -2197,7 +2498,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     });
   }
 
-  // 6. EXCLUSIONS
+  // 7. EXCLUSIONS
   if (Array.isArray(cloudData.exclusions)) {
     if (!appState.exclusions) appState.exclusions = [];
     cloudData.exclusions.forEach(ex => {
@@ -2211,7 +2512,7 @@ function mergeCloudDataIntoAppState(cloudData) {
   if (cloudData.recipesDaysRange) appState.recipesDaysRange = cloudData.recipesDaysRange;
   if (cloudData.shoppingDaysRange) appState.shoppingDaysRange = cloudData.shoppingDaysRange;
 
-  const m = appState.appleWatch?.metrics?.[author] || {};
+  const mCurrent = appState.appleWatch?.metrics?.[author] || {};
   const w = appState.completedWorkouts?.[author] || {};
   const wDoneCount = Object.values(w).filter(val => val && (val === true || val.done)).length;
   const weightLogs = appState.weightLogs?.[author] || [];
@@ -2219,11 +2520,14 @@ function mergeCloudDataIntoAppState(cloudData) {
     ? weightLogs[weightLogs.length - 1].weight 
     : 'N/A';
 
-  const logDetails = `📥 Datos de ${authorName} importados: ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg`;
+  const logDetails = `📥 Datos de ${authorName} importados: ${mCurrent.steps || 0} pasos, ${mCurrent.moveKcal || 0} kcal, ${mCurrent.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg`;
   addSyncConsoleLog(logDetails, "success");
 
   if (hasChanges) {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+    if (appState.appleWatch?.metrics) {
+      localStorage.setItem(LAST_REGISTERED_METRICS_KEY, JSON.stringify(appState.appleWatch.metrics));
+    }
   }
   return hasChanges;
 }
@@ -2376,40 +2680,42 @@ export async function pullFromCloud(showToast = false) {
     const key = getCloudSyncKey();
     const myMasterPid = getMasterProfileId();
     const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
-    const partnerName = partnerPid === 'he' ? 'Carlos' : 'Andrea';
-    const myName = myMasterPid === 'he' ? 'Carlos' : 'Andrea';
+    const channelsToPoll = [
+      { pid: partnerPid, name: partnerPid === 'he' ? 'Carlos' : 'Andrea', isPartner: true },
+      { pid: myMasterPid, name: myMasterPid === 'he' ? 'Carlos' : 'Andrea', isPartner: false }
+    ];
 
-    addSyncConsoleLog(`☁️ Descargando datos de ${partnerName.toUpperCase()} en este móvil de ${myName.toUpperCase()}...`, "info");
     let hasMergedAny = false;
     let pullSuccess = false;
 
-    // 1. Primary Cloud: PubNub Unified Realtime Engine Read (GET Request - 0 CORS / 0 ITP Block)
-    try {
-      const partnerPnChannel = `${key}_${partnerPid}`;
-      const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${partnerPnChannel}?count=1`;
-      addSyncConsoleLog(`📡 GET [PubNub Engine] (${partnerName.toUpperCase()})...`, "info");
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(pnSubUrl, { signal: controller.signal });
-      clearTimeout(tId);
+    for (const target of channelsToPoll) {
+      try {
+        const pnChannel = `${key}_${target.pid}`;
+        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${pnChannel}?count=1`;
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 4500);
+        const res = await fetch(pnSubUrl, { signal: controller.signal });
+        clearTimeout(tId);
 
-      if (res.ok) {
-        const rawText = await res.text();
-        if (rawText && rawText.trim().length > 10) {
-          const partnerData = await cleanAndParseJsonFromCloud(rawText);
-          if (partnerData) {
-            pullSuccess = true;
-            const changed = mergeCloudDataIntoAppState(partnerData);
-            if (changed) hasMergedAny = true;
-            addSyncConsoleLog(`✅ Nube PubNub de ${partnerName.toUpperCase()} leída correctamente (HTTP ${res.status})`, "success");
+        if (res.ok) {
+          const rawText = await res.text();
+          if (rawText && rawText.trim().length > 10) {
+            const data = await cleanAndParseJsonFromCloud(rawText);
+            if (data) {
+              pullSuccess = true;
+              const changed = mergeCloudDataIntoAppState(data);
+              if (changed) {
+                hasMergedAny = true;
+                addSyncConsoleLog(`✅ Nube: Datos de ${target.name.toUpperCase()} procesados (${target.isPartner ? 'Pareja' : 'Atajo en 2º plano'})`, "success");
+              }
+            }
           }
         }
+      } catch (eCh) {
+        // Continue to next channel
       }
-    } catch (ePnPull) {
-      addSyncConsoleLog(`⚠️ Nube PubNub error: ${ePnPull.name} - ${ePnPull.message}`, "warn");
     }
 
-    // Update global UI cloud badge if read succeeded
     if (pullSuccess || hasMergedAny) {
       appState.lastCloudSync = new Date().toISOString();
       updateCloudSyncUI("Conectado a la Nube (Sincronizado)", true);
@@ -2417,7 +2723,7 @@ export async function pullFromCloud(showToast = false) {
 
     if (hasMergedAny) {
       if (showToast && typeof showIosToast === 'function') {
-        showIosToast(`☁️ ¡Datos de ${partnerName} actualizados!`, "fa-solid fa-cloud-arrow-down");
+        showIosToast(`☁️ ¡Datos actualizados desde la nube!`, "fa-solid fa-cloud-arrow-down");
       }
       renderAll();
     } else {
