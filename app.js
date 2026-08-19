@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.7';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.8';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -262,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.closeEditWorkoutWatchModal = closeEditWorkoutWatchModal;
   window.saveWorkoutWatchDataFromModal = saveWorkoutWatchDataFromModal;
   window.launchIosShortcutSync = launchIosShortcutSync;
+  window.syncHealthShortcutAndCloud = syncHealthShortcutAndCloud;
   window.toggleAutoLaunchShortcutOnOpen = toggleAutoLaunchShortcutOnOpen;
   window.toggleShortcutGuide = toggleShortcutGuide;
   window.openHealthSyncModal = openHealthSyncModal;
@@ -626,7 +627,7 @@ function performAutoSyncTick() {
 function updateHeaderWatchBadge() {
   const badgeText = document.getElementById("ios-header-watch-text");
   if (badgeText) {
-    badgeText.innerText = " Sync Resumen";
+    badgeText.innerText = "☁️ Actualizar Nube";
   }
 }
 
@@ -1156,6 +1157,33 @@ function checkAutoLaunchShortcutOnOpen() {
     launchIosShortcutSync(true, 'health');
   }, 1000);
 }
+
+async function syncHealthShortcutAndCloud() {
+  try { triggerHapticTouch(); } catch(e) {}
+  sessionStorage.setItem("fitduo_shortcut_launched", "true");
+  const pid = appState.activeProfileId || getMasterProfileId();
+  const pName = pid === 'he' ? 'Carlos' : 'Andrea';
+  const shortcutName = "SubirSaludNubeFitDuo";
+  const url = `shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}`;
+
+  addDebugLog(`☁️ Invocando Atajo de Nube: ${shortcutName} para ${pName}`, "info", { url, pid });
+  showIosToast(`☁️ <strong>Subiendo a la Nube:</strong> Ejecutando atajo ${shortcutName}...`, "fa-solid fa-cloud-arrow-up");
+
+  // 1. Launch the shortcut to upload active profile metrics to the cloud in background
+  setTimeout(() => {
+    window.location.href = url;
+  }, 200);
+
+  // 2. Poll & update data for both profiles in the cloud
+  setTimeout(async () => {
+    try {
+      showIosToast("📥 Actualizando datos de ambos perfiles desde la Nube...", "fa-solid fa-arrows-rotate");
+      await pullFromCloud(true);
+      renderAll();
+    } catch(e) {}
+  }, 4000);
+}
+window.syncHealthShortcutAndCloud = syncHealthShortcutAndCloud;
 
 async function launchIosShortcutSync(isAuto = false, mode = 'health') {
   triggerHapticTouch();
