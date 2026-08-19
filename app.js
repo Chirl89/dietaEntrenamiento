@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.8';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.9';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1232,10 +1232,10 @@ function getShortcutCloudUrl(mode = 'health', customPid = null) {
   const channel = `${key}_${pid}`;
 
   if (mode === 'workout') {
-    const payload = `{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":[Calorias_Entreno],"duration":[Duracion_Entreno],"avgHr":[FC_Entreno],"kcal":[Calorias_Activas],"steps":[Pasos],"hr":[Ritmo_Cardiaco],"dist":[Distancia],"exMin":[Minutos_Ejercicio]}`;
+    const payload = `{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":"[Calorias_Entreno]","duration":"[Duracion_Entreno]","avgHr":"[FC_Entreno]","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]"}`;
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/${encodeURIComponent(payload)}`;
   } else {
-    const payload = `{"author":"${pid}","kcal":[Calorias_Activas],"steps":[Pasos],"hr":[Ritmo_Cardiaco],"dist":[Distancia],"exMin":[Minutos_Ejercicio]}`;
+    const payload = `{"author":"${pid}","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]"}`;
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/${encodeURIComponent(payload)}`;
   }
 }
