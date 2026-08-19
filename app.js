@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.0';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.1';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -1166,9 +1166,9 @@ function getShortcutUrl(mode = 'health') {
   } catch(e) {}
 
   if (mode === 'workout') {
-    return `${baseUrl}?syncWatch=true&workout=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&exMin=[Minutos_Ejercicio]&dist=[Distancia_Km]&stand=[Horas_De_Pie]&workoutKcal=[Calorias_Entrenamiento]&duration=[Duracion_Minutos]&avgHr=[FC_Entrenamiento_Media]&maxHr=[FC_Entrenamiento_Max]`;
+    return `${baseUrl}?syncWatch=true&workout=true&day=Hoy&workoutKcal=[Calorias_Entreno]&duration=[Duracion_Minutos]&avgHr=[FC_Entreno_Media]&maxHr=[FC_Entreno_Max]&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&dist=[Distancia_Km]&exMin=[Minutos_Ejercicio]&stand=[Horas_De_Pie]&device=Apple+Watch`;
   } else {
-    return `${baseUrl}?syncWatch=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&exMin=[Minutos_Ejercicio]&dist=[Distancia_Km]&stand=[Horas_De_Pie]`;
+    return `${baseUrl}?syncWatch=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Pulso_Promedio]&dist=[Distancia_Km]&exMin=[Minutos_Ejercicio]&stand=[Horas_De_Pie]&maxHr=[FC_Maxima]&device=Apple+Watch`;
   }
 }
 
@@ -1178,10 +1178,10 @@ function getShortcutCloudUrl(mode = 'health', customPid = null) {
   const channel = `${key}_${pid}`;
 
   if (mode === 'workout') {
-    const payload = `{"author":"${pid}","workout":true,"workoutKcal":[Calorias_Entreno],"duration":[Duracion_Minutos],"avgHr":[FC_Entreno_Media],"maxHr":[FC_Entreno_Max],"steps":[Pasos],"kcal":[Calorias_Activas],"exerciseMin":[Minutos_Ejercicio],"hr":[Pulso_Promedio],"day":"Hoy"}`;
+    const payload = `{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":[Calorias_Entreno],"duration":[Duracion_Minutos],"avgHr":[FC_Entreno_Media],"maxHr":[FC_Entreno_Max],"kcal":[Calorias_Activas],"steps":[Pasos],"hr":[Pulso_Promedio],"dist":[Distancia_Km],"exMin":[Minutos_Ejercicio],"stand":[Horas_De_Pie],"deviceName":"Apple Watch"}`;
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/${encodeURIComponent(payload)}`;
   } else {
-    const payload = `{"author":"${pid}","steps":[Pasos],"kcal":[Calorias_Activas],"exerciseMin":[Minutos_Ejercicio],"hr":[Pulso_Promedio]}`;
+    const payload = `{"author":"${pid}","kcal":[Calorias_Activas],"steps":[Pasos],"hr":[Pulso_Promedio],"dist":[Distancia_Km],"exMin":[Minutos_Ejercicio],"stand":[Horas_De_Pie],"maxHr":[FC_Maxima],"deviceName":"Apple Watch"}`;
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/${encodeURIComponent(payload)}`;
   }
 }
@@ -1438,14 +1438,16 @@ async function testSimulatedBackgroundCloudSync() {
 
   const randomKcal = Math.floor(520 + Math.random() * 220);
   const randomSteps = Math.floor(8800 + Math.random() * 3800);
+  const randomDist = parseFloat((randomSteps * 0.00075).toFixed(2));
   const randomHr = Math.floor(70 + Math.random() * 16);
   const randomExMin = Math.floor(35 + Math.random() * 25);
+  const randomStand = Math.floor(8 + Math.random() * 6);
   const workoutKcal = Math.floor(390 + Math.random() * 120);
   const workoutHr = Math.floor(140 + Math.random() * 16);
 
-  addSyncConsoleLog(`🧪 [SIMULADOR ATAJO EN 2º PLANO] Enviando telemetría HTTP de Salud de ${authorName} a la Nube...`, "info");
+  addSyncConsoleLog(`🧪 [SIMULADOR ATAJO EN 2º PLANO] Enviando telemetría completa de Salud (${randomSteps} pasos, ${randomKcal} kcal, ${randomDist} km, ${randomExMin} min ejerc, ${randomStand}h de pie) de ${authorName} a la Nube...`, "info");
   if (typeof showIosToast === 'function') {
-    showIosToast(`🧪 <strong>Simulando Atajo en 2º Plano:</strong> Enviando datos a la nube...`, "fa-solid fa-cloud-arrow-up");
+    showIosToast(`🧪 <strong>Simulando Atajo en 2º Plano:</strong> Enviando métricas completas a la nube...`, "fa-solid fa-cloud-arrow-up");
   }
 
   const payload = {
@@ -1455,12 +1457,20 @@ async function testSimulatedBackgroundCloudSync() {
     day: todayDay,
     steps: randomSteps,
     kcal: randomKcal,
+    dist: randomDist,
+    distanceKm: randomDist,
     exerciseMin: randomExMin,
+    exMin: randomExMin,
     hr: randomHr,
+    avgHr: randomHr,
+    stand: randomStand,
+    standHours: randomStand,
+    maxHr: workoutHr + 24,
     workoutKcal: workoutKcal,
     duration: randomExMin,
-    avgHr: workoutHr,
-    maxHr: workoutHr + 22,
+    workoutAvgHr: workoutHr,
+    workoutMaxHr: workoutHr + 22,
+    deviceName: `Apple Watch (${authorName})`,
     timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs"
   };
 
@@ -1470,7 +1480,7 @@ async function testSimulatedBackgroundCloudSync() {
     const pnPubUrl = `https://ps.pubnub.com/publish/demo/demo/0/${pnChannel}/0/${encodedMsg}`;
     const res = await fetch(pnPubUrl);
     if (res.ok) {
-      addSyncConsoleLog(`✅ Simulador: Mensaje de Atajo en 2º Plano inyectado en la Nube (${pnChannel})`, "success");
+      addSyncConsoleLog(`✅ Simulador: Mensaje con todas las variables inyectado en la Nube (${pnChannel})`, "success");
       setTimeout(() => {
         pullFromCloud(true);
       }, 500);
@@ -2343,39 +2353,57 @@ function mergeCloudDataIntoAppState(cloudData) {
 
   // 1. Direct Apple Watch Metrics (Background Shortcuts / Cloud REST API)
   let directMetricsUpdated = false;
-  const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories);
+  const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories ?? cloudData.calorias);
   if (kcalVal !== null) {
     m.moveKcal = kcalVal;
     directMetricsUpdated = true;
   }
 
-  const stepsVal = parseSmartMetricValue(cloudData.steps);
+  const stepsVal = parseSmartMetricValue(cloudData.steps ?? cloudData.pasos);
   if (stepsVal !== null) {
     m.steps = stepsVal;
     m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
     directMetricsUpdated = true;
   }
 
-  const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.heartRate ?? cloudData.avgHr);
+  const distVal = parseSmartMetricFloatValue(cloudData.dist ?? cloudData.distanceKm ?? cloudData.distance ?? cloudData.distancia);
+  if (distVal !== null) {
+    m.distanceKm = distVal;
+    directMetricsUpdated = true;
+  }
+
+  const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.heartRate ?? cloudData.avgHr ?? cloudData.pulso ?? cloudData.ritmoCardiaco);
   if (hrVal !== null) {
     m.hr = hrVal;
     directMetricsUpdated = true;
   }
 
-  const exMinVal = parseSmartMetricValue(cloudData.exerciseMin ?? cloudData.durationMin ?? cloudData.exMin);
+  const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.durationMin ?? cloudData.minutosEjercicio);
   if (exMinVal !== null) {
     m.exerciseMin = exMinVal;
     directMetricsUpdated = true;
   }
 
-  const maxHrVal = parseSmartMetricValue(cloudData.maxHr);
+  const standVal = parseSmartMetricValue(cloudData.stand ?? cloudData.standHours ?? cloudData.horasDePie);
+  if (standVal !== null) {
+    m.standHours = standVal;
+    directMetricsUpdated = true;
+  }
+
+  const maxHrVal = parseSmartMetricValue(cloudData.maxHr ?? cloudData.fcMaxima);
   if (maxHrVal !== null) {
     m.maxHr = maxHrVal;
     directMetricsUpdated = true;
   }
 
-  if (cloudData.deviceName) {
-    m.deviceName = cloudData.deviceName;
+  const restingHrVal = parseSmartMetricValue(cloudData.restingHr ?? cloudData.hrReposo ?? cloudData.fcReposo);
+  if (restingHrVal !== null) {
+    m.restingHr = restingHrVal;
+    directMetricsUpdated = true;
+  }
+
+  if (cloudData.deviceName || cloudData.device) {
+    m.deviceName = cloudData.deviceName || cloudData.device;
     directMetricsUpdated = true;
   }
 
