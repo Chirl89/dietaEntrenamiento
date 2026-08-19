@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Application CSS -->
-  <link rel="stylesheet" href="styles.css?v=0.7.2">
+  <link rel="stylesheet" href="styles.css?v=0.7.3">
   
   <!-- Chart.js for progress graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -32,7 +32,7 @@
   <header class="ios-top-bar">
     <div class="ios-header-brand">
       <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
-      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.7.2</span></span>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.7.3</span></span>
     </div>
 
     <div class="ios-header-actions">
@@ -60,7 +60,7 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div>
-            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.7.2</span></div>
+            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.7.3</span></div>
             <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
           </div>
         </div>
@@ -113,7 +113,7 @@
           <div>
             <div class="user-pill-name" id="sidebar-watch-user">Carlos (Series 9)</div>
             <div class="user-pill-status" style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-              <span> Salud • v0.7.2</span>
+              <span> Salud • v0.7.3</span>
               <span id="cloud-status-badge" class="cloud-status-badge"><i class="fa-solid fa-cloud"></i> Nube Conectada</span>
             </div>
           </div>
@@ -138,6 +138,11 @@
           <div class="summary-watch-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
               <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;" id="summary-watch-sync-time">Sincronizado hace 0 segundos</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button type="button" class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.76rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: var(--accent-cyan); border-radius: 8px;" onclick="openManualMetricsModal()" title="Editar o calibrar los pasos y métricas de este panel de forma manual">
+                <i class="fa-solid fa-pen-to-square"></i> Calibrar Pasos Manuales
+              </button>
             </div>
           </div>
 
@@ -250,6 +255,121 @@
               <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem;"></i>
             </div>
             <p style="font-size: 0.8rem; color: var(--text-secondary);">Revisa los ejercicios asignados para la sesión.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SUBTAB 2: RESUMEN REPLICA (NUBE / SEGUNDO PLANO) -->
+      <section id="summary-replica-view" class="view-panel">
+        <div class="glass-card summary-watch-card" style="margin-bottom: 1.5rem; padding: 1.25rem; border-color: rgba(56, 189, 248, 0.3);">
+          <div class="summary-watch-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="replica-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); padding: 0.25rem 0.65rem; border-radius: 6px; font-weight: 700; font-size: 0.78rem; border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; gap: 0.35rem;">
+                  <i class="fa-solid fa-cloud"></i> Réplica Nube (Atajo en 2º Plano)
+                </span>
+                <span id="summary-replica-user-badge" style="font-size: 0.82rem; color: var(--text-primary); font-weight: 700;">Carlos</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; margin-top: 0.35rem;" id="summary-replica-sync-time">Última subida a la nube: N/A</p>
+            </div>
+            
+            <!-- ACTIONS IN REPLICA SUBTAB -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669); color: #fff; border-radius: 8px;" onclick="applyReplicaToPrimary()" title="Copiar y aplicar estos datos de Réplica al panel Principal">
+                <i class="fa-solid fa-file-import"></i> Aplicar a Principal
+              </button>
+              <button type="button" class="btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-cyan), #2563eb); color: #fff; border-radius: 8px;" onclick="testSimulatedBackgroundCloudSync()" title="Simular nueva subida en 2º plano a la nube">
+                <i class="fa-solid fa-flask"></i> Probar Subida
+              </button>
+            </div>
+          </div>
+
+          <!-- BANNER EXPLICATIVO -->
+          <div style="margin-bottom: 1.25rem; padding: 0.65rem 0.9rem; background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--accent-cyan); border-radius: 8px; font-size: 0.82rem; line-height: 1.4; color: #cbd5e1;">
+            <strong style="color: var(--accent-cyan);"><i class="fa-solid fa-circle-info"></i> Subpestaña de Réplica:</strong> Aquí se almacenan y muestran de forma independiente las mediciones recibidas en segundo plano desde el nuevo Atajo de la nube. Tus datos en el panel <strong>Principal</strong> (manuales o por Safari) se mantienen intactos a menos que pulses <em>"Aplicar a Principal"</em>.
+          </div>
+
+          <!-- ACTIVITY RINGS & METRICS IN REPLICA -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; align-items: center;">
+            
+            <!-- RINGS SECTION -->
+            <div class="activity-rings-container" style="background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+              <div class="rings-wrapper">
+                <svg class="rings-svg" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" class="ring-bg move-bg" />
+                  <circle cx="60" cy="60" r="38" class="ring-bg exercise-bg" />
+                  <circle cx="60" cy="60" r="26" class="ring-bg steps-bg" />
+                  
+                  <circle cx="60" cy="60" r="50" class="ring-fg move-fg" id="replica-ring-move-circle" stroke-dasharray="314" stroke-dashoffset="60" />
+                  <circle cx="60" cy="60" r="38" class="ring-fg exercise-fg" id="replica-ring-exercise-circle" stroke-dasharray="238" stroke-dashoffset="30" />
+                  <circle cx="60" cy="60" r="26" class="ring-fg steps-fg" id="replica-ring-steps-circle" stroke-dasharray="163" stroke-dashoffset="20" />
+                </svg>
+                <div class="rings-center-icon">
+                  <i class="fa-solid fa-cloud" style="color: var(--accent-cyan);"></i>
+                </div>
+              </div>
+
+              <div class="rings-legend">
+                <div class="ring-legend-item move">
+                  <div class="legend-color-dot"></div>
+                  <div class="legend-text">
+                    <span class="legend-title">Movimiento (Réplica)</span>
+                    <span class="legend-val" id="replica-ring-move-val">-- / 600 kcal</span>
+                  </div>
+                </div>
+                <div class="ring-legend-item exercise">
+                  <div class="legend-color-dot"></div>
+                  <div class="legend-text">
+                    <span class="legend-title">Ejercicio (Réplica)</span>
+                    <span class="legend-val" id="replica-ring-exercise-val">-- / 30 min</span>
+                  </div>
+                </div>
+                <div class="ring-legend-item steps">
+                  <div class="legend-color-dot"></div>
+                  <div class="legend-text">
+                    <span class="legend-title">Pasos (Réplica)</span>
+                    <span class="legend-val" id="replica-ring-steps-val">-- / 10.000 pasos</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- METRICS CARDS -->
+            <div class="watch-metrics-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <div class="metric-card">
+                <div class="metric-icon hr-pulse"><i class="fa-solid fa-heart-pulse"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Ritmo Cardíaco</span>
+                  <span class="metric-value" id="replica-metric-hr">-- <small>BPM</small></span>
+                  <span class="metric-sub">Atajo Nube</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon steps"><i class="fa-solid fa-shoe-prints"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Pasos Réplica</span>
+                  <span class="metric-value" id="replica-metric-steps">--</span>
+                  <span class="metric-sub">Segundo Plano</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon dist"><i class="fa-solid fa-route"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Distancia</span>
+                  <span class="metric-value" id="replica-metric-dist">-- <small>km</small></span>
+                  <span class="metric-sub">Atajo Nube</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon kcal"><i class="fa-solid fa-fire"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Calorías Activas</span>
+                  <span class="metric-value" id="replica-metric-kcal">-- <small>kcal</small></span>
+                  <span class="metric-sub">Atajo Nube</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -906,10 +1026,10 @@
                 </div>
               </div>
               <div id="cloud-sync-status-text" style="font-size: 0.82rem; font-weight: 600; color: var(--accent-emerald); margin-bottom: 0.5rem;">
-                Estado: Conectado a la Nube (v0.7.2)
+                Estado: Conectado a la Nube (v0.7.3)
               </div>
               <div id="sync-diagnostic-console" style="font-family: monospace; font-size: 0.75rem; color: #a3e635; background: #090d16; padding: 0.6rem; border-radius: 6px; max-height: 120px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); white-space: pre-wrap;">
-⚡ fitduo_v2 sync engine v0.7.2 listo.
+⚡ fitduo_v2 sync engine v0.7.3 listo.
               </div>
             </div>
           </div>
@@ -1275,10 +1395,57 @@
     </div>
   </div>
 
+  <!-- MODAL DE CALIBRACIÓN / EDICIÓN MANUAL DE PASOS Y MÉTRICAS -->
+  <div id="manual-metrics-modal" class="modal-overlay" onclick="if(event.target.id==='manual-metrics-modal') closeManualMetricsModal()">
+    <div class="modal-card glass-modal" style="max-width: 460px;">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <i class="fa-solid fa-pen-to-square" style="color: var(--accent-emerald); font-size: 1.3rem;"></i>
+          <div>
+            <h3>Calibrar Métricas Manuales</h3>
+            <p id="manual-metrics-modal-subtitle">Actualiza los datos de tu panel Principal</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeManualMetricsModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="saveManualMetricsFromModal(event)">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label><i class="fa-solid fa-shoe-prints" style="color:var(--accent-emerald);"></i> Pasos</label>
+              <input type="number" id="manual-edit-steps" class="ios-input" required min="0" max="100000">
+            </div>
+            <div class="form-group">
+              <label><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías (kcal)</label>
+              <input type="number" id="manual-edit-kcal" class="ios-input" required min="0" max="10000">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label><i class="fa-solid fa-heart-pulse" style="color:var(--accent-cyan);"></i> Pulso (BPM)</label>
+              <input type="number" id="manual-edit-hr" class="ios-input" required min="30" max="250">
+            </div>
+            <div class="form-group">
+              <label><i class="fa-solid fa-stopwatch" style="color:var(--accent-amber);"></i> Min. Ejercicio</label>
+              <input type="number" id="manual-edit-exmin" class="ios-input" required min="0" max="600">
+            </div>
+          </div>
+          <div class="form-group">
+            <label><i class="fa-solid fa-route" style="color:var(--accent-purple);"></i> Distancia (km)</label>
+            <input type="number" step="0.01" id="manual-edit-dist" class="ios-input" required min="0" max="100">
+          </div>
+          <button type="submit" class="btn-save-calibration" style="margin-top: 1rem; width: 100%; background: var(--gradient-primary);">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar en Panel Principal
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- FLOATING IOS TOAST NOTIFICATIONS CONTAINER -->
   <div id="ios-toast-container" class="ios-toast-container"></div>
 
   <!-- Application Logic -->
-  <script type="module" src="app.js?v=0.7.2"></script>
+  <script type="module" src="app.js?v=0.7.3"></script>
 </body>
 </html>

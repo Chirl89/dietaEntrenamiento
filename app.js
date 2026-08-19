@@ -1,15 +1,21 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.2';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.3';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
 const LAST_ACTIVE_PROFILE_KEY = "FITDUO_LAST_ACTIVE_PROFILE";
 const DEVICE_DEFAULT_PROFILE_KEY = "FITDUO_DEVICE_DEFAULT_PROFILE";
 const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
+const LAST_CLOUD_REPLICA_KEY = "FITDUO_LAST_CLOUD_REPLICA";
 
 // INITIAL FALLBACK METRICS
 let defaultWatchMetrics = {
   he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2 },
   she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8 }
+};
+
+let defaultCloudReplica = {
+  he: { moveKcal: 480, exerciseMin: 35, steps: 8450, hr: 72, distanceKm: 6.2, lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" },
+  she: { moveKcal: 420, exerciseMin: 40, steps: 9120, hr: 68, distanceKm: 6.8, lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" }
 };
 
 try {
@@ -18,6 +24,12 @@ try {
     const parsedLastMetrics = JSON.parse(savedLastMetrics);
     if (parsedLastMetrics?.he) defaultWatchMetrics.he = { ...defaultWatchMetrics.he, ...parsedLastMetrics.he };
     if (parsedLastMetrics?.she) defaultWatchMetrics.she = { ...defaultWatchMetrics.she, ...parsedLastMetrics.she };
+  }
+  const savedReplica = localStorage.getItem(LAST_CLOUD_REPLICA_KEY);
+  if (savedReplica) {
+    const parsedReplica = JSON.parse(savedReplica);
+    if (parsedReplica?.he) defaultCloudReplica.he = { ...defaultCloudReplica.he, ...parsedReplica.he };
+    if (parsedReplica?.she) defaultCloudReplica.she = { ...defaultCloudReplica.she, ...parsedReplica.she };
   }
 } catch (e) {}
 
@@ -67,6 +79,7 @@ let appState = {
     syncIntervalSec: 6,
     lastGlobalSync: new Date().toISOString(),
     metrics: defaultWatchMetrics,
+    cloudReplica: defaultCloudReplica,
     syncLogs: []
   }
 };
@@ -188,6 +201,9 @@ function saveState() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
   if (appState.appleWatch?.metrics) {
     localStorage.setItem(LAST_REGISTERED_METRICS_KEY, JSON.stringify(appState.appleWatch.metrics));
+  }
+  if (appState.appleWatch?.cloudReplica) {
+    localStorage.setItem(LAST_CLOUD_REPLICA_KEY, JSON.stringify(appState.appleWatch.cloudReplica));
   }
   debouncedPushToCloud(1500);
 }
@@ -1334,6 +1350,113 @@ function switchShortcutMethodTab(methodName) {
       btnCloud.style.color = "#ffffff";
     }
     if (btnSafari) {
+function applyReplicaToPrimary(customPid = null) {
+  try { triggerHapticTouch(); } catch(e) {}
+  const pid = customPid || appState.activeProfileId || 'he';
+  const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
+  const rep = appState.appleWatch?.cloudReplica?.[pid];
+  const m = appState.appleWatch?.metrics?.[pid];
+
+  if (!rep || !m) {
+    showIosToast("⚠️ No hay datos de Réplica disponibles para aplicar.", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+
+  m.moveKcal = rep.moveKcal || m.moveKcal;
+  m.steps = rep.steps || m.steps;
+  m.distanceKm = rep.distanceKm || m.distanceKm;
+  m.hr = rep.hr || m.hr;
+  m.exerciseMin = rep.exerciseMin || m.exerciseMin;
+  appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
+  saveState();
+  renderAll();
+
+  showIosToast(`📥 <strong>Datos de Réplica aplicados a Principal</strong> (${m.steps.toLocaleString()} pasos, ${m.moveKcal} kcal para ${authorName}).`, "fa-solid fa-circle-check");
+}
+window.applyReplicaToPrimary = applyReplicaToPrimary;
+
+function openManualMetricsModal() {
+  try { triggerHapticTouch(); } catch(e) {}
+  const pid = appState.activeProfileId || 'he';
+  const p = appState.profiles[pid];
+  const m = appState.appleWatch?.metrics?.[pid];
+  if (!m) return;
+
+  const subtitle = document.getElementById("manual-metrics-modal-subtitle");
+  if (subtitle) subtitle.innerText = `Calibrar datos del panel Principal para ${p?.name || 'Usuario'}`;
+
+  const stepsInp = document.getElementById("manual-edit-steps");
+  if (stepsInp) stepsInp.value = m.steps;
+
+  const kcalInp = document.getElementById("manual-edit-kcal");
+  if (kcalInp) kcalInp.value = m.moveKcal;
+
+  const hrInp = document.getElementById("manual-edit-hr");
+  if (hrInp) hrInp.value = m.hr;
+
+  const exminInp = document.getElementById("manual-edit-exmin");
+  if (exminInp) exminInp.value = m.exerciseMin;
+
+  const distInp = document.getElementById("manual-edit-dist");
+  if (distInp) distInp.value = m.distanceKm;
+
+  const modal = document.getElementById("manual-metrics-modal");
+  if (modal) modal.classList.add("active");
+}
+window.openManualMetricsModal = openManualMetricsModal;
+
+function closeManualMetricsModal() {
+  try { triggerHapticTouch(); } catch(e) {}
+  const modal = document.getElementById("manual-metrics-modal");
+  if (modal) modal.classList.remove("active");
+}
+window.closeManualMetricsModal = closeManualMetricsModal;
+
+function saveManualMetricsFromModal(e) {
+  if (e) e.preventDefault();
+  try { triggerHapticTouch(); } catch(e) {}
+  const pid = appState.activeProfileId || 'he';
+  const m = appState.appleWatch?.metrics?.[pid];
+  if (!m) return;
+
+  const stepsVal = parseInt(document.getElementById("manual-edit-steps")?.value);
+  const kcalVal = parseInt(document.getElementById("manual-edit-kcal")?.value);
+  const hrVal = parseInt(document.getElementById("manual-edit-hr")?.value);
+  const exminVal = parseInt(document.getElementById("manual-edit-exmin")?.value);
+  const distVal = parseFloat(document.getElementById("manual-edit-dist")?.value);
+
+  if (!isNaN(stepsVal) && stepsVal >= 0) m.steps = stepsVal;
+  if (!isNaN(kcalVal) && kcalVal >= 0) m.moveKcal = kcalVal;
+  if (!isNaN(hrVal) && hrVal > 0) m.hr = hrVal;
+  if (!isNaN(exminVal) && exminVal >= 0) m.exerciseMin = exminVal;
+  if (!isNaN(distVal) && distVal >= 0) m.distanceKm = distVal;
+
+  appState.appleWatch.lastGlobalSync = new Date().toISOString();
+  saveState();
+  renderAll();
+  closeManualMetricsModal();
+
+  showIosToast(`💾 <strong>Métricas guardadas manualmente</strong> (${m.steps.toLocaleString()} pasos, ${m.moveKcal} kcal).`, "fa-solid fa-circle-check");
+}
+window.saveManualMetricsFromModal = saveManualMetricsFromModal;
+
+function switchShortcutMethodTab(methodName) {
+  try { triggerHapticTouch(); } catch(e) {}
+  updateShortcutUrlInputs();
+
+  const btnCloud = document.getElementById("shortcut-method-btn-cloud");
+  const btnSafari = document.getElementById("shortcut-method-btn-safari");
+  const paneCloud = document.getElementById("shortcut-method-pane-cloud");
+  const paneSafari = document.getElementById("shortcut-method-pane-safari");
+
+  if (methodName === 'cloud') {
+    if (btnCloud) {
+      btnCloud.className = "shortcut-tab-btn active";
+      btnCloud.style.background = "linear-gradient(135deg, var(--accent-cyan), #2563eb)";
+      btnCloud.style.color = "#ffffff";
+    }
+    if (btnSafari) {
       btnSafari.className = "shortcut-tab-btn";
       btnSafari.style.background = "transparent";
       btnSafari.style.color = "var(--text-secondary)";
@@ -1872,6 +1995,54 @@ function renderSummaryView() {
       `;
     }
   }
+
+  // Live Metrics & Rings for Réplica Subtab (Atajo Nube)
+  if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = defaultCloudReplica;
+  if (!appState.appleWatch.cloudReplica[pid]) appState.appleWatch.cloudReplica[pid] = { ...defaultCloudReplica[pid] };
+  const rep = appState.appleWatch.cloudReplica[pid];
+
+  const repUserBadge = document.getElementById("summary-replica-user-badge");
+  if (repUserBadge) repUserBadge.innerText = pName;
+
+  const repSyncTime = document.getElementById("summary-replica-sync-time");
+  if (repSyncTime) repSyncTime.innerText = `Última subida a la nube: ${formatSyncRelativeTime(rep.lastSync)}`;
+
+  const repHrEl = document.getElementById("replica-metric-hr");
+  if (repHrEl) repHrEl.innerHTML = `${rep.hr || 0} <small>BPM</small>`;
+
+  const repStepsEl = document.getElementById("replica-metric-steps");
+  if (repStepsEl) repStepsEl.innerText = (rep.steps || 0).toLocaleString();
+
+  const repDistEl = document.getElementById("replica-metric-dist");
+  if (repDistEl) repDistEl.innerHTML = `${rep.distanceKm || 0} <small>km</small>`;
+
+  const repKcalEl = document.getElementById("replica-metric-kcal");
+  if (repKcalEl) repKcalEl.innerHTML = `${rep.moveKcal || 0} <small>kcal</small>`;
+
+  // Rings (Réplica)
+  const repMoveGoal = m.moveGoal || m.targetKcal || 600;
+  const repMoveCircle = document.getElementById("replica-ring-move-circle");
+  const repMoveRatio = Math.min(1.2, (rep.moveKcal || 0) / repMoveGoal);
+  const repMoveOffset = Math.max(0, 314 - (314 * Math.min(1, repMoveRatio)));
+  if (repMoveCircle) repMoveCircle.style.strokeDashoffset = repMoveOffset;
+  const repMoveValEl = document.getElementById("replica-ring-move-val");
+  if (repMoveValEl) repMoveValEl.innerText = `${rep.moveKcal || 0} / ${repMoveGoal} kcal`;
+
+  const repExGoal = m.exerciseGoal || m.targetMin || 30;
+  const repExCircle = document.getElementById("replica-ring-exercise-circle");
+  const repExRatio = Math.min(1.2, (rep.exerciseMin || 0) / repExGoal);
+  const repExOffset = Math.max(0, 238 - (238 * Math.min(1, repExRatio)));
+  if (repExCircle) repExCircle.style.strokeDashoffset = repExOffset;
+  const repExValEl = document.getElementById("replica-ring-exercise-val");
+  if (repExValEl) repExValEl.innerText = `${rep.exerciseMin || 0} / ${repExGoal} min`;
+
+  const repStepsGoal = m.stepsGoal || m.targetSteps || 10000;
+  const repStepsCircle = document.getElementById("replica-ring-steps-circle");
+  const repStepsRatio = Math.min(1.2, (rep.steps || 0) / repStepsGoal);
+  const repStepsOffset = Math.max(0, 163 - (163 * Math.min(1, repStepsRatio)));
+  if (repStepsCircle) repStepsCircle.style.strokeDashoffset = repStepsOffset;
+  const repStepsValEl = document.getElementById("replica-ring-steps-val");
+  if (repStepsValEl) repStepsValEl.innerText = `${(rep.steps || 0).toLocaleString()} / ${repStepsGoal.toLocaleString()} pasos`;
 }
 
 // RENDER PROFILE & MACROS
@@ -2343,62 +2514,56 @@ function mergeCloudDataIntoAppState(cloudData) {
   if (!appState.appleWatch.metrics) appState.appleWatch.metrics = defaultWatchMetrics;
   if (!appState.appleWatch.metrics[author]) appState.appleWatch.metrics[author] = { ...defaultWatchMetrics[author] };
 
-  const m = appState.appleWatch.metrics[author];
+  if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = defaultCloudReplica;
+  if (!appState.appleWatch.cloudReplica[author]) appState.appleWatch.cloudReplica[author] = { ...defaultCloudReplica[author] };
 
-  // 1. Direct Apple Watch Metrics (Background Shortcuts / Cloud REST API)
-  let directMetricsUpdated = false;
+  // Full backup state import (from JSON file or full cloud backup)
+  if (cloudData.appleWatch?.metrics && cloudData.profiles) {
+    if (cloudData.appleWatch.metrics[author]) {
+      appState.appleWatch.metrics[author] = { ...appState.appleWatch.metrics[author], ...cloudData.appleWatch.metrics[author] };
+    }
+    if (cloudData.appleWatch.cloudReplica?.[author]) {
+      appState.appleWatch.cloudReplica[author] = { ...appState.appleWatch.cloudReplica[author], ...cloudData.appleWatch.cloudReplica[author] };
+    }
+    if (cloudData.completedWorkouts?.[author]) {
+      appState.completedWorkouts[author] = { ...appState.completedWorkouts[author], ...cloudData.completedWorkouts[author] };
+    }
+    hasChanges = true;
+  }
+
+  // 1. Direct Background Shortcut Telemetry -> Saved strictly in cloudReplica (Leaving Principal untouched)
+  const rep = appState.appleWatch.cloudReplica[author];
+  let replicaMetricsUpdated = false;
+
   const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories ?? cloudData.calorias);
   if (kcalVal !== null) {
-    m.moveKcal = kcalVal;
-    directMetricsUpdated = true;
+    rep.moveKcal = kcalVal;
+    replicaMetricsUpdated = true;
   }
 
   const stepsVal = parseSmartMetricValue(cloudData.steps ?? cloudData.pasos);
   if (stepsVal !== null) {
-    m.steps = stepsVal;
-    m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
-    directMetricsUpdated = true;
+    rep.steps = stepsVal;
+    rep.distanceKm = parseFloat((rep.steps * 0.00075).toFixed(2));
+    replicaMetricsUpdated = true;
   }
 
   const distVal = parseSmartMetricFloatValue(cloudData.dist ?? cloudData.distanceKm ?? cloudData.distance ?? cloudData.distancia);
   if (distVal !== null) {
-    m.distanceKm = distVal;
-    directMetricsUpdated = true;
+    rep.distanceKm = distVal;
+    replicaMetricsUpdated = true;
   }
 
   const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.heartRate ?? cloudData.avgHr ?? cloudData.pulso ?? cloudData.ritmoCardiaco);
   if (hrVal !== null) {
-    m.hr = hrVal;
-    directMetricsUpdated = true;
+    rep.hr = hrVal;
+    replicaMetricsUpdated = true;
   }
 
   const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.durationMin ?? cloudData.minutosEjercicio);
   if (exMinVal !== null) {
-    m.exerciseMin = exMinVal;
-    directMetricsUpdated = true;
-  }
-
-  const standVal = parseSmartMetricValue(cloudData.stand ?? cloudData.standHours ?? cloudData.horasDePie);
-  if (standVal !== null) {
-    m.standHours = standVal;
-    directMetricsUpdated = true;
-  }
-
-  const maxHrVal = parseSmartMetricValue(cloudData.maxHr ?? cloudData.fcMaxima);
-  if (maxHrVal !== null) {
-    m.maxHr = maxHrVal;
-    directMetricsUpdated = true;
-  }
-
-  const restingHrVal = parseSmartMetricValue(cloudData.restingHr ?? cloudData.hrReposo ?? cloudData.fcReposo);
-  if (restingHrVal !== null) {
-    m.restingHr = restingHrVal;
-    directMetricsUpdated = true;
-  }
-
-  if (cloudData.deviceName || cloudData.device) {
-    m.deviceName = cloudData.deviceName || cloudData.device;
-    directMetricsUpdated = true;
+    rep.exerciseMin = exMinVal;
+    replicaMetricsUpdated = true;
   }
 
   // Direct Weight log from cloud
@@ -2426,7 +2591,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     const wDur = parseSmartMetricValue(cloudData.workoutDuration ?? cloudData.duration ?? cloudData.dur) ?? (exMinVal || 45);
     const wKcal = parseSmartMetricValue(cloudData.workoutKcal ?? cloudData.wKcal) ?? (kcalVal || 350);
     const wAvgHr = parseSmartMetricValue(cloudData.workoutAvgHr ?? cloudData.avgHr) ?? (hrVal || 140);
-    const wMaxHr = parseSmartMetricValue(cloudData.workoutMaxHr ?? cloudData.maxHr) ?? (m.maxHr || (wAvgHr + 20));
+    const wMaxHr = parseSmartMetricValue(cloudData.workoutMaxHr ?? cloudData.maxHr) ?? (rep.maxHr || (wAvgHr + 20));
     const timeStr = cloudData.timeStr || (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
 
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
@@ -2435,7 +2600,7 @@ function mergeCloudDataIntoAppState(cloudData) {
     appState.completedWorkouts[author][targetDay] = {
       done: true,
       watchData: {
-        deviceName: m.deviceName || `Apple Watch (${authorName})`,
+        deviceName: `Apple Watch (${authorName})`,
         durationMin: wDur,
         kcal: wKcal,
         avgHr: wAvgHr,
@@ -2444,22 +2609,22 @@ function mergeCloudDataIntoAppState(cloudData) {
         autoSync: true
       }
     };
-    directMetricsUpdated = true;
+    replicaMetricsUpdated = true;
   }
 
-  if (directMetricsUpdated) {
+  if (replicaMetricsUpdated) {
     hasChanges = true;
-    appState.appleWatch.syncMode = "real";
-    appState.appleWatch.lastGlobalSync = new Date().toISOString();
+    rep.lastSync = new Date().toISOString();
+    rep.source = "Atajo Nube en 2º Plano";
 
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     appState.appleWatch.syncLogs.unshift({
       timestamp: timeStr,
-      device: m.deviceName || `Apple Watch (${authorName})`,
-      hr: m.hr,
-      kcal: m.moveKcal,
-      steps: m.steps,
-      status: isWorkoutSync ? `Entrenamiento + Salud (${authorName}) en 2º Plano (Nube)` : `Salud de ${authorName} en 2º Plano (Nube)`
+      device: `Apple Watch (${authorName})`,
+      hr: rep.hr,
+      kcal: rep.moveKcal,
+      steps: rep.steps,
+      status: `☁️ Réplica Nube (${authorName}): ${rep.steps.toLocaleString()} pasos, ${rep.moveKcal} kcal`
     });
     if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
   }
