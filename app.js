@@ -1,12 +1,13 @@
 /**
- * FitDuo & Collie Coach - Main Orchestrator (v0.8.0)
+ * FitDuo & Collie Coach - Main Orchestrator (v0.8.1)
  * Modularized Architecture
  */
 
 import { appState, LOCAL_STORAGE_KEY, LAST_ACTIVE_PROFILE_KEY, DEVICE_DEFAULT_PROFILE_KEY, loadSavedState, saveState, triggerHapticTouch, showIosToast, addDebugLog, clearDebugLogs, copyDebugLogsToClipboard, renderDebugLogsView, getMasterProfileId, getTodayDayName } from './js/state.js';
 import { switchCategory, renderSubtabSegmentedControl, updateProfileSwitcherButtonsUI, renderAll, switchProfile, showTab, setDeviceDefaultProfile, checkDeviceIdentityBanner, getProfileShortName, updateUIProfileNames } from './js/navigation.js';
 import { isCloudSyncing, pushToCloud, pullFromCloud, syncNowWithCloud, saveCustomCloudKeyFromInput, resetDefaultCloudKey, exportSyncToken, promptImportSyncToken, exportBackupJson, triggerImportBackupJson, handleBackupFileSelect, copyDiagnosticLogs, forceAppRefresh } from './js/cloudSync.js';
-import { startAppleWatchAutoSync, openAppleWatchModal, closeAppleWatchModal, closeAppleWatchModalOnBackdrop, toggleAutoSync, triggerManualSync, checkUrlParamsForWatchSync, checkClipboardForWatchSync, checkAutoLaunchShortcutOnOpen, syncHealthShortcutAndCloud, launchIosShortcutSync, copyShortcutUrlToClipboard, copyShortcutCloudUrlToClipboard, openHealthSyncModal, closeHealthSyncModal, applyReplicaToPrimary, openManualMetricsModal, closeManualMetricsModal, saveManualMetricsFromModal, switchShortcutMethodTab, switchShortcutTab, testSimulatedHealthSync, testSimulatedWorkoutSync, resetMetricsToZeroUsingUrlShortcut, testSimulatedBackgroundCloudSync, updateAppleWatchModalUI, handleHealthFileImport, setAppleWatchSyncMode, updateShortcutUrlInputs, formatSyncRelativeTime } from './js/appleWatch.js';
+import { startAppleWatchAutoSync, openAppleWatchModal, closeAppleWatchModal, closeAppleWatchModalOnBackdrop, toggleAutoSync, triggerManualSync, checkUrlParamsForWatchSync, checkClipboardForWatchSync, checkAutoLaunchShortcutOnOpen, syncHealthShortcutAndCloud, launchIosShortcutSync, copyShortcutUrlToClipboard, copyShortcutCloudUrlToClipboard, openHealthSyncModal, closeHealthSyncModal, applyReplicaToPrimary, openManualMetricsModal, closeManualMetricsModal, saveManualMetricsFromModal, switchShortcutMethodTab, switchShortcutTab, testSimulatedHealthSync, testSimulatedWorkoutSync, resetMetricsToZeroUsingUrlShortcut, testSimulatedBackgroundCloudSync, updateAppleWatchModalUI, handleHealthFileImport, setAppleWatchSyncMode, updateShortcutUrlInputs } from './js/appleWatch.js';
+import { formatSyncRelativeTime } from './js/utils.js';
 import { renderSummaryView, renderProfileView } from './js/views/summaryView.js';
 import { renderNutritionMenuView, renderNutritionRecipesView, renderShoppingView, selectDay, selectDayFromDropdown, openTodayNutrition, toggleShoppingItem, copyShoppingList, setRecipesRange, setShoppingRange, addExclusion, removeExclusion } from './js/views/nutritionView.js';
 import { renderWorkoutsView, renderWorkoutTracker, openTodayWorkouts, selectWorkoutDay, selectWorkoutDayFromDropdown, toggleWorkoutDay, resetWorkoutWeek, recordWatchWorkoutForDay, syncAppleWatchData, openEditWorkoutWatchModal, closeEditWorkoutWatchModal, saveWorkoutWatchDataFromModal, connectBluetoothHR } from './js/views/workoutsView.js';
@@ -15,7 +16,7 @@ import { renderProgressView, addWeightEntry } from './js/views/progressView.js';
 import { renderSettingsView, populateSettingsInputs, saveCustomSettings } from './js/views/settingsView.js';
 import { sendChatMessage, handleChatKeyPress } from './js/views/chatView.js';
 
-// Expose state and functions to window for HTML inline event handlers
+// Expose state and functions to window for HTML inline event handlers immediately
 window.appState = appState;
 window.switchProfile = switchProfile;
 window.syncNowWithCloud = syncNowWithCloud;
@@ -111,8 +112,8 @@ window.checkDeviceIdentityBanner = checkDeviceIdentityBanner;
 window.getProfileShortName = getProfileShortName;
 window.isCloudSyncing = isCloudSyncing;
 
-// DOM Initialization
-document.addEventListener("DOMContentLoaded", () => {
+// Robust App Bootstrapping function
+function initApp() {
   loadSavedState();
   checkDeviceIdentityBanner();
 
@@ -124,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     pullFromCloud(false);
   }, 45000);
 
-  addDebugLog("⚡ App FitDuo arrancada (DOMContentLoaded)", "info", { url: window.location.href, userAgent: navigator.userAgent });
+  addDebugLog("⚡ App FitDuo arrancada", "info", { url: window.location.href, userAgent: navigator.userAgent });
 
   const syncedFromUrl = checkUrlParamsForWatchSync();
   if (!syncedFromUrl) {
@@ -152,7 +153,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   startAppleWatchAutoSync();
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
 
 // Storage, Visibility & Lifecycle Listeners
 window.addEventListener("storage", (e) => {

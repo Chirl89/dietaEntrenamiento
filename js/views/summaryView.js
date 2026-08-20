@@ -1,27 +1,7 @@
 import { appState, getTodayDayName } from '../state.js';
-import { formatSmartSleepValue, updateShortcutUrlInputs } from '../appleWatch.js';
+import { formatSmartSleepValue, formatSyncRelativeTime } from '../utils.js';
+import { updateShortcutUrlInputs } from '../appleWatch.js';
 import { isDayCompleted, getDayWatchData, toggleWorkoutDay, renderWorkoutTracker } from './workoutsView.js';
-
-export function formatSyncRelativeTime(lastSyncDate) {
-  if (!lastSyncDate) return "Sincronizado hace 0 segundos";
-  const now = new Date();
-  const past = new Date(lastSyncDate);
-  const diffSec = Math.max(0, Math.floor((now - past) / 1000));
-
-  if (diffSec < 60) {
-    return `Sincronizado hace ${diffSec} segundos`;
-  }
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) {
-    return `Sincronizado hace ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`;
-  }
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) {
-    return `Sincronizado hace ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
-  }
-  const diffDays = Math.floor(diffHours / 24);
-  return `Sincronizado hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
-}
 
 export function renderSummaryView() {
   const pid = appState.activeProfileId;

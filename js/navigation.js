@@ -197,10 +197,18 @@ export function showTab(tabId, btnElement) {
     renderNutritionRecipesView();
   } else if (tabId === 'nutrition-shopping-view') {
     renderShoppingView();
+  } else if (tabId === 'workouts-view') {
+    renderWorkoutsView();
+  } else if (tabId === 'workouts-boo-view') {
+    renderBooWorkoutView();
   } else if (tabId === 'apple-watch-view') {
     updateAppleWatchModalUI();
   } else if (tabId === 'settings-view') {
     renderSettingsView();
+  } else if (tabId === 'progress-view') {
+    renderProgressView();
+  } else if (tabId === 'logs-view') {
+    renderDebugLogsView();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });

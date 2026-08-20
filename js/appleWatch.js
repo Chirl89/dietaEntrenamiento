@@ -1,5 +1,6 @@
-import { appState, defaultWatchMetrics, defaultCloudReplica, LOCAL_STORAGE_KEY, LAST_ACTIVE_PROFILE_KEY, getMasterProfileId, saveState, triggerHapticTouch, showIosToast, getTodayDayName, addDebugLog } from './state.js';
+import { appState, defaultWatchMetrics, defaultCloudReplica, LAST_ACTIVE_PROFILE_KEY, getMasterProfileId, saveState, triggerHapticTouch, showIosToast, getTodayDayName, addDebugLog } from './state.js';
 import { pushToCloud, pullFromCloud, getCloudSyncKey, addSyncConsoleLog } from './cloudSync.js';
+import { parseSmartMetricValue, parseSmartMetricFloatValue, parseSmartMetricArray, formatSmartSleepValue } from './utils.js';
 
 let autoSyncIntervalTimer = null;
 
@@ -118,121 +119,6 @@ export function triggerManualSync() {
   showIosToast(` ¡Datos de Apple Watch (${pName}) verificados! (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-solid fa-circle-check");
 }
 
-// SMART 7-DAY METRIC PARSERS
-export function parseSmartMetricValue(val) {
-  if (val === null || val === undefined) return null;
-  if (typeof val === 'number') {
-    if (isNaN(val) || !isFinite(val)) return null;
-    if (val > 50000) return Math.round(val / 4184);
-    return Math.round(val);
-  }
-  if (Array.isArray(val)) {
-    if (val.length === 0) return null;
-    const validNums = val.map(v => parseSmartMetricValue(v)).filter(v => v !== null && v >= 0);
-    if (validNums.length === 0) return null;
-    return validNums[validNums.length - 1];
-  }
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (trimmed === '0') return 0;
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null;
-    
-    const clean = trimmed.replace(/,/g, '.');
-    const floatVal = parseFloat(clean);
-    if (!isNaN(floatVal) && isFinite(floatVal)) {
-      if (floatVal > 50000) {
-        return Math.round(floatVal / 4184);
-      }
-      return Math.round(floatVal);
-    }
-
-    const match = clean.match(/(\d+(?:\.\d+)?)/);
-    if (match) {
-      const parsed = parseFloat(match[1]);
-      if (!isNaN(parsed) && isFinite(parsed)) {
-        if (parsed > 50000) return Math.round(parsed / 4184);
-        return Math.round(parsed);
-      }
-    }
-    return null;
-  }
-  return null;
-}
-
-export function parseSmartMetricFloatValue(val) {
-  if (val === null || val === undefined) return null;
-  if (typeof val === 'number') {
-    if (isNaN(val) || !isFinite(val)) return null;
-    if (val > 100) return parseFloat((val / 1000).toFixed(2));
-    return parseFloat(val.toFixed(2));
-  }
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (trimmed === '0' || trimmed === '0.0' || trimmed === '0.00') return 0;
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null;
-    const clean = trimmed.replace(/,/g, '.');
-    const floatVal = parseFloat(clean);
-    if (!isNaN(floatVal) && isFinite(floatVal)) {
-      if (floatVal > 100) {
-        return parseFloat((floatVal / 1000).toFixed(2));
-      }
-      return parseFloat(floatVal.toFixed(2));
-    }
-    const match = clean.match(/(\d+(?:\.\d+)?)/);
-    if (match) {
-      const parsed = parseFloat(match[1]);
-      if (!isNaN(parsed) && isFinite(parsed)) {
-        if (parsed > 100) return parseFloat((parsed / 1000).toFixed(2));
-        return parseFloat(parsed.toFixed(2));
-      }
-    }
-    return null;
-  }
-  return null;
-}
-
-export function parseSmartMetricArray(val) {
-  if (!val) return [];
-  if (Array.isArray(val)) return val.map(v => parseInt(v)).filter(v => !isNaN(v));
-  if (typeof val === 'string') {
-    return val.split(',').map(s => parseInt(s.trim())).filter(v => !isNaN(v));
-  }
-  const p = parseInt(val);
-  return isNaN(p) ? [] : [p];
-}
-
-export function formatSmartSleepValue(val) {
-  if (val === null || val === undefined || val === '') return '--';
-  if (typeof val === 'string') {
-    const s = val.trim();
-    if (s.startsWith('[') && s.endsWith(']')) return '--';
-    if (s === '0' || s === '0.0' || s === '0.00' || s === '0h' || s === '0m' || s === '0h 0m' || s === '0:00' || s === '-' || s === '--' || s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'nan') {
-      return '--';
-    }
-    if (s.toLowerCase().includes('h') || s.toLowerCase().includes('m') || s.includes(':')) {
-      return s;
-    }
-    const num = parseFloat(s.replace(',', '.'));
-    if (!isNaN(num)) val = num;
-    else return s;
-  }
-  if (typeof val === 'number') {
-    if (val <= 0 || isNaN(val) || !isFinite(val)) return '--';
-    if (val < 24) {
-      const hrs = Math.floor(val);
-      const mins = Math.round((val - hrs) * 60);
-      if (hrs === 0 && mins === 0) return '--';
-      return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
-    } else {
-      const hrs = Math.floor(val / 60);
-      const mins = Math.round(val % 60);
-      if (hrs === 0 && mins === 0) return '--';
-      return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
-    }
-  }
-  return String(val);
-}
-
 export function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], hrArr = []) {
   if (!Array.isArray(kcalArr) || kcalArr.length === 0) return;
   const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -296,7 +182,7 @@ export function checkUrlParamsForWatchSync() {
   }
 
   if (!appState.appleWatch) appState.appleWatch = {};
-  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = defaultWatchMetrics;
+  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = JSON.parse(JSON.stringify(defaultWatchMetrics));
   if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = { ...defaultWatchMetrics[pid] };
 
   const m = appState.appleWatch.metrics[pid];
@@ -448,7 +334,7 @@ export function checkUrlParamsForWatchSync() {
     appState.appleWatch.syncMode = "real";
     appState.appleWatch.lastGlobalSync = new Date().toISOString();
 
-    if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = defaultCloudReplica;
+    if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = JSON.parse(JSON.stringify(defaultCloudReplica));
     if (!appState.appleWatch.cloudReplica[pid]) appState.appleWatch.cloudReplica[pid] = { ...defaultCloudReplica[pid] };
     const rep = appState.appleWatch.cloudReplica[pid];
     rep.moveKcal = m.moveKcal;
@@ -474,7 +360,6 @@ export function checkUrlParamsForWatchSync() {
     });
     if (appState.appleWatch.syncLogs.length > 8) appState.appleWatch.syncLogs.pop();
 
-    appState.appleWatch.lastLocalSyncTimestamp = Date.now();
     saveState();
     pushToCloud(false);
     if (window.renderAll) window.renderAll();
@@ -495,6 +380,69 @@ export function checkUrlParamsForWatchSync() {
     }, 400);
 
     return true;
+  }
+
+  return false;
+}
+
+export async function checkClipboardForWatchSync(forceManual = false) {
+  addDebugLog("📋 Iniciando comprobación de datos de Salud desde el Portapapeles...", "info");
+
+  if (!navigator.clipboard || !navigator.clipboard.readText) {
+    addDebugLog("⚠️ El navegador no soporta la API navigator.clipboard.readText", "warning");
+    return false;
+  }
+
+  try {
+    const text = await navigator.clipboard.readText();
+    addDebugLog(`📥 TEXTO BRUTO LEÍDO DEL PORTAPAPELES (${text ? text.length : 0} caracteres)`, "clipboard", { rawText: text || "(Vacío)" });
+
+    if (!text || text.trim().length === 0) {
+      return false;
+    }
+
+    const pid = getMasterProfileId();
+    const m = appState.appleWatch.metrics[pid];
+
+    let updated = false;
+
+    if (text.includes("=") || text.includes("kcal") || text.includes("steps")) {
+      const qParams = new URLSearchParams(text.startsWith("?") ? text.slice(1) : text);
+      const kcalVal = parseSmartMetricValue(qParams.get("kcal") || qParams.get("moveKcal"));
+      if (kcalVal !== null) {
+        m.moveKcal = kcalVal;
+        updated = true;
+      }
+      const stepsVal = parseSmartMetricValue(qParams.get("steps"));
+      if (stepsVal !== null) {
+        m.steps = stepsVal;
+        m.distanceKm = parseFloat((m.steps * 0.00075).toFixed(2));
+        updated = true;
+      }
+      const hrVal = parseSmartMetricValue(qParams.get("hr") || qParams.get("avgHr"));
+      if (hrVal !== null) {
+        m.hr = hrVal;
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      appState.appleWatch.syncMode = "real";
+      appState.appleWatch.lastGlobalSync = new Date().toISOString();
+
+      saveState();
+      if (window.renderAll) window.renderAll();
+
+      const pName = appState.profiles[pid].name.split(" ")[0];
+      try {
+        await navigator.clipboard.writeText("");
+      } catch (clipErr) {}
+
+      showIosToast(`📋 <strong>Sincronización silenciosa:</strong> Datos de Apple Watch (${pName}) cargados desde Portapapeles`, "fa-solid fa-clipboard-check");
+      return true;
+    }
+  } catch(e) {
+    addDebugLog(`⚠️ Error leyendo portapapeles: ${e.message}`, "warning");
   }
 
   return false;
@@ -948,9 +896,7 @@ export async function testSimulatedBackgroundCloudSync() {
   const workoutHr = Math.floor(140 + Math.random() * 16);
 
   addSyncConsoleLog(`🧪 [SIMULADOR ATAJO EN 2º PLANO] Enviando telemetría de Salud (${randomSteps} pasos, ${randomKcal} kcal, ${randomDist} km, ${randomExMin} min ejerc, ${randomHr} bpm) de ${authorName} a la Nube...`, "info");
-  if (typeof showIosToast === 'function') {
-    showIosToast(`🧪 <strong>Simulando Atajo en 2º Plano:</strong> Enviando métricas a la nube...`, "fa-solid fa-cloud-arrow-up");
-  }
+  showIosToast(`🧪 <strong>Simulando Atajo en 2º Plano:</strong> Enviando métricas a la nube...`, "fa-solid fa-cloud-arrow-up");
 
   const payload = {
     author: masterPid,
@@ -1033,13 +979,11 @@ export function updateAppleWatchModalUI() {
   const tsEl = document.getElementById("watch-sync-timestamp");
   if (tsEl) tsEl.innerText = `Sincronizado: Hace ${timeDiffSec < 3 ? 'un instante' : timeDiffSec + ' seg'}`;
 
-  // Live Metrics Grid
   document.querySelectorAll("[id='watch-metric-hr']").forEach(el => el.innerHTML = `${m.hr} <small>BPM</small>`);
   document.querySelectorAll("[id='watch-metric-floors']").forEach(el => el.innerHTML = `${m.floors ?? 0} <small>pisos</small>`);
   document.querySelectorAll("[id='watch-metric-sleep']").forEach(el => el.innerHTML = `${formatSmartSleepValue(m.sleep)}`);
   document.querySelectorAll("[id='watch-metric-dist']").forEach(el => el.innerHTML = `${m.distanceKm} <small>km</small>`);
 
-  // Rings
   const moveGoal = m.moveGoal || m.targetKcal || 600;
   const moveRatio = Math.min(1.2, m.moveKcal / moveGoal);
   const moveOffset = Math.max(0, 314 - (314 * Math.min(1, moveRatio)));

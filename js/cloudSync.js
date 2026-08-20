@@ -1,5 +1,5 @@
-import { appState, defaultWatchMetrics, defaultCloudReplica, LOCAL_STORAGE_KEY, LAST_REGISTERED_METRICS_KEY, getMasterProfileId, saveState, triggerHapticTouch, showIosToast, getTodayDayName } from './state.js';
-import { parseSmartMetricValue, parseSmartMetricFloatValue, formatSmartSleepValue } from './appleWatch.js';
+import { appState, defaultWatchMetrics, defaultCloudReplica, LOCAL_STORAGE_KEY, LAST_REGISTERED_METRICS_KEY, getMasterProfileId, triggerHapticTouch, showIosToast, getTodayDayName } from './state.js';
+import { parseSmartMetricValue, parseSmartMetricFloatValue, formatSmartSleepValue, toUrlSafeB64, fromUrlSafeB64 } from './utils.js';
 
 export const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 export const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";
@@ -17,30 +17,6 @@ export function addSyncConsoleLog(message, type = "info") {
     consoleEl.textContent = logLine + consoleEl.textContent.slice(0, 1000);
   }
   console.log(`[SYNC CONSOLE ${type.toUpperCase()}] ${message}`);
-}
-
-export function toUrlSafeB64(jsonObj) {
-  try {
-    const str = JSON.stringify(jsonObj);
-    const b64 = btoa(unescape(encodeURIComponent(str)));
-    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  } catch (e) {
-    return "";
-  }
-}
-
-export function fromUrlSafeB64(b64Str) {
-  try {
-    if (!b64Str || typeof b64Str !== 'string') return null;
-    let base64 = b64Str.trim().replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) {
-      base64 += '=';
-    }
-    const jsonStr = decodeURIComponent(escape(atob(base64)));
-    const parsed = JSON.parse(jsonStr);
-    if (parsed && typeof parsed === 'object') return parsed;
-  } catch (e) {}
-  return null;
 }
 
 export async function cleanAndParseJsonFromCloud(rawText) {
@@ -85,7 +61,7 @@ export async function cleanAndParseJsonFromCloud(rawText) {
     } catch (eWh) {}
   }
 
-  // Priority 3: Handle ntfy.sh JSON poll stream (NDJSON / JSON lines)
+  // Priority 3: Handle ntfy.sh JSON poll stream
   if (text.includes('"message":') || text.includes('"event":')) {
     const lines = text.split('\n').filter(Boolean);
     for (let i = lines.length - 1; i >= 0; i--) {
@@ -158,10 +134,10 @@ export function mergeCloudDataIntoAppState(cloudData) {
   const authorName = author === 'he' ? 'Carlos' : author === 'she' ? 'Andrea' : author;
 
   if (!appState.appleWatch) appState.appleWatch = {};
-  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = defaultWatchMetrics;
+  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = JSON.parse(JSON.stringify(defaultWatchMetrics));
   if (!appState.appleWatch.metrics[author]) appState.appleWatch.metrics[author] = { ...defaultWatchMetrics[author] };
 
-  if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = defaultCloudReplica;
+  if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = JSON.parse(JSON.stringify(defaultCloudReplica));
   if (!appState.appleWatch.cloudReplica[author]) appState.appleWatch.cloudReplica[author] = { ...defaultCloudReplica[author] };
 
   if (cloudData.appleWatch?.metrics && cloudData.profiles) {

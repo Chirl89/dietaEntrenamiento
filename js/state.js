@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES } from '../data.js?v=0.8.0';
+import { INITIAL_PROFILES } from '../data.js?v=0.8.1';
 
 // STATE STORAGE KEYS
 export const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -8,12 +8,12 @@ export const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
 export const LAST_CLOUD_REPLICA_KEY = "FITDUO_LAST_CLOUD_REPLICA";
 
 // INITIAL FALLBACK METRICS
-export let defaultWatchMetrics = {
+export const defaultWatchMetrics = {
   he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2, floors: 0, sleep: "--" },
   she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8, floors: 0, sleep: "--" }
 };
 
-export let defaultCloudReplica = {
+export const defaultCloudReplica = {
   he: { moveKcal: 480, exerciseMin: 35, steps: 8450, hr: 72, distanceKm: 6.2, floors: 0, sleep: "--", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" },
   she: { moveKcal: 420, exerciseMin: 40, steps: 9120, hr: 68, distanceKm: 6.8, floors: 0, sleep: "--", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" }
 };
@@ -22,14 +22,14 @@ try {
   const savedLastMetrics = localStorage.getItem(LAST_REGISTERED_METRICS_KEY);
   if (savedLastMetrics) {
     const parsedLastMetrics = JSON.parse(savedLastMetrics);
-    if (parsedLastMetrics?.he) defaultWatchMetrics.he = { ...defaultWatchMetrics.he, ...parsedLastMetrics.he };
-    if (parsedLastMetrics?.she) defaultWatchMetrics.she = { ...defaultWatchMetrics.she, ...parsedLastMetrics.she };
+    if (parsedLastMetrics?.he) Object.assign(defaultWatchMetrics.he, parsedLastMetrics.he);
+    if (parsedLastMetrics?.she) Object.assign(defaultWatchMetrics.she, parsedLastMetrics.she);
   }
   const savedReplica = localStorage.getItem(LAST_CLOUD_REPLICA_KEY);
   if (savedReplica) {
     const parsedReplica = JSON.parse(savedReplica);
-    if (parsedReplica?.he) defaultCloudReplica.he = { ...defaultCloudReplica.he, ...parsedReplica.he };
-    if (parsedReplica?.she) defaultCloudReplica.she = { ...defaultCloudReplica.she, ...parsedReplica.she };
+    if (parsedReplica?.he) Object.assign(defaultCloudReplica.he, parsedReplica.he);
+    if (parsedReplica?.she) Object.assign(defaultCloudReplica.she, parsedReplica.she);
   }
 } catch (e) {}
 
@@ -39,12 +39,12 @@ export function getTodayDayName() {
   return days[idx];
 }
 
-// INITIAL STATE STRUCTURE
-export let appState = {
-  masterProfileId: "he", // 'he' (Carlos) or 'she' (Andrea) - Selected in Settings
-  activeProfileId: "he", // 'he' (Carlos) or 'she' (Andrea) - Visual view mode
+// INITIAL STATE STRUCTURE (STABLE OBJECT REFERENCE)
+export const appState = {
+  masterProfileId: "he",
+  activeProfileId: "he",
   profiles: JSON.parse(JSON.stringify(INITIAL_PROFILES)),
-  exclusions: [], // Kept for backward safety
+  exclusions: [],
   completedWorkouts: {
     he: {
       Lunes: { done: true, watchData: { deviceName: "Apple Watch (Carlos)", durationMin: 45, kcal: 430, avgHr: 142, maxHr: 168, timestamp: "09:30 hs", autoSync: true } },
@@ -61,9 +61,9 @@ export let appState = {
   activeDay: getTodayDayName(),
   activeWorkoutDay: getTodayDayName(),
   activeBooDay: getTodayDayName(),
-  recipesDaysRange: "5", // '5' (L-V) or '7' (L-D)
-  shoppingDaysRange: "5", // '5' (L-V) or '7' (L-D)
-  checkedShoppingItems: {}, // { "ingredientName": true/false }
+  recipesDaysRange: "5",
+  shoppingDaysRange: "5",
+  checkedShoppingItems: {},
   weightLogs: {
     he: [
       { date: "Semana -4", weight: 79.5 },
@@ -81,11 +81,12 @@ export let appState = {
     ]
   },
   appleWatch: {
+    syncMode: "real",
     autoSyncEnabled: true,
     syncIntervalSec: 6,
     lastGlobalSync: new Date().toISOString(),
-    metrics: defaultWatchMetrics,
-    cloudReplica: defaultCloudReplica,
+    metrics: JSON.parse(JSON.stringify(defaultWatchMetrics)),
+    cloudReplica: JSON.parse(JSON.stringify(defaultCloudReplica)),
     syncLogs: []
   },
   booProgress: {
@@ -99,7 +100,7 @@ export let appState = {
   debugLogs: []
 };
 
-// HELPER: GET MASTER PROFILE ID (LOCKED TO THIS SPECIFIC PHYSICAL DEVICE)
+// HELPER: GET MASTER PROFILE ID
 export function getMasterProfileId() {
   const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
   if (devicePref === 'he' || devicePref === 'she') {
@@ -114,13 +115,15 @@ export function loadSavedState() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      appState = { ...appState, ...parsed };
+      if (parsed && typeof parsed === 'object') {
+        Object.assign(appState, parsed);
+      }
     } catch (e) {
       console.warn("Could not parse saved state, using defaults.");
     }
   }
 
-  // Device-specific master profile memory preference (Fixed to physical device)
+  // Device-specific master profile memory preference
   const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
   if (devicePref === 'he' || devicePref === 'she') {
     appState.masterProfileId = devicePref;
@@ -128,7 +131,7 @@ export function loadSavedState() {
     if (!appState.masterProfileId) appState.masterProfileId = 'he';
   }
 
-  // Active visual profile preference (persist last viewed profile)
+  // Active visual profile preference
   const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
   if (lastProfile === 'he' || lastProfile === 'she') {
     appState.activeProfileId = lastProfile;
@@ -147,8 +150,22 @@ export function loadSavedState() {
   if (appState.profiles.dog.name === "Boo (Border Collie)") appState.profiles.dog.name = "Boo";
 
   // Ensure ring goals in metrics
+  if (!appState.appleWatch) {
+    appState.appleWatch = {
+      syncMode: "real",
+      autoSyncEnabled: true,
+      syncIntervalSec: 6,
+      lastGlobalSync: new Date().toISOString(),
+      metrics: JSON.parse(JSON.stringify(defaultWatchMetrics)),
+      cloudReplica: JSON.parse(JSON.stringify(defaultCloudReplica)),
+      syncLogs: []
+    };
+  }
+  if (!appState.appleWatch.metrics) {
+    appState.appleWatch.metrics = JSON.parse(JSON.stringify(defaultWatchMetrics));
+  }
+
   ['he', 'she'].forEach(pid => {
-    if (!appState.appleWatch.metrics) appState.appleWatch.metrics = defaultWatchMetrics;
     if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = { ...defaultWatchMetrics[pid] };
     const m = appState.appleWatch.metrics[pid];
     if (!m.moveGoal) m.moveGoal = m.targetKcal || (pid === 'he' ? 600 : 500);
@@ -158,7 +175,6 @@ export function loadSavedState() {
     if (!m.sleep || m.sleep === '7h 45m' || m.sleep === '8h 15m') m.sleep = '--';
   });
 
-  // Clean cloud replica legacy hardcoded demo metrics if present
   ['he', 'she'].forEach(pid => {
     if (appState.appleWatch?.cloudReplica?.[pid]) {
       const rep = appState.appleWatch.cloudReplica[pid];
@@ -178,21 +194,6 @@ export function loadSavedState() {
   }
   if (!appState.completedWorkouts.she) {
     appState.completedWorkouts.she = { Lunes: false, Martes: false, Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false };
-  }
-
-  // Ensure Apple Watch structure exists
-  if (!appState.appleWatch) {
-    appState.appleWatch = {
-      syncMode: "real",
-      autoSyncEnabled: true,
-      syncIntervalSec: 6,
-      lastGlobalSync: new Date().toISOString(),
-      metrics: defaultWatchMetrics,
-      syncLogs: []
-    };
-  }
-  if (!appState.appleWatch.syncMode) {
-    appState.appleWatch.syncMode = "real";
   }
 }
 
@@ -259,7 +260,7 @@ export function addDebugLog(message, type = 'info', data = null) {
     id: Date.now() + "_" + Math.random().toString(36).substr(2, 4),
     timestamp: timeStr,
     message: message,
-    type: type, // 'info', 'success', 'warning', 'error', 'url', 'clipboard', 'health'
+    type: type,
     data: data ? (typeof data === 'object' ? JSON.parse(JSON.stringify(data)) : data) : null
   };
 
