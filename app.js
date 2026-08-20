@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.13';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.14';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -367,8 +367,7 @@ const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-summary",
     sidebarId: "sidebar-nav-summary",
     subtabs: [
-      { id: "summary-view", label: "Resumen Diario", icon: "fa-solid fa-gauge-high" },
-      { id: "summary-replica-view", label: "Réplica Nube", icon: "fa-solid fa-cloud" }
+      { id: "summary-view", label: "Resumen Diario", icon: "fa-solid fa-gauge-high" }
     ]
   },
   nutrition: {
@@ -2068,53 +2067,6 @@ function renderSummaryView() {
     }
   }
 
-  // Live Metrics & Rings for Réplica Subtab (Atajo Nube)
-  if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = defaultCloudReplica;
-  if (!appState.appleWatch.cloudReplica[pid]) appState.appleWatch.cloudReplica[pid] = { ...defaultCloudReplica[pid] };
-  const rep = appState.appleWatch.cloudReplica[pid];
-
-  const repUserBadge = document.getElementById("summary-replica-user-badge");
-  if (repUserBadge) repUserBadge.innerText = pName;
-
-  const repSyncTime = document.getElementById("summary-replica-sync-time");
-  if (repSyncTime) repSyncTime.innerText = `Última subida a la nube: ${formatSyncRelativeTime(rep.lastSync)}`;
-
-  const repHrEl = document.getElementById("replica-metric-hr");
-  if (repHrEl) repHrEl.innerHTML = `${rep.hr || 0} <small>BPM</small>`;
-
-  const repStepsEl = document.getElementById("replica-metric-steps");
-  if (repStepsEl) repStepsEl.innerText = (rep.steps || 0).toLocaleString();
-
-  const repDistEl = document.getElementById("replica-metric-dist");
-  if (repDistEl) repDistEl.innerHTML = `${rep.distanceKm || 0} <small>km</small>`;
-
-  const repKcalEl = document.getElementById("replica-metric-kcal");
-  if (repKcalEl) repKcalEl.innerHTML = `${rep.moveKcal || 0} <small>kcal</small>`;
-
-  // Rings (Réplica)
-  const repMoveGoal = m.moveGoal || m.targetKcal || 600;
-  const repMoveCircle = document.getElementById("replica-ring-move-circle");
-  const repMoveRatio = Math.min(1.2, (rep.moveKcal || 0) / repMoveGoal);
-  const repMoveOffset = Math.max(0, 314 - (314 * Math.min(1, repMoveRatio)));
-  if (repMoveCircle) repMoveCircle.style.strokeDashoffset = repMoveOffset;
-  const repMoveValEl = document.getElementById("replica-ring-move-val");
-  if (repMoveValEl) repMoveValEl.innerText = `${rep.moveKcal || 0} / ${repMoveGoal} kcal`;
-
-  const repExGoal = m.exerciseGoal || m.targetMin || 30;
-  const repExCircle = document.getElementById("replica-ring-exercise-circle");
-  const repExRatio = Math.min(1.2, (rep.exerciseMin || 0) / repExGoal);
-  const repExOffset = Math.max(0, 238 - (238 * Math.min(1, repExRatio)));
-  if (repExCircle) repExCircle.style.strokeDashoffset = repExOffset;
-  const repExValEl = document.getElementById("replica-ring-exercise-val");
-  if (repExValEl) repExValEl.innerText = `${rep.exerciseMin || 0} / ${repExGoal} min`;
-
-  const repStepsGoal = m.stepsGoal || m.targetSteps || 10000;
-  const repStepsCircle = document.getElementById("replica-ring-steps-circle");
-  const repStepsRatio = Math.min(1.2, (rep.steps || 0) / repStepsGoal);
-  const repStepsOffset = Math.max(0, 163 - (163 * Math.min(1, repStepsRatio)));
-  if (repStepsCircle) repStepsCircle.style.strokeDashoffset = repStepsOffset;
-  const repStepsValEl = document.getElementById("replica-ring-steps-val");
-  if (repStepsValEl) repStepsValEl.innerText = `${(rep.steps || 0).toLocaleString()} / ${repStepsGoal.toLocaleString()} pasos`;
 }
 
 // RENDER PROFILE & MACROS
