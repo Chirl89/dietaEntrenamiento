@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.15';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.16';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -9,13 +9,13 @@ const LAST_CLOUD_REPLICA_KEY = "FITDUO_LAST_CLOUD_REPLICA";
 
 // INITIAL FALLBACK METRICS
 let defaultWatchMetrics = {
-  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2, floors: 14, sleep: "7h 45m" },
-  she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8, floors: 10, sleep: "8h 15m" }
+  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2, floors: 0, sleep: "--" },
+  she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8, floors: 0, sleep: "--" }
 };
 
 let defaultCloudReplica = {
-  he: { moveKcal: 480, exerciseMin: 35, steps: 8450, hr: 72, distanceKm: 6.2, floors: 14, sleep: "7h 45m", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" },
-  she: { moveKcal: 420, exerciseMin: 40, steps: 9120, hr: 68, distanceKm: 6.8, floors: 10, sleep: "8h 15m", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" }
+  he: { moveKcal: 480, exerciseMin: 35, steps: 8450, hr: 72, distanceKm: 6.2, floors: 0, sleep: "--", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" },
+  she: { moveKcal: 420, exerciseMin: 40, steps: 9120, hr: 68, distanceKm: 6.8, floors: 0, sleep: "--", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" }
 };
 
 try {
@@ -142,8 +142,17 @@ function loadSavedState() {
     if (!m.moveGoal) m.moveGoal = m.targetKcal || (pid === 'he' ? 600 : 500);
     if (!m.exerciseGoal) m.exerciseGoal = m.targetMin || 30;
     if (!m.stepsGoal) m.stepsGoal = m.targetSteps || 10000;
-    if (m.floors === undefined || m.floors === null) m.floors = pid === 'he' ? 14 : 10;
-    if (!m.sleep) m.sleep = pid === 'he' ? '7h 45m' : '8h 15m';
+    if (m.floors === undefined || m.floors === null || m.floors === 14 || m.floors === 10) m.floors = 0;
+    if (!m.sleep || m.sleep === '7h 45m' || m.sleep === '8h 15m') m.sleep = '--';
+  });
+
+  // Clean cloud replica legacy hardcoded demo metrics if present
+  ['he', 'she'].forEach(pid => {
+    if (appState.appleWatch?.cloudReplica?.[pid]) {
+      const rep = appState.appleWatch.cloudReplica[pid];
+      if (rep.floors === 14 || rep.floors === 10) rep.floors = 0;
+      if (rep.sleep === '7h 45m' || rep.sleep === '8h 15m') rep.sleep = '--';
+    }
   });
   
   if (!appState.completedWorkouts) {
@@ -809,6 +818,9 @@ function formatSmartSleepValue(val) {
   if (typeof val === 'string') {
     const s = val.trim();
     if (s.startsWith('[') && s.endsWith(']')) return '--';
+    if (s === '0' || s === '0.0' || s === '0.00' || s === '0h' || s === '0m' || s === '0h 0m' || s === '0:00' || s === '-' || s === '--' || s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'nan') {
+      return '--';
+    }
     if (s.toLowerCase().includes('h') || s.toLowerCase().includes('m') || s.includes(':')) {
       return s;
     }
@@ -821,11 +833,13 @@ function formatSmartSleepValue(val) {
     if (val < 24) {
       const hrs = Math.floor(val);
       const mins = Math.round((val - hrs) * 60);
+      if (hrs === 0 && mins === 0) return '--';
       return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
     } else {
       // If passed as minutes (e.g. 465)
       const hrs = Math.floor(val / 60);
       const mins = Math.round(val % 60);
+      if (hrs === 0 && mins === 0) return '--';
       return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
     }
   }
@@ -984,15 +998,15 @@ function checkUrlParamsForWatchSync() {
   if (floorsVal !== null) {
     m.floors = floorsVal;
     updated = true;
+  } else if (params.has("syncWatch") || params.has("floors")) {
+    m.floors = 0;
+    updated = true;
   }
 
   const sleepRaw = params.get("sleep") || params.get("sueno") || params.get("sleepHours") || params.get("horasSueno");
-  if (sleepRaw !== null && sleepRaw !== undefined && sleepRaw !== "") {
-    const formattedSleep = formatSmartSleepValue(sleepRaw);
-    if (formattedSleep && formattedSleep !== '--') {
-      m.sleep = formattedSleep;
-      updated = true;
-    }
+  if (sleepRaw !== null && sleepRaw !== undefined) {
+    m.sleep = formatSmartSleepValue(sleepRaw);
+    updated = true;
   }
 
   const deviceParam = params.get("deviceName") || params.get("device");
@@ -1507,10 +1521,10 @@ function openManualMetricsModal() {
   if (exminInp) exminInp.value = m.exerciseMin;
 
   const floorsInp = document.getElementById("manual-edit-floors");
-  if (floorsInp) floorsInp.value = m.floors ?? 12;
+  if (floorsInp) floorsInp.value = m.floors ?? 0;
 
   const sleepInp = document.getElementById("manual-edit-sleep");
-  if (sleepInp) sleepInp.value = m.sleep || "7h 45m";
+  if (sleepInp) sleepInp.value = m.sleep || "--";
 
   const distInp = document.getElementById("manual-edit-dist");
   if (distInp) distInp.value = m.distanceKm;
@@ -2662,16 +2676,18 @@ function mergeCloudDataIntoAppState(cloudData) {
     rep.floors = floorsVal;
     m.floors = floorsVal;
     replicaMetricsUpdated = true;
+  } else if (cloudData.floors !== undefined || cloudData.syncWatch) {
+    rep.floors = 0;
+    m.floors = 0;
+    replicaMetricsUpdated = true;
   }
 
   const sleepRaw = cloudData.sleep ?? cloudData.sueno ?? cloudData.sleepHours ?? cloudData.horasSueno;
-  if (sleepRaw !== null && sleepRaw !== undefined && sleepRaw !== "") {
+  if (sleepRaw !== undefined) {
     const formattedSleep = formatSmartSleepValue(sleepRaw);
-    if (formattedSleep && formattedSleep !== '--') {
-      rep.sleep = formattedSleep;
-      m.sleep = formattedSleep;
-      replicaMetricsUpdated = true;
-    }
+    rep.sleep = formattedSleep;
+    m.sleep = formattedSleep;
+    replicaMetricsUpdated = true;
   }
 
   if (replicaMetricsUpdated) {
