@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.12';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.13';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -721,7 +721,12 @@ function triggerManualSync() {
 // SMART 7-DAY METRIC PARSERS
 function parseSmartMetricValue(val) {
   if (val === null || val === undefined) return null;
-  if (typeof val === 'number') return Math.round(val);
+  if (typeof val === 'number') {
+    if (isNaN(val) || !isFinite(val)) return null;
+    // If Joules was passed (e.g. > 50000), convert J to kcal
+    if (val > 50000) return Math.round(val / 4184);
+    return Math.round(val);
+  }
   if (Array.isArray(val)) {
     if (val.length === 0) return null;
     const validNums = val.map(v => parseSmartMetricValue(v)).filter(v => v !== null && v >= 0);
@@ -732,14 +737,24 @@ function parseSmartMetricValue(val) {
     const trimmed = val.trim();
     if (trimmed === '0') return 0;
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null; // Placeholder text not replaced by iOS Shortcuts
-    let clean = trimmed;
-    if (/^\d{1,3}[.,\s]\d{3}/.test(clean)) {
-      clean = clean.replace(/[.,\s](?=\d{3})/g, '');
+    
+    // Replace comma with dot for decimals (e.g. "37,48" -> "37.48")
+    const clean = trimmed.replace(/,/g, '.');
+    const floatVal = parseFloat(clean);
+    if (!isNaN(floatVal) && isFinite(floatVal)) {
+      if (floatVal > 50000) {
+        return Math.round(floatVal / 4184);
+      }
+      return Math.round(floatVal);
     }
-    const match = clean.match(/(\d+)/);
+
+    const match = clean.match(/(\d+(?:\.\d+)?)/);
     if (match) {
-      const num = parseInt(match[1], 10);
-      if (!isNaN(num)) return num;
+      const parsed = parseFloat(match[1]);
+      if (!isNaN(parsed) && isFinite(parsed)) {
+        if (parsed > 50000) return Math.round(parsed / 4184);
+        return Math.round(parsed);
+      }
     }
     return null;
   }
@@ -748,16 +763,30 @@ function parseSmartMetricValue(val) {
 
 function parseSmartMetricFloatValue(val) {
   if (val === null || val === undefined) return null;
-  if (typeof val === 'number') return parseFloat(val.toFixed(2));
+  if (typeof val === 'number') {
+    if (isNaN(val) || !isFinite(val)) return null;
+    if (val > 100) return parseFloat((val / 1000).toFixed(2));
+    return parseFloat(val.toFixed(2));
+  }
   if (typeof val === 'string') {
     const trimmed = val.trim();
     if (trimmed === '0' || trimmed === '0.0' || trimmed === '0.00') return 0;
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null; // Placeholder text not replaced by iOS Shortcuts
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null;
     const clean = trimmed.replace(/,/g, '.');
+    const floatVal = parseFloat(clean);
+    if (!isNaN(floatVal) && isFinite(floatVal)) {
+      if (floatVal > 100) {
+        return parseFloat((floatVal / 1000).toFixed(2));
+      }
+      return parseFloat(floatVal.toFixed(2));
+    }
     const match = clean.match(/(\d+(?:\.\d+)?)/);
     if (match) {
-      const num = parseFloat(match[1]);
-      if (!isNaN(num)) return parseFloat(num.toFixed(2));
+      const parsed = parseFloat(match[1]);
+      if (!isNaN(parsed) && isFinite(parsed)) {
+        if (parsed > 100) return parseFloat((parsed / 1000).toFixed(2));
+        return parseFloat(parsed.toFixed(2));
+      }
     }
     return null;
   }
