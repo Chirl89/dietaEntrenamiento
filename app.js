@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.14';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.15';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -9,13 +9,13 @@ const LAST_CLOUD_REPLICA_KEY = "FITDUO_LAST_CLOUD_REPLICA";
 
 // INITIAL FALLBACK METRICS
 let defaultWatchMetrics = {
-  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2 },
-  she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8 }
+  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2, floors: 14, sleep: "7h 45m" },
+  she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8, floors: 10, sleep: "8h 15m" }
 };
 
 let defaultCloudReplica = {
-  he: { moveKcal: 480, exerciseMin: 35, steps: 8450, hr: 72, distanceKm: 6.2, lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" },
-  she: { moveKcal: 420, exerciseMin: 40, steps: 9120, hr: 68, distanceKm: 6.8, lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" }
+  he: { moveKcal: 480, exerciseMin: 35, steps: 8450, hr: 72, distanceKm: 6.2, floors: 14, sleep: "7h 45m", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" },
+  she: { moveKcal: 420, exerciseMin: 40, steps: 9120, hr: 68, distanceKm: 6.8, floors: 10, sleep: "8h 15m", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" }
 };
 
 try {
@@ -142,6 +142,8 @@ function loadSavedState() {
     if (!m.moveGoal) m.moveGoal = m.targetKcal || (pid === 'he' ? 600 : 500);
     if (!m.exerciseGoal) m.exerciseGoal = m.targetMin || 30;
     if (!m.stepsGoal) m.stepsGoal = m.targetSteps || 10000;
+    if (m.floors === undefined || m.floors === null) m.floors = pid === 'he' ? 14 : 10;
+    if (!m.sleep) m.sleep = pid === 'he' ? '7h 45m' : '8h 15m';
   });
   
   if (!appState.completedWorkouts) {
@@ -802,6 +804,34 @@ function parseSmartMetricArray(val) {
   return isNaN(p) ? [] : [p];
 }
 
+function formatSmartSleepValue(val) {
+  if (val === null || val === undefined || val === '') return '--';
+  if (typeof val === 'string') {
+    const s = val.trim();
+    if (s.startsWith('[') && s.endsWith(']')) return '--';
+    if (s.toLowerCase().includes('h') || s.toLowerCase().includes('m') || s.includes(':')) {
+      return s;
+    }
+    const num = parseFloat(s.replace(',', '.'));
+    if (!isNaN(num)) val = num;
+    else return s;
+  }
+  if (typeof val === 'number') {
+    if (val <= 0 || isNaN(val) || !isFinite(val)) return '--';
+    if (val < 24) {
+      const hrs = Math.floor(val);
+      const mins = Math.round((val - hrs) * 60);
+      return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+    } else {
+      // If passed as minutes (e.g. 465)
+      const hrs = Math.floor(val / 60);
+      const mins = Math.round(val % 60);
+      return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+    }
+  }
+  return String(val);
+}
+
 // Helper to sync weekly history array (7 days) across past days of the week
 function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], hrArr = []) {
   if (!Array.isArray(kcalArr) || kcalArr.length === 0) return;
@@ -949,6 +979,22 @@ function checkUrlParamsForWatchSync() {
     updated = true;
   }
 
+  const floorsRaw = params.get("floors") || params.get("pisos") || params.get("floorsClimbed");
+  const floorsVal = parseSmartMetricValue(floorsRaw);
+  if (floorsVal !== null) {
+    m.floors = floorsVal;
+    updated = true;
+  }
+
+  const sleepRaw = params.get("sleep") || params.get("sueno") || params.get("sleepHours") || params.get("horasSueno");
+  if (sleepRaw !== null && sleepRaw !== undefined && sleepRaw !== "") {
+    const formattedSleep = formatSmartSleepValue(sleepRaw);
+    if (formattedSleep && formattedSleep !== '--') {
+      m.sleep = formattedSleep;
+      updated = true;
+    }
+  }
+
   const deviceParam = params.get("deviceName") || params.get("device");
   if (deviceParam) {
     m.deviceName = decodeURIComponent(deviceParam);
@@ -1016,6 +1062,8 @@ function checkUrlParamsForWatchSync() {
     rep.distanceKm = m.distanceKm;
     rep.hr = m.hr;
     rep.exerciseMin = m.exerciseMin;
+    if (m.floors !== undefined) rep.floors = m.floors;
+    if (m.sleep !== undefined) rep.sleep = m.sleep;
     rep.lastSync = new Date().toISOString();
 
     const pName = appState.profiles[pid].name.split(" ")[0];
@@ -1253,9 +1301,9 @@ function getShortcutUrl(mode = 'health') {
   } catch(e) {}
 
   if (mode === 'workout') {
-    return `${baseUrl}?syncWatch=true&workout=true&day=Hoy&workoutKcal=[Calorias_Entreno]&duration=[Duracion_Entreno]&avgHr=[FC_Entreno]&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Ritmo_Cardiaco]&dist=[Distancia]&exMin=[Minutos_Ejercicio]`;
+    return `${baseUrl}?syncWatch=true&workout=true&day=Hoy&workoutKcal=[Calorias_Entreno]&duration=[Duracion_Entreno]&avgHr=[FC_Entreno]&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Ritmo_Cardiaco]&dist=[Distancia]&exMin=[Minutos_Ejercicio]&floors=[Pisos_Subidos]&sleep=[Horas_Sueno]`;
   } else {
-    return `${baseUrl}?syncWatch=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Ritmo_Cardiaco]&dist=[Distancia]&exMin=[Minutos_Ejercicio]`;
+    return `${baseUrl}?syncWatch=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Ritmo_Cardiaco]&dist=[Distancia]&exMin=[Minutos_Ejercicio]&floors=[Pisos_Subidos]&sleep=[Horas_Sueno]`;
   }
 }
 
@@ -1265,9 +1313,9 @@ function getShortcutCloudUrl(mode = 'health', customPid = null) {
   const channel = `${key}_${pid}`;
 
   if (mode === 'workout') {
-    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":"[Calorias_Entreno]","duration":"[Duracion_Entreno]","avgHr":"[FC_Entreno]","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]"}`;
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":"[Calorias_Entreno]","duration":"[Duracion_Entreno]","avgHr":"[FC_Entreno]","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]","floors":"[Pisos_Subidos]","sleep":"[Horas_Sueno]"}`;
   } else {
-    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]"}`;
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]","floors":"[Pisos_Subidos]","sleep":"[Horas_Sueno]"}`;
   }
 }
 
@@ -1425,6 +1473,8 @@ function applyReplicaToPrimary(customPid = null) {
   m.distanceKm = rep.distanceKm || m.distanceKm;
   m.hr = rep.hr || m.hr;
   m.exerciseMin = rep.exerciseMin || m.exerciseMin;
+  if (rep.floors !== undefined) m.floors = rep.floors;
+  if (rep.sleep !== undefined) m.sleep = rep.sleep;
   appState.appleWatch.lastGlobalSync = new Date().toISOString();
 
   saveState();
@@ -1456,6 +1506,12 @@ function openManualMetricsModal() {
   const exminInp = document.getElementById("manual-edit-exmin");
   if (exminInp) exminInp.value = m.exerciseMin;
 
+  const floorsInp = document.getElementById("manual-edit-floors");
+  if (floorsInp) floorsInp.value = m.floors ?? 12;
+
+  const sleepInp = document.getElementById("manual-edit-sleep");
+  if (sleepInp) sleepInp.value = m.sleep || "7h 45m";
+
   const distInp = document.getElementById("manual-edit-dist");
   if (distInp) distInp.value = m.distanceKm;
 
@@ -1482,12 +1538,16 @@ function saveManualMetricsFromModal(e) {
   const kcalVal = parseInt(document.getElementById("manual-edit-kcal")?.value);
   const hrVal = parseInt(document.getElementById("manual-edit-hr")?.value);
   const exminVal = parseInt(document.getElementById("manual-edit-exmin")?.value);
+  const floorsVal = parseInt(document.getElementById("manual-edit-floors")?.value);
+  const sleepVal = document.getElementById("manual-edit-sleep")?.value?.trim();
   const distVal = parseFloat(document.getElementById("manual-edit-dist")?.value);
 
   if (!isNaN(stepsVal) && stepsVal >= 0) m.steps = stepsVal;
   if (!isNaN(kcalVal) && kcalVal >= 0) m.moveKcal = kcalVal;
   if (!isNaN(hrVal) && hrVal > 0) m.hr = hrVal;
   if (!isNaN(exminVal) && exminVal >= 0) m.exerciseMin = exminVal;
+  if (!isNaN(floorsVal) && floorsVal >= 0) m.floors = floorsVal;
+  if (sleepVal) m.sleep = formatSmartSleepValue(sleepVal);
   if (!isNaN(distVal) && distVal >= 0) m.distanceKm = distVal;
 
   appState.appleWatch.lastGlobalSync = new Date().toISOString();
@@ -1730,9 +1790,9 @@ function updateAppleWatchModalUI() {
 
   // Live Metrics Grid
   document.querySelectorAll("[id='watch-metric-hr']").forEach(el => el.innerHTML = `${m.hr} <small>BPM</small>`);
-  document.querySelectorAll("[id='watch-metric-steps']").forEach(el => el.innerText = m.steps.toLocaleString());
+  document.querySelectorAll("[id='watch-metric-floors']").forEach(el => el.innerHTML = `${m.floors ?? 0} <small>pisos</small>`);
+  document.querySelectorAll("[id='watch-metric-sleep']").forEach(el => el.innerHTML = `${formatSmartSleepValue(m.sleep)}`);
   document.querySelectorAll("[id='watch-metric-dist']").forEach(el => el.innerHTML = `${m.distanceKm} <small>km</small>`);
-  document.querySelectorAll("[id='watch-metric-kcal']").forEach(el => el.innerHTML = `${m.moveKcal} <small>kcal</small>`);
 
   // Apple Activity Rings Calculations
   const moveGoal = m.moveGoal || m.targetKcal || 600;
@@ -1953,18 +2013,18 @@ function renderSummaryView() {
   const syncTimeEl = document.getElementById("summary-watch-sync-time");
   if (syncTimeEl) syncTimeEl.innerText = formatSyncRelativeTime(appState.appleWatch?.lastGlobalSync);
 
-  // Live Metrics
+  // Live Metrics (Sin duplicar anillos: Pulso, Pisos, Sueño, Distancia)
   const hrEl = document.getElementById("summary-metric-hr");
   if (hrEl) hrEl.innerHTML = `${m.hr} <small>BPM</small>`;
 
-  const stepsEl = document.getElementById("summary-metric-steps");
-  if (stepsEl) stepsEl.innerText = m.steps.toLocaleString();
+  const floorsEl = document.getElementById("summary-metric-floors");
+  if (floorsEl) floorsEl.innerHTML = `${m.floors ?? 0} <small>pisos</small>`;
+
+  const sleepEl = document.getElementById("summary-metric-sleep");
+  if (sleepEl) sleepEl.innerHTML = `${formatSmartSleepValue(m.sleep)}`;
 
   const distEl = document.getElementById("summary-metric-dist");
   if (distEl) distEl.innerHTML = `${m.distanceKm} <small>km</small>`;
-
-  const kcalEl = document.getElementById("summary-metric-kcal");
-  if (kcalEl) kcalEl.innerHTML = `${m.moveKcal} <small>kcal</small>`;
 
   // Rings
   const moveGoal = m.moveGoal || m.targetKcal || 600;
@@ -2595,6 +2655,23 @@ function mergeCloudDataIntoAppState(cloudData) {
     rep.exerciseMin = exMinVal;
     m.exerciseMin = exMinVal;
     replicaMetricsUpdated = true;
+  }
+
+  const floorsVal = parseSmartMetricValue(cloudData.floors ?? cloudData.pisos ?? cloudData.floorsClimbed);
+  if (floorsVal !== null) {
+    rep.floors = floorsVal;
+    m.floors = floorsVal;
+    replicaMetricsUpdated = true;
+  }
+
+  const sleepRaw = cloudData.sleep ?? cloudData.sueno ?? cloudData.sleepHours ?? cloudData.horasSueno;
+  if (sleepRaw !== null && sleepRaw !== undefined && sleepRaw !== "") {
+    const formattedSleep = formatSmartSleepValue(sleepRaw);
+    if (formattedSleep && formattedSleep !== '--') {
+      rep.sleep = formattedSleep;
+      m.sleep = formattedSleep;
+      replicaMetricsUpdated = true;
+    }
   }
 
   if (replicaMetricsUpdated) {
