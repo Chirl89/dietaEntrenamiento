@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.11';
+import { INITIAL_PROFILES, RECIPES_DATABASE, WEEKLY_WORKOUT_SCHEDULE, INGREDIENT_CATEGORIES, BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from './data.js?v=0.7.12';
 
 // STATE STORAGE KEYS
 const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -732,11 +732,14 @@ function parseSmartMetricValue(val) {
     const trimmed = val.trim();
     if (trimmed === '0') return 0;
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null; // Placeholder text not replaced by iOS Shortcuts
-    const cleanStr = trimmed.replace(/,/g, '.').replace(/[^\d.]/g, ' ').trim();
-    if (cleanStr === '') return null;
-    const numbers = cleanStr.split(/\s+/).map(n => parseFloat(n)).filter(n => !isNaN(n) && n >= 0);
-    if (numbers.length > 0) {
-      return Math.round(numbers[numbers.length - 1]);
+    let clean = trimmed;
+    if (/^\d{1,3}[.,\s]\d{3}/.test(clean)) {
+      clean = clean.replace(/[.,\s](?=\d{3})/g, '');
+    }
+    const match = clean.match(/(\d+)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num)) return num;
     }
     return null;
   }
@@ -750,11 +753,11 @@ function parseSmartMetricFloatValue(val) {
     const trimmed = val.trim();
     if (trimmed === '0' || trimmed === '0.0' || trimmed === '0.00') return 0;
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null; // Placeholder text not replaced by iOS Shortcuts
-    const cleanStr = trimmed.replace(/,/g, '.').replace(/[^\d.]/g, ' ').trim();
-    if (cleanStr === '') return null;
-    const numbers = cleanStr.split(/\s+/).map(n => parseFloat(n)).filter(n => !isNaN(n) && n >= 0);
-    if (numbers.length > 0) {
-      return parseFloat(numbers[numbers.length - 1].toFixed(2));
+    const clean = trimmed.replace(/,/g, '.');
+    const match = clean.match(/(\d+(?:\.\d+)?)/);
+    if (match) {
+      const num = parseFloat(match[1]);
+      if (!isNaN(num)) return parseFloat(num.toFixed(2));
     }
     return null;
   }
@@ -2571,39 +2574,52 @@ function mergeCloudDataIntoAppState(cloudData) {
     hasChanges = true;
   }
 
-  // 1. Direct Background Shortcut Telemetry -> Saved strictly in cloudReplica (Leaving Principal untouched)
+  // 1. Direct Background Shortcut Telemetry -> Update both Main Health Metrics and Replica Subtab
   const rep = appState.appleWatch.cloudReplica[author];
+  const m = appState.appleWatch.metrics[author];
   let replicaMetricsUpdated = false;
 
   const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories ?? cloudData.calorias);
   if (kcalVal !== null) {
     rep.moveKcal = kcalVal;
+    m.moveKcal = kcalVal;
     replicaMetricsUpdated = true;
   }
 
   const stepsVal = parseSmartMetricValue(cloudData.steps ?? cloudData.pasos);
   if (stepsVal !== null) {
     rep.steps = stepsVal;
+    m.steps = stepsVal;
     rep.distanceKm = parseFloat((rep.steps * 0.00075).toFixed(2));
+    m.distanceKm = rep.distanceKm;
     replicaMetricsUpdated = true;
   }
 
   const distVal = parseSmartMetricFloatValue(cloudData.dist ?? cloudData.distanceKm ?? cloudData.distance ?? cloudData.distancia);
   if (distVal !== null) {
     rep.distanceKm = distVal;
+    m.distanceKm = distVal;
     replicaMetricsUpdated = true;
   }
 
   const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.heartRate ?? cloudData.avgHr ?? cloudData.pulso ?? cloudData.ritmoCardiaco);
   if (hrVal !== null) {
     rep.hr = hrVal;
+    m.hr = hrVal;
     replicaMetricsUpdated = true;
   }
 
   const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.durationMin ?? cloudData.minutosEjercicio);
   if (exMinVal !== null) {
     rep.exerciseMin = exMinVal;
+    m.exerciseMin = exMinVal;
     replicaMetricsUpdated = true;
+  }
+
+  if (replicaMetricsUpdated) {
+    rep.lastSync = new Date().toISOString();
+    appState.appleWatch.lastGlobalSync = new Date().toISOString();
+    hasChanges = true;
   }
 
   // Direct Weight log from cloud
@@ -2907,10 +2923,9 @@ export async function pullFromCloud(showToast = false) {
     const key = getCloudSyncKey();
     const myMasterPid = getMasterProfileId();
     const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
-    const isRecentLocalSync = (Date.now() - (appState.appleWatch?.lastLocalSyncTimestamp || 0)) < 25000;
     const channelsToPoll = [
       { pid: partnerPid, name: partnerPid === 'he' ? 'Carlos' : 'Andrea', isPartner: true },
-      ...(!isRecentLocalSync ? [{ pid: myMasterPid, name: myMasterPid === 'he' ? 'Carlos' : 'Andrea', isPartner: false }] : [])
+      { pid: myMasterPid, name: myMasterPid === 'he' ? 'Carlos' : 'Andrea', isPartner: false }
     ];
 
     let hasMergedAny = false;
@@ -2950,10 +2965,11 @@ export async function pullFromCloud(showToast = false) {
     }
 
     if (hasMergedAny) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+      renderAll();
       if (showToast && typeof showIosToast === 'function') {
         showIosToast(`☁️ ¡Datos actualizados desde la nube!`, "fa-solid fa-cloud-arrow-down");
       }
-      renderAll();
     } else {
       addSyncConsoleLog("✅ Sincronización completa: Datos actualizados", "info");
     }
