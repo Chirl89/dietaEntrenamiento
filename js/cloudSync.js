@@ -38,7 +38,16 @@ export async function cleanAndParseJsonFromCloud(rawText) {
               const parsedFromMsg = await cleanAndParseJsonFromCloud(
                 typeof lastMsg.message === 'string' ? lastMsg.message : JSON.stringify(lastMsg.message)
               );
-              if (parsedFromMsg) return parsedFromMsg;
+              if (parsedFromMsg && typeof parsedFromMsg === 'object') {
+                if (lastMsg.timetoken) {
+                  parsedFromMsg._timetoken = String(lastMsg.timetoken);
+                  const pubDate = new Date(parseInt(lastMsg.timetoken) / 10000);
+                  if (!isNaN(pubDate.getTime())) {
+                    parsedFromMsg._timeStr = pubDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+                  }
+                }
+                return parsedFromMsg;
+              }
             }
           }
         }

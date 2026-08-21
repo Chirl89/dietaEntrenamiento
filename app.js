@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.9.10)
+ * FitDuo & Collie Coach - Main Application Engine (v0.9.11)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -193,10 +193,28 @@ export function loadSavedState() {
   
   if (!appState.completedWorkouts) {
     appState.completedWorkouts = {
-      he: { Lunes: false, Martes: false, Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false },
-      she: { Lunes: false, Martes: false, Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false }
+      he: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } },
+      she: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } }
     };
   }
+
+  ['he', 'she'].forEach(pid => {
+    if (appState.completedWorkouts?.[pid]) {
+      for (const [day, dayObj] of Object.entries(appState.completedWorkouts[pid])) {
+        if (dayObj && Array.isArray(dayObj.sessions) && dayObj.sessions.length > 1) {
+          const uniqueSessions = [];
+          for (const s of dayObj.sessions) {
+            const exists = uniqueSessions.some(u =>
+              (u.id && s.id && u.id === s.id) ||
+              (u.durationMin === s.durationMin && u.kcal === s.kcal && u.timestamp === s.timestamp)
+            );
+            if (!exists) uniqueSessions.push(s);
+          }
+          dayObj.sessions = uniqueSessions;
+        }
+      }
+    }
+  });
 }
 
 let pushDebounceTimer = null;
@@ -1440,7 +1458,16 @@ export async function cleanAndParseJsonFromCloud(rawText) {
             const lastMsg = msgList[msgList.length - 1];
             if (lastMsg && lastMsg.message) {
               const res = await cleanAndParseJsonFromCloud(typeof lastMsg.message === 'string' ? lastMsg.message : JSON.stringify(lastMsg.message));
-              if (res) return res;
+              if (res && typeof res === 'object') {
+                if (lastMsg.timetoken) {
+                  res._timetoken = String(lastMsg.timetoken);
+                  const pubDate = new Date(parseInt(lastMsg.timetoken) / 10000);
+                  if (!isNaN(pubDate.getTime())) {
+                    res._timeStr = pubDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+                  }
+                }
+                return res;
+              }
             }
           }
         }
@@ -1486,8 +1513,19 @@ export function mergeCloudDataIntoAppState(cloudData) {
   const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.avgHr);
   if (hrVal !== null) { rep.hr = hrVal; m.hr = hrVal; replicaUpdated = true; }
 
-  const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin);
+  const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.minutosEjercicio ?? cloudData.exerciseTime);
   if (exMinVal !== null) { rep.exerciseMin = exMinVal; m.exerciseMin = exMinVal; replicaUpdated = true; }
+
+  const floorsVal = parseSmartMetricValue(cloudData.floors ?? cloudData.pisos ?? cloudData.floorsClimbed);
+  if (floorsVal !== null) { rep.floors = floorsVal; m.floors = floorsVal; replicaUpdated = true; }
+
+  const sleepVal = cloudData.sleep ?? cloudData.sueno ?? cloudData.sleepHours;
+  if (sleepVal !== undefined && sleepVal !== null && sleepVal !== "") {
+    const formattedSleep = formatSmartSleepValue(sleepVal);
+    rep.sleep = formattedSleep;
+    m.sleep = formattedSleep;
+    replicaUpdated = true;
+  }
 
   if (replicaUpdated) {
     rep.lastSync = new Date().toISOString();
@@ -1544,8 +1582,8 @@ export function mergeCloudDataIntoAppState(cloudData) {
         appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
       }
 
-      const sessionTimestamp = cloudData.timeStr || (cloudData.timestamp ? (cloudData.timestamp.includes(":") ? cloudData.timestamp : new Date(cloudData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs") : (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs"));
-      const sessionId = cloudData.id || (`sess_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`);
+      const sessionTimestamp = cloudData.timeStr || cloudData._timeStr || (cloudData.timestamp ? (cloudData.timestamp.includes(":") ? cloudData.timestamp : new Date(cloudData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs") : "10:00 hs");
+      const sessionId = cloudData._timetoken ? `pn_${cloudData._timetoken}` : (cloudData.id || `sess_${durMin}_${wKcal}_${sessionTimestamp}`);
 
       const sessionObj = {
         id: sessionId,
@@ -1558,7 +1596,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
 
       const isDuplicate = appState.completedWorkouts[author][targetDay].sessions.some(s =>
         (s.id && s.id === sessionObj.id) ||
-        (s.timestamp === sessionObj.timestamp && s.durationMin === durMin && s.kcal === wKcal)
+        (s.durationMin === durMin && s.kcal === wKcal && (s.timestamp === sessionObj.timestamp || s.id === sessionId))
       );
 
       if (!isDuplicate) {

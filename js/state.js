@@ -192,16 +192,28 @@ export function loadSavedState() {
   
   if (!appState.completedWorkouts) {
     appState.completedWorkouts = {
-      he: { Lunes: false, Martes: false, Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false },
-      she: { Lunes: false, Martes: false, Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false }
+      he: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } },
+      she: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } }
     };
   }
-  if (!appState.completedWorkouts.he) {
-    appState.completedWorkouts.he = { Lunes: false, Martes: false, Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false };
-  }
-  if (!appState.completedWorkouts.she) {
-    appState.completedWorkouts.she = { Lunes: false, Martes: false, Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false };
-  }
+
+  ['he', 'she'].forEach(pid => {
+    if (appState.completedWorkouts?.[pid]) {
+      for (const [day, dayObj] of Object.entries(appState.completedWorkouts[pid])) {
+        if (dayObj && Array.isArray(dayObj.sessions) && dayObj.sessions.length > 1) {
+          const uniqueSessions = [];
+          for (const s of dayObj.sessions) {
+            const exists = uniqueSessions.some(u =>
+              (u.id && s.id && u.id === s.id) ||
+              (u.durationMin === s.durationMin && u.kcal === s.kcal && u.timestamp === s.timestamp)
+            );
+            if (!exists) uniqueSessions.push(s);
+          }
+          dayObj.sessions = uniqueSessions;
+        }
+      }
+    }
+  });
 }
 
 let pushDebounceTimer = null;
