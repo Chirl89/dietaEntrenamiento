@@ -233,16 +233,14 @@ export function mergeCloudDataIntoAppState(cloudData) {
     hasChanges = true;
   }
 
-  const isWorkoutSync = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === "true" || cloudData.workoutKcal !== undefined || (cloudData.duration !== undefined && cloudData.avgHr !== undefined);
+  const isWorkoutSync = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true" || (cloudData.workoutKcal !== undefined && cloudData.workoutKcal !== "0") || (cloudData.duration !== undefined && cloudData.duration !== "0");
   if (isWorkoutSync) {
     let targetDay = cloudData.day;
-    if (!targetDay || targetDay === "Hoy" || targetDay === "today" || targetDay.toLowerCase() === "today") {
+    if (!targetDay || targetDay === "Hoy" || targetDay === "today" || targetDay.toLowerCase() === "today" || targetDay.toLowerCase() === "hoy") {
       targetDay = getTodayDayName();
     }
     const wDur = parseSmartMetricValue(cloudData.workoutDuration ?? cloudData.duration ?? cloudData.dur) ?? (exMinVal || 45);
     const wKcal = parseSmartMetricValue(cloudData.workoutKcal ?? cloudData.wKcal) ?? (kcalVal || 350);
-    const wAvgHr = parseSmartMetricValue(cloudData.workoutAvgHr ?? cloudData.avgHr) ?? (hrVal || 140);
-    const wMaxHr = parseSmartMetricValue(cloudData.workoutMaxHr ?? cloudData.maxHr) ?? (rep.maxHr || (wAvgHr + 20));
     const timeStr = cloudData.timeStr || (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
 
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
@@ -255,16 +253,12 @@ export function mergeCloudDataIntoAppState(cloudData) {
       deviceName: `Apple Watch (${authorName})`,
       durationMin: wDur,
       kcal: wKcal,
-      avgHr: wAvgHr,
-      maxHr: wMaxHr,
       timestamp: timeStr,
-      autoSync: true,
-      isScheduled: true
+      autoSync: true
     };
 
-    // Avoid duplicate session timestamp within exact same minute
-    const alreadyExists = existingSessions.some(s => s.timestamp === timeStr && s.durationMin === wDur && s.kcal === wKcal);
-    if (!alreadyExists) {
+    const isDuplicate = existingSessions.some(s => s.durationMin === wDur && s.kcal === wKcal && s.timestamp === timeStr);
+    if (!isDuplicate) {
       existingSessions.push(newSession);
     }
 
@@ -273,7 +267,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
       watchData: newSession,
       sessions: existingSessions
     };
-    replicaMetricsUpdated = true;
+    hasChanges = true;
   }
 
   if (replicaMetricsUpdated) {

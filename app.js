@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.9.7)
+ * FitDuo & Collie Coach - Main Application Engine (v0.9.8)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -1026,22 +1026,29 @@ export function checkUrlParamsForWatchSync() {
   if (isWorkoutSync) {
     const wKcal = parseSmartMetricValue(params.get("workoutKcal") || params.get("wKcal")) || (kcalVal || 350);
     const durMin = parseSmartMetricValue(params.get("workoutDuration") || params.get("dur") || params.get("duration")) || (exMinVal || 45);
-    const avgH = parseSmartMetricValue(params.get("workoutAvgHr") || params.get("avgHr")) || (hrVal || 140);
-    const maxH = parseSmartMetricValue(params.get("workoutMaxHr") || params.get("maxHr")) || (avgH + 20);
 
     if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
-    appState.completedWorkouts[pid][targetDay] = {
-      done: true,
-      watchData: {
-        deviceName: m.deviceName || `Apple Watch (${getProfileShortName(pid)})`,
-        durationMin: durMin,
-        kcal: wKcal,
-        avgHr: avgH,
-        maxHr: maxH,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs",
-        autoSync: true
-      }
+    if (!appState.completedWorkouts[pid][targetDay] || typeof appState.completedWorkouts[pid][targetDay] !== 'object') {
+      appState.completedWorkouts[pid][targetDay] = { done: true, watchData: null, sessions: [] };
+    }
+    if (!Array.isArray(appState.completedWorkouts[pid][targetDay].sessions)) {
+      appState.completedWorkouts[pid][targetDay].sessions = [];
+    }
+
+    const sessionObj = {
+      deviceName: m.deviceName || `Apple Watch (${getProfileShortName(pid)})`,
+      durationMin: durMin,
+      kcal: wKcal,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs",
+      autoSync: true
     };
+
+    const isDuplicate = appState.completedWorkouts[pid][targetDay].sessions.some(s => s.durationMin === durMin && s.kcal === wKcal && s.timestamp === sessionObj.timestamp);
+    if (!isDuplicate) {
+      appState.completedWorkouts[pid][targetDay].sessions.push(sessionObj);
+    }
+    appState.completedWorkouts[pid][targetDay].done = true;
+    appState.completedWorkouts[pid][targetDay].watchData = sessionObj;
     appState.activeWorkoutDay = targetDay;
     updated = true;
   }
@@ -1484,6 +1491,42 @@ export function mergeCloudDataIntoAppState(cloudData) {
   if (cloudData.completedWorkouts?.[author]) {
     if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
     Object.assign(appState.completedWorkouts[author], cloudData.completedWorkouts[author]);
+    hasChanges = true;
+  }
+
+  // Handle direct workout payload from Shortcuts (e.g. "Fin Entrenamiento")
+  const isDirectWorkout = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true" || (!!cloudData.workoutKcal && cloudData.workoutKcal !== "0") || (!!cloudData.duration && cloudData.duration !== "0");
+  if (isDirectWorkout) {
+    let targetDay = cloudData.day;
+    if (!targetDay || targetDay === "Hoy" || targetDay.toLowerCase() === "today" || targetDay.toLowerCase() === "hoy") {
+      targetDay = getTodayDayName();
+    }
+    const durMin = parseSmartMetricValue(cloudData.duration ?? cloudData.workoutDuration ?? cloudData.dur) || (exMinVal || 45);
+    const wKcal = parseSmartMetricValue(cloudData.workoutKcal ?? cloudData.wKcal) || (kcalVal || 350);
+
+    if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+    if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
+      appState.completedWorkouts[author][targetDay] = { done: true, watchData: null, sessions: [] };
+    }
+    if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
+      appState.completedWorkouts[author][targetDay].sessions = [];
+    }
+
+    const sessionTimestamp = cloudData.timestamp ? (cloudData.timestamp.includes(":") ? cloudData.timestamp : new Date(cloudData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs") : (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
+    const sessionObj = {
+      deviceName: `Apple Watch (${getProfileShortName(author)})`,
+      durationMin: durMin,
+      kcal: wKcal,
+      timestamp: sessionTimestamp,
+      autoSync: true
+    };
+
+    const isDuplicate = appState.completedWorkouts[author][targetDay].sessions.some(s => s.durationMin === durMin && s.kcal === wKcal && s.timestamp === sessionObj.timestamp);
+    if (!isDuplicate) {
+      appState.completedWorkouts[author][targetDay].sessions.push(sessionObj);
+    }
+    appState.completedWorkouts[author][targetDay].done = true;
+    appState.completedWorkouts[author][targetDay].watchData = sessionObj;
     hasChanges = true;
   }
 
