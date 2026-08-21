@@ -47,15 +47,22 @@ export const appState = {
   exclusions: [],
   completedWorkouts: {
     he: {
-      Lunes: { done: true, watchData: { deviceName: "Apple Watch (Carlos)", durationMin: 45, kcal: 430, avgHr: 142, maxHr: 168, timestamp: "09:30 hs", autoSync: true } },
-      Martes: { done: true, watchData: { deviceName: "Apple Watch (Carlos)", durationMin: 40, kcal: 390, avgHr: 136, maxHr: 160, timestamp: "18:15 hs", autoSync: true } },
-      Miércoles: false, Jueves: false, Viernes: false, Sábado: false, Domingo: false
+      Lunes: { done: false, watchData: null, sessions: [] },
+      Martes: { done: false, watchData: null, sessions: [] },
+      Miércoles: { done: false, watchData: null, sessions: [] },
+      Jueves: { done: false, watchData: null, sessions: [] },
+      Viernes: { done: false, watchData: null, sessions: [] },
+      Sábado: { done: false, watchData: null, sessions: [] },
+      Domingo: { done: false, watchData: null, sessions: [] }
     },
     she: {
-      Lunes: { done: true, watchData: { deviceName: "Apple Watch (Andrea)", durationMin: 45, kcal: 380, avgHr: 138, maxHr: 162, timestamp: "09:30 hs", autoSync: true } },
-      Martes: false,
-      Miércoles: { done: true, watchData: { deviceName: "Apple Watch (Andrea)", durationMin: 50, kcal: 410, avgHr: 140, maxHr: 165, timestamp: "19:00 hs", autoSync: true } },
-      Jueves: false, Viernes: false, Sábado: false, Domingo: false
+      Lunes: { done: false, watchData: null, sessions: [] },
+      Martes: { done: false, watchData: null, sessions: [] },
+      Miércoles: { done: false, watchData: null, sessions: [] },
+      Jueves: { done: false, watchData: null, sessions: [] },
+      Viernes: { done: false, watchData: null, sessions: [] },
+      Sábado: { done: false, watchData: null, sessions: [] },
+      Domingo: { done: false, watchData: null, sessions: [] }
     }
   },
   activeDay: getTodayDayName(),

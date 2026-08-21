@@ -148,7 +148,33 @@ export function mergeCloudDataIntoAppState(cloudData) {
       appState.appleWatch.cloudReplica[author] = { ...appState.appleWatch.cloudReplica[author], ...cloudData.appleWatch.cloudReplica[author] };
     }
     if (cloudData.completedWorkouts?.[author]) {
-      appState.completedWorkouts[author] = { ...appState.completedWorkouts[author], ...cloudData.completedWorkouts[author] };
+      if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+      for (const [day, dayObj] of Object.entries(cloudData.completedWorkouts[author])) {
+        if (!dayObj) continue;
+        if (!appState.completedWorkouts[author][day] || typeof appState.completedWorkouts[author][day] !== 'object') {
+          appState.completedWorkouts[author][day] = { done: false, watchData: null, sessions: [] };
+        }
+        const localDay = appState.completedWorkouts[author][day];
+        if (!Array.isArray(localDay.sessions)) {
+          localDay.sessions = localDay.watchData ? [localDay.watchData] : [];
+        }
+        const incomingList = Array.isArray(dayObj.sessions) ? dayObj.sessions : (dayObj.watchData ? [dayObj.watchData] : []);
+        for (const inc of incomingList) {
+          if (!inc) continue;
+          const already = localDay.sessions.some(s =>
+            (s.id && inc.id && s.id === inc.id) ||
+            (s.timestamp === inc.timestamp && s.durationMin === inc.durationMin && s.kcal === inc.kcal)
+          );
+          if (!already) {
+            localDay.sessions.push(inc);
+            hasChanges = true;
+          }
+        }
+        if (dayObj.done || localDay.sessions.length > 0) {
+          localDay.done = true;
+          localDay.watchData = localDay.sessions[localDay.sessions.length - 1];
+        }
+      }
     }
     hasChanges = true;
   }
@@ -233,41 +259,49 @@ export function mergeCloudDataIntoAppState(cloudData) {
     hasChanges = true;
   }
 
-  const isWorkoutSync = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true" || (cloudData.workoutKcal !== undefined && cloudData.workoutKcal !== "0") || (cloudData.duration !== undefined && cloudData.duration !== "0");
+  const isWorkoutSync = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true" || (cloudData.workoutKcal !== undefined && cloudData.workoutKcal !== "0" && cloudData.workoutKcal !== 0) || (cloudData.duration !== undefined && cloudData.duration !== "0" && cloudData.duration !== 0);
   if (isWorkoutSync) {
     let targetDay = cloudData.day;
     if (!targetDay || targetDay === "Hoy" || targetDay === "today" || targetDay.toLowerCase() === "today" || targetDay.toLowerCase() === "hoy") {
       targetDay = getTodayDayName();
     }
-    const wDur = parseSmartMetricValue(cloudData.workoutDuration ?? cloudData.duration ?? cloudData.dur) ?? (exMinVal || 45);
-    const wKcal = parseSmartMetricValue(cloudData.workoutKcal ?? cloudData.wKcal) ?? (kcalVal || 350);
-    const timeStr = cloudData.timeStr || (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
+    const wDur = parseSmartMetricValue(cloudData.workoutDuration ?? cloudData.duration ?? cloudData.dur) ?? 0;
+    const wKcal = parseSmartMetricValue(cloudData.workoutKcal ?? cloudData.wKcal) ?? 0;
 
-    if (!appState.completedWorkouts) appState.completedWorkouts = {};
-    if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
-    
-    const existingDayWorkout = appState.completedWorkouts[author][targetDay] || {};
-    let existingSessions = Array.isArray(existingDayWorkout.sessions) ? [...existingDayWorkout.sessions] : (existingDayWorkout.watchData ? [existingDayWorkout.watchData] : []);
+    if (wDur > 0 || wKcal > 0) {
+      const timeStr = cloudData.timeStr || (cloudData.timestamp ? (cloudData.timestamp.includes(":") ? cloudData.timestamp : new Date(cloudData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs") : (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs"));
 
-    const newSession = {
-      deviceName: `Apple Watch (${authorName})`,
-      durationMin: wDur,
-      kcal: wKcal,
-      timestamp: timeStr,
-      autoSync: true
-    };
+      if (!appState.completedWorkouts) appState.completedWorkouts = {};
+      if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+      
+      const existingDayWorkout = appState.completedWorkouts[author][targetDay] || {};
+      let existingSessions = Array.isArray(existingDayWorkout.sessions) ? [...existingDayWorkout.sessions] : (existingDayWorkout.watchData ? [existingDayWorkout.watchData] : []);
 
-    const isDuplicate = existingSessions.some(s => s.durationMin === wDur && s.kcal === wKcal && s.timestamp === timeStr);
-    if (!isDuplicate) {
-      existingSessions.push(newSession);
+      const newSession = {
+        id: cloudData.id || `sess_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        deviceName: `Apple Watch (${authorName})`,
+        durationMin: wDur,
+        kcal: wKcal,
+        timestamp: timeStr,
+        autoSync: true
+      };
+
+      const isDuplicate = existingSessions.some(s =>
+        (s.id && newSession.id && s.id === newSession.id) ||
+        (s.durationMin === wDur && s.kcal === wKcal && s.timestamp === timeStr)
+      );
+
+      if (!isDuplicate) {
+        existingSessions.push(newSession);
+      }
+
+      appState.completedWorkouts[author][targetDay] = {
+        done: true,
+        watchData: newSession,
+        sessions: existingSessions
+      };
+      hasChanges = true;
     }
-
-    appState.completedWorkouts[author][targetDay] = {
-      done: true,
-      watchData: newSession,
-      sessions: existingSessions
-    };
-    hasChanges = true;
   }
 
   if (replicaMetricsUpdated) {
