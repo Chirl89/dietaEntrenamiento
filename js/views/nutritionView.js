@@ -1,5 +1,5 @@
 import { appState, saveState, getTodayDayName } from '../state.js';
-import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js?v=0.10.7';
+import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js?v=0.10.8';
 
 export function renderExclusions() {}
 export function addExclusion() {}
