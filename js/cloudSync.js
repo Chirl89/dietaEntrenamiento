@@ -85,7 +85,7 @@ export async function cleanAndParseJsonFromCloud(rawText) {
   }
 
   // Priority 5: URL query parameters
-  if (text.includes("=") && (text.includes("kcal=") || text.includes("steps=") || text.includes("author=") || text.includes("syncWatch="))) {
+  if (text.includes("=") && (text.includes("kcal") || text.includes("steps") || text.includes("author") || text.includes("syncWatch") || text.includes("workout") || text.includes("duration"))) {
     try {
       const cleanParamsText = text.startsWith("?") ? text.slice(1) : text;
       const qParams = new URLSearchParams(cleanParamsText);
