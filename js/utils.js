@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Shared Utilities (v0.9.0)
+ * FitDuo & Collie Coach - Shared Utilities (v0.9.1)
  */
 
 export function parseSmartMetricValue(val) {
