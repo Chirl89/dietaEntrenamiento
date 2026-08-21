@@ -618,11 +618,7 @@ export async function pullFromCloud(showToast = false) {
     const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
     const channelNames = Array.from(new Set([
       `${key}_${partnerPid}`,
-      `${key}_${myMasterPid}`,
-      `fitduo_sync_${partnerPid}`,
-      `fitduo_sync_${myMasterPid}`,
-      `fitduo_sync_v2_${partnerPid}`,
-      `fitduo_sync_v2_${myMasterPid}`
+      `${key}_${myMasterPid}`
     ]));
 
     let hasMergedAny = false;

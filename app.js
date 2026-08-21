@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.4)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.5)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.4';
+} from './data.js?v=0.10.5';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1506,15 +1506,16 @@ export async function cleanAndParseAllMessagesFromCloud(rawText) {
 
   const results = [];
 
-  if (text.includes('"channels":') && text.includes('"message":')) {
+  // Handle PubNub v3 history envelope { status: 200, channels: { channel_name: [ { message: ..., timetoken: ... } ] } }
+  if (text.includes('"channels":') || text.includes('"error":')) {
     try {
       const parsed = JSON.parse(text);
-      if (parsed && parsed.channels) {
+      if (parsed && typeof parsed === 'object' && parsed.channels) {
         for (let ch of Object.keys(parsed.channels)) {
           const msgList = parsed.channels[ch];
           if (Array.isArray(msgList) && msgList.length > 0) {
             for (const msgItem of msgList) {
-              if (msgItem && msgItem.message) {
+              if (msgItem && msgItem.message !== undefined && msgItem.message !== null) {
                 const subParsed = await cleanAndParseAllMessagesFromCloud(typeof msgItem.message === 'string' ? msgItem.message : JSON.stringify(msgItem.message));
                 for (const item of subParsed) {
                   if (item && typeof item === 'object') {
@@ -1532,7 +1533,8 @@ export async function cleanAndParseAllMessagesFromCloud(rawText) {
             }
           }
         }
-        if (results.length > 0) return results;
+        // If it was a PubNub envelope, return the extracted results (even if empty)
+        return results;
       }
     } catch (e) {}
   }
@@ -1544,7 +1546,13 @@ export async function cleanAndParseAllMessagesFromCloud(rawText) {
     try {
       const parsed = JSON.parse(text);
       if (Array.isArray(parsed)) return parsed;
-      if (parsed && typeof parsed === 'object') return [parsed];
+      if (parsed && typeof parsed === 'object') {
+        // Discard raw empty PubNub metadata envelope if somehow caught here
+        if (parsed.status !== undefined && parsed.channels !== undefined) {
+          return [];
+        }
+        return [parsed];
+      }
     } catch (e) {}
   }
   return [];
@@ -1552,6 +1560,7 @@ export async function cleanAndParseAllMessagesFromCloud(rawText) {
 
 export function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
+  if (cloudData.status !== undefined && cloudData.channels !== undefined) return false;
   let hasChanges = false;
   const author = cloudData.authorProfileId || cloudData.masterProfileId || cloudData.author || cloudData.pid || 'he';
 
@@ -1637,14 +1646,17 @@ export function mergeCloudDataIntoAppState(cloudData) {
     if (!appState.appleWatch) appState.appleWatch = {};
     if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
     const prevSnap = appState.appleWatch.pendingWorkout[author] || {};
+    const msgTimetoken = cloudData._timetoken || String(Date.now() * 10000);
     appState.appleWatch.pendingWorkout[author] = {
       pending: true,
       startedAt: cloudData.timestamp || cloudData._timeStr || new Date().toISOString(),
+      startedAtTimetoken: msgTimetoken,
       snapshotKcal: prevSnap.pending ? prevSnap.snapshotKcal : (rep.moveKcal || m.moveKcal || 0),
       snapshotExMin: prevSnap.pending ? prevSnap.snapshotExMin : (rep.exerciseMin || m.exerciseMin || 0),
       snapshotSteps: prevSnap.pending ? prevSnap.snapshotSteps : (rep.steps || m.steps || 0)
     };
     hasChanges = true;
+    addSyncConsoleLog(`🏃 FLAG DE ENTRENO ACTIVADO (${author.toUpperCase()}): Foto base Kcal = ${appState.appleWatch.pendingWorkout[author].snapshotKcal}`, "success");
     if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
   }
 
@@ -1673,7 +1685,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
       const sessionObj = {
         id: sessionId,
         deviceName: `Apple Watch (${getProfileShortName(author)})`,
-        durationMin: durMin,
+        durationMin: durMin || 30,
         kcal: wKcal,
         timestamp: sessionTimestamp,
         autoSync: true
@@ -1681,7 +1693,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
 
       const isDuplicate = appState.completedWorkouts[author][targetDay].sessions.some(s =>
         (s.id && s.id === sessionObj.id) ||
-        (s.durationMin === durMin && s.kcal === wKcal && (s.timestamp === sessionObj.timestamp || s.id === sessionId))
+        (s.durationMin === sessionObj.durationMin && s.kcal === wKcal && (s.timestamp === sessionObj.timestamp || s.id === sessionId))
       );
 
       if (!isDuplicate) {
@@ -1689,49 +1701,62 @@ export function mergeCloudDataIntoAppState(cloudData) {
         appState.completedWorkouts[author][targetDay].done = true;
         appState.completedWorkouts[author][targetDay].watchData = sessionObj;
         hasChanges = true;
+        addSyncConsoleLog(`🏋️ SESIÓN DE ENTRENO AÑADIDA (${author.toUpperCase()}): ${sessionObj.durationMin} min · ${sessionObj.kcal} kcal`, "success");
       }
     }
 
-    // Resetear flag de entreno pendiente si existía
-    if (appState.appleWatch?.pendingWorkout?.[author]?.pending) {
-      appState.appleWatch.pendingWorkout[author].pending = false;
-      hasChanges = true;
-      if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+    // Resetear flag de entreno pendiente SOLO si el mensaje de fin de entreno es igual o posterior al inicio
+    const pInfo = appState.appleWatch?.pendingWorkout?.[author];
+    if (pInfo?.pending) {
+      const msgTimetoken = cloudData._timetoken ? BigInt(cloudData._timetoken) : 0n;
+      const startedTimetoken = pInfo.startedAtTimetoken ? BigInt(pInfo.startedAtTimetoken) : 0n;
+      if (!cloudData._timetoken || !pInfo.startedAtTimetoken || msgTimetoken >= startedTimetoken) {
+        pInfo.pending = false;
+        hasChanges = true;
+        addSyncConsoleLog(`✅ Flag de entreno resuelto (${author.toUpperCase()}) tras procesar sesión explícita.`, "success");
+        if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+      }
     }
   } else if (appState.appleWatch?.pendingWorkout?.[author]?.pending && replicaUpdated) {
     // Cálculo por diferencias al recibir actualización de salud posterior a la bandera de entreno
     const pInfo = appState.appleWatch.pendingWorkout[author];
-    const curKcal = rep.moveKcal || m.moveKcal || 0;
-    const curExMin = rep.exerciseMin || m.exerciseMin || 0;
-    const deltaKcal = Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
-    const deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
+    const msgTimetoken = cloudData._timetoken ? BigInt(cloudData._timetoken) : 0n;
+    const startedTimetoken = pInfo.startedAtTimetoken ? BigInt(pInfo.startedAtTimetoken) : 0n;
 
-    if (deltaMin >= 5 || deltaKcal >= 25) {
-      const targetDay = getTodayDayName();
-      if (!appState.completedWorkouts) appState.completedWorkouts = {};
-      if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
-      if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
-        appState.completedWorkouts[author][targetDay] = { done: true, watchData: null, sessions: [] };
+    if (!cloudData._timetoken || !pInfo.startedAtTimetoken || msgTimetoken >= startedTimetoken) {
+      const curKcal = rep.moveKcal || m.moveKcal || 0;
+      const curExMin = rep.exerciseMin || m.exerciseMin || 0;
+      const deltaKcal = Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
+      const deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
+
+      if (deltaMin >= 5 || deltaKcal >= 25) {
+        const targetDay = getTodayDayName();
+        if (!appState.completedWorkouts) appState.completedWorkouts = {};
+        if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+        if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
+          appState.completedWorkouts[author][targetDay] = { done: true, watchData: null, sessions: [] };
+        }
+        if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
+          appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
+        }
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+        const newSession = {
+          id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Auto Diferencial)`,
+          durationMin: deltaMin || 30,
+          kcal: deltaKcal,
+          timestamp: timeStr,
+          autoSync: true
+        };
+        appState.completedWorkouts[author][targetDay].sessions.push(newSession);
+        appState.completedWorkouts[author][targetDay].done = true;
+        appState.completedWorkouts[author][targetDay].watchData = newSession;
+        hasChanges = true;
+        pInfo.pending = false;
+        addSyncConsoleLog(`🎯 CÁLCULO DIFERENCIAL APLICADO (${author.toUpperCase()}): +${deltaKcal} kcal, +${deltaMin} min. Añadido a entrenos de hoy.`, "success");
+        if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
       }
-      if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
-        appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
-      }
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
-      const newSession = {
-        id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Auto Diferencial)`,
-        durationMin: deltaMin || 30,
-        kcal: deltaKcal,
-        timestamp: timeStr,
-        autoSync: true
-      };
-      appState.completedWorkouts[author][targetDay].sessions.push(newSession);
-      appState.completedWorkouts[author][targetDay].done = true;
-      appState.completedWorkouts[author][targetDay].watchData = newSession;
-      hasChanges = true;
     }
-    appState.appleWatch.pendingWorkout[author].pending = false;
-    if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
   }
 
   if (hasChanges) {
@@ -1791,36 +1816,28 @@ export async function pullFromCloud(showToast = false) {
     const key = getCloudSyncKey();
     const myMasterPid = getMasterProfileId();
     const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
+    // ONLY query the active current cloud key channels (fitduo_sync_v2_he, fitduo_sync_v2_she)
     const channels = Array.from(new Set([
       `${key}_${partnerPid}`,
-      `${key}_${myMasterPid}`,
-      `fitduo_sync_${partnerPid}`,
-      `fitduo_sync_${myMasterPid}`,
-      `fitduo_sync_v2_${partnerPid}`,
-      `fitduo_sync_v2_${myMasterPid}`
+      `${key}_${myMasterPid}`
     ]));
 
-    addSyncConsoleLog(`🔍 Consultando historial de canales PubNub: [${channels.join(", ")}]...`);
+    addSyncConsoleLog(`🔍 Consultando canales PubNub: [${channels.join(", ")}]...`);
     let hasMerged = false;
-    let totalMessages = 0;
+    let allCollectedMessages = [];
 
     for (const ch of channels) {
       try {
-        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}?count=15`;
+        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}?count=10`;
         const res = await fetch(pnSubUrl);
         if (res.ok) {
           const rawText = await res.text();
           const dataList = await cleanAndParseAllMessagesFromCloud(rawText);
           if (dataList.length > 0) {
-            totalMessages += dataList.length;
-            addSyncConsoleLog(`📥 Canal [${ch}]: ${dataList.length} mensaje(s) encontrados.`);
             for (const data of dataList) {
-              if (data) {
-                const preview = JSON.stringify(data);
-                const shortPreview = preview.length > 95 ? preview.slice(0, 95) + '...' : preview;
-                addSyncConsoleLog(`📦 [${data.author || data.pid || 'he'}] ${shortPreview}`);
-                const changed = mergeCloudDataIntoAppState(data);
-                if (changed) hasMerged = true;
+              if (data && typeof data === 'object') {
+                data._channel = ch;
+                allCollectedMessages.push(data);
               }
             }
           }
@@ -1830,10 +1847,26 @@ export async function pullFromCloud(showToast = false) {
       }
     }
 
-    if (totalMessages === 0) {
-      addSyncConsoleLog(`ℹ️ Consulta finalizada: No hay mensajes pendientes en PubNub.`);
+    if (allCollectedMessages.length === 0) {
+      addSyncConsoleLog(`ℹ️ Consulta finalizada: Sin mensajes en PubNub.`);
     } else {
-      addSyncConsoleLog(`✅ Procesamiento finalizado (${totalMessages} mensajes analizados, cambios=${hasMerged}).`, "success");
+      // Sort messages chronologically by timetoken (oldest first, newest last)
+      allCollectedMessages.sort((a, b) => {
+        const ta = a._timetoken ? BigInt(a._timetoken) : 0n;
+        const tb = b._timetoken ? BigInt(b._timetoken) : 0n;
+        return ta < tb ? -1 : ta > tb ? 1 : 0;
+      });
+
+      addSyncConsoleLog(`📥 Procesando ${allCollectedMessages.length} mensaje(s) en orden cronológico...`);
+
+      for (const data of allCollectedMessages) {
+        const preview = JSON.stringify(data);
+        const shortPreview = preview.length > 95 ? preview.slice(0, 95) + '...' : preview;
+        addSyncConsoleLog(`📦 [${data.author || data.pid || 'he'}] (${data._timeStr || 'reciente'}) ${shortPreview}`);
+        const changed = mergeCloudDataIntoAppState(data);
+        if (changed) hasMerged = true;
+      }
+      addSyncConsoleLog(`✅ Procesamiento finalizado (cambios=${hasMerged}).`, "success");
     }
 
     if (hasMerged) {
