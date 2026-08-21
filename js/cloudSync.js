@@ -522,17 +522,20 @@ export async function pullFromCloud(showToast = false) {
     const key = getCloudSyncKey();
     const myMasterPid = getMasterProfileId();
     const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
-    const channelsToPoll = [
-      { pid: partnerPid, name: partnerPid === 'he' ? 'Carlos' : 'Andrea', isPartner: true },
-      { pid: myMasterPid, name: myMasterPid === 'he' ? 'Carlos' : 'Andrea', isPartner: false }
-    ];
+    const channelNames = Array.from(new Set([
+      `${key}_${partnerPid}`,
+      `${key}_${myMasterPid}`,
+      `fitduo_sync_${partnerPid}`,
+      `fitduo_sync_${myMasterPid}`,
+      `fitduo_sync_v2_${partnerPid}`,
+      `fitduo_sync_v2_${myMasterPid}`
+    ]));
 
     let hasMergedAny = false;
     let pullSuccess = false;
 
-    for (const target of channelsToPoll) {
+    for (const pnChannel of channelNames) {
       try {
-        const pnChannel = `${key}_${target.pid}`;
         const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${pnChannel}?count=1`;
         const controller = new AbortController();
         const tId = setTimeout(() => controller.abort(), 4500);

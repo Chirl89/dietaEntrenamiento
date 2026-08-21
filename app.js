@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.9.3)
+ * FitDuo & Collie Coach - Main Application Engine (v0.9.4)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -1540,7 +1540,14 @@ export async function pullFromCloud(showToast = false) {
     const key = getCloudSyncKey();
     const myMasterPid = getMasterProfileId();
     const partnerPid = myMasterPid === 'he' ? 'she' : 'he';
-    const channels = [`${key}_${partnerPid}`, `${key}_${myMasterPid}`];
+    const channels = Array.from(new Set([
+      `${key}_${partnerPid}`,
+      `${key}_${myMasterPid}`,
+      `fitduo_sync_${partnerPid}`,
+      `fitduo_sync_${myMasterPid}`,
+      `fitduo_sync_v2_${partnerPid}`,
+      `fitduo_sync_v2_${myMasterPid}`
+    ]));
 
     let hasMerged = false;
     for (const ch of channels) {
