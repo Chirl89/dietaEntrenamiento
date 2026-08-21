@@ -154,12 +154,12 @@ export function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], h
 }
 
 export function checkUrlParamsForWatchSync() {
-  let searchStr = window.location.search;
-  let hashStr = window.location.hash;
+  let searchStr = window.location?.search || "";
+  let hashStr = window.location?.hash || "";
   
-  if (!searchStr && hashStr.includes("?")) {
+  if (!searchStr && hashStr && hashStr.includes("?")) {
     searchStr = hashStr.substring(hashStr.indexOf("?"));
-  } else if (!searchStr && hashStr.includes("=")) {
+  } else if (!searchStr && hashStr && hashStr.includes("=")) {
     searchStr = hashStr.replace("#", "?");
   }
 
