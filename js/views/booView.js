@@ -1,5 +1,5 @@
 import { appState, saveState, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from '../../data.js?v=0.9.9';
+import { BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from '../../data.js?v=0.9.10';
 
 export function selectBooDayFromDropdown(dayName) {
   appState.activeBooDay = dayName;
