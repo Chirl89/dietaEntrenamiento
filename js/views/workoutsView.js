@@ -1,5 +1,5 @@
 import { appState, saveState, getMasterProfileId, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.8.1';
+import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.9.0';
 
 export function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -17,11 +17,24 @@ export function getDayWatchData(profileId, dayName) {
   if (val === true) {
     const snapshot = createWatchDataSnapshot(profileId);
     if (!appState.completedWorkouts[profileId]) appState.completedWorkouts[profileId] = {};
-    appState.completedWorkouts[profileId][dayName] = { done: true, watchData: snapshot };
+    appState.completedWorkouts[profileId][dayName] = { done: true, watchData: snapshot, sessions: [snapshot] };
     saveState();
     return snapshot;
   }
   return null;
+}
+
+export function getDaySessions(profileId, dayName) {
+  const val = appState.completedWorkouts?.[profileId]?.[dayName];
+  if (val && typeof val === 'object') {
+    if (Array.isArray(val.sessions) && val.sessions.length > 0) {
+      return val.sessions;
+    }
+    if (val.watchData) {
+      return [val.watchData];
+    }
+  }
+  return [];
 }
 
 export function createWatchDataSnapshot(profileId, customDuration = null) {
@@ -40,7 +53,8 @@ export function createWatchDataSnapshot(profileId, customDuration = null) {
     avgHr: avgHr,
     maxHr: maxHr,
     timestamp: timeStr,
-    autoSync: true
+    autoSync: true,
+    isScheduled: true
   };
 }
 
@@ -53,9 +67,14 @@ export function recordWatchWorkoutForDay(dayName = null, profileId = null, notif
   }
 
   const snapshot = createWatchDataSnapshot(pid);
+  const existing = appState.completedWorkouts[pid][targetDay] || {};
+  const existingSessions = Array.isArray(existing.sessions) ? [...existing.sessions] : (existing.watchData ? [existing.watchData] : []);
+  existingSessions.push(snapshot);
+
   appState.completedWorkouts[pid][targetDay] = {
     done: true,
-    watchData: snapshot
+    watchData: snapshot,
+    sessions: existingSessions
   };
 
   saveState();
@@ -76,12 +95,13 @@ export function toggleWorkoutDay(dayName) {
   const currentDone = isDayCompleted(profileId, dayName);
 
   if (currentDone) {
-    appState.completedWorkouts[profileId][dayName] = { done: false, watchData: null };
+    appState.completedWorkouts[profileId][dayName] = { done: false, watchData: null, sessions: [] };
   } else {
     const watchSnapshot = createWatchDataSnapshot(profileId);
     appState.completedWorkouts[profileId][dayName] = {
       done: true,
-      watchData: watchSnapshot
+      watchData: watchSnapshot,
+      sessions: [watchSnapshot]
     };
     const pName = appState.profiles[profileId].name.split(" ")[0];
     showIosToast(` Entrenamiento de ${dayName} registrado con Apple Watch (${pName}: ${watchSnapshot.kcal} kcal - ${watchSnapshot.durationMin} min)`, "fa-brands fa-apple");
@@ -98,7 +118,7 @@ export function resetWorkoutWeek() {
     appState.completedWorkouts[profileId] = {};
   }
   days.forEach(d => {
-    appState.completedWorkouts[profileId][d] = { done: false, watchData: null };
+    appState.completedWorkouts[profileId][d] = { done: false, watchData: null, sessions: [] };
   });
   saveState();
   if (window.renderAll) window.renderAll();
@@ -150,19 +170,43 @@ export function renderWorkoutsView() {
   const profileId = appState.activeProfileId;
   const isDone = isDayCompleted(profileId, activeDay);
   const watchData = getDayWatchData(profileId, activeDay);
+  const sessions = getDaySessions(profileId, activeDay);
 
   // If completed with watch data, show top Apple Watch banner
   if (isDone && watchData) {
     const watchBanner = document.createElement("div");
     watchBanner.className = "glass-card watch-workout-summary-card";
     watchBanner.style.marginBottom = "1rem";
+
+    let multiSessionsHtml = "";
+    if (sessions.length > 1) {
+      multiSessionsHtml = `
+        <div style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-list-check"></i> ${sessions.length} Sesiones registradas hoy (${activeDay}):
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            ${sessions.map((s, idx) => `
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 0.4rem 0.75rem; border-radius: 8px; font-size: 0.8rem;">
+                <span><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> <strong>Sesión ${idx + 1}</strong> (${s.timestamp || '--'})</span>
+                <span style="color: var(--accent-rose); font-weight: 600;">${s.kcal || 0} kcal · ${s.durationMin || 0} min</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
     watchBanner.innerHTML = `
       <div class="watch-summary-header">
         <div class="watch-summary-title">
           <div class="watch-icon-glow"><i class="fa-brands fa-apple"></i></div>
           <div>
-            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
-               Sesión Medida por Apple Watch (${activeDay})
+            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+              <span> Sesión Medida por Apple Watch (${activeDay})</span>
+              <span style="font-size: 0.75rem; background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.4); padding: 2px 8px; border-radius: 20px; font-weight: 600;">
+                <i class="fa-solid fa-circle-check"></i> Entreno Programado Completado
+              </span>
             </h3>
             <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
               Sincronizado automáticamente a las ${watchData.timestamp} • ${watchData.deviceName}
@@ -190,6 +234,7 @@ export function renderWorkoutsView() {
           <span class="metric-val" style="color:var(--accent-amber);">${watchData.maxHr} <small>BPM</small></span>
         </div>
       </div>
+      ${multiSessionsHtml}
     `;
     container.appendChild(watchBanner);
   }

@@ -1,6 +1,6 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.8.2)
- * Comprehensive, High-Performance, Unified Architecture
+ * FitDuo & Collie Coach - Main Application Engine (v0.9.0)
+ * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
 import {

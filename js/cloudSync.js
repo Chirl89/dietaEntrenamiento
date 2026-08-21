@@ -248,17 +248,30 @@ export function mergeCloudDataIntoAppState(cloudData) {
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
     
+    const existingDayWorkout = appState.completedWorkouts[author][targetDay] || {};
+    let existingSessions = Array.isArray(existingDayWorkout.sessions) ? [...existingDayWorkout.sessions] : (existingDayWorkout.watchData ? [existingDayWorkout.watchData] : []);
+
+    const newSession = {
+      deviceName: `Apple Watch (${authorName})`,
+      durationMin: wDur,
+      kcal: wKcal,
+      avgHr: wAvgHr,
+      maxHr: wMaxHr,
+      timestamp: timeStr,
+      autoSync: true,
+      isScheduled: true
+    };
+
+    // Avoid duplicate session timestamp within exact same minute
+    const alreadyExists = existingSessions.some(s => s.timestamp === timeStr && s.durationMin === wDur && s.kcal === wKcal);
+    if (!alreadyExists) {
+      existingSessions.push(newSession);
+    }
+
     appState.completedWorkouts[author][targetDay] = {
       done: true,
-      watchData: {
-        deviceName: `Apple Watch (${authorName})`,
-        durationMin: wDur,
-        kcal: wKcal,
-        avgHr: wAvgHr,
-        maxHr: wMaxHr,
-        timestamp: timeStr,
-        autoSync: true
-      }
+      watchData: newSession,
+      sessions: existingSessions
     };
     replicaMetricsUpdated = true;
   }

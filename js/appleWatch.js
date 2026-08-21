@@ -314,17 +314,29 @@ export function checkUrlParamsForWatchSync() {
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
 
+    const existingDayWorkout = appState.completedWorkouts[pid][targetDay] || {};
+    let existingSessions = Array.isArray(existingDayWorkout.sessions) ? [...existingDayWorkout.sessions] : (existingDayWorkout.watchData ? [existingDayWorkout.watchData] : []);
+
+    const newSession = {
+      deviceName: m.deviceName || `Apple Watch (${appState.profiles[pid].name.split(" ")[0]})`,
+      durationMin: durMin,
+      kcal: wKcal,
+      avgHr: avgH,
+      maxHr: maxH,
+      timestamp: timeStr,
+      autoSync: true,
+      isScheduled: true
+    };
+
+    const alreadyExists = existingSessions.some(s => s.timestamp === timeStr && s.durationMin === durMin && s.kcal === wKcal);
+    if (!alreadyExists) {
+      existingSessions.push(newSession);
+    }
+
     appState.completedWorkouts[pid][targetDay] = {
       done: true,
-      watchData: {
-        deviceName: m.deviceName || `Apple Watch (${appState.profiles[pid].name.split(" ")[0]})`,
-        durationMin: durMin,
-        kcal: wKcal,
-        avgHr: avgH,
-        maxHr: maxH,
-        timestamp: timeStr,
-        autoSync: true
-      }
+      watchData: newSession,
+      sessions: existingSessions
     };
     appState.activeWorkoutDay = targetDay;
     updated = true;
