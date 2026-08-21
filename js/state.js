@@ -1,4 +1,4 @@
-import { INITIAL_PROFILES } from '../data.js?v=0.10.1';
+import { INITIAL_PROFILES } from '../data.js?v=0.10.2';
 
 // STATE STORAGE KEYS
 export const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";

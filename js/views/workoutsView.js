@@ -1,5 +1,5 @@
 import { appState, saveState, getMasterProfileId, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.10.1';
+import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.10.2';
 
 export function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -113,7 +113,61 @@ export function selectExerciseDayFromDropdown(dayName) {
   renderExerciseTableView();
 }
 
+export function updateWorkoutPendingStatusBadge() {
+  const badgeEl = document.getElementById("workout-pending-status-pill");
+  if (!badgeEl) return;
+
+  const profileId = appState.activeProfileId || 'he';
+  const authorName = profileId === 'he' ? 'Carlos' : 'Andrea';
+  const pendingInfo = appState.appleWatch?.pendingWorkout?.[profileId];
+  const isPending = pendingInfo && (pendingInfo.pending === true || pendingInfo.pending === "true");
+
+  if (isPending) {
+    const timeStr = pendingInfo.startedAt ? (pendingInfo.startedAt.includes("T") ? new Date(pendingInfo.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (pendingInfo.startedAt.includes(":") ? pendingInfo.startedAt : new Date(pendingInfo.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))) : '--:--';
+    badgeEl.style.display = "inline-flex";
+    badgeEl.style.alignItems = "center";
+    badgeEl.style.gap = "0.45rem";
+    badgeEl.style.padding = "0.38rem 0.85rem";
+    badgeEl.style.borderRadius = "8px";
+    badgeEl.style.fontSize = "0.78rem";
+    badgeEl.style.fontWeight = "600";
+    badgeEl.style.background = "rgba(245, 158, 11, 0.15)";
+    badgeEl.style.border = "1px solid rgba(245, 158, 11, 0.45)";
+    badgeEl.style.color = "#fbbf24";
+    badgeEl.style.cursor = "pointer";
+    badgeEl.setAttribute("title", `Entreno iniciado (${timeStr}). Foto base: ${pendingInfo.snapshotKcal || 0} kcal. Se procesará por diferencias al sincronizar Salud.`);
+    badgeEl.innerHTML = `
+      <span class="status-pulse-dot" style="width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #fbbf24;"></span>
+      <span>🏃 <strong>Flag Activo:</strong> Entreno en curso (${timeStr})</span>
+    `;
+    badgeEl.onclick = () => {
+      showIosToast(`🏃 <strong>Entreno en curso (${authorName}):</strong> Iniciado a las ${timeStr}. Base: ${pendingInfo.snapshotKcal || 0} kcal. Al abrir WhatsApp/FitDuo y sincronizar Salud, se calculará por diferencias.`, "fa-solid fa-person-running");
+    };
+  } else {
+    badgeEl.style.display = "inline-flex";
+    badgeEl.style.alignItems = "center";
+    badgeEl.style.gap = "0.45rem";
+    badgeEl.style.padding = "0.38rem 0.85rem";
+    badgeEl.style.borderRadius = "8px";
+    badgeEl.style.fontSize = "0.78rem";
+    badgeEl.style.fontWeight = "600";
+    badgeEl.style.background = "rgba(16, 185, 129, 0.12)";
+    badgeEl.style.border = "1px solid rgba(16, 185, 129, 0.35)";
+    badgeEl.style.color = "#34d399";
+    badgeEl.style.cursor = "pointer";
+    badgeEl.setAttribute("title", `No hay entrenamientos pendientes para ${authorName}. Flag en False.`);
+    badgeEl.innerHTML = `
+      <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
+      <span>✓ <strong>Flag Inactivo:</strong> Sincronizado</span>
+    `;
+    badgeEl.onclick = () => {
+      showIosToast(`✓ <strong>Estado Sincronizado (${authorName}):</strong> Flag = false. Sin entrenamientos pendientes.`, "fa-solid fa-circle-check");
+    };
+  }
+}
+
 export function renderWorkoutsView() {
+  updateWorkoutPendingStatusBadge();
   const container = document.getElementById("workouts-daily-container") || document.getElementById("routines-container");
   if (!container) return;
   container.innerHTML = "";
