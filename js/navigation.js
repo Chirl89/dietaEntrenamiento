@@ -2,7 +2,7 @@ import { appState, LOCAL_STORAGE_KEY, LAST_ACTIVE_PROFILE_KEY, DEVICE_DEFAULT_PR
 import { updateAppleWatchModalUI, updateHeaderWatchBadge } from './appleWatch.js';
 import { renderSummaryView, renderProfileView } from './views/summaryView.js';
 import { renderNutritionMenuView, renderNutritionRecipesView, renderShoppingView } from './views/nutritionView.js';
-import { renderWorkoutsView } from './views/workoutsView.js';
+import { renderWorkoutsView, renderExerciseTableView } from './views/workoutsView.js';
 import { renderBooWorkoutView } from './views/booView.js';
 import { renderProgressView } from './views/progressView.js';
 import { renderSettingsView } from './views/settingsView.js';
@@ -116,6 +116,7 @@ export function renderAll() {
   renderShoppingView();
   renderWorkoutsView();
   renderBooWorkoutView();
+  renderExerciseTableView();
   renderProgressView();
   renderSettingsView();
   updateHeaderWatchBadge();
@@ -202,6 +203,8 @@ export function showTab(tabId, btnElement) {
     renderWorkoutsView();
   } else if (tabId === 'workouts-boo-view') {
     renderBooWorkoutView();
+  } else if (tabId === 'workouts-exercises-view') {
+    renderExerciseTableView();
   } else if (tabId === 'apple-watch-view') {
     updateAppleWatchModalUI();
   } else if (tabId === 'settings-view') {

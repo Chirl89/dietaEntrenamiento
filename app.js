@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.9.5)
+ * FitDuo & Collie Coach - Main Application Engine (v0.9.6)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -697,6 +697,8 @@ export function showTab(tabId, btnElement) {
     renderWorkoutsView();
   } else if (tabId === 'workouts-boo-view') {
     renderBooWorkoutView();
+  } else if (tabId === 'workouts-exercises-view') {
+    renderExerciseTableView();
   } else if (tabId === 'apple-watch-view') {
     updateAppleWatchModalUI();
   } else if (tabId === 'settings-view') {
@@ -2125,6 +2127,31 @@ export function syncAppleWatchData() {
   triggerManualSync();
 }
 
+export function renderWorkoutTracker() {
+  const pid = appState.activeProfileId;
+  const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const completedCount = days.filter(d => isDayCompleted(pid, d)).length;
+
+  const countEl = document.getElementById("tracker-completed-count");
+  if (countEl) countEl.innerText = `${completedCount}/7 Días Completados`;
+
+  const barEl = document.getElementById("tracker-progress-bar");
+  if (barEl) barEl.style.width = `${(completedCount / 7) * 100}%`;
+
+  const daysGrid = document.getElementById("tracker-days-grid");
+  if (daysGrid) {
+    daysGrid.innerHTML = days.map(d => {
+      const isDone = isDayCompleted(pid, d);
+      return `
+        <button type="button" class="tracker-day-pill ${isDone ? 'completed' : ''}" onclick="toggleWorkoutDay('${d}')">
+          <i class="fa-solid ${isDone ? 'fa-circle-check' : 'fa-circle'}"></i>
+          <span>${d.slice(0, 3)}</span>
+        </button>
+      `;
+    }).join("");
+  }
+}
+
 export function openTodayWorkouts() {
   showTab("workouts-view", document.getElementById("dock-btn-workouts"));
 }
@@ -2953,6 +2980,7 @@ window.renderProfileView = renderProfileView;
 window.addExclusion = addExclusion;
 window.removeExclusion = removeExclusion;
 window.toggleWorkoutDay = toggleWorkoutDay;
+window.renderWorkoutTracker = renderWorkoutTracker;
 window.deleteWorkoutSession = deleteWorkoutSession;
 window.resetWorkoutWeek = resetWorkoutWeek;
 window.syncAppleWatchData = syncAppleWatchData;
