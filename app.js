@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.9.4)
+ * FitDuo & Collie Coach - Main Application Engine (v0.9.5)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -528,8 +528,9 @@ export const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-workouts",
     sidebarId: "sidebar-nav-workouts",
     subtabs: [
-      { id: "workouts-view", label: "Ejercicios", icon: "fa-solid fa-dumbbell" },
-      { id: "workouts-boo-view", label: "Boo (Perros)", icon: "fa-solid fa-dog" }
+      { id: "workouts-view", label: "Entrenamientos", icon: "fa-solid fa-dumbbell" },
+      { id: "workouts-boo-view", label: "Boo", icon: "fa-solid fa-dog" },
+      { id: "workouts-exercises-view", label: "Tabla de Ejercicios", icon: "fa-solid fa-list-check" }
     ]
   },
   profile: {
@@ -609,6 +610,7 @@ export function renderAll() {
   renderShoppingView();
   renderWorkoutsView();
   renderBooWorkoutView();
+  renderExerciseTableView();
   renderProgressView();
   renderSettingsView();
   updateHeaderWatchBadge();
@@ -2034,7 +2036,7 @@ export function copyShoppingList() {
 }
 
 // ==========================================
-// 8. WORKOUTS & ROUTINES VIEW
+// 8. WORKOUTS & ROUTINES VIEW (SUBTAB 1 & SUBTAB 3)
 // ==========================================
 export function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -2123,154 +2125,190 @@ export function syncAppleWatchData() {
   triggerManualSync();
 }
 
-export function renderWorkoutTracker() {
-  const pid = appState.activeProfileId;
-  const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-  const completedCount = days.filter(d => isDayCompleted(pid, d)).length;
-
-  const countEl = document.getElementById("tracker-completed-count");
-  if (countEl) countEl.innerText = `${completedCount}/7 Días Completados`;
-
-  const barEl = document.getElementById("tracker-progress-bar");
-  if (barEl) barEl.style.width = `${(completedCount / 7) * 100}%`;
-
-  const daysGrid = document.getElementById("tracker-days-grid");
-  if (daysGrid) {
-    daysGrid.innerHTML = days.map(d => {
-      const isDone = isDayCompleted(pid, d);
-      return `
-        <button type="button" class="tracker-day-pill ${isDone ? 'completed' : ''}" onclick="toggleWorkoutDay('${d}')">
-          <i class="fa-solid ${isDone ? 'fa-circle-check' : 'fa-circle'}"></i>
-          <span>${d.slice(0, 3)}</span>
-        </button>
-      `;
-    }).join("");
-  }
-}
-
 export function openTodayWorkouts() {
-  const today = getTodayDayName();
-  appState.activeWorkoutDay = today;
-  const selectElem = document.getElementById("workout-day-select");
-  if (selectElem) selectElem.value = today;
   showTab("workouts-view", document.getElementById("dock-btn-workouts"));
 }
 
-export function selectWorkoutDay(dayName) {
-  appState.activeWorkoutDay = dayName;
-  const selectElem = document.getElementById("workout-day-select");
-  if (selectElem) selectElem.value = dayName;
-  renderWorkoutsView();
+export function openManualWorkoutModal() {
+  triggerHapticTouch();
+  const modal = document.getElementById("manual-workout-modal");
+  if (modal) {
+    const timeInput = document.getElementById("manual-workout-timestamp");
+    if (timeInput) {
+      timeInput.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+    }
+    modal.classList.add("active");
+  }
 }
 
-export function selectWorkoutDayFromDropdown(dayName) {
-  appState.activeWorkoutDay = dayName;
-  renderWorkoutsView();
+export function closeManualWorkoutModal() {
+  const modal = document.getElementById("manual-workout-modal");
+  if (modal) modal.classList.remove("active");
 }
 
+export function saveManualWorkoutSession(e) {
+  if (e) e.preventDefault();
+  triggerHapticTouch();
+
+  const durInput = document.getElementById("manual-workout-duration");
+  const kcalInput = document.getElementById("manual-workout-kcal");
+  const timeInput = document.getElementById("manual-workout-timestamp");
+
+  const duration = parseInt(durInput?.value || "30", 10);
+  const kcal = parseInt(kcalInput?.value || "250", 10);
+  const timestamp = timeInput?.value.trim() || (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
+
+  const pid = appState.activeProfileId;
+  const today = getTodayDayName();
+
+  if (!appState.completedWorkouts) appState.completedWorkouts = {};
+  if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
+
+  const existing = appState.completedWorkouts[pid][today] || {};
+  const sessions = Array.isArray(existing.sessions) ? [...existing.sessions] : (existing.watchData ? [existing.watchData] : []);
+
+  const newSession = {
+    deviceName: "Registro Manual",
+    durationMin: duration,
+    kcal: kcal,
+    timestamp: timestamp,
+    autoSync: false,
+    isScheduled: true
+  };
+
+  sessions.push(newSession);
+
+  appState.completedWorkouts[pid][today] = {
+    done: true,
+    watchData: newSession,
+    sessions: sessions
+  };
+
+  saveState();
+  closeManualWorkoutModal();
+  if (durInput) durInput.value = "";
+  if (kcalInput) kcalInput.value = "";
+
+  renderAll();
+  showIosToast(`🏋️ Sesión añadida (${duration} min · ${kcal} kcal)`, "fa-solid fa-dumbbell");
+}
+
+// SUBTAB 1: RENDER REGISTRO DE ENTRENAMIENTOS DE HOY
 export function renderWorkoutsView() {
-  renderWorkoutTracker();
-  const container = document.getElementById("routines-container") || document.getElementById("workout-routines-container");
+  const container = document.getElementById("workouts-daily-container") || document.getElementById("routines-container");
   if (!container) return;
   container.innerHTML = "";
 
-  const activeDay = appState.activeWorkoutDay || getTodayDayName();
+  const profileId = appState.activeProfileId;
+  const today = getTodayDayName();
+  const sessions = getDaySessions(profileId, today);
+
+  if (sessions.length === 0) {
+    const emptyCard = document.createElement("div");
+    emptyCard.className = "glass-card";
+    emptyCard.style.cssText = "text-align: center; padding: 2.8rem 1.5rem; border: 1px dashed var(--border-color); border-radius: var(--radius-md);";
+    emptyCard.innerHTML = `
+      <div style="font-size: 2.8rem; margin-bottom: 0.75rem; color: var(--text-muted); opacity: 0.5;">
+        <i class="fa-solid fa-dumbbell"></i>
+      </div>
+      <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; margin-bottom: 0.4rem;">
+        Hoy no se han registrado entrenamientos
+      </h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 1.5rem auto; line-height: 1.45;">
+        Los entrenamientos que ejecutes con los atajos de Apple Watch o añadas manualmente se guardarán en esta lista diaria.
+      </p>
+      <button type="button" class="btn-primary" onclick="openManualWorkoutModal()" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; padding: 0.55rem 1.1rem; margin: 0 auto;">
+        <i class="fa-solid fa-plus"></i> + Añadir Entrenamiento Manual
+      </button>
+    `;
+    container.appendChild(emptyCard);
+    return;
+  }
+
+  const totalMin = sessions.reduce((acc, s) => acc + (s.durationMin || 0), 0);
+  const totalKcal = sessions.reduce((acc, s) => acc + (s.kcal || 0), 0);
+
+  const summaryCard = document.createElement("div");
+  summaryCard.className = "glass-card watch-workout-summary-card";
+  summaryCard.style.marginBottom = "1.25rem";
+
+  summaryCard.innerHTML = `
+    <div class="watch-summary-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+      <div class="watch-summary-title">
+        <div class="watch-icon-glow"><i class="fa-solid fa-bolt"></i></div>
+        <div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff;">
+            Entrenamientos Registrados Hoy (${today})
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
+            ${sessions.length} ${sessions.length === 1 ? 'sesión completada' : 'sesiones completadas'}
+          </p>
+        </div>
+      </div>
+      <button type="button" class="btn-secondary-sm" onclick="openManualWorkoutModal()" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 8px;">
+        <i class="fa-solid fa-plus"></i> + Añadir otra sesión
+      </button>
+    </div>
+
+    <div class="watch-summary-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 0.85rem;">
+      <div class="summary-metric-box">
+        <span class="metric-lbl"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Tiempo Total Medido</span>
+        <span class="metric-val" style="color:var(--accent-cyan);">${totalMin} <small>min</small></span>
+      </div>
+      <div class="summary-metric-box">
+        <span class="metric-lbl"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías Totales</span>
+        <span class="metric-val" style="color:var(--accent-rose);">${totalKcal} <small>kcal</small></span>
+      </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
+      <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+        <i class="fa-solid fa-list-check"></i> Desglose de Sesiones de Hoy:
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+        ${sessions.map((s, idx) => `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 0.55rem 0.85rem; border-radius: 8px; font-size: 0.83rem;">
+            <div>
+              <span style="font-weight: 600; color: #fff;"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Sesión ${idx + 1}</span>
+              <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.4rem;">(${s.timestamp || '--'})</span>
+              <span style="color: var(--text-muted); font-size: 0.72rem; margin-left: 0.3rem;">• ${s.deviceName || 'Apple Watch'}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="color: var(--accent-cyan); font-weight: 600;">${s.durationMin || 0} min</span>
+              <span style="color: var(--accent-rose); font-weight: 600;">${s.kcal || 0} kcal</span>
+              <button type="button" onclick="deleteWorkoutSession('${today}', ${idx})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 2px 6px; font-size: 0.85rem;" title="Eliminar esta sesión">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  container.appendChild(summaryCard);
+}
+
+// SUBTAB 3: RENDER TABLA DE EJERCICIOS SEMANAL (RUTINAS POR DÍA)
+export function selectExerciseDayFromDropdown(dayName) {
+  appState.activeExerciseDay = dayName;
+  renderExerciseTableView();
+}
+
+export function renderExerciseTableView() {
+  const container = document.getElementById("exercise-routines-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const activeDay = appState.activeExerciseDay || getTodayDayName();
+
+  const selectElem = document.getElementById("exercise-day-select");
+  if (selectElem && selectElem.value !== activeDay) {
+    selectElem.value = activeDay;
+  }
+
   const routine = WEEKLY_WORKOUT_SCHEDULE?.[activeDay] || WEEKLY_WORKOUT_SCHEDULE?.["Lunes"];
   if (!routine) return;
-
-  const profileId = appState.activeProfileId;
-  const isDone = isDayCompleted(profileId, activeDay);
-  const watchData = getDayWatchData(profileId, activeDay);
-  const sessions = getDaySessions(profileId, activeDay);
-
-  // If there are recorded sessions or watch data, show top Apple Watch banner (WITHOUT fake HR)
-  if (sessions.length > 0 || (isDone && watchData)) {
-    const primaryData = watchData || sessions[sessions.length - 1];
-    const totalMin = sessions.length > 0 ? sessions.reduce((acc, s) => acc + (s.durationMin || 0), 0) : (primaryData?.durationMin || 0);
-    const totalKcal = sessions.length > 0 ? sessions.reduce((acc, s) => acc + (s.kcal || 0), 0) : (primaryData?.kcal || 0);
-
-    const watchBanner = document.createElement("div");
-    watchBanner.className = "glass-card watch-workout-summary-card";
-    watchBanner.style.marginBottom = "1rem";
-
-    let sessionsListHtml = "";
-    if (sessions.length > 0) {
-      sessionsListHtml = `
-        <div style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
-            <span><i class="fa-solid fa-list-check"></i> ${sessions.length} ${sessions.length === 1 ? 'Sesión registrada' : 'Sesiones registradas'} (${activeDay}):</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-            ${sessions.map((s, idx) => `
-              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.82rem;">
-                <div>
-                  <span style="font-weight: 600; color: #fff;"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Sesión ${idx + 1}</span>
-                  <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.4rem;">(${s.timestamp || '--'})</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.6rem;">
-                  <span style="color: var(--accent-cyan); font-weight: 600;">${s.durationMin || 0} min</span>
-                  <span style="color: var(--accent-rose); font-weight: 600;">${s.kcal || 0} kcal</span>
-                  <button type="button" onclick="deleteWorkoutSession('${activeDay}', ${idx})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 2px 6px; font-size: 0.8rem;" title="Eliminar esta sesión">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    watchBanner.innerHTML = `
-      <div class="watch-summary-header">
-        <div class="watch-summary-title">
-          <div class="watch-icon-glow"><i class="fa-brands fa-apple"></i></div>
-          <div>
-            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-              <span> Sesión Medida por Apple Watch (${activeDay})</span>
-              <span style="font-size: 0.75rem; background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.4); padding: 2px 8px; border-radius: 20px; font-weight: 600;">
-                <i class="fa-solid fa-circle-check"></i> Entreno Programado Completado
-              </span>
-            </h3>
-            <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
-              Sincronizado a las ${primaryData?.timestamp || '--'} • ${primaryData?.deviceName || 'Apple Watch'}
-            </p>
-          </div>
-        </div>
-        <span class="watch-live-badge"><i class="fa-solid fa-circle-check"></i> Salud iOS Sync</span>
-      </div>
-
-      <div class="watch-summary-grid" style="grid-template-columns: repeat(2, 1fr);">
-        <div class="summary-metric-box">
-          <span class="metric-lbl"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Tiempo Medido</span>
-          <span class="metric-val" style="color:var(--accent-cyan);">${totalMin} <small>min</small></span>
-        </div>
-        <div class="summary-metric-box">
-          <span class="metric-lbl"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías Activas</span>
-          <span class="metric-val" style="color:var(--accent-rose);">${totalKcal} <small>kcal</small></span>
-        </div>
-      </div>
-      ${sessionsListHtml}
-    `;
-    container.appendChild(watchBanner);
-  } else if (isDone) {
-    const manualDoneBanner = document.createElement("div");
-    manualDoneBanner.className = "glass-card";
-    manualDoneBanner.style.marginBottom = "1rem";
-    manualDoneBanner.style.padding = "0.85rem 1rem";
-    manualDoneBanner.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; color: #10b981; font-weight: 600;">
-          <i class="fa-solid fa-circle-check" style="font-size: 1.2rem;"></i>
-          <span>Entrenamiento de ${activeDay} marcado como completado</span>
-        </div>
-        <button type="button" class="btn-secondary-sm" onclick="toggleWorkoutDay('${activeDay}')" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
-          <i class="fa-solid fa-xmark"></i> Desmarcar
-        </button>
-      </div>
-    `;
-    container.appendChild(manualDoneBanner);
-  }
 
   const card = document.createElement("div");
   card.className = "glass-card";
@@ -2290,15 +2328,11 @@ export function renderWorkoutsView() {
   card.innerHTML = `
     <div class="routine-header-box" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
       <div>
-        <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">${routine.title}</h2>
+        <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">${routine.title} (${activeDay})</h2>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Enfoque: ${routine.focus || ''}</p>
       </div>
-      <div style="display:flex; gap:0.5rem; align-items:center;">
+      <div>
         <span class="routine-badge"><i class="fa-solid fa-clock"></i> ${routine.duration} min (Juntos)</span>
-        <button type="button" class="btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;" onclick="toggleWorkoutDay('${activeDay}')">
-          <i class="fa-solid ${isDone ? 'fa-circle-check' : 'fa-circle'}"></i>
-          ${isDone ? 'Completado' : 'Marcar Hecho'}
-        </button>
       </div>
     </div>
 
@@ -2354,25 +2388,28 @@ export function connectBluetoothHR() {
 }
 
 // ==========================================
-// 9. BOO (BORDER COLLIE) TRAINING VIEW
+// 9. BOO (BORDER COLLIE) TRAINING VIEW (SUBTAB 2)
 // ==========================================
 export function selectBooDayFromDropdown(dayName) {
   appState.activeBooDay = dayName;
   renderBooWorkoutView();
 }
 
-export function toggleBooTask(taskId) {
+export function toggleBooTask(taskId, dayName = null) {
   triggerHapticTouch();
+  const targetDay = dayName || appState.activeBooDay || getTodayDayName();
+  if (!appState.booProgress) appState.booProgress = {};
   if (!appState.booProgress.completedTasks) appState.booProgress.completedTasks = {};
   const current = !!appState.booProgress.completedTasks[taskId];
   appState.booProgress.completedTasks[taskId] = !current;
   saveState();
   renderBooWorkoutView();
-  showIosToast(!current ? "🐾 ¡Ejercicio de Boo registrado!" : "Desmarcado", "fa-solid fa-paw");
+  showIosToast(!current ? "🐾 ¡Ejercicio de Boo registrado!" : "Ejercicio desmarcado", "fa-solid fa-paw");
 }
 
 export function setBooMood(dayName, mood) {
   triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
   if (!appState.booProgress.moodLogs) appState.booProgress.moodLogs = {};
   appState.booProgress.moodLogs[dayName] = mood;
   saveState();
@@ -2384,6 +2421,7 @@ export function saveBooSessionNotes(dayName) {
   triggerHapticTouch();
   const input = document.getElementById("boo-session-note-input");
   if (!input) return;
+  if (!appState.booProgress) appState.booProgress = {};
   if (!appState.booProgress.sessionNotes) appState.booProgress.sessionNotes = {};
   appState.booProgress.sessionNotes[dayName] = input.value.trim();
   saveState();
@@ -2392,6 +2430,7 @@ export function saveBooSessionNotes(dayName) {
 
 export function markBooModulePracticed(moduleId) {
   triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
   if (!appState.booProgress.moduleStats) appState.booProgress.moduleStats = {};
   appState.booProgress.moduleStats[moduleId] = (appState.booProgress.moduleStats[moduleId] || 0) + 1;
   saveState();
@@ -2401,6 +2440,7 @@ export function markBooModulePracticed(moduleId) {
 
 export function toggleContinuousItem(itemId, dayName) {
   triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
   if (!appState.booProgress.completedContinuous) appState.booProgress.completedContinuous = {};
   const key = `${dayName}_${itemId}`;
   const cur = !!appState.booProgress.completedContinuous[key];
@@ -2412,6 +2452,7 @@ export function toggleContinuousItem(itemId, dayName) {
 
 export function markTrickMastered(trickId) {
   triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
   if (!appState.booProgress.learnedTricks) appState.booProgress.learnedTricks = [];
   if (!appState.booProgress.learnedTricks.includes(trickId)) {
     appState.booProgress.learnedTricks.push(trickId);
@@ -2420,19 +2461,21 @@ export function markTrickMastered(trickId) {
   appState.booProgress.activeTrickId = next ? next.id : null;
   saveState();
   renderBooWorkoutView();
-  showIosToast("🎉 ¡Truco dominado!", "fa-solid fa-trophy");
+  showIosToast("🎉 ¡Enhorabuena! Boo ha dominado un nuevo truco.", "fa-solid fa-trophy");
 }
 
 export function selectActiveTrickFromBacklog(trickId) {
   triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
   appState.booProgress.activeTrickId = trickId;
   saveState();
   renderBooWorkoutView();
-  showIosToast("🎯 Truco seleccionado", "fa-solid fa-bullseye");
+  showIosToast("🎯 Truco fijado para hoy", "fa-solid fa-bullseye");
 }
 
 export function toggleBooAccordion(accordionId) {
   triggerHapticTouch();
+  if (!appState.booProgress) appState.booProgress = {};
   if (!appState.booProgress.accordions) appState.booProgress.accordions = {};
   appState.booProgress.accordions[accordionId] = !appState.booProgress.accordions[accordionId];
   saveState();
@@ -2483,21 +2526,90 @@ export function closeBooBacklogModalOnBackdrop(e) {
 export function renderBooBacklogModalUI() {
   const container = document.getElementById("boo-backlog-modal-content");
   if (!container) return;
-  const learned = appState.booProgress.learnedTricks || [];
-  const tricks = BOO_TRICKS_BACKLOG || [];
 
-  container.innerHTML = tricks.map(t => {
-    const isLearned = learned.includes(t.id);
+  if (!appState.booProgress) {
+    appState.booProgress = { completedContinuous: {}, learnedTricks: [], activeTrickId: null, moodLogs: {}, sessionNotes: {}, accordions: {} };
+  }
+
+  const learnedTricks = appState.booProgress.learnedTricks || [];
+  const activeTrickId = appState.booProgress.activeTrickId;
+  const unlearnedTricks = (BOO_TRICKS_BACKLOG || []).filter(t => !learnedTricks.includes(t.id));
+  const masteredTricks = (BOO_TRICKS_BACKLOG || []).filter(t => learnedTricks.includes(t.id));
+
+  const unlearnedListHtml = unlearnedTricks.map((t, idx) => {
+    const isCurrentActive = activeTrickId === t.id;
     return `
-      <div style="padding: 0.8rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div style="font-weight: 700; color: #fff;"><i class="${t.icon}"></i> ${t.title}</div>
-          <div style="font-size: 0.78rem; color: var(--text-muted);">${t.summary}</div>
+      <div style="padding: 0.85rem 0.95rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid ${isCurrentActive ? 'var(--accent-amber)' : 'var(--border-color)'}; margin-bottom: 0.75rem;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+          <div style="display: flex; align-items: flex-start; gap: 0.6rem; flex: 1;">
+            <span style="font-weight: 700; font-size: 0.8rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.18); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">#${idx + 1}</span>
+            <div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">
+                <i class="${t.icon}" style="color: ${t.badgeColor}; font-size: 0.9rem; margin-right: 0.35rem;"></i>${t.title}
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;">${t.summary}</div>
+            </div>
+          </div>
+          <div>
+            ${isCurrentActive ? `
+              <span style="font-size: 0.75rem; background: rgba(245,158,11,0.22); color: var(--accent-amber); padding: 4px 10px; border-radius: 12px; font-weight: 700; border: 1px solid var(--accent-amber);">
+                🎯 En Curso
+              </span>
+            ` : `
+              <button type="button" class="btn-micro" onclick="selectActiveTrickFromBacklog('${t.id}'); closeBooBacklogModal();" style="font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                Fijar Hoy
+              </button>
+            `}
+          </div>
         </div>
-        ${isLearned ? '<span style="color:var(--accent-emerald); font-weight:700;">✓ Dominado</span>' : `<button type="button" class="btn-micro" onclick="selectActiveTrickFromBacklog('${t.id}'); closeBooBacklogModal();">Fijar</button>`}
       </div>
     `;
   }).join("");
+
+  const masteredListHtml = masteredTricks.map(t => `
+    <div style="padding: 0.75rem 0.95rem; background: rgba(16, 185, 129, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.25); margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 0.9rem; font-weight: 700; color: #fff;"><i class="fa-solid fa-medal" style="color:var(--accent-emerald);"></i> ${t.title}</div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${t.summary}</div>
+      </div>
+      <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16,185,129,0.15); padding: 4px 10px; border-radius: 12px;">
+        <i class="fa-solid fa-circle-check"></i> Dominado
+      </span>
+    </div>
+  `).join("");
+
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary); padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1.25rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-graduation-cap" style="color: var(--accent-amber); font-size: 1.2rem;"></i>
+        <span style="font-size: 0.88rem; font-weight: 600; color: #fff;">Progreso Total del Adiestramiento</span>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <span style="font-size: 0.78rem; padding: 3px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); font-weight: 700;">
+          🏆 ${masteredTricks.length} Aprendidos
+        </span>
+        <span style="font-size: 0.78rem; padding: 3px 10px; border-radius: 12px; background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 700;">
+          ⏳ ${unlearnedTricks.length} Pendientes
+        </span>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+      <h4 style="font-family: var(--font-heading); font-size: 1rem; color: var(--accent-amber); margin-bottom: 0.65rem;">
+        <i class="fa-solid fa-list-ol"></i> Próximos Trucos en Cola (${unlearnedTricks.length})
+      </h4>
+      ${unlearnedListHtml || '<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem;">🎉 ¡Felicidades! Boo ha aprendido todos los trucos programados.</p>'}
+    </div>
+
+    ${masteredTricks.length > 0 ? `
+      <div>
+        <h4 style="font-family: var(--font-heading); font-size: 1rem; color: var(--accent-emerald); margin-bottom: 0.65rem;">
+          <i class="fa-solid fa-trophy"></i> Trucos Dominados (${masteredTricks.length})
+        </h4>
+        ${masteredListHtml}
+      </div>
+    ` : ''}
+  `;
 }
 
 export function renderBooWorkoutView() {
@@ -2506,42 +2618,214 @@ export function renderBooWorkoutView() {
   container.innerHTML = "";
 
   const activeDay = appState.activeBooDay || getTodayDayName();
-  const learned = appState.booProgress?.learnedTricks || [];
-  const activeTrick = BOO_TRICKS_BACKLOG?.find(t => t.id === appState.booProgress?.activeTrickId) || BOO_TRICKS_BACKLOG?.[0];
 
+  const selectElem = document.getElementById("boo-day-select");
+  if (selectElem && selectElem.value !== activeDay) {
+    selectElem.value = activeDay;
+  }
+
+  if (!appState.booProgress) {
+    appState.booProgress = { completedContinuous: {}, learnedTricks: [], activeTrickId: null, moodLogs: {}, sessionNotes: {}, accordions: {} };
+  }
+
+  const completedContinuous = appState.booProgress.completedContinuous || {};
+  const learnedTricks = appState.booProgress.learnedTricks || [];
+  const moodLogs = appState.booProgress.moodLogs || {};
+  const sessionNotes = appState.booProgress.sessionNotes || {};
+  const accordions = appState.booProgress.accordions || {};
+
+  let activeTrick = (BOO_TRICKS_BACKLOG || []).find(t => t.id === appState.booProgress.activeTrickId);
+  if (!activeTrick || learnedTricks.includes(activeTrick.id)) {
+    activeTrick = (BOO_TRICKS_BACKLOG || []).find(t => !learnedTricks.includes(t.id)) || BOO_TRICKS_BACKLOG?.[0];
+    appState.booProgress.activeTrickId = activeTrick ? activeTrick.id : null;
+  }
+
+  const currentMood = moodLogs[activeDay] || "🧘‍♂️ Calma & Enfocada";
+  const currentNote = sessionNotes[activeDay] || "";
+
+  // 1. BOO HERO BANNER
   const heroCard = document.createElement("div");
   heroCard.className = "glass-card boo-hero-card";
   heroCard.style.marginBottom = "1.25rem";
   heroCard.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div class="boo-hero-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
       <div style="display: flex; align-items: center; gap: 1rem;">
-        <div style="font-size: 2rem;">🐕</div>
+        <div class="boo-avatar-badge" style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(16, 185, 129, 0.25)); border: 2px solid var(--accent-amber); display: flex; align-items: center; justify-content: center; font-size: 1.7rem;">
+          🐕
+        </div>
         <div>
-          <h2 style="font-size: 1.25rem; color: #fff;">Boo <span style="font-size: 0.8rem; color: var(--accent-amber);">Border Collie</span></h2>
-          <p style="color: var(--text-muted); font-size: 0.82rem;">Adiestramiento y hábitos diarios</p>
+          <h2 style="font-family: var(--font-heading); font-size: 1.25rem; color: #fff; margin-bottom: 2px;">
+            Boo <span style="font-size: 0.8rem; background: var(--bg-tertiary); color: var(--accent-amber); padding: 2px 8px; border-radius: 12px; font-weight: 500;">Border Collie • 3 años</span>
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.82rem;">
+            Plan de adiestramiento conductual y mapa evolutivo de trucos
+          </p>
         </div>
       </div>
-      <button type="button" class="btn-primary" onclick="openBooBacklogModal()" style="font-size: 0.8rem; padding: 6px 12px;">
-        <i class="fa-solid fa-book-open"></i> Ver Mapa de Trucos (${learned.length} dominados)
-      </button>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+        <span class="boo-stat-pill"><i class="fa-solid fa-trophy" style="color:var(--accent-amber);"></i> ${learnedTricks.length} Dominados</span>
+        <span class="boo-stat-pill"><i class="fa-solid fa-list-check" style="color:var(--accent-cyan);"></i> ${(BOO_TRICKS_BACKLOG || []).length - learnedTricks.length} En Cola</span>
+        <button type="button" class="btn-primary" onclick="openBooBacklogModal()" style="font-size: 0.8rem; padding: 6px 12px; background: rgba(245, 158, 11, 0.18); border: 1px solid var(--accent-amber); color: var(--accent-amber); border-radius: 20px; font-weight: 600;">
+          <i class="fa-solid fa-book-open"></i> Ver Mapa de Trucos
+        </button>
+      </div>
     </div>
   `;
   container.appendChild(heroCard);
 
+  // 2. OBJETIVO DE APRENDIZAJE DE HOY
   if (activeTrick) {
-    const trickCard = document.createElement("div");
-    trickCard.className = "glass-card";
-    trickCard.style.marginBottom = "1.25rem";
-    trickCard.innerHTML = `
-      <span style="font-size:0.75rem; color:var(--accent-amber); font-weight:700;">OBJETIVO DE HOY</span>
-      <h3 style="font-size:1.2rem; color:#fff; margin:0.3rem 0;">${activeTrick.title}</h3>
-      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:0.8rem;">${activeTrick.summary}</p>
-      <button type="button" class="btn-primary" onclick="markTrickMastered('${activeTrick.id}')" style="background:var(--accent-emerald);">
-        <i class="fa-solid fa-circle-check"></i> ¡Dominado! ✅
-      </button>
+    const isMastered = learnedTricks.includes(activeTrick.id);
+    const activeTrickCard = document.createElement("div");
+    activeTrickCard.className = "glass-card boo-active-trick-card";
+    activeTrickCard.style.cssText = "margin-bottom: 1.25rem; border: 1px solid var(--accent-amber); background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(19,26,42,0.95));";
+
+    const stepsListHtml = (activeTrick.steps || []).map((step, idx) => `
+      <li style="margin-bottom: 0.45rem; font-size: 0.85rem; line-height: 1.4; color: var(--text-secondary); display: flex; gap: 0.5rem; align-items: flex-start;">
+        <span style="background: ${activeTrick.badgeColor || 'var(--accent-amber)'}; color: #000; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; flex-shrink: 0; margin-top: 2px;">${idx + 1}</span>
+        <span>${step}</span>
+      </li>
+    `).join("");
+
+    activeTrickCard.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 12px; background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid var(--accent-amber);">
+            <i class="fa-solid fa-bullseye"></i> OBJETIVO DE APRENDIZAJE DE HOY
+          </span>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Dificultad: <strong style="color:#fff;">${activeTrick.difficulty || 'Media'}</strong></span>
+        </div>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--accent-cyan); background: var(--bg-tertiary); padding: 4px 10px; border-radius: 12px;">
+          <i class="${activeTrick.icon || 'fa-solid fa-star'}"></i> ${activeTrick.category || 'Habilidad'}
+        </span>
+      </div>
+
+      <h3 style="font-family: var(--font-heading); font-size: 1.3rem; color: #fff; margin-bottom: 0.4rem;">
+        ${activeTrick.title}
+      </h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+        ${activeTrick.summary}
+      </p>
+
+      <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 0.6rem; letter-spacing: 0.5px;">
+          <i class="fa-solid fa-shoe-prints"></i> Paso a Paso para Entrenar Hoy:
+        </div>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          ${stepsListHtml}
+        </ul>
+      </div>
+
+      ${activeTrick.proTip ? `
+        <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--accent-amber); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--text-secondary);">
+          <strong style="color: var(--accent-amber);"><i class="fa-solid fa-lightbulb"></i> Consejo Collie:</strong> ${activeTrick.proTip}
+        </div>
+      ` : ''}
+
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border-color);">
+        <span style="font-size: 0.82rem; color: var(--text-muted);">
+          Estado: <strong style="color: ${isMastered ? 'var(--accent-emerald)' : 'var(--accent-amber)'};">${isMastered ? '¡Ya Dominado!' : 'En Proceso de Aprendizaje'}</strong>
+        </span>
+        <button type="button" class="btn-primary" onclick="markTrickMastered('${activeTrick.id}')" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 0.88rem; padding: 8px 16px;">
+          <i class="fa-solid fa-circle-check"></i> ¡Dominado / Ya lo sabe! ✅ (Siguiente Truco)
+        </button>
+      </div>
     `;
-    container.appendChild(trickCard);
+    container.appendChild(activeTrickCard);
   }
+
+  // 3. REFUERZO CONTINUO DEL PASEO
+  const isContinuousOpen = accordions["continuous"] ?? true;
+  const continuousAccordionCard = document.createElement("div");
+  continuousAccordionCard.className = "glass-card boo-accordion-card";
+  continuousAccordionCard.style.marginBottom = "1.25rem";
+
+  const continuousItemsHtml = (BOO_CONTINUOUS_REINFORCEMENT || []).map(item => {
+    const key = `${activeDay}_${item.id}`;
+    const isDone = !!completedContinuous[key];
+    return `
+      <div class="boo-task-item ${isDone ? 'completed' : ''}" onclick="toggleContinuousItem('${item.id}', '${activeDay}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="custom-checkbox ${isDone ? 'checked' : ''}" style="width: 22px; height: 22px; border-radius: 6px; border: 2px solid ${isDone ? 'var(--accent-emerald)' : 'var(--text-muted)'}; background: ${isDone ? 'var(--accent-emerald)' : 'transparent'}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.75rem;">
+            ${isDone ? '<i class="fa-solid fa-check"></i>' : ''}
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.92rem; color: ${isDone ? 'var(--text-muted)' : 'var(--text-primary)'}; ${isDone ? 'text-decoration: line-through;' : ''}">
+              <i class="${item.icon}" style="color: ${item.color};"></i> ${item.title}
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${item.desc}</div>
+          </div>
+        </div>
+        <span class="btn-micro" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 12px; background: ${isDone ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)'}; color: ${isDone ? 'var(--accent-emerald)' : 'var(--text-secondary)'}; font-weight: 600;">
+          ${isDone ? '¡Reforzado!' : 'Practicado hoy'}
+        </span>
+      </div>
+    `;
+  }).join("");
+
+  continuousAccordionCard.innerHTML = `
+    <div class="boo-accordion-header" onclick="toggleBooAccordion('continuous')" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <i class="fa-solid fa-arrows-rotate" style="font-size: 1.1rem; color: var(--accent-cyan);"></i>
+        <div>
+          <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin: 0;">
+            🔄 Refuerzo Continuo del Paseo (${activeDay})
+          </h4>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">
+            Hábitos permanentes que se trabajan a diario durante las salidas (Pulsar para ${isContinuousOpen ? 'ocultar' : 'desplegar'})
+          </p>
+        </div>
+      </div>
+      <i class="fa-solid fa-chevron-${isContinuousOpen ? 'up' : 'down'}" style="color: var(--text-muted);"></i>
+    </div>
+
+    ${isContinuousOpen ? `
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        ${continuousItemsHtml}
+      </div>
+    ` : ''}
+  `;
+  container.appendChild(continuousAccordionCard);
+
+  // 4. REGISTRO EMOCIONAL Y NOTAS DEL PASEO
+  const moodCard = document.createElement("div");
+  moodCard.className = "glass-card";
+  moodCard.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem;">
+      <div>
+        <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-face-smile-wink" style="color: var(--accent-amber);"></i> Registro Emocional y Notas del Paseo (${activeDay})
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.8rem;">Registra la actitud de Boo hoy y anotaciones de su evolución</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+        Estado de Ánimo Predominante de Boo Hoy:
+      </label>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        ${["🧘‍♂️ Calma & Enfocada", "⚡ Alta Excitación", "🎾 Obsesionada con Pelota", "🎯 Excelente Respuesta a Llamada"].map(m => `
+          <button type="button" class="boo-mood-btn ${currentMood === m ? 'active' : ''}" onclick="setBooMood('${activeDay}', '${m}')" style="padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; border: 1px solid ${currentMood === m ? 'var(--accent-amber)' : 'var(--border-color)'}; background: ${currentMood === m ? 'rgba(245,158,11,0.2)' : 'var(--bg-secondary)'}; color: ${currentMood === m ? 'var(--accent-amber)' : 'var(--text-secondary)'}; cursor: pointer; transition: all 0.2s ease;">
+            ${m}
+          </button>
+        `).join("")}
+      </div>
+    </div>
+
+    <div>
+      <label for="boo-session-note-input" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+        Observaciones o Logro Destacado del Día:
+      </label>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <input type="text" id="boo-session-note-input" class="custom-input" placeholder="Ej: ¡Hoy volvió a la primera cuando la llamé en el parque!" value="${currentNote.replace(/"/g, '&quot;')}" style="flex: 1; min-width: 240px; font-size: 0.85rem;">
+        <button type="button" class="btn-primary" onclick="saveBooSessionNotes('${activeDay}')" style="font-size: 0.82rem;">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar Nota
+        </button>
+      </div>
+    </div>
+  `;
+  container.appendChild(moodCard);
 }
 
 // ==========================================
@@ -2678,8 +2962,13 @@ window.setRecipesRange = setRecipesRange;
 window.setShoppingRange = setShoppingRange;
 window.renderNutritionMenuView = renderNutritionMenuView;
 window.renderNutritionRecipesView = renderNutritionRecipesView;
-window.selectWorkoutDay = selectWorkoutDay;
+window.selectWorkoutDay = selectWorkoutDayFromDropdown;
 window.selectWorkoutDayFromDropdown = selectWorkoutDayFromDropdown;
+window.selectExerciseDayFromDropdown = selectExerciseDayFromDropdown;
+window.renderExerciseTableView = renderExerciseTableView;
+window.openManualWorkoutModal = openManualWorkoutModal;
+window.closeManualWorkoutModal = closeManualWorkoutModal;
+window.saveManualWorkoutSession = saveManualWorkoutSession;
 window.selectBooDayFromDropdown = selectBooDayFromDropdown;
 window.toggleBooTask = toggleBooTask;
 window.toggleContinuousItem = toggleContinuousItem;

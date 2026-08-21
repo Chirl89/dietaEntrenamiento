@@ -31,8 +31,9 @@ export const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-workouts",
     sidebarId: "sidebar-nav-workouts",
     subtabs: [
-      { id: "workouts-view", label: "Ejercicios", icon: "fa-solid fa-dumbbell" },
-      { id: "workouts-boo-view", label: "Boo (Perros)", icon: "fa-solid fa-dog" }
+      { id: "workouts-view", label: "Entrenamientos", icon: "fa-solid fa-dumbbell" },
+      { id: "workouts-boo-view", label: "Boo", icon: "fa-solid fa-dog" },
+      { id: "workouts-exercises-view", label: "Tabla de Ejercicios", icon: "fa-solid fa-list-check" }
     ]
   },
   profile: {

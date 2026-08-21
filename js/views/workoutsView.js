@@ -1,5 +1,5 @@
 import { appState, saveState, getMasterProfileId, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.9.4';
+import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.9.5';
 
 export function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -108,117 +108,172 @@ export function selectWorkoutDay(dayName, btnElem) {
   renderWorkoutsView();
 }
 
-export function selectWorkoutDayFromDropdown(dayName) {
-  appState.activeWorkoutDay = dayName;
-  renderWorkoutsView();
+export function selectExerciseDayFromDropdown(dayName) {
+  appState.activeExerciseDay = dayName;
+  renderExerciseTableView();
 }
 
 export function renderWorkoutsView() {
-  const container = document.getElementById("routines-container");
+  const container = document.getElementById("workouts-daily-container") || document.getElementById("routines-container");
   if (!container) return;
   container.innerHTML = "";
 
-  const activeDay = appState.activeWorkoutDay || getTodayDayName();
+  const profileId = appState.activeProfileId;
+  const today = getTodayDayName();
+  const sessions = getDaySessions(profileId, today);
 
-  // Sync dropdown selector state if present
-  const selectElem = document.getElementById("workout-day-select");
+  if (sessions.length === 0) {
+    const emptyCard = document.createElement("div");
+    emptyCard.className = "glass-card";
+    emptyCard.style.cssText = "text-align: center; padding: 2.8rem 1.5rem; border: 1px dashed var(--border-color); border-radius: var(--radius-md);";
+    emptyCard.innerHTML = `
+      <div style="font-size: 2.8rem; margin-bottom: 0.75rem; color: var(--text-muted); opacity: 0.5;">
+        <i class="fa-solid fa-dumbbell"></i>
+      </div>
+      <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; margin-bottom: 0.4rem;">
+        Hoy no se han registrado entrenamientos
+      </h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 1.5rem auto; line-height: 1.45;">
+        Los entrenamientos que ejecutes con los atajos de Apple Watch o añadas manualmente se guardarán en esta lista diaria.
+      </p>
+      <button type="button" class="btn-primary" onclick="if(window.openManualWorkoutModal) window.openManualWorkoutModal();" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; padding: 0.55rem 1.1rem; margin: 0 auto;">
+        <i class="fa-solid fa-plus"></i> + Añadir Entrenamiento Manual
+      </button>
+    `;
+    container.appendChild(emptyCard);
+    return;
+  }
+
+  const totalMin = sessions.reduce((acc, s) => acc + (s.durationMin || 0), 0);
+  const totalKcal = sessions.reduce((acc, s) => acc + (s.kcal || 0), 0);
+
+  const summaryCard = document.createElement("div");
+  summaryCard.className = "glass-card watch-workout-summary-card";
+  summaryCard.style.marginBottom = "1.25rem";
+
+  summaryCard.innerHTML = `
+    <div class="watch-summary-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+      <div class="watch-summary-title">
+        <div class="watch-icon-glow"><i class="fa-solid fa-bolt"></i></div>
+        <div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff;">
+            Entrenamientos Registrados Hoy (${today})
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
+            ${sessions.length} ${sessions.length === 1 ? 'sesión completada' : 'sesiones completadas'}
+          </p>
+        </div>
+      </div>
+      <button type="button" class="btn-secondary-sm" onclick="if(window.openManualWorkoutModal) window.openManualWorkoutModal();" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 8px;">
+        <i class="fa-solid fa-plus"></i> + Añadir otra sesión
+      </button>
+    </div>
+
+    <div class="watch-summary-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 0.85rem;">
+      <div class="summary-metric-box">
+        <span class="metric-lbl"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Tiempo Total Medido</span>
+        <span class="metric-val" style="color:var(--accent-cyan);">${totalMin} <small>min</small></span>
+      </div>
+      <div class="summary-metric-box">
+        <span class="metric-lbl"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías Totales</span>
+        <span class="metric-val" style="color:var(--accent-rose);">${totalKcal} <small>kcal</small></span>
+      </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
+      <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+        <i class="fa-solid fa-list-check"></i> Desglose de Sesiones de Hoy:
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+        ${sessions.map((s, idx) => `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 0.55rem 0.85rem; border-radius: 8px; font-size: 0.83rem;">
+            <div>
+              <span style="font-weight: 600; color: #fff;"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Sesión ${idx + 1}</span>
+              <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.4rem;">(${s.timestamp || '--'})</span>
+              <span style="color: var(--text-muted); font-size: 0.72rem; margin-left: 0.3rem;">• ${s.deviceName || 'Apple Watch'}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="color: var(--accent-cyan); font-weight: 600;">${s.durationMin || 0} min</span>
+              <span style="color: var(--accent-rose); font-weight: 600;">${s.kcal || 0} kcal</span>
+              <button type="button" onclick="if(window.deleteWorkoutSession) window.deleteWorkoutSession('${today}', ${idx});" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 2px 6px; font-size: 0.85rem;" title="Eliminar esta sesión">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  container.appendChild(summaryCard);
+}
+
+export function renderExerciseTableView() {
+  const container = document.getElementById("exercise-routines-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const activeDay = appState.activeExerciseDay || getTodayDayName();
+
+  const selectElem = document.getElementById("exercise-day-select");
   if (selectElem && selectElem.value !== activeDay) {
     selectElem.value = activeDay;
   }
-  const routine = WEEKLY_WORKOUT_SCHEDULE[activeDay] || WEEKLY_WORKOUT_SCHEDULE["Lunes"];
-  const profileId = appState.activeProfileId;
-  const isDone = isDayCompleted(profileId, activeDay);
-  const watchData = getDayWatchData(profileId, activeDay);
-  const sessions = getDaySessions(profileId, activeDay);
 
-  // If there are recorded sessions or watch data, show top Apple Watch banner (WITHOUT fake HR)
-  if (sessions.length > 0 || (isDone && watchData)) {
-    const primaryData = watchData || sessions[sessions.length - 1];
-    const totalMin = sessions.length > 0 ? sessions.reduce((acc, s) => acc + (s.durationMin || 0), 0) : (primaryData?.durationMin || 0);
-    const totalKcal = sessions.length > 0 ? sessions.reduce((acc, s) => acc + (s.kcal || 0), 0) : (primaryData?.kcal || 0);
+  const routine = WEEKLY_WORKOUT_SCHEDULE?.[activeDay] || WEEKLY_WORKOUT_SCHEDULE?.["Lunes"];
+  if (!routine) return;
 
-    const watchBanner = document.createElement("div");
-    watchBanner.className = "glass-card watch-workout-summary-card";
-    watchBanner.style.marginBottom = "1rem";
+  const card = document.createElement("div");
+  card.className = "glass-card";
 
-    let sessionsListHtml = "";
-    if (sessions.length > 0) {
-      sessionsListHtml = `
-        <div style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
-            <span><i class="fa-solid fa-list-check"></i> ${sessions.length} ${sessions.length === 1 ? 'Sesión registrada' : 'Sesiones registradas'} (${activeDay}):</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-            ${sessions.map((s, idx) => `
-              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.82rem;">
-                <div>
-                  <span style="font-weight: 600; color: #fff;"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Sesión ${idx + 1}</span>
-                  <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.4rem;">(${s.timestamp || '--'})</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.6rem;">
-                  <span style="color: var(--accent-cyan); font-weight: 600;">${s.durationMin || 0} min</span>
-                  <span style="color: var(--accent-rose); font-weight: 600;">${s.kcal || 0} kcal</span>
-                  <button type="button" onclick="window.deleteWorkoutSession ? window.deleteWorkoutSession('${activeDay}', ${idx}) : deleteWorkoutSession('${activeDay}', ${idx})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 2px 6px; font-size: 0.8rem;" title="Eliminar esta sesión">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
+  const rows = (routine.exercises || []).map(ex => `
+    <tr>
+      <td>
+        <div class="exercise-name">${ex.name}</div>
+        <div class="exercise-tech"><i class="fa-solid fa-lightbulb" style="color:var(--accent-amber);"></i> ${ex.technique || ''}</div>
+      </td>
+      <td><strong style="color:var(--accent-emerald);">${ex.sets}</strong> series</td>
+      <td><strong>${ex.reps}</strong> reps</td>
+      <td><span style="color:var(--text-muted);">${ex.rest}</span></td>
+    </tr>
+  `).join("");
 
-    watchBanner.innerHTML = `
-      <div class="watch-summary-header">
-        <div class="watch-summary-title">
-          <div class="watch-icon-glow"><i class="fa-brands fa-apple"></i></div>
-          <div>
-            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-              <span> Sesión Medida por Apple Watch (${activeDay})</span>
-              <span style="font-size: 0.75rem; background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.4); padding: 2px 8px; border-radius: 20px; font-weight: 600;">
-                <i class="fa-solid fa-circle-check"></i> Entreno Programado Completado
-              </span>
-            </h3>
-            <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
-              Sincronizado a las ${primaryData?.timestamp || '--'} • ${primaryData?.deviceName || 'Apple Watch'}
-            </p>
-          </div>
-        </div>
-        <span class="watch-live-badge"><i class="fa-solid fa-circle-check"></i> Salud iOS Sync</span>
+  card.innerHTML = `
+    <div class="routine-header-box" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+      <div>
+        <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">${routine.title} (${activeDay})</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Enfoque: ${routine.focus || ''}</p>
       </div>
+      <div>
+        <span class="routine-badge"><i class="fa-solid fa-clock"></i> ${routine.duration} min (Juntos)</span>
+      </div>
+    </div>
 
-      <div class="watch-summary-grid" style="grid-template-columns: repeat(2, 1fr);">
-        <div class="summary-metric-box">
-          <span class="metric-lbl"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Tiempo Medido</span>
-          <span class="metric-val" style="color:var(--accent-cyan);">${totalMin} <small>min</small></span>
-        </div>
-        <div class="summary-metric-box">
-          <span class="metric-lbl"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías Activas</span>
-          <span class="metric-val" style="color:var(--accent-rose);">${totalKcal} <small>kcal</small></span>
-        </div>
-      </div>
-      ${sessionsListHtml}
-    `;
-    container.appendChild(watchBanner);
-  } else if (isDone) {
-    const manualDoneBanner = document.createElement("div");
-    manualDoneBanner.className = "glass-card";
-    manualDoneBanner.style.marginBottom = "1rem";
-    manualDoneBanner.style.padding = "0.85rem 1rem";
-    manualDoneBanner.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; color: #10b981; font-weight: 600;">
-          <i class="fa-solid fa-circle-check" style="font-size: 1.2rem;"></i>
-          <span>Entrenamiento de ${activeDay} marcado como completado</span>
-        </div>
-        <button type="button" class="btn-secondary-sm" onclick="toggleWorkoutDay('${activeDay}')" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
-          <i class="fa-solid fa-xmark"></i> Desmarcar
-        </button>
-      </div>
-    `;
-    container.appendChild(manualDoneBanner);
-  }
+    <div style="display:flex; flex-wrap: wrap; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+      <span><i class="fa-solid fa-location-dot" style="color:var(--accent-cyan);"></i> ${routine.location || 'En casa'}</span>
+      <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i> ${routine.type || 'Fuerza'}</span>
+      <span><i class="fa-solid fa-toolbox" style="color:var(--accent-violet);"></i> Equipamiento: ${(routine.equipment || []).join(", ")}</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="exercise-table">
+        <thead>
+          <tr>
+            <th>Ejercicio & Técnica</th>
+            <th>Series</th>
+            <th>Repeticiones / Tiempo</th>
+            <th>Descanso</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  container.appendChild(card);
+}
 
   const card = document.createElement("div");
   card.className = "glass-card";
