@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.10)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.11)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.10';
+} from './data.js?v=0.10.11';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1134,8 +1134,10 @@ export function getShortcutCloudUrl(mode = 'health', customPid = null) {
   const key = getCloudSyncKey();
   const pid = customPid || getMasterProfileId();
   const channel = `${key}_${pid}`;
-  if (mode === 'locked_trigger' || mode === 'locked_start') {
-    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workoutPending":true,"timestamp":"[Fecha_Actual]"}`;
+  if (mode === 'locked_trigger' || mode === 'locked_start' || mode === 'start') {
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/%7B%22author%22%3A%22${pid}%22%2C%22workoutPending%22%3Atrue%7D`;
+  } else if (mode === 'locked_end' || mode === 'end' || mode === 'stop') {
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/%7B%22author%22%3A%22${pid}%22%2C%22workoutPending%22%3Afalse%7D`;
   } else if (mode === 'workout') {
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":"[Calorias_Entreno]","duration":"[Duracion_Entreno]","avgHr":"[FC_Entreno]","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]","floors":"[Pisos_Subidos]","sleep":"[Horas_Sueno]"}`;
   }
@@ -1152,7 +1154,9 @@ export function updateShortcutUrlInputs() {
   const cloudWorkoutInput = document.getElementById("shortcut-cloud-url-workout-input");
   if (cloudWorkoutInput) cloudWorkoutInput.value = getShortcutCloudUrl('workout');
   const cloudLockedInput = document.getElementById("shortcut-cloud-url-locked-input");
-  if (cloudLockedInput) cloudLockedInput.value = getShortcutCloudUrl('locked_trigger');
+  if (cloudLockedInput) cloudLockedInput.value = getShortcutCloudUrl('locked_start');
+  const cloudLockedEndInput = document.getElementById("shortcut-cloud-url-locked-end-input");
+  if (cloudLockedEndInput) cloudLockedEndInput.value = getShortcutCloudUrl('locked_end');
   const settingsCloudInput = document.getElementById("settings-shortcut-cloud-url-input");
   if (settingsCloudInput) settingsCloudInput.value = getShortcutCloudUrl('health');
 }
@@ -1634,9 +1638,16 @@ export async function cleanAndParseAllMessagesFromCloud(rawText) {
   const fromUrlB64 = fromUrlSafeB64(text);
   if (fromUrlB64) return [fromUrlB64];
 
-  if ((text.startsWith('{') && text.endsWith('}')) || (text.startsWith('[') && text.endsWith(']'))) {
+  let rawJsonCandidate = text;
+  if (rawJsonCandidate.includes('%7B') || rawJsonCandidate.includes('%7b') || rawJsonCandidate.includes('%22')) {
     try {
-      const parsed = JSON.parse(text);
+      rawJsonCandidate = decodeURIComponent(rawJsonCandidate);
+    } catch(e) {}
+  }
+
+  if ((rawJsonCandidate.startsWith('{') && rawJsonCandidate.endsWith('}')) || (rawJsonCandidate.startsWith('[') && rawJsonCandidate.endsWith(']'))) {
+    try {
+      const parsed = JSON.parse(rawJsonCandidate);
       if (Array.isArray(parsed)) return parsed;
       if (parsed && typeof parsed === 'object') {
         // Discard raw empty PubNub metadata envelope if somehow caught here

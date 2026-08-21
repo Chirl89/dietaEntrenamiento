@@ -542,8 +542,10 @@ export function getShortcutCloudUrl(mode = 'health', customPid = null) {
   const pid = customPid || getMasterProfileId();
   const channel = `${key}_${pid}`;
 
-  if (mode === 'locked_trigger' || mode === 'locked_start') {
-    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workoutPending":true,"timestamp":"[Fecha_Actual]"}`;
+  if (mode === 'locked_trigger' || mode === 'locked_start' || mode === 'start') {
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/%7B%22author%22%3A%22${pid}%22%2C%22workoutPending%22%3Atrue%7D`;
+  } else if (mode === 'locked_end' || mode === 'end' || mode === 'stop') {
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/%7B%22author%22%3A%22${pid}%22%2C%22workoutPending%22%3Afalse%7D`;
   } else if (mode === 'workout') {
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":"[Calorias_Entreno]","duration":"[Duracion_Entreno]","avgHr":"[FC_Entreno]","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]","floors":"[Pisos_Subidos]","sleep":"[Horas_Sueno]"}`;
   } else {
@@ -566,7 +568,10 @@ export function updateShortcutUrlInputs() {
     if (cloudWorkoutInput) cloudWorkoutInput.value = getShortcutCloudUrl('workout');
 
     const cloudLockedInput = document.getElementById("shortcut-cloud-url-locked-input");
-    if (cloudLockedInput) cloudLockedInput.value = getShortcutCloudUrl('locked_trigger');
+    if (cloudLockedInput) cloudLockedInput.value = getShortcutCloudUrl('locked_start');
+
+    const cloudLockedEndInput = document.getElementById("shortcut-cloud-url-locked-end-input");
+    if (cloudLockedEndInput) cloudLockedEndInput.value = getShortcutCloudUrl('locked_end');
 
     const settingsCloudInput = document.getElementById("settings-shortcut-cloud-url-input");
     if (settingsCloudInput) settingsCloudInput.value = getShortcutCloudUrl('health');
