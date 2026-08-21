@@ -542,7 +542,9 @@ export function getShortcutCloudUrl(mode = 'health', customPid = null) {
   const pid = customPid || getMasterProfileId();
   const channel = `${key}_${pid}`;
 
-  if (mode === 'workout') {
+  if (mode === 'locked_trigger' || mode === 'locked_start') {
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workoutPending":true,"timestamp":"[Fecha_Actual]"}`;
+  } else if (mode === 'workout') {
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":"[Calorias_Entreno]","duration":"[Duracion_Entreno]","avgHr":"[FC_Entreno]","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]","floors":"[Pisos_Subidos]","sleep":"[Horas_Sueno]"}`;
   } else {
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]","floors":"[Pisos_Subidos]","sleep":"[Horas_Sueno]"}`;
@@ -562,6 +564,9 @@ export function updateShortcutUrlInputs() {
 
     const cloudWorkoutInput = document.getElementById("shortcut-cloud-url-workout-input");
     if (cloudWorkoutInput) cloudWorkoutInput.value = getShortcutCloudUrl('workout');
+
+    const cloudLockedInput = document.getElementById("shortcut-cloud-url-locked-input");
+    if (cloudLockedInput) cloudLockedInput.value = getShortcutCloudUrl('locked_trigger');
 
     const settingsCloudInput = document.getElementById("settings-shortcut-cloud-url-input");
     if (settingsCloudInput) settingsCloudInput.value = getShortcutCloudUrl('health');
@@ -610,7 +615,10 @@ export function copyShortcutCloudUrlToClipboard(mode = 'health') {
   try { triggerHapticTouch(); } catch(e) {}
   const url = getShortcutCloudUrl(mode);
   
-  const inputId = mode === 'workout' ? 'shortcut-cloud-url-workout-input' : 'shortcut-cloud-url-health-input';
+  let inputId = 'shortcut-cloud-url-health-input';
+  if (mode === 'workout') inputId = 'shortcut-cloud-url-workout-input';
+  else if (mode === 'locked_trigger' || mode === 'locked_start') inputId = 'shortcut-cloud-url-locked-input';
+
   const inputEl = document.getElementById(inputId);
   if (inputEl) {
     inputEl.value = url;
@@ -619,15 +627,17 @@ export function copyShortcutCloudUrlToClipboard(mode = 'health') {
     inputEl.setSelectionRange(0, 99999);
   }
 
-  const label = mode === 'workout' ? 'Entrenamiento en 2º Plano (Nube)' : 'Salud en 2º Plano (Nube)';
+  let label = 'Salud en 2º Plano (Nube)';
+  if (mode === 'workout') label = 'Entrenamiento en 2º Plano (Nube)';
+  else if (mode === 'locked_trigger' || mode === 'locked_start') label = 'Aviso Ligero Pantalla Bloqueada (100% Sin Errores)';
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url).then(() => {
-      showIosToast(`☁️ <strong>URL de Subida Nube en 2º Plano (${label}) copiada</strong>. Pégala en "Obtener contenido de URL" de Atajos iOS.`, "fa-solid fa-cloud-arrow-up");
+      showIosToast(`☁️ <strong>URL de Subida Nube (${label}) copiada</strong>. Pégala en "Obtener contenido de URL" de Atajos iOS.`, "fa-solid fa-cloud-arrow-up");
     }).catch(() => {
       try {
         document.execCommand('copy');
-        showIosToast(`☁️ <strong>URL de Subida Nube (${label}) copiada</strong>.`, "fa-solid fa-copy");
+        showIosToast(`☁️ <strong>URL de Subida Nube (${label}) copiada</strong>.`, "fa-solid fa-cloud-arrow-up");
       } catch(err) {
         showIosToast("📋 Texto seleccionado. Mantén pulsado el cuadro y selecciona 'Copiar'.", "fa-solid fa-copy");
       }
@@ -635,7 +645,7 @@ export function copyShortcutCloudUrlToClipboard(mode = 'health') {
   } else {
     try {
       document.execCommand('copy');
-      showIosToast(`☁️ <strong>URL de Subida Nube (${label}) copiada</strong>.`, "fa-solid fa-copy");
+      showIosToast(`☁️ <strong>URL de Subida Nube (${label}) copiada</strong>.`, "fa-solid fa-cloud-arrow-up");
     } catch(err) {
       showIosToast("📋 Texto seleccionado. Mantén pulsado el cuadro y selecciona 'Copiar'.", "fa-solid fa-copy");
     }

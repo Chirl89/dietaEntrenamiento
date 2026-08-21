@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.9.13)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.0)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.8.2';
+} from './data.js?v=0.10.0';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1134,7 +1134,9 @@ export function getShortcutCloudUrl(mode = 'health', customPid = null) {
   const key = getCloudSyncKey();
   const pid = customPid || getMasterProfileId();
   const channel = `${key}_${pid}`;
-  if (mode === 'workout') {
+  if (mode === 'locked_trigger' || mode === 'locked_start') {
+    return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workoutPending":true,"timestamp":"[Fecha_Actual]"}`;
+  } else if (mode === 'workout') {
     return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","workout":true,"day":"Hoy","workoutKcal":"[Calorias_Entreno]","duration":"[Duracion_Entreno]","avgHr":"[FC_Entreno]","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]","floors":"[Pisos_Subidos]","sleep":"[Horas_Sueno]"}`;
   }
   return `https://ps.pubnub.com/publish/demo/demo/0/${channel}/0/{"author":"${pid}","kcal":"[Calorias_Activas]","steps":"[Pasos]","hr":"[Ritmo_Cardiaco]","dist":"[Distancia]","exMin":"[Minutos_Ejercicio]","floors":"[Pisos_Subidos]","sleep":"[Horas_Sueno]"}`;
@@ -1149,6 +1151,8 @@ export function updateShortcutUrlInputs() {
   if (cloudHealthInput) cloudHealthInput.value = getShortcutCloudUrl('health');
   const cloudWorkoutInput = document.getElementById("shortcut-cloud-url-workout-input");
   if (cloudWorkoutInput) cloudWorkoutInput.value = getShortcutCloudUrl('workout');
+  const cloudLockedInput = document.getElementById("shortcut-cloud-url-locked-input");
+  if (cloudLockedInput) cloudLockedInput.value = getShortcutCloudUrl('locked_trigger');
   const settingsCloudInput = document.getElementById("settings-shortcut-cloud-url-input");
   if (settingsCloudInput) settingsCloudInput.value = getShortcutCloudUrl('health');
 }

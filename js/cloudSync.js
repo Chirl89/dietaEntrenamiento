@@ -268,6 +268,21 @@ export function mergeCloudDataIntoAppState(cloudData) {
     hasChanges = true;
   }
 
+  // Manejo de Bandera de Entreno en Pantalla Bloqueada (workoutPending)
+  if (cloudData.workoutPending === true || cloudData.workoutPending === "true" || cloudData.workoutStatus === "started" || cloudData.event === "workout_pending") {
+    if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
+    const prevSnap = appState.appleWatch.pendingWorkout[author] || {};
+    appState.appleWatch.pendingWorkout[author] = {
+      pending: true,
+      timestamp: cloudData.timestamp || new Date().toISOString(),
+      snapshotKcal: prevSnap.pending ? prevSnap.snapshotKcal : (rep.moveKcal || m.moveKcal || 0),
+      snapshotExMin: prevSnap.pending ? prevSnap.snapshotExMin : (rep.exerciseMin || m.exerciseMin || 0),
+      snapshotSteps: prevSnap.pending ? prevSnap.snapshotSteps : (rep.steps || m.steps || 0)
+    };
+    hasChanges = true;
+    addSyncConsoleLog(`🏃 Aviso de entreno en pantalla bloqueada recibido (${authorName}). Se calculará por diferencias al desbloquear.`, "info");
+  }
+
   const isWorkoutSync = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true" || (cloudData.workoutKcal !== undefined && cloudData.workoutKcal !== "0" && cloudData.workoutKcal !== 0) || (cloudData.duration !== undefined && cloudData.duration !== "0" && cloudData.duration !== 0);
   if (isWorkoutSync) {
     let targetDay = cloudData.day;
@@ -311,6 +326,48 @@ export function mergeCloudDataIntoAppState(cloudData) {
       };
       hasChanges = true;
     }
+
+    // Resetear flag de entreno pendiente si existía
+    if (appState.appleWatch.pendingWorkout?.[author]?.pending) {
+      appState.appleWatch.pendingWorkout[author].pending = false;
+      addSyncConsoleLog(`✅ Flag de entreno pendiente resuelto (${authorName}) con datos explícitos de entreno.`, "success");
+    }
+  } else if (appState.appleWatch.pendingWorkout?.[author]?.pending && replicaMetricsUpdated) {
+    // Cálculo por diferencias al recibir actualización de salud posterior a la bandera de entreno
+    const pInfo = appState.appleWatch.pendingWorkout[author];
+    const curKcal = rep.moveKcal || m.moveKcal || 0;
+    const curExMin = rep.exerciseMin || m.exerciseMin || 0;
+    const deltaKcal = Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
+    const deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
+
+    if (deltaMin >= 5 || deltaKcal >= 25) {
+      const targetDay = getTodayDayName();
+      if (!appState.completedWorkouts) appState.completedWorkouts = {};
+      if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+      const existingDayWorkout = appState.completedWorkouts[author][targetDay] || {};
+      let existingSessions = Array.isArray(existingDayWorkout.sessions) ? [...existingDayWorkout.sessions] : (existingDayWorkout.watchData ? [existingDayWorkout.watchData] : []);
+
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+      const newSession = {
+        id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        deviceName: `Apple Watch (${authorName} - Auto Diferencial)`,
+        durationMin: deltaMin || 30,
+        kcal: deltaKcal,
+        timestamp: timeStr,
+        autoSync: true
+      };
+
+      existingSessions.push(newSession);
+      appState.completedWorkouts[author][targetDay] = {
+        done: true,
+        watchData: newSession,
+        sessions: existingSessions
+      };
+      hasChanges = true;
+      addSyncConsoleLog(`🎯 Entreno calculado por diferencias: +${deltaKcal} kcal, ${deltaMin} min (${authorName}). Flag resuelto.`, "success");
+    }
+    // Desactivar el booleano pendiente para que no vuelva a calcular en la siguiente sincronización
+    appState.appleWatch.pendingWorkout[author].pending = false;
   }
 
   if (replicaMetricsUpdated) {
