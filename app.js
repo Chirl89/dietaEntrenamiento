@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.5)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.6)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.5';
+} from './data.js?v=0.10.6';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1494,6 +1494,64 @@ export function testSimulatedWorkoutPendingFlag() {
   showIosToast(`🏃 Flag de entreno activado para ${authorName} (${timeStr}).`, "fa-solid fa-person-running");
 }
 
+export function resolvePendingWorkoutManually(forceKcal = null) {
+  triggerHapticTouch();
+  const pid = appState.activeProfileId || 'he';
+  const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
+  const pInfo = appState.appleWatch?.pendingWorkout?.[pid];
+  if (!pInfo || !pInfo.pending) {
+    showIosToast("ℹ️ No hay entreno pendiente para resolver.", "fa-solid fa-circle-info");
+    return;
+  }
+
+  const curKcal = appState.appleWatch?.metrics?.[pid]?.moveKcal || 150;
+  const curExMin = appState.appleWatch?.metrics?.[pid]?.exerciseMin || 20;
+  let deltaKcal = forceKcal !== null ? forceKcal : Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
+  let deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
+  if (deltaKcal === 0) deltaKcal = 120; // Default simulated delta if no movement
+  if (deltaMin === 0) deltaMin = 25;
+
+  const targetDay = getTodayDayName();
+  if (!appState.completedWorkouts) appState.completedWorkouts = {};
+  if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
+  if (!appState.completedWorkouts[pid][targetDay]) {
+    appState.completedWorkouts[pid][targetDay] = { done: true, watchData: null, sessions: [] };
+  }
+  if (!Array.isArray(appState.completedWorkouts[pid][targetDay].sessions)) {
+    appState.completedWorkouts[pid][targetDay].sessions = [];
+  }
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+  const newSession = {
+    id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+    deviceName: `Apple Watch (${authorName} - Resuelto Manual)`,
+    durationMin: deltaMin,
+    kcal: deltaKcal,
+    timestamp: timeStr,
+    autoSync: true
+  };
+  appState.completedWorkouts[pid][targetDay].sessions.push(newSession);
+  appState.completedWorkouts[pid][targetDay].done = true;
+  appState.completedWorkouts[pid][targetDay].watchData = newSession;
+  pInfo.pending = false;
+  saveState();
+  renderAll();
+  addSyncConsoleLog(`🎯 Flag de entreno resuelto manualmente para ${authorName}: +${deltaKcal} kcal, ${deltaMin} min.`, "success");
+  showIosToast(`✅ Entreno resuelto (+${deltaKcal} kcal · ${deltaMin} min)`, "fa-solid fa-circle-check");
+}
+
+export function cancelPendingWorkoutManually() {
+  triggerHapticTouch();
+  const pid = appState.activeProfileId || 'he';
+  const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
+  if (appState.appleWatch?.pendingWorkout?.[pid]) {
+    appState.appleWatch.pendingWorkout[pid].pending = false;
+  }
+  saveState();
+  renderAll();
+  addSyncConsoleLog(`❌ Flag de entreno cancelado para ${authorName} sin registrar sesión.`, "info");
+  showIosToast(`Flag de entreno cancelado`, "fa-solid fa-circle-xmark");
+}
+
 export async function cleanAndParseJsonFromCloud(rawText) {
   const list = await cleanAndParseAllMessagesFromCloud(rawText);
   return list.length > 0 ? list[list.length - 1] : null;
@@ -1641,7 +1699,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   }
 
-  // Manejo de Bandera de Entreno en Pantalla Bloqueada (workoutPending)
+  // Manejo de Bandera de Entreno en Pantalla Bloqueada (workoutPending: true)
   if (cloudData.workoutPending === true || cloudData.workoutPending === "true" || cloudData.workoutStatus === "started" || cloudData.event === "workout_pending") {
     if (!appState.appleWatch) appState.appleWatch = {};
     if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
@@ -1658,6 +1716,47 @@ export function mergeCloudDataIntoAppState(cloudData) {
     hasChanges = true;
     addSyncConsoleLog(`🏃 FLAG DE ENTRENO ACTIVADO (${author.toUpperCase()}): Foto base Kcal = ${appState.appleWatch.pendingWorkout[author].snapshotKcal}`, "success");
     if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+  }
+
+  // Cierre explícito de Bandera de Entreno (workoutPending: false / workoutStatus: "ended")
+  if (cloudData.workoutPending === false || cloudData.workoutPending === "false" || cloudData.workoutStatus === "ended" || cloudData.workoutStatus === "finished") {
+    const pInfo = appState.appleWatch?.pendingWorkout?.[author];
+    if (pInfo?.pending) {
+      const curKcal = rep.moveKcal || m.moveKcal || 0;
+      const curExMin = rep.exerciseMin || m.exerciseMin || 0;
+      const deltaKcal = Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
+      const deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
+
+      if (deltaKcal > 0 || deltaMin > 0) {
+        const targetDay = getTodayDayName();
+        if (!appState.completedWorkouts) appState.completedWorkouts = {};
+        if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+        if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
+          appState.completedWorkouts[author][targetDay] = { done: true, watchData: null, sessions: [] };
+        }
+        if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
+          appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
+        }
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+        const newSession = {
+          id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Fin Entreno)`,
+          durationMin: deltaMin || 30,
+          kcal: deltaKcal || 150,
+          timestamp: timeStr,
+          autoSync: true
+        };
+        appState.completedWorkouts[author][targetDay].sessions.push(newSession);
+        appState.completedWorkouts[author][targetDay].done = true;
+        appState.completedWorkouts[author][targetDay].watchData = newSession;
+        addSyncConsoleLog(`🎯 FIN DE ENTRENO PROCESADO (${author.toUpperCase()}): +${newSession.kcal} kcal, +${newSession.durationMin} min.`, "success");
+      } else {
+        addSyncConsoleLog(`ℹ️ Flag de entreno resuelto para ${author.toUpperCase()} (sin delta de kcal).`, "info");
+      }
+      pInfo.pending = false;
+      hasChanges = true;
+      if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+    }
   }
 
   // Handle direct workout payload from Shortcuts (e.g. "Fin Entrenamiento")
@@ -1729,7 +1828,9 @@ export function mergeCloudDataIntoAppState(cloudData) {
       const deltaKcal = Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
       const deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
 
-      if (deltaMin >= 5 || deltaKcal >= 25) {
+      addSyncConsoleLog(`📊 Comprobando diferencial (${author.toUpperCase()}): Kcal actual=${curKcal} vs Base=${pInfo.snapshotKcal || 0} (Δ: +${deltaKcal} kcal, +${deltaMin} min)`);
+
+      if (deltaKcal >= 10 || deltaMin >= 3) {
         const targetDay = getTodayDayName();
         if (!appState.completedWorkouts) appState.completedWorkouts = {};
         if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
@@ -1753,8 +1854,10 @@ export function mergeCloudDataIntoAppState(cloudData) {
         appState.completedWorkouts[author][targetDay].watchData = newSession;
         hasChanges = true;
         pInfo.pending = false;
-        addSyncConsoleLog(`🎯 CÁLCULO DIFERENCIAL APLICADO (${author.toUpperCase()}): +${deltaKcal} kcal, +${deltaMin} min. Añadido a entrenos de hoy.`, "success");
+        addSyncConsoleLog(`🎯 CÁLCULO DIFERENCIAL APLICADO (${author.toUpperCase()}): +${deltaKcal} kcal, +${deltaMin} min. Añadido a entrenos y flag cerrado.`, "success");
         if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+      } else {
+        addSyncConsoleLog(`ℹ️ Entreno en curso: Delta actual (+${deltaKcal} kcal) aún bajo el umbral (mínimo 10 kcal). Flag sigue activo.`);
       }
     }
   }
@@ -3379,6 +3482,8 @@ window.updateWorkoutPendingStatusBadge = updateWorkoutPendingStatusBadge;
 window.clearWorkoutDiagnosticLogs = clearWorkoutDiagnosticLogs;
 window.copyWorkoutDiagnosticLogs = copyWorkoutDiagnosticLogs;
 window.testSimulatedWorkoutPendingFlag = testSimulatedWorkoutPendingFlag;
+window.resolvePendingWorkoutManually = resolvePendingWorkoutManually;
+window.cancelPendingWorkoutManually = cancelPendingWorkoutManually;
 
 function initApp() {
   loadSavedState();
