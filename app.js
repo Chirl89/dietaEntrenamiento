@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.9.12)
+ * FitDuo & Collie Coach - Main Application Engine (v0.9.13)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -390,14 +390,14 @@ export function parseSmartMetricValue(val) {
     return Math.round(val);
   }
   if (Array.isArray(val)) {
-    if (val.length === 0) return null;
+    if (val.length === 0) return 0;
     const validNums = val.map(v => parseSmartMetricValue(v)).filter(v => v !== null && v >= 0);
-    if (validNums.length === 0) return null;
+    if (validNums.length === 0) return 0;
     return validNums[validNums.length - 1];
   }
   if (typeof val === 'string') {
     const trimmed = val.trim();
-    if (trimmed === '0') return 0;
+    if (trimmed === '' || trimmed === '0') return 0;
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) return null;
     const clean = trimmed.replace(/,/g, '.');
     const floatVal = parseFloat(clean);
