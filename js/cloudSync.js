@@ -626,7 +626,7 @@ export async function pullFromCloud(showToast = false) {
 
     for (const pnChannel of channelNames) {
       try {
-        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${pnChannel}?count=1`;
+        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${pnChannel}?count=100`;
         const controller = new AbortController();
         const tId = setTimeout(() => controller.abort(), 4500);
         const res = await fetch(pnSubUrl, { signal: controller.signal });

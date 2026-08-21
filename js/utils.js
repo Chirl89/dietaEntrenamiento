@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Shared Utilities (v0.10.8)
+ * FitDuo & Collie Coach - Shared Utilities (v0.10.9)
  * Helper functions, toast notification engine, DOM formatters, math utilities
  */
 

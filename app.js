@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.8)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.9)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.8';
+} from './data.js?v=0.10.9';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1906,7 +1906,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
         addSyncConsoleLog(`⏹️ Entreno descartado (${author.toUpperCase()}): Duración inferior a 1 min (${elapsedSeconds}s transcurridos, Δ:${deltaKcal} kcal). Flag reseteado a "N/A" sin cargar sesión.`, "warn");
         if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
       } else {
-        const targetDay = getTodayDayName();
+        const targetDay = getDayNameFromTimestamp(pState.startedAtTimetoken || pState.startedAt);
         if (!appState.completedWorkouts) appState.completedWorkouts = {};
         if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
         if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
@@ -1916,29 +1916,38 @@ export function mergeCloudDataIntoAppState(cloudData) {
           appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
         }
 
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+        const eventDate = pState.startedAtTimetoken ? new Date(parseInt(pState.startedAtTimetoken, 10) / 10000) : (pState.startedAt ? new Date(pState.startedAt) : new Date());
+        const timeStr = !isNaN(eventDate.getTime()) ? eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs" : (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
         const finalDuration = deltaMin > 0 ? deltaMin : (elapsedMin >= 1 ? elapsedMin : 1);
         const finalKcal = deltaKcal > 0 ? deltaKcal : Math.round(finalDuration * 4.5);
+        const sessionId = pState.startedAtTimetoken ? `diff_${author}_${pState.startedAtTimetoken}` : `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
-        const newSession = {
-          id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-          deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Auto Diferencial)`,
-          durationMin: finalDuration,
-          kcal: finalKcal,
-          timestamp: timeStr,
-          autoSync: true
-        };
+        const isDuplicate = appState.completedWorkouts[author][targetDay].sessions.some(s =>
+          s.id === sessionId ||
+          (s.durationMin === finalDuration && s.kcal === finalKcal && s.timestamp === timeStr)
+        );
 
-        appState.completedWorkouts[author][targetDay].sessions.push(newSession);
-        appState.completedWorkouts[author][targetDay].done = true;
-        appState.completedWorkouts[author][targetDay].watchData = newSession;
+        if (!isDuplicate) {
+          const newSession = {
+            id: sessionId,
+            deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Auto Diferencial)`,
+            durationMin: finalDuration,
+            kcal: finalKcal,
+            timestamp: timeStr,
+            autoSync: true
+          };
+          appState.completedWorkouts[author][targetDay].sessions.push(newSession);
+          appState.completedWorkouts[author][targetDay].done = true;
+          appState.completedWorkouts[author][targetDay].watchData = newSession;
+          addSyncConsoleLog(`🎯 HISTORIAL RECONSTRUIDO (${author.toUpperCase()} - ${targetDay}): ${timeStr} · +${finalKcal} kcal (+${finalDuration} min).`, "success");
+        }
 
         // TRANSICIÓN A "N/A" (ENTRENAMIENTO CARGADO)
         pState.flag = "N/A";
         pState.pending = false;
         hasChanges = true;
 
-        addSyncConsoleLog(`🎯 FLAG -> "N/A" (Entrenamiento Cargado - ${author.toUpperCase()}): Fin(${finKcal} kcal) - Inicio(${initKcal} kcal) = +${finalKcal} kcal (+${finalDuration} min). Sesión registrada.`, "success");
+        addSyncConsoleLog(`🎯 FLAG -> "N/A" (Entrenamiento Cargado - ${author.toUpperCase()}): Fin(${finKcal} kcal) - Inicio(${initKcal} kcal) = +${finalKcal} kcal (+${finalDuration} min).`, "success");
         if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
       }
     }
@@ -1993,6 +2002,26 @@ export async function pushToCloud(showToast = false) {
   }
 }
 
+export function getDayNameFromTimestamp(t) {
+  if (!t) return getTodayDayName();
+  let d;
+  if (typeof t === 'number') {
+    d = new Date(t > 10000000000000 ? t / 10000 : t);
+  } else if (typeof t === 'string') {
+    const trimmed = t.trim();
+    if (/^\d{15,18}$/.test(trimmed)) {
+      d = new Date(parseInt(trimmed, 10) / 10000);
+    } else {
+      d = new Date(t);
+    }
+  } else {
+    d = new Date();
+  }
+  if (isNaN(d.getTime())) return getTodayDayName();
+  const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  return days[d.getDay()];
+}
+
 export async function pullFromCloud(showToast = false) {
   if (isPullSyncing) return;
   isPullSyncing = true;
@@ -2013,7 +2042,7 @@ export async function pullFromCloud(showToast = false) {
 
     for (const ch of channels) {
       try {
-        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}?count=10`;
+        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}?count=100`;
         const res = await fetch(pnSubUrl);
         if (res.ok) {
           const rawText = await res.text();
