@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.3)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.4)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.3';
+} from './data.js?v=0.10.4';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1439,12 +1439,59 @@ export function getCloudSyncKey() {
 }
 
 export function addSyncConsoleLog(message, type = "info") {
-  const consoleEl = document.getElementById("sync-diagnostic-console");
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const logLine = `[${timeStr}] ${message}\n`;
-  if (consoleEl) {
-    consoleEl.textContent = logLine + consoleEl.textContent.slice(0, 1000);
+  const icon = type === "success" ? "✅" : type === "error" ? "❌" : type === "warn" ? "⚠️" : "ℹ️";
+  const logLine = `[${timeStr}] ${icon} ${message}\n`;
+
+  const workoutConsole = document.getElementById("workout-sync-diagnostic-console");
+  if (workoutConsole) {
+    workoutConsole.textContent = logLine + workoutConsole.textContent.slice(0, 4000);
   }
+
+  const legacyConsole = document.getElementById("sync-diagnostic-console");
+  if (legacyConsole) {
+    legacyConsole.textContent = logLine + legacyConsole.textContent.slice(0, 4000);
+  }
+}
+
+export function clearWorkoutDiagnosticLogs() {
+  const workoutConsole = document.getElementById("workout-sync-diagnostic-console");
+  if (workoutConsole) workoutConsole.textContent = `[${new Date().toLocaleTimeString()}] 🧹 Logs de diagnóstico limpiados.\n`;
+}
+
+export function copyWorkoutDiagnosticLogs() {
+  const workoutConsole = document.getElementById("workout-sync-diagnostic-console");
+  const logsText = workoutConsole ? workoutConsole.textContent : "";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(logsText).then(() => {
+      showIosToast("📋 ¡Logs de diagnóstico copiados!", "fa-solid fa-copy");
+    });
+  } else {
+    prompt("Copia los logs:", logsText);
+  }
+}
+
+export function testSimulatedWorkoutPendingFlag() {
+  triggerHapticTouch();
+  const pid = appState.activeProfileId || 'he';
+  const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
+  const curKcal = appState.appleWatch?.metrics?.[pid]?.moveKcal || 100;
+  const curMin = appState.appleWatch?.metrics?.[pid]?.exerciseMin || 0;
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+
+  addSyncConsoleLog(`🧪 Simulación local: Activando flag de entreno para ${authorName} (Base: ${curKcal} kcal, ${curMin} min)...`, "warn");
+  if (!appState.appleWatch) appState.appleWatch = {};
+  if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
+  appState.appleWatch.pendingWorkout[pid] = {
+    pending: true,
+    startedAt: timeStr,
+    snapshotKcal: curKcal,
+    snapshotExMin: curMin,
+    snapshotSteps: appState.appleWatch?.metrics?.[pid]?.steps || 0
+  };
+  saveState();
+  renderAll();
+  showIosToast(`🏃 Flag de entreno activado para ${authorName} (${timeStr}).`, "fa-solid fa-person-running");
 }
 
 export async function cleanAndParseJsonFromCloud(rawText) {
@@ -1753,7 +1800,10 @@ export async function pullFromCloud(showToast = false) {
       `fitduo_sync_v2_${myMasterPid}`
     ]));
 
+    addSyncConsoleLog(`🔍 Consultando historial de canales PubNub: [${channels.join(", ")}]...`);
     let hasMerged = false;
+    let totalMessages = 0;
+
     for (const ch of channels) {
       try {
         const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}?count=15`;
@@ -1761,14 +1811,29 @@ export async function pullFromCloud(showToast = false) {
         if (res.ok) {
           const rawText = await res.text();
           const dataList = await cleanAndParseAllMessagesFromCloud(rawText);
-          for (const data of dataList) {
-            if (data) {
-              const changed = mergeCloudDataIntoAppState(data);
-              if (changed) hasMerged = true;
+          if (dataList.length > 0) {
+            totalMessages += dataList.length;
+            addSyncConsoleLog(`📥 Canal [${ch}]: ${dataList.length} mensaje(s) encontrados.`);
+            for (const data of dataList) {
+              if (data) {
+                const preview = JSON.stringify(data);
+                const shortPreview = preview.length > 95 ? preview.slice(0, 95) + '...' : preview;
+                addSyncConsoleLog(`📦 [${data.author || data.pid || 'he'}] ${shortPreview}`);
+                const changed = mergeCloudDataIntoAppState(data);
+                if (changed) hasMerged = true;
+              }
             }
           }
         }
-      } catch (eCh) {}
+      } catch (eCh) {
+        addSyncConsoleLog(`❌ Error en canal [${ch}]: ${eCh.message}`, "error");
+      }
+    }
+
+    if (totalMessages === 0) {
+      addSyncConsoleLog(`ℹ️ Consulta finalizada: No hay mensajes pendientes en PubNub.`);
+    } else {
+      addSyncConsoleLog(`✅ Procesamiento finalizado (${totalMessages} mensajes analizados, cambios=${hasMerged}).`, "success");
     }
 
     if (hasMerged) {
@@ -3278,6 +3343,9 @@ window.getProfileShortName = getProfileShortName;
 window.isCloudSyncing = isCloudSyncing;
 window.toggleShortcutGuide = toggleShortcutGuide;
 window.updateWorkoutPendingStatusBadge = updateWorkoutPendingStatusBadge;
+window.clearWorkoutDiagnosticLogs = clearWorkoutDiagnosticLogs;
+window.copyWorkoutDiagnosticLogs = copyWorkoutDiagnosticLogs;
+window.testSimulatedWorkoutPendingFlag = testSimulatedWorkoutPendingFlag;
 
 function initApp() {
   loadSavedState();
