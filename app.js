@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.11)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.12)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.11';
+} from './data.js?v=0.10.12';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1629,7 +1629,6 @@ export async function cleanAndParseAllMessagesFromCloud(rawText) {
             }
           }
         }
-        // If it was a PubNub envelope, return the extracted results (even if empty)
         return results;
       }
     } catch (e) {}
@@ -1648,9 +1647,38 @@ export async function cleanAndParseAllMessagesFromCloud(rawText) {
   if ((rawJsonCandidate.startsWith('{') && rawJsonCandidate.endsWith('}')) || (rawJsonCandidate.startsWith('[') && rawJsonCandidate.endsWith(']'))) {
     try {
       const parsed = JSON.parse(rawJsonCandidate);
-      if (Array.isArray(parsed)) return parsed;
+      // Handle PubNub v2 history envelope: [ [ { message: ..., timetoken: ... }, ... ], start_tt, end_tt ]
+      if (Array.isArray(parsed)) {
+        if (parsed.length >= 2 && Array.isArray(parsed[0])) {
+          const msgList = parsed[0];
+          for (const msgItem of msgList) {
+            if (msgItem !== undefined && msgItem !== null) {
+              let innerPayload = msgItem;
+              let tt = null;
+              if (typeof msgItem === 'object' && msgItem.message !== undefined) {
+                innerPayload = msgItem.message;
+                tt = msgItem.timetoken;
+              }
+              const subParsed = await cleanAndParseAllMessagesFromCloud(typeof innerPayload === 'string' ? innerPayload : JSON.stringify(innerPayload));
+              for (const item of subParsed) {
+                if (item && typeof item === 'object') {
+                  if (tt) {
+                    item._timetoken = String(tt);
+                    const pubDate = new Date(parseInt(tt) / 10000);
+                    if (!isNaN(pubDate.getTime())) {
+                      item._timeStr = pubDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+                    }
+                  }
+                  results.push(item);
+                }
+              }
+            }
+          }
+          return results;
+        }
+        return parsed;
+      }
       if (parsed && typeof parsed === 'object') {
-        // Discard raw empty PubNub metadata envelope if somehow caught here
         if (parsed.status !== undefined && parsed.channels !== undefined) {
           return [];
         }
@@ -2062,7 +2090,7 @@ export async function pullFromCloud(showToast = false) {
 
     for (const ch of channels) {
       try {
-        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}?count=100`;
+        const pnSubUrl = `https://ps.pubnub.com/v2/history/sub-key/demo/channel/${ch}?count=100&include_token=true`;
         const res = await fetch(pnSubUrl);
         if (res.ok) {
           const rawText = await res.text();
