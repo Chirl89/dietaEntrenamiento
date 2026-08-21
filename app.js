@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.6)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.7)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.6';
+} from './data.js?v=0.10.7';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1477,38 +1477,69 @@ export function testSimulatedWorkoutPendingFlag() {
   const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
   const curKcal = appState.appleWatch?.metrics?.[pid]?.moveKcal || 100;
   const curMin = appState.appleWatch?.metrics?.[pid]?.exerciseMin || 0;
+  const curSteps = appState.appleWatch?.metrics?.[pid]?.steps || 0;
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
 
-  addSyncConsoleLog(`🧪 Simulación local: Activando flag de entreno para ${authorName} (Base: ${curKcal} kcal, ${curMin} min)...`, "warn");
+  addSyncConsoleLog(`🧪 Simulación: Flag puesto a "true" para ${authorName} (Base: ${curKcal} kcal, ${curMin} min)...`, "warn");
   if (!appState.appleWatch) appState.appleWatch = {};
   if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
   appState.appleWatch.pendingWorkout[pid] = {
+    flag: "true",
     pending: true,
     startedAt: timeStr,
+    startedAtTimetoken: String(Date.now() * 10000),
+    datos_inicio_entrenamiento: {
+      kcal: curKcal,
+      exMin: curMin,
+      steps: curSteps,
+      timestamp: timeStr
+    },
     snapshotKcal: curKcal,
     snapshotExMin: curMin,
-    snapshotSteps: appState.appleWatch?.metrics?.[pid]?.steps || 0
+    snapshotSteps: curSteps
   };
   saveState();
   renderAll();
-  showIosToast(`🏃 Flag de entreno activado para ${authorName} (${timeStr}).`, "fa-solid fa-person-running");
+  showIosToast(`🏃 Flag: "true" (Iniciado). Base congelada: ${curKcal} kcal.`, "fa-solid fa-person-running");
+}
+
+export function testSimulatedWorkoutEndFlag() {
+  triggerHapticTouch();
+  const pid = appState.activeProfileId || 'he';
+  const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
+  const pState = appState.appleWatch?.pendingWorkout?.[pid];
+  if (!pState || pState.flag !== "true") {
+    showIosToast("⚠️ Primero debes simular el inicio (Flag en true)", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+  pState.flag = "false";
+  pState.endedAt = timeStr;
+  pState.endedAtTimetoken = String(Date.now() * 10000);
+  saveState();
+  renderAll();
+  addSyncConsoleLog(`⏹️ Simulación: Flag puesto a "false" para ${authorName}. Esperando datos_fin.`, "warn");
+  showIosToast(`⏹️ Flag: "false" (Finalizado). Esperando Salud.`, "fa-solid fa-flag-checkered");
 }
 
 export function resolvePendingWorkoutManually(forceKcal = null) {
   triggerHapticTouch();
   const pid = appState.activeProfileId || 'he';
   const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
-  const pInfo = appState.appleWatch?.pendingWorkout?.[pid];
-  if (!pInfo || !pInfo.pending) {
-    showIosToast("ℹ️ No hay entreno pendiente para resolver.", "fa-solid fa-circle-info");
+  const pState = appState.appleWatch?.pendingWorkout?.[pid];
+  if (!pState || (pState.flag !== "true" && pState.flag !== "false" && !pState.pending)) {
+    showIosToast("ℹ️ No hay entreno en curso o pendiente de resolver.", "fa-solid fa-circle-info");
     return;
   }
 
   const curKcal = appState.appleWatch?.metrics?.[pid]?.moveKcal || 150;
   const curExMin = appState.appleWatch?.metrics?.[pid]?.exerciseMin || 20;
-  let deltaKcal = forceKcal !== null ? forceKcal : Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
-  let deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
-  if (deltaKcal === 0) deltaKcal = 120; // Default simulated delta if no movement
+  const initKcal = pState.datos_inicio_entrenamiento?.kcal ?? pState.snapshotKcal ?? 0;
+  const initExMin = pState.datos_inicio_entrenamiento?.exMin ?? pState.snapshotExMin ?? 0;
+
+  let deltaKcal = forceKcal !== null ? forceKcal : Math.max(0, curKcal - initKcal);
+  let deltaMin = Math.max(0, curExMin - initExMin);
+  if (deltaKcal === 0) deltaKcal = 120;
   if (deltaMin === 0) deltaMin = 25;
 
   const targetDay = getTodayDayName();
@@ -1532,11 +1563,13 @@ export function resolvePendingWorkoutManually(forceKcal = null) {
   appState.completedWorkouts[pid][targetDay].sessions.push(newSession);
   appState.completedWorkouts[pid][targetDay].done = true;
   appState.completedWorkouts[pid][targetDay].watchData = newSession;
-  pInfo.pending = false;
+
+  pState.flag = "N/A";
+  pState.pending = false;
   saveState();
   renderAll();
-  addSyncConsoleLog(`🎯 Flag de entreno resuelto manualmente para ${authorName}: +${deltaKcal} kcal, ${deltaMin} min.`, "success");
-  showIosToast(`✅ Entreno resuelto (+${deltaKcal} kcal · ${deltaMin} min)`, "fa-solid fa-circle-check");
+  addSyncConsoleLog(`🎯 FLAG -> "N/A": Entreno resuelto manualmente para ${authorName} (+${deltaKcal} kcal, ${deltaMin} min).`, "success");
+  showIosToast(`✅ Flag -> "N/A" (+${deltaKcal} kcal · ${deltaMin} min)`, "fa-solid fa-circle-check");
 }
 
 export function cancelPendingWorkoutManually() {
@@ -1544,12 +1577,13 @@ export function cancelPendingWorkoutManually() {
   const pid = appState.activeProfileId || 'he';
   const authorName = pid === 'he' ? 'Carlos' : 'Andrea';
   if (appState.appleWatch?.pendingWorkout?.[pid]) {
+    appState.appleWatch.pendingWorkout[pid].flag = "N/A";
     appState.appleWatch.pendingWorkout[pid].pending = false;
   }
   saveState();
   renderAll();
-  addSyncConsoleLog(`❌ Flag de entreno cancelado para ${authorName} sin registrar sesión.`, "info");
-  showIosToast(`Flag de entreno cancelado`, "fa-solid fa-circle-xmark");
+  addSyncConsoleLog(`❌ FLAG -> "N/A": Flag cancelado para ${authorName} sin registrar sesión.`, "info");
+  showIosToast(`Flag reseteado a "N/A"`, "fa-solid fa-circle-xmark");
 }
 
 export async function cleanAndParseJsonFromCloud(rawText) {
@@ -1699,67 +1733,68 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   }
 
-  // Manejo de Bandera de Entreno en Pantalla Bloqueada (workoutPending: true)
-  if (cloudData.workoutPending === true || cloudData.workoutPending === "true" || cloudData.workoutStatus === "started" || cloudData.event === "workout_pending") {
-    if (!appState.appleWatch) appState.appleWatch = {};
-    if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
-    const prevSnap = appState.appleWatch.pendingWorkout[author] || {};
-    const msgTimetoken = cloudData._timetoken || String(Date.now() * 10000);
+  // ----------------------------------------------------
+  // GESTIÓN DEL CICLO DE VIDA DEL ENTRENAMIENTO (3 ESTADOS):
+  // "true"  -> Entrenamiento Iniciado (datos_inicio congelados)
+  // "false" -> Entrenamiento Finalizado (esperando datos_fin)
+  // "N/A" o "" -> Entrenamiento Cargado / Sincronizado
+  // ----------------------------------------------------
+  if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
+  if (!appState.appleWatch.pendingWorkout[author]) {
     appState.appleWatch.pendingWorkout[author] = {
-      pending: true,
-      startedAt: cloudData.timestamp || cloudData._timeStr || new Date().toISOString(),
-      startedAtTimetoken: msgTimetoken,
-      snapshotKcal: prevSnap.pending ? prevSnap.snapshotKcal : (rep.moveKcal || m.moveKcal || 0),
-      snapshotExMin: prevSnap.pending ? prevSnap.snapshotExMin : (rep.exerciseMin || m.exerciseMin || 0),
-      snapshotSteps: prevSnap.pending ? prevSnap.snapshotSteps : (rep.steps || m.steps || 0)
+      flag: "N/A",
+      pending: false,
+      datos_inicio_entrenamiento: null,
+      datos_fin_entrenamiento: null,
+      startedAt: null,
+      endedAt: null
     };
-    hasChanges = true;
-    addSyncConsoleLog(`🏃 FLAG DE ENTRENO ACTIVADO (${author.toUpperCase()}): Foto base Kcal = ${appState.appleWatch.pendingWorkout[author].snapshotKcal}`, "success");
-    if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+  }
+  const pState = appState.appleWatch.pendingWorkout[author];
+
+  // CASO 1: LLEGA SEÑAL DE INICIO DE ENTRENAMIENTO (workoutPending: true / "true" / "started")
+  if (cloudData.workoutPending === true || cloudData.workoutPending === "true" || cloudData.workoutStatus === "started" || cloudData.event === "workout_pending") {
+    if (pState.flag !== "true") {
+      const initKcal = rep.moveKcal || m.moveKcal || 0;
+      const initExMin = rep.exerciseMin || m.exerciseMin || 0;
+      const initSteps = rep.steps || m.steps || 0;
+      const startedTime = cloudData.timestamp || cloudData._timeStr || new Date().toISOString();
+
+      pState.flag = "true";
+      pState.pending = true;
+      pState.startedAt = startedTime;
+      pState.startedAtTimetoken = cloudData._timetoken || String(Date.now() * 10000);
+      pState.datos_inicio_entrenamiento = {
+        kcal: initKcal,
+        exMin: initExMin,
+        steps: initSteps,
+        timestamp: startedTime
+      };
+      pState.snapshotKcal = initKcal;
+      pState.snapshotExMin = initExMin;
+      pState.snapshotSteps = initSteps;
+
+      hasChanges = true;
+      addSyncConsoleLog(`🏃 FLAG -> "true" (Entrenamiento Iniciado - ${author.toUpperCase()}): datos_inicio = ${initKcal} kcal, ${initExMin} min. Base congelada.`, "success");
+      if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+    } else {
+      addSyncConsoleLog(`ℹ️ Flag ya está en "true" (${author.toUpperCase()}). datos_inicio se mantienen intactos (${pState.datos_inicio_entrenamiento?.kcal || 0} kcal).`);
+    }
   }
 
-  // Cierre explícito de Bandera de Entreno (workoutPending: false / workoutStatus: "ended")
-  if (cloudData.workoutPending === false || cloudData.workoutPending === "false" || cloudData.workoutStatus === "ended" || cloudData.workoutStatus === "finished") {
-    const pInfo = appState.appleWatch?.pendingWorkout?.[author];
-    if (pInfo?.pending) {
-      const curKcal = rep.moveKcal || m.moveKcal || 0;
-      const curExMin = rep.exerciseMin || m.exerciseMin || 0;
-      const deltaKcal = Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
-      const deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
-
-      if (deltaKcal > 0 || deltaMin > 0) {
-        const targetDay = getTodayDayName();
-        if (!appState.completedWorkouts) appState.completedWorkouts = {};
-        if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
-        if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
-          appState.completedWorkouts[author][targetDay] = { done: true, watchData: null, sessions: [] };
-        }
-        if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
-          appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
-        }
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
-        const newSession = {
-          id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-          deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Fin Entreno)`,
-          durationMin: deltaMin || 30,
-          kcal: deltaKcal || 150,
-          timestamp: timeStr,
-          autoSync: true
-        };
-        appState.completedWorkouts[author][targetDay].sessions.push(newSession);
-        appState.completedWorkouts[author][targetDay].done = true;
-        appState.completedWorkouts[author][targetDay].watchData = newSession;
-        addSyncConsoleLog(`🎯 FIN DE ENTRENO PROCESADO (${author.toUpperCase()}): +${newSession.kcal} kcal, +${newSession.durationMin} min.`, "success");
-      } else {
-        addSyncConsoleLog(`ℹ️ Flag de entreno resuelto para ${author.toUpperCase()} (sin delta de kcal).`, "info");
-      }
-      pInfo.pending = false;
+  // CASO 2: LLEGA SEÑAL DE FIN DE ENTRENAMIENTO (workoutPending: false / "false" / "ended" / "finished")
+  else if (cloudData.workoutPending === false || cloudData.workoutPending === "false" || cloudData.workoutStatus === "ended" || cloudData.workoutStatus === "finished") {
+    if (pState.flag === "true" || pState.pending) {
+      pState.flag = "false";
+      pState.endedAt = cloudData.timestamp || cloudData._timeStr || new Date().toISOString();
+      pState.endedAtTimetoken = cloudData._timetoken || String(Date.now() * 10000);
       hasChanges = true;
+      addSyncConsoleLog(`⏹️ FLAG -> "false" (Entrenamiento Finalizado - ${author.toUpperCase()}): Esperando próxima sincronización de Salud para capturar datos_fin.`, "warn");
       if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
     }
   }
 
-  // Handle direct workout payload from Shortcuts (e.g. "Fin Entrenamiento")
+  // CASO 3: LLEGA UN MENSAJE DIRECTO DE ENTRENO CON KCAL/DURACIÓN EXPLÍCITA
   const isDirectWorkout = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true" || (cloudData.workoutKcal !== undefined && cloudData.workoutKcal !== "0" && cloudData.workoutKcal !== 0) || (cloudData.duration !== undefined && cloudData.duration !== "0" && cloudData.duration !== 0);
   if (isDirectWorkout) {
     let targetDay = cloudData.day;
@@ -1804,61 +1839,71 @@ export function mergeCloudDataIntoAppState(cloudData) {
       }
     }
 
-    // Resetear flag de entreno pendiente SOLO si el mensaje de fin de entreno es igual o posterior al inicio
-    const pInfo = appState.appleWatch?.pendingWorkout?.[author];
-    if (pInfo?.pending) {
-      const msgTimetoken = cloudData._timetoken ? BigInt(cloudData._timetoken) : 0n;
-      const startedTimetoken = pInfo.startedAtTimetoken ? BigInt(pInfo.startedAtTimetoken) : 0n;
-      if (!cloudData._timetoken || !pInfo.startedAtTimetoken || msgTimetoken >= startedTimetoken) {
-        pInfo.pending = false;
-        hasChanges = true;
-        addSyncConsoleLog(`✅ Flag de entreno resuelto (${author.toUpperCase()}) tras procesar sesión explícita.`, "success");
-        if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
-      }
+    if (pState.flag === "true" || pState.flag === "false") {
+      pState.flag = "N/A";
+      pState.pending = false;
+      hasChanges = true;
+      addSyncConsoleLog(`🎯 FLAG -> "N/A" (Entrenamiento Cargado - ${author.toUpperCase()}) tras recibir sesión directa.`, "success");
+      if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
     }
-  } else if (appState.appleWatch?.pendingWorkout?.[author]?.pending && replicaUpdated) {
-    // Cálculo por diferencias al recibir actualización de salud posterior a la bandera de entreno
-    const pInfo = appState.appleWatch.pendingWorkout[author];
-    const msgTimetoken = cloudData._timetoken ? BigInt(cloudData._timetoken) : 0n;
-    const startedTimetoken = pInfo.startedAtTimetoken ? BigInt(pInfo.startedAtTimetoken) : 0n;
+  }
 
-    if (!cloudData._timetoken || !pInfo.startedAtTimetoken || msgTimetoken >= startedTimetoken) {
-      const curKcal = rep.moveKcal || m.moveKcal || 0;
-      const curExMin = rep.exerciseMin || m.exerciseMin || 0;
-      const deltaKcal = Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
-      const deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
+  // CASO 4: LLEGA ACTUALIZACIÓN DE SALUD (e.g. al abrir WhatsApp/FitDuo):
+  // Si el flag es "true": Se actualizan métricas de salud, pero datos_inicio permanece CONGELADO y el flag continúa en "true".
+  // Si el flag es "false": Estos datos son "datos_fin_entrenamiento". Se calculan diferencias, se guarda el entreno y el flag pasa a "N/A".
+  else if (replicaUpdated) {
+    if (pState.flag === "true") {
+      addSyncConsoleLog(`ℹ️ Sincro de Salud a mitad de entreno (${author.toUpperCase()}): Kcal actuales=${rep.moveKcal}. datos_inicio congelados en ${pState.datos_inicio_entrenamiento?.kcal || pState.snapshotKcal || 0} kcal. Flag continúa en "true".`);
+    } else if (pState.flag === "false") {
+      const initKcal = pState.datos_inicio_entrenamiento?.kcal ?? pState.snapshotKcal ?? 0;
+      const initExMin = pState.datos_inicio_entrenamiento?.exMin ?? pState.snapshotExMin ?? 0;
+      const finKcal = rep.moveKcal || m.moveKcal || 0;
+      const finExMin = rep.exerciseMin || m.exerciseMin || 0;
 
-      addSyncConsoleLog(`📊 Comprobando diferencial (${author.toUpperCase()}): Kcal actual=${curKcal} vs Base=${pInfo.snapshotKcal || 0} (Δ: +${deltaKcal} kcal, +${deltaMin} min)`);
+      pState.datos_fin_entrenamiento = {
+        kcal: finKcal,
+        exMin: finExMin,
+        steps: rep.steps || m.steps || 0,
+        timestamp: new Date().toISOString()
+      };
 
-      if (deltaKcal >= 10 || deltaMin >= 3) {
-        const targetDay = getTodayDayName();
-        if (!appState.completedWorkouts) appState.completedWorkouts = {};
-        if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
-        if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
-          appState.completedWorkouts[author][targetDay] = { done: true, watchData: null, sessions: [] };
-        }
-        if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
-          appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
-        }
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
-        const newSession = {
-          id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-          deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Auto Diferencial)`,
-          durationMin: deltaMin || 30,
-          kcal: deltaKcal,
-          timestamp: timeStr,
-          autoSync: true
-        };
-        appState.completedWorkouts[author][targetDay].sessions.push(newSession);
-        appState.completedWorkouts[author][targetDay].done = true;
-        appState.completedWorkouts[author][targetDay].watchData = newSession;
-        hasChanges = true;
-        pInfo.pending = false;
-        addSyncConsoleLog(`🎯 CÁLCULO DIFERENCIAL APLICADO (${author.toUpperCase()}): +${deltaKcal} kcal, +${deltaMin} min. Añadido a entrenos y flag cerrado.`, "success");
-        if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
-      } else {
-        addSyncConsoleLog(`ℹ️ Entreno en curso: Delta actual (+${deltaKcal} kcal) aún bajo el umbral (mínimo 10 kcal). Flag sigue activo.`);
+      const deltaKcal = Math.max(0, finKcal - initKcal);
+      const deltaMin = Math.max(0, finExMin - initExMin);
+
+      const targetDay = getTodayDayName();
+      if (!appState.completedWorkouts) appState.completedWorkouts = {};
+      if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+      if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
+        appState.completedWorkouts[author][targetDay] = { done: true, watchData: null, sessions: [] };
       }
+      if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
+        appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
+      }
+
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+      const finalDuration = deltaMin > 0 ? deltaMin : 30;
+      const finalKcal = deltaKcal > 0 ? deltaKcal : 120;
+
+      const newSession = {
+        id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Auto Diferencial)`,
+        durationMin: finalDuration,
+        kcal: finalKcal,
+        timestamp: timeStr,
+        autoSync: true
+      };
+
+      appState.completedWorkouts[author][targetDay].sessions.push(newSession);
+      appState.completedWorkouts[author][targetDay].done = true;
+      appState.completedWorkouts[author][targetDay].watchData = newSession;
+
+      // TRANSICIÓN A "N/A" (ENTRENAMIENTO CARGADO)
+      pState.flag = "N/A";
+      pState.pending = false;
+      hasChanges = true;
+
+      addSyncConsoleLog(`🎯 FLAG -> "N/A" (Entrenamiento Cargado - ${author.toUpperCase()}): Fin(${finKcal} kcal) - Inicio(${initKcal} kcal) = +${finalKcal} kcal (+${finalDuration} min). Sesión registrada.`, "success");
+      if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
     }
   }
 
@@ -2572,11 +2617,12 @@ export function updateWorkoutPendingStatusBadge() {
 
   const profileId = appState.activeProfileId || 'he';
   const authorName = profileId === 'he' ? 'Carlos' : 'Andrea';
-  const pendingInfo = appState.appleWatch?.pendingWorkout?.[profileId];
-  const isPending = pendingInfo && (pendingInfo.pending === true || pendingInfo.pending === "true");
+  const pState = appState.appleWatch?.pendingWorkout?.[profileId];
+  const flag = pState?.flag || (pState?.pending ? "true" : "N/A");
 
-  if (isPending) {
-    const timeStr = pendingInfo.startedAt ? (pendingInfo.startedAt.includes("T") ? new Date(pendingInfo.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (pendingInfo.startedAt.includes(":") ? pendingInfo.startedAt : new Date(pendingInfo.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))) : '--:--';
+  if (flag === "true") {
+    const timeStr = pState.startedAt ? (pState.startedAt.includes("T") ? new Date(pState.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (pState.startedAt.includes(":") ? pState.startedAt : new Date(pState.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))) : '--:--';
+    const initKcal = pState.datos_inicio_entrenamiento?.kcal ?? pState.snapshotKcal ?? 0;
     badgeEl.style.display = "inline-flex";
     badgeEl.style.alignItems = "center";
     badgeEl.style.gap = "0.45rem";
@@ -2588,14 +2634,37 @@ export function updateWorkoutPendingStatusBadge() {
     badgeEl.style.border = "1px solid rgba(245, 158, 11, 0.45)";
     badgeEl.style.color = "#fbbf24";
     badgeEl.style.cursor = "pointer";
-    badgeEl.setAttribute("title", `Entreno iniciado (${timeStr}). Foto base: ${pendingInfo.snapshotKcal || 0} kcal. Se procesará por diferencias al sincronizar Salud.`);
+    badgeEl.setAttribute("title", `Flag: "true" (Iniciado ${timeStr}). Base congelada: ${initKcal} kcal. Puedes abrir otras apps sin alterar la base.`);
     badgeEl.innerHTML = `
       <span class="status-pulse-dot" style="width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #fbbf24;"></span>
-      <span>🏃 <strong>Flag Activo:</strong> Entreno en curso (${timeStr})</span>
+      <span>🏃 <strong>Flag: "true"</strong> | Iniciado (${timeStr}) • Base: ${initKcal} kcal</span>
     `;
     badgeEl.onclick = async () => {
       triggerHapticTouch();
-      showIosToast(`🏃 <strong>Entreno en curso (${authorName}):</strong> Iniciado a las ${timeStr}. Base: ${pendingInfo.snapshotKcal || 0} kcal. Consultando nube...`, "fa-solid fa-person-running");
+      showIosToast(`🏃 <strong>Flag: "true" (${authorName}):</strong> Entreno iniciado a las ${timeStr}. Base: ${initKcal} kcal. Consultando nube...`, "fa-solid fa-person-running");
+      await pullFromCloud(true);
+    };
+  } else if (flag === "false") {
+    const timeStr = pState.endedAt ? (pState.endedAt.includes("T") ? new Date(pState.endedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (pState.endedAt.includes(":") ? pState.endedAt : new Date(pState.endedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))) : '--:--';
+    badgeEl.style.display = "inline-flex";
+    badgeEl.style.alignItems = "center";
+    badgeEl.style.gap = "0.45rem";
+    badgeEl.style.padding = "0.38rem 0.85rem";
+    badgeEl.style.borderRadius = "8px";
+    badgeEl.style.fontSize = "0.78rem";
+    badgeEl.style.fontWeight = "600";
+    badgeEl.style.background = "rgba(249, 115, 22, 0.15)";
+    badgeEl.style.border = "1px solid rgba(249, 115, 22, 0.45)";
+    badgeEl.style.color = "#fb923c";
+    badgeEl.style.cursor = "pointer";
+    badgeEl.setAttribute("title", `Flag: "false" (Finalizado ${timeStr}). Esperando sincronización de Salud para capturar datos_fin y registrar entreno.`);
+    badgeEl.innerHTML = `
+      <span class="status-pulse-dot" style="width: 8px; height: 8px; background: #fb923c; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #fb923c;"></span>
+      <span>⏹️ <strong>Flag: "false"</strong> | Finalizado (${timeStr}) • Esperando Salud</span>
+    `;
+    badgeEl.onclick = async () => {
+      triggerHapticTouch();
+      showIosToast(`⏹️ <strong>Flag: "false" (${authorName}):</strong> Finalizado. Abre WhatsApp/FitDuo para capturar datos_fin y registrar entreno.`, "fa-solid fa-flag-checkered");
       await pullFromCloud(true);
     };
   } else {
@@ -2610,14 +2679,14 @@ export function updateWorkoutPendingStatusBadge() {
     badgeEl.style.border = "1px solid rgba(16, 185, 129, 0.35)";
     badgeEl.style.color = "#34d399";
     badgeEl.style.cursor = "pointer";
-    badgeEl.setAttribute("title", `No hay entrenamientos pendientes para ${authorName}. Flag en False.`);
+    badgeEl.setAttribute("title", `Flag: "N/A" (Entrenamientos cargados y sincronizados).`);
     badgeEl.innerHTML = `
       <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
-      <span>✓ <strong>Flag Inactivo:</strong> Sincronizado</span>
+      <span>✓ <strong>Flag: "N/A"</strong> | Entrenos Cargados</span>
     `;
     badgeEl.onclick = async () => {
       triggerHapticTouch();
-      showIosToast(`✓ <strong>Consultando Nube:</strong> Comprobando si hay flags de entreno de ${authorName}...`, "fa-solid fa-arrows-rotate");
+      showIosToast(`✓ <strong>Flag: "N/A" (${authorName}):</strong> Entrenamientos cargados y sincronizados.`, "fa-solid fa-circle-check");
       await pullFromCloud(true);
     };
   }
@@ -3482,6 +3551,7 @@ window.updateWorkoutPendingStatusBadge = updateWorkoutPendingStatusBadge;
 window.clearWorkoutDiagnosticLogs = clearWorkoutDiagnosticLogs;
 window.copyWorkoutDiagnosticLogs = copyWorkoutDiagnosticLogs;
 window.testSimulatedWorkoutPendingFlag = testSimulatedWorkoutPendingFlag;
+window.testSimulatedWorkoutEndFlag = testSimulatedWorkoutEndFlag;
 window.resolvePendingWorkoutManually = resolvePendingWorkoutManually;
 window.cancelPendingWorkoutManually = cancelPendingWorkoutManually;
 
