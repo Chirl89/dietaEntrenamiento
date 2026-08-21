@@ -1,5 +1,5 @@
 import { appState, saveState, getMasterProfileId, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.10.13';
+import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.10.14';
 
 export function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -36,6 +36,14 @@ export function deleteWorkoutSession(dayName, sessionIndex) {
   const dayEntry = appState.completedWorkouts?.[pid]?.[dayName];
   if (!dayEntry || !Array.isArray(dayEntry.sessions)) return;
 
+  const deletedSession = dayEntry.sessions[sessionIndex];
+  if (deletedSession) {
+    if (!appState.deletedWorkoutSessionIds) appState.deletedWorkoutSessionIds = [];
+    if (deletedSession.id) appState.deletedWorkoutSessionIds.push(deletedSession.id);
+    const sig = `${deletedSession.durationMin}_${deletedSession.kcal}_${deletedSession.timestamp}_${pid}_${dayName}`;
+    appState.deletedWorkoutSessionIds.push(sig);
+  }
+
   dayEntry.sessions.splice(sessionIndex, 1);
   if (dayEntry.sessions.length === 0) {
     appState.completedWorkouts[pid][dayName] = { done: false, watchData: null, sessions: [] };
@@ -43,9 +51,16 @@ export function deleteWorkoutSession(dayName, sessionIndex) {
     dayEntry.watchData = dayEntry.sessions[dayEntry.sessions.length - 1];
   }
 
+  // Also reset pending workout flag if still active
+  if (appState.appleWatch?.pendingWorkout?.[pid]) {
+    appState.appleWatch.pendingWorkout[pid].flag = "N/A";
+    appState.appleWatch.pendingWorkout[pid].pending = false;
+  }
+
   saveState();
   if (window.renderAll) window.renderAll();
   showIosToast("🗑️ Sesión de entrenamiento eliminada", "fa-solid fa-trash-can");
+  if (window.pushToCloud) window.pushToCloud(false);
 }
 
 export function toggleWorkoutDay(dayName) {

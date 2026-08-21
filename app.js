@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.13)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.14)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.13';
+} from './data.js?v=0.10.14';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1753,6 +1753,12 @@ export function tryResolveCompletedWorkout(author, endKcalOverride = null, endEx
     const finalKcal = deltaKcal > 0 ? deltaKcal : Math.round(finalDuration * 4.5);
     const sessionId = pState.startedAtTimetoken ? `diff_${author}_${pState.startedAtTimetoken}` : `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
+    if (appState.deletedWorkoutSessionIds && appState.deletedWorkoutSessionIds.includes(sessionId)) {
+      pState.flag = "N/A";
+      pState.pending = false;
+      return false;
+    }
+
     const isDuplicate = appState.completedWorkouts[author][targetDay].sessions.some(s =>
       s.id === sessionId ||
       (s.durationMin === finalDuration && s.kcal === finalKcal && s.timestamp === timeStr)
@@ -1770,6 +1776,8 @@ export function tryResolveCompletedWorkout(author, endKcalOverride = null, endEx
       appState.completedWorkouts[author][targetDay].sessions.push(newSession);
       appState.completedWorkouts[author][targetDay].done = true;
       appState.completedWorkouts[author][targetDay].watchData = newSession;
+      if (!appState.processedWorkoutIds) appState.processedWorkoutIds = [];
+      appState.processedWorkoutIds.push(sessionId);
       addSyncConsoleLog(`🎯 HISTORIAL RECONSTRUIDO (${author.toUpperCase()} - ${targetDay}): ${timeStr} · +${finalKcal} kcal (+${finalDuration} min).`, "success");
     }
 
@@ -1787,6 +1795,16 @@ export function tryResolveCompletedWorkout(author, endKcalOverride = null, endEx
 export function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
   if (cloudData.status !== undefined && cloudData.channels !== undefined) return false;
+
+  // Ignorar mensajes antiguos si se ha ejecutado una purga
+  if (appState.lastPurgeTimetoken && cloudData._timetoken) {
+    try {
+      if (BigInt(cloudData._timetoken) <= BigInt(appState.lastPurgeTimetoken)) {
+        return false;
+      }
+    } catch(e) {}
+  }
+
   let hasChanges = false;
   const author = cloudData.authorProfileId || cloudData.masterProfileId || cloudData.author || cloudData.pid || 'he';
 
@@ -1851,6 +1869,12 @@ export function mergeCloudDataIntoAppState(cloudData) {
       const incomingList = Array.isArray(dayObj.sessions) ? dayObj.sessions : (dayObj.watchData ? [dayObj.watchData] : []);
       for (const inc of incomingList) {
         if (!inc) continue;
+        const isDeleted = appState.deletedWorkoutSessionIds && (
+          (inc.id && appState.deletedWorkoutSessionIds.includes(inc.id)) ||
+          appState.deletedWorkoutSessionIds.includes(`${inc.durationMin}_${inc.kcal}_${inc.timestamp}_${author}_${day}`)
+        );
+        if (isDeleted) continue;
+
         const already = localDay.sessions.some(s =>
           (s.id && inc.id && s.id === inc.id) ||
           (s.timestamp === inc.timestamp && s.durationMin === inc.durationMin && s.kcal === inc.kcal)
@@ -1860,6 +1884,12 @@ export function mergeCloudDataIntoAppState(cloudData) {
           hasChanges = true;
         }
       }
+      if (dayObj.done || localDay.sessions.length > 0) {
+        localDay.done = true;
+        localDay.watchData = localDay.sessions[localDay.sessions.length - 1];
+      }
+    }
+  }
       if (dayObj.done || localDay.sessions.length > 0) {
         localDay.done = true;
         localDay.watchData = localDay.sessions[localDay.sessions.length - 1];
@@ -2148,6 +2178,10 @@ export async function pullFromCloud(showToast = false) {
 export async function purgeCloudHistory() {
   triggerHapticTouch();
   showIosToast("🧹 Purgando cola de la nube...", "fa-solid fa-broom");
+  
+  // Establecer marca de tiempo de purga para que la app ignore todo mensaje previo
+  appState.lastPurgeTimetoken = String(Date.now() * 10000);
+
   const key = getCloudSyncKey();
   const channels = [`${key}_he`, `${key}_she`];
   let success = true;
@@ -2160,6 +2194,23 @@ export async function purgeCloudHistory() {
       if (!res.ok) success = false;
     } catch(e) {
       success = false;
+    }
+  }
+
+  // Marcar todas las sesiones actuales como eliminadas para que nunca vuelvan
+  if (!appState.deletedWorkoutSessionIds) appState.deletedWorkoutSessionIds = [];
+  if (appState.completedWorkouts) {
+    for (const p of ['he', 'she']) {
+      if (appState.completedWorkouts[p]) {
+        for (const [dayName, dayObj] of Object.entries(appState.completedWorkouts[p])) {
+          if (dayObj && Array.isArray(dayObj.sessions)) {
+            for (const sess of dayObj.sessions) {
+              if (sess.id) appState.deletedWorkoutSessionIds.push(sess.id);
+              appState.deletedWorkoutSessionIds.push(`${sess.durationMin}_${sess.kcal}_${sess.timestamp}_${p}_${dayName}`);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -2179,13 +2230,10 @@ export async function purgeCloudHistory() {
 
   saveState();
   if (window.renderAll) window.renderAll();
+  await pushToCloud(false);
 
-  if (success) {
-    addSyncConsoleLog("🧹 Cola de mensajes en PubNub purgada con éxito. Canales limpios.", "success");
-    showIosToast("✅ Cola de la nube vaciada por completo", "fa-solid fa-circle-check");
-  } else {
-    addSyncConsoleLog("⚠️ Advertencia al purgar algunos canales de PubNub.", "warn");
-  }
+  addSyncConsoleLog("🧹 Cola purgada con éxito. Mensajes antiguos descartados y estados reseteados.", "success");
+  showIosToast("✅ Cola de la nube purgada por completo", "fa-solid fa-circle-check");
 }
 
 export function syncNowWithCloud() {
@@ -2651,6 +2699,14 @@ export function deleteWorkoutSession(dayName, sessionIndex) {
   const dayEntry = appState.completedWorkouts?.[pid]?.[dayName];
   if (!dayEntry || !Array.isArray(dayEntry.sessions)) return;
 
+  const deletedSession = dayEntry.sessions[sessionIndex];
+  if (deletedSession) {
+    if (!appState.deletedWorkoutSessionIds) appState.deletedWorkoutSessionIds = [];
+    if (deletedSession.id) appState.deletedWorkoutSessionIds.push(deletedSession.id);
+    const sig = `${deletedSession.durationMin}_${deletedSession.kcal}_${deletedSession.timestamp}_${pid}_${dayName}`;
+    appState.deletedWorkoutSessionIds.push(sig);
+  }
+
   dayEntry.sessions.splice(sessionIndex, 1);
   if (dayEntry.sessions.length === 0) {
     appState.completedWorkouts[pid][dayName] = { done: false, watchData: null, sessions: [] };
@@ -2658,9 +2714,16 @@ export function deleteWorkoutSession(dayName, sessionIndex) {
     dayEntry.watchData = dayEntry.sessions[dayEntry.sessions.length - 1];
   }
 
+  // Also reset pending workout flag if still active
+  if (appState.appleWatch?.pendingWorkout?.[pid]) {
+    appState.appleWatch.pendingWorkout[pid].flag = "N/A";
+    appState.appleWatch.pendingWorkout[pid].pending = false;
+  }
+
   saveState();
   renderAll();
   showIosToast("🗑️ Sesión de entrenamiento eliminada", "fa-solid fa-trash-can");
+  pushToCloud(false);
 }
 
 export function resetWorkoutWeek() {
