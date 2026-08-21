@@ -192,60 +192,60 @@ export function mergeCloudDataIntoAppState(cloudData) {
   const m = appState.appleWatch.metrics[author];
   let replicaMetricsUpdated = false;
 
-  const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories ?? cloudData.calorias);
-  if (kcalVal !== null) {
-    rep.moveKcal = kcalVal;
-    m.moveKcal = kcalVal;
-    replicaMetricsUpdated = true;
-  }
+  const isWorkoutPayload = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true";
 
-  const stepsVal = parseSmartMetricValue(cloudData.steps ?? cloudData.pasos);
-  if (stepsVal !== null) {
-    rep.steps = stepsVal;
-    m.steps = stepsVal;
-    rep.distanceKm = parseFloat((rep.steps * 0.00075).toFixed(2));
-    m.distanceKm = rep.distanceKm;
-    replicaMetricsUpdated = true;
-  }
+  if (!isWorkoutPayload || cloudData.steps !== undefined || cloudData.floors !== undefined || cloudData.sleep !== undefined) {
+    const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories ?? cloudData.calorias);
+    if (kcalVal !== null && !isWorkoutPayload) {
+      rep.moveKcal = kcalVal;
+      m.moveKcal = kcalVal;
+      replicaMetricsUpdated = true;
+    }
 
-  const distVal = parseSmartMetricFloatValue(cloudData.dist ?? cloudData.distanceKm ?? cloudData.distance ?? cloudData.distancia);
-  if (distVal !== null) {
-    rep.distanceKm = distVal;
-    m.distanceKm = distVal;
-    replicaMetricsUpdated = true;
-  }
+    const stepsVal = parseSmartMetricValue(cloudData.steps ?? cloudData.pasos);
+    if (stepsVal !== null) {
+      rep.steps = stepsVal;
+      m.steps = stepsVal;
+      rep.distanceKm = parseFloat((rep.steps * 0.00075).toFixed(2));
+      m.distanceKm = rep.distanceKm;
+      replicaMetricsUpdated = true;
+    }
 
-  const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.heartRate ?? cloudData.avgHr ?? cloudData.pulso ?? cloudData.ritmoCardiaco);
-  if (hrVal !== null) {
-    rep.hr = hrVal;
-    m.hr = hrVal;
-    replicaMetricsUpdated = true;
-  }
+    const distVal = parseSmartMetricFloatValue(cloudData.dist ?? cloudData.distanceKm ?? cloudData.distance ?? cloudData.distancia);
+    if (distVal !== null) {
+      rep.distanceKm = distVal;
+      m.distanceKm = distVal;
+      replicaMetricsUpdated = true;
+    }
 
-  const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.durationMin ?? cloudData.minutosEjercicio);
-  if (exMinVal !== null) {
-    rep.exerciseMin = exMinVal;
-    m.exerciseMin = exMinVal;
-    replicaMetricsUpdated = true;
-  }
+    const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.heartRate ?? cloudData.avgHr ?? cloudData.pulso ?? cloudData.ritmoCardiaco);
+    if (hrVal !== null && !isWorkoutPayload) {
+      rep.hr = hrVal;
+      m.hr = hrVal;
+      replicaMetricsUpdated = true;
+    }
 
-  const floorsVal = parseSmartMetricValue(cloudData.floors ?? cloudData.pisos ?? cloudData.floorsClimbed);
-  if (floorsVal !== null) {
-    rep.floors = floorsVal;
-    m.floors = floorsVal;
-    replicaMetricsUpdated = true;
-  } else if (cloudData.floors !== undefined || cloudData.syncWatch) {
-    rep.floors = 0;
-    m.floors = 0;
-    replicaMetricsUpdated = true;
-  }
+    const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.minutosEjercicio ?? cloudData.exerciseTime);
+    if (exMinVal !== null && !isWorkoutPayload) {
+      rep.exerciseMin = exMinVal;
+      m.exerciseMin = exMinVal;
+      replicaMetricsUpdated = true;
+    }
 
-  const sleepRaw = cloudData.sleep ?? cloudData.sueno ?? cloudData.sleepHours ?? cloudData.horasSueno;
-  if (sleepRaw !== undefined) {
-    const formattedSleep = formatSmartSleepValue(sleepRaw);
-    rep.sleep = formattedSleep;
-    m.sleep = formattedSleep;
-    replicaMetricsUpdated = true;
+    const floorsVal = parseSmartMetricValue(cloudData.floors ?? cloudData.pisos ?? cloudData.floorsClimbed);
+    if (floorsVal !== null) {
+      rep.floors = floorsVal;
+      m.floors = floorsVal;
+      replicaMetricsUpdated = true;
+    }
+
+    const sleepVal = cloudData.sleep ?? cloudData.sueno ?? cloudData.sleepHours ?? cloudData.horasSueno;
+    if (sleepVal !== undefined && sleepVal !== null && sleepVal !== "") {
+      const formattedSleep = formatSmartSleepValue(sleepVal);
+      rep.sleep = formattedSleep;
+      m.sleep = formattedSleep;
+      replicaMetricsUpdated = true;
+    }
   }
 
   if (replicaMetricsUpdated) {

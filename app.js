@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.9.11)
+ * FitDuo & Collie Coach - Main Application Engine (v0.9.12)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -1444,9 +1444,16 @@ export function addSyncConsoleLog(message, type = "info") {
 }
 
 export async function cleanAndParseJsonFromCloud(rawText) {
-  if (!rawText || typeof rawText !== 'string') return null;
+  const list = await cleanAndParseAllMessagesFromCloud(rawText);
+  return list.length > 0 ? list[list.length - 1] : null;
+}
+
+export async function cleanAndParseAllMessagesFromCloud(rawText) {
+  if (!rawText || typeof rawText !== 'string') return [];
   let text = rawText.trim();
-  if (text === 'null' || text === '""' || text.length < 2) return null;
+  if (text === 'null' || text === '""' || text.length < 2) return [];
+
+  const results = [];
 
   if (text.includes('"channels":') && text.includes('"message":')) {
     try {
@@ -1455,35 +1462,41 @@ export async function cleanAndParseJsonFromCloud(rawText) {
         for (let ch of Object.keys(parsed.channels)) {
           const msgList = parsed.channels[ch];
           if (Array.isArray(msgList) && msgList.length > 0) {
-            const lastMsg = msgList[msgList.length - 1];
-            if (lastMsg && lastMsg.message) {
-              const res = await cleanAndParseJsonFromCloud(typeof lastMsg.message === 'string' ? lastMsg.message : JSON.stringify(lastMsg.message));
-              if (res && typeof res === 'object') {
-                if (lastMsg.timetoken) {
-                  res._timetoken = String(lastMsg.timetoken);
-                  const pubDate = new Date(parseInt(lastMsg.timetoken) / 10000);
-                  if (!isNaN(pubDate.getTime())) {
-                    res._timeStr = pubDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+            for (const msgItem of msgList) {
+              if (msgItem && msgItem.message) {
+                const subParsed = await cleanAndParseAllMessagesFromCloud(typeof msgItem.message === 'string' ? msgItem.message : JSON.stringify(msgItem.message));
+                for (const item of subParsed) {
+                  if (item && typeof item === 'object') {
+                    if (msgItem.timetoken) {
+                      item._timetoken = String(msgItem.timetoken);
+                      const pubDate = new Date(parseInt(msgItem.timetoken) / 10000);
+                      if (!isNaN(pubDate.getTime())) {
+                        item._timeStr = pubDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+                      }
+                    }
+                    results.push(item);
                   }
                 }
-                return res;
               }
             }
           }
         }
+        if (results.length > 0) return results;
       }
     } catch (e) {}
   }
 
   const fromUrlB64 = fromUrlSafeB64(text);
-  if (fromUrlB64) return fromUrlB64;
+  if (fromUrlB64) return [fromUrlB64];
 
   if ((text.startsWith('{') && text.endsWith('}')) || (text.startsWith('[') && text.endsWith(']'))) {
     try {
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === 'object') return [parsed];
     } catch (e) {}
   }
-  return null;
+  return [];
 }
 
 export function mergeCloudDataIntoAppState(cloudData) {
@@ -1498,33 +1511,38 @@ export function mergeCloudDataIntoAppState(cloudData) {
   const m = appState.appleWatch.metrics[author];
   let replicaUpdated = false;
 
-  const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal);
-  if (kcalVal !== null) { rep.moveKcal = kcalVal; m.moveKcal = kcalVal; replicaUpdated = true; }
+  const isWorkoutPayload = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true";
 
-  const stepsVal = parseSmartMetricValue(cloudData.steps);
-  if (stepsVal !== null) {
-    rep.steps = stepsVal;
-    m.steps = stepsVal;
-    rep.distanceKm = parseFloat((rep.steps * 0.00075).toFixed(2));
-    m.distanceKm = rep.distanceKm;
-    replicaUpdated = true;
-  }
+  // ONLY update summary daily health metrics (Move, Steps, Rings, Floors, Sleep) if this is NOT a pure workout snippet
+  if (!isWorkoutPayload || cloudData.steps !== undefined || cloudData.floors !== undefined || cloudData.sleep !== undefined) {
+    const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories ?? cloudData.calorias);
+    if (kcalVal !== null && !isWorkoutPayload) { rep.moveKcal = kcalVal; m.moveKcal = kcalVal; replicaUpdated = true; }
 
-  const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.avgHr);
-  if (hrVal !== null) { rep.hr = hrVal; m.hr = hrVal; replicaUpdated = true; }
+    const stepsVal = parseSmartMetricValue(cloudData.steps ?? cloudData.pasos);
+    if (stepsVal !== null) {
+      rep.steps = stepsVal;
+      m.steps = stepsVal;
+      rep.distanceKm = parseFloat((rep.steps * 0.00075).toFixed(2));
+      m.distanceKm = rep.distanceKm;
+      replicaUpdated = true;
+    }
 
-  const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.minutosEjercicio ?? cloudData.exerciseTime);
-  if (exMinVal !== null) { rep.exerciseMin = exMinVal; m.exerciseMin = exMinVal; replicaUpdated = true; }
+    const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.avgHr ?? cloudData.bpm);
+    if (hrVal !== null && !isWorkoutPayload) { rep.hr = hrVal; m.hr = hrVal; replicaUpdated = true; }
 
-  const floorsVal = parseSmartMetricValue(cloudData.floors ?? cloudData.pisos ?? cloudData.floorsClimbed);
-  if (floorsVal !== null) { rep.floors = floorsVal; m.floors = floorsVal; replicaUpdated = true; }
+    const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.minutosEjercicio ?? cloudData.exerciseTime);
+    if (exMinVal !== null && !isWorkoutPayload) { rep.exerciseMin = exMinVal; m.exerciseMin = exMinVal; replicaUpdated = true; }
 
-  const sleepVal = cloudData.sleep ?? cloudData.sueno ?? cloudData.sleepHours;
-  if (sleepVal !== undefined && sleepVal !== null && sleepVal !== "") {
-    const formattedSleep = formatSmartSleepValue(sleepVal);
-    rep.sleep = formattedSleep;
-    m.sleep = formattedSleep;
-    replicaUpdated = true;
+    const floorsVal = parseSmartMetricValue(cloudData.floors ?? cloudData.pisos ?? cloudData.floorsClimbed);
+    if (floorsVal !== null) { rep.floors = floorsVal; m.floors = floorsVal; replicaUpdated = true; }
+
+    const sleepVal = cloudData.sleep ?? cloudData.sueno ?? cloudData.sleepHours;
+    if (sleepVal !== undefined && sleepVal !== null && sleepVal !== "") {
+      const formattedSleep = formatSmartSleepValue(sleepVal);
+      rep.sleep = formattedSleep;
+      m.sleep = formattedSleep;
+      replicaUpdated = true;
+    }
   }
 
   if (replicaUpdated) {
@@ -1677,14 +1695,16 @@ export async function pullFromCloud(showToast = false) {
     let hasMerged = false;
     for (const ch of channels) {
       try {
-        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}?count=1`;
+        const pnSubUrl = `https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}?count=15`;
         const res = await fetch(pnSubUrl);
         if (res.ok) {
           const rawText = await res.text();
-          const data = await cleanAndParseJsonFromCloud(rawText);
-          if (data) {
-            const changed = mergeCloudDataIntoAppState(data);
-            if (changed) hasMerged = true;
+          const dataList = await cleanAndParseAllMessagesFromCloud(rawText);
+          for (const data of dataList) {
+            if (data) {
+              const changed = mergeCloudDataIntoAppState(data);
+              if (changed) hasMerged = true;
+            }
           }
         }
       } catch (eCh) {}
