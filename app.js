@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.12)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.13)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.12';
+} from './data.js?v=0.10.13';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -2145,6 +2145,49 @@ export async function pullFromCloud(showToast = false) {
   }
 }
 
+export async function purgeCloudHistory() {
+  triggerHapticTouch();
+  showIosToast("🧹 Purgando cola de la nube...", "fa-solid fa-broom");
+  const key = getCloudSyncKey();
+  const channels = [`${key}_he`, `${key}_she`];
+  let success = true;
+
+  for (const ch of channels) {
+    try {
+      const res = await fetch(`https://ps.pubnub.com/v3/history/sub-key/demo/channel/${ch}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) success = false;
+    } catch(e) {
+      success = false;
+    }
+  }
+
+  // Reset local pending workout flags cleanly
+  if (appState.appleWatch?.pendingWorkout) {
+    for (const pid of ['he', 'she']) {
+      if (appState.appleWatch.pendingWorkout[pid]) {
+        appState.appleWatch.pendingWorkout[pid].flag = "N/A";
+        appState.appleWatch.pendingWorkout[pid].pending = false;
+        appState.appleWatch.pendingWorkout[pid].datos_inicio_entrenamiento = null;
+        appState.appleWatch.pendingWorkout[pid].datos_fin_entrenamiento = null;
+        appState.appleWatch.pendingWorkout[pid].startedAt = null;
+        appState.appleWatch.pendingWorkout[pid].endedAt = null;
+      }
+    }
+  }
+
+  saveState();
+  if (window.renderAll) window.renderAll();
+
+  if (success) {
+    addSyncConsoleLog("🧹 Cola de mensajes en PubNub purgada con éxito. Canales limpios.", "success");
+    showIosToast("✅ Cola de la nube vaciada por completo", "fa-solid fa-circle-check");
+  } else {
+    addSyncConsoleLog("⚠️ Advertencia al purgar algunos canales de PubNub.", "warn");
+  }
+}
+
 export function syncNowWithCloud() {
   triggerHapticTouch();
   showIosToast("☁️ Sincronizando...", "fa-solid fa-arrows-rotate");
@@ -3674,6 +3717,7 @@ window.testSimulatedWorkoutEndFlag = testSimulatedWorkoutEndFlag;
 window.resolvePendingWorkoutManually = resolvePendingWorkoutManually;
 window.cancelPendingWorkoutManually = cancelPendingWorkoutManually;
 window.tryResolveCompletedWorkout = tryResolveCompletedWorkout;
+window.purgeCloudHistory = purgeCloudHistory;
 
 function initApp() {
   loadSavedState();
