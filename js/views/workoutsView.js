@@ -1,5 +1,5 @@
 import { appState, saveState, getMasterProfileId, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.10.2';
+import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.10.3';
 
 export function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -140,8 +140,10 @@ export function updateWorkoutPendingStatusBadge() {
       <span class="status-pulse-dot" style="width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #fbbf24;"></span>
       <span>🏃 <strong>Flag Activo:</strong> Entreno en curso (${timeStr})</span>
     `;
-    badgeEl.onclick = () => {
-      showIosToast(`🏃 <strong>Entreno en curso (${authorName}):</strong> Iniciado a las ${timeStr}. Base: ${pendingInfo.snapshotKcal || 0} kcal. Al abrir WhatsApp/FitDuo y sincronizar Salud, se calculará por diferencias.`, "fa-solid fa-person-running");
+    badgeEl.onclick = async () => {
+      triggerHapticTouch();
+      showIosToast(`🏃 <strong>Entreno en curso (${authorName}):</strong> Iniciado a las ${timeStr}. Base: ${pendingInfo.snapshotKcal || 0} kcal. Consultando nube...`, "fa-solid fa-person-running");
+      if (window.pullFromCloud) await window.pullFromCloud(true);
     };
   } else {
     badgeEl.style.display = "inline-flex";
@@ -160,8 +162,10 @@ export function updateWorkoutPendingStatusBadge() {
       <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
       <span>✓ <strong>Flag Inactivo:</strong> Sincronizado</span>
     `;
-    badgeEl.onclick = () => {
-      showIosToast(`✓ <strong>Estado Sincronizado (${authorName}):</strong> Flag = false. Sin entrenamientos pendientes.`, "fa-solid fa-circle-check");
+    badgeEl.onclick = async () => {
+      triggerHapticTouch();
+      showIosToast(`✓ <strong>Consultando Nube:</strong> Comprobando si hay flags de entreno de ${authorName}...`, "fa-solid fa-arrows-rotate");
+      if (window.pullFromCloud) await window.pullFromCloud(true);
     };
   }
 }

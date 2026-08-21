@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.2)
+ * FitDuo & Collie Coach - Main Application Engine (v0.10.3)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.2';
+} from './data.js?v=0.10.3';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1585,6 +1585,22 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   }
 
+  // Manejo de Bandera de Entreno en Pantalla Bloqueada (workoutPending)
+  if (cloudData.workoutPending === true || cloudData.workoutPending === "true" || cloudData.workoutStatus === "started" || cloudData.event === "workout_pending") {
+    if (!appState.appleWatch) appState.appleWatch = {};
+    if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
+    const prevSnap = appState.appleWatch.pendingWorkout[author] || {};
+    appState.appleWatch.pendingWorkout[author] = {
+      pending: true,
+      startedAt: cloudData.timestamp || cloudData._timeStr || new Date().toISOString(),
+      snapshotKcal: prevSnap.pending ? prevSnap.snapshotKcal : (rep.moveKcal || m.moveKcal || 0),
+      snapshotExMin: prevSnap.pending ? prevSnap.snapshotExMin : (rep.exerciseMin || m.exerciseMin || 0),
+      snapshotSteps: prevSnap.pending ? prevSnap.snapshotSteps : (rep.steps || m.steps || 0)
+    };
+    hasChanges = true;
+    if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+  }
+
   // Handle direct workout payload from Shortcuts (e.g. "Fin Entrenamiento")
   const isDirectWorkout = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true" || (cloudData.workoutKcal !== undefined && cloudData.workoutKcal !== "0" && cloudData.workoutKcal !== 0) || (cloudData.duration !== undefined && cloudData.duration !== "0" && cloudData.duration !== 0);
   if (isDirectWorkout) {
@@ -1628,6 +1644,47 @@ export function mergeCloudDataIntoAppState(cloudData) {
         hasChanges = true;
       }
     }
+
+    // Resetear flag de entreno pendiente si existía
+    if (appState.appleWatch?.pendingWorkout?.[author]?.pending) {
+      appState.appleWatch.pendingWorkout[author].pending = false;
+      hasChanges = true;
+      if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
+    }
+  } else if (appState.appleWatch?.pendingWorkout?.[author]?.pending && replicaUpdated) {
+    // Cálculo por diferencias al recibir actualización de salud posterior a la bandera de entreno
+    const pInfo = appState.appleWatch.pendingWorkout[author];
+    const curKcal = rep.moveKcal || m.moveKcal || 0;
+    const curExMin = rep.exerciseMin || m.exerciseMin || 0;
+    const deltaKcal = Math.max(0, curKcal - (pInfo.snapshotKcal || 0));
+    const deltaMin = Math.max(0, curExMin - (pInfo.snapshotExMin || 0));
+
+    if (deltaMin >= 5 || deltaKcal >= 25) {
+      const targetDay = getTodayDayName();
+      if (!appState.completedWorkouts) appState.completedWorkouts = {};
+      if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+      if (!appState.completedWorkouts[author][targetDay] || typeof appState.completedWorkouts[author][targetDay] !== 'object') {
+        appState.completedWorkouts[author][targetDay] = { done: true, watchData: null, sessions: [] };
+      }
+      if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
+        appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
+      }
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+      const newSession = {
+        id: `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        deviceName: `Apple Watch (${author === 'he' ? 'Carlos' : 'Andrea'} - Auto Diferencial)`,
+        durationMin: deltaMin || 30,
+        kcal: deltaKcal,
+        timestamp: timeStr,
+        autoSync: true
+      };
+      appState.completedWorkouts[author][targetDay].sessions.push(newSession);
+      appState.completedWorkouts[author][targetDay].done = true;
+      appState.completedWorkouts[author][targetDay].watchData = newSession;
+      hasChanges = true;
+    }
+    appState.appleWatch.pendingWorkout[author].pending = false;
+    if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
   }
 
   if (hasChanges) {
@@ -2335,8 +2392,10 @@ export function updateWorkoutPendingStatusBadge() {
       <span class="status-pulse-dot" style="width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #fbbf24;"></span>
       <span>🏃 <strong>Flag Activo:</strong> Entreno en curso (${timeStr})</span>
     `;
-    badgeEl.onclick = () => {
-      showIosToast(`🏃 <strong>Entreno en curso (${authorName}):</strong> Iniciado a las ${timeStr}. Base: ${pendingInfo.snapshotKcal || 0} kcal. Al abrir WhatsApp/FitDuo y sincronizar Salud, se calculará por diferencias.`, "fa-solid fa-person-running");
+    badgeEl.onclick = async () => {
+      triggerHapticTouch();
+      showIosToast(`🏃 <strong>Entreno en curso (${authorName}):</strong> Iniciado a las ${timeStr}. Base: ${pendingInfo.snapshotKcal || 0} kcal. Consultando nube...`, "fa-solid fa-person-running");
+      await pullFromCloud(true);
     };
   } else {
     badgeEl.style.display = "inline-flex";
@@ -2355,8 +2414,10 @@ export function updateWorkoutPendingStatusBadge() {
       <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
       <span>✓ <strong>Flag Inactivo:</strong> Sincronizado</span>
     `;
-    badgeEl.onclick = () => {
-      showIosToast(`✓ <strong>Estado Sincronizado (${authorName}):</strong> Flag = false. Sin entrenamientos pendientes.`, "fa-solid fa-circle-check");
+    badgeEl.onclick = async () => {
+      triggerHapticTouch();
+      showIosToast(`✓ <strong>Consultando Nube:</strong> Comprobando si hay flags de entreno de ${authorName}...`, "fa-solid fa-arrows-rotate");
+      await pullFromCloud(true);
     };
   }
 }
