@@ -10,6 +10,7 @@ import {
   LOCAL_STORAGE_KEY,
   LAST_REGISTERED_METRICS_KEY,
   getMasterProfileId,
+  getProfileShortName,
   triggerHapticTouch,
   showIosToast,
   getTodayDayName,
@@ -22,7 +23,6 @@ import {
   toUrlSafeB64,
   fromUrlSafeB64
 } from './utils.js';
-import { getProfileShortName } from './navigation.js';
 
 export const CLOUD_SYNC_APP_KEY = "fitduo_v2";
 export const DEFAULT_CLOUD_KEY = "fitduo_sync_v2";

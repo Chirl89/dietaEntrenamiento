@@ -8,10 +8,10 @@ import {
   saveState,
   DEVICE_DEFAULT_PROFILE_KEY,
   getMasterProfileId,
+  getProfileShortName,
   triggerHapticTouch,
   showIosToast
 } from '../state.js';
-import { getProfileShortName, updateUIProfileNames } from '../navigation.js';
 import { getCloudSyncKey, updateCloudSyncUI, pushToCloud } from '../cloudSync.js';
 
 export function populateSettingsInputs() {
@@ -175,7 +175,7 @@ export function renderSettingsView() {
       badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> ${label}`;
     }
 
-    updateUIProfileNames();
+    if (window.updateUIProfileNames) window.updateUIProfileNames();
     populateSettingsInputs();
     updateCloudSyncUI(appState.lastCloudSync ? "Conectado a la Nube (Sincronizado)" : "Conectado a la Nube", true);
   } catch(e) {

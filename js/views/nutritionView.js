@@ -4,7 +4,7 @@
  */
 
 import { appState, saveState, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js?v=0.14.0';
+import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js';
 
 export function renderExclusions() {}
 export function addExclusion() {}

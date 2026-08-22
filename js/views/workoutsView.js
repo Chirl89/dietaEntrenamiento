@@ -10,8 +10,7 @@ import {
   getTodayDayName,
   triggerHapticTouch,
   showIosToast
-} from '../state.js';
-import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.14.0';
+import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js';
 
 export function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];

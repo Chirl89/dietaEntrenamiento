@@ -11,6 +11,7 @@ import {
   getMasterProfileId,
   getTodayDayName,
   getLocalIsoDate,
+  getProfileShortName,
   triggerHapticTouch,
   showIosToast,
   addDebugLog,
@@ -18,7 +19,7 @@ import {
   copyDebugLogs,
   clearDebugLogs,
   closeDebugLogsModal
-} from './js/state.js?v=0.14.0';
+} from './js/state.js';
 
 import {
   parseSmartMetricValue,
@@ -27,7 +28,7 @@ import {
   formatSyncRelativeTime,
   toUrlSafeB64,
   fromUrlSafeB64
-} from './js/utils.js?v=0.14.0';
+} from './js/utils.js';
 
 // 2. Navigation & Routing
 import {
@@ -41,9 +42,8 @@ import {
   showTab,
   setDeviceDefaultProfile,
   checkDeviceIdentityBanner,
-  getProfileShortName,
   updateUIProfileNames
-} from './js/navigation.js?v=0.14.0';
+} from './js/navigation.js';
 
 // 3. Apple Watch & iOS Shortcuts
 import {
@@ -82,7 +82,7 @@ import {
   updateAppleWatchModalUI,
   handleHealthFileImport,
   toggleShortcutGuide
-} from './js/appleWatch.js?v=0.14.0';
+} from './js/appleWatch.js';
 
 // 4. Multi-Device Cloud Sync
 import {
@@ -113,13 +113,13 @@ import {
   handleBackupFileSelect,
   updateCloudSyncUI,
   forceAppRefresh
-} from './js/cloudSync.js?v=0.14.0';
+} from './js/cloudSync.js';
 
 // 5. Views & Tab Modules
 import {
   renderSummaryView,
   renderProfileView
-} from './js/views/summaryView.js?v=0.14.0';
+} from './js/views/summaryView.js';
 
 import {
   renderExclusions,
@@ -136,7 +136,7 @@ import {
   renderShoppingView,
   toggleShoppingItem,
   copyShoppingList
-} from './js/views/nutritionView.js?v=0.14.0';
+} from './js/views/nutritionView.js';
 
 import {
   isDayCompleted,
@@ -163,7 +163,7 @@ import {
   saveWorkoutWatchDataFromModal,
   connectBluetoothHR,
   simulateBluetoothPairing
-} from './js/views/workoutsView.js?v=0.14.0';
+} from './js/views/workoutsView.js';
 
 import {
   selectBooDayFromDropdown,
@@ -180,7 +180,7 @@ import {
   closeBooBacklogModalOnBackdrop,
   renderBooBacklogModalUI,
   renderBooWorkoutView
-} from './js/views/booView.js?v=0.14.0';
+} from './js/views/booView.js';
 
 import {
   currentProgressMainTab,
@@ -198,19 +198,19 @@ import {
   setHeatmapMonth,
   setHeatmapYear,
   resetHeatmapToCurrentMonth
-} from './js/views/progressView.js?v=0.14.0';
+} from './js/views/progressView.js';
 
 import {
   populateSettingsInputs,
   saveCustomSettings,
   renderSettingsView
-} from './js/views/settingsView.js?v=0.14.0';
+} from './js/views/settingsView.js';
 
 import {
   handleChatKeyPress,
   sendChatMessage,
   generateBotReply
-} from './js/views/chatView.js?v=0.14.0';
+} from './js/views/chatView.js';
 
 // 6. Expose all functions to global window for HTML event handlers
 const globalBindings = {
@@ -383,6 +383,7 @@ const globalBindings = {
   generateBotReply
 };
 
+// Immediate global binding
 Object.assign(window, globalBindings);
 
 // 7. App Initialization & Lifecycle

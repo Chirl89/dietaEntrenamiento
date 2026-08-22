@@ -1,4 +1,8 @@
-import { INITIAL_PROFILES } from '../data.js?v=0.14.0';
+/**
+ * FitDuo & Collie Coach - Global State & Persistence Engine (v0.14.0)
+ */
+
+import { INITIAL_PROFILES } from '../data.js';
 
 // STATE STORAGE KEYS
 export const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -47,6 +51,32 @@ export function getLocalIsoDate(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+export function getProfileShortName(pid) {
+  try {
+    if (!appState || !appState.profiles) {
+      if (pid === 'he') return "Carlos";
+      if (pid === 'she') return "Andrea";
+      if (pid === 'dog') return "Boo";
+      return "Usuario";
+    }
+    if (pid === 'he') {
+      const raw = appState.profiles.he?.name || "Carlos";
+      return raw.replace(/^Él\s*\(/i, '').replace(/\)$/, '').trim() || "Carlos";
+    }
+    if (pid === 'she') {
+      const raw = appState.profiles.she?.name || "Andrea";
+      return raw.replace(/^Ella\s*\(/i, '').replace(/\)$/, '').trim() || "Andrea";
+    }
+    if (pid === 'dog') {
+      const raw = appState.profiles.dog?.name || "Boo";
+      return raw.replace(/\s*\(Border Collie\)$/i, '').trim() || "Boo";
+    }
+    return appState.profiles[pid]?.name || "Usuario";
+  } catch(e) {
+    return pid === 'he' ? 'Carlos' : pid === 'she' ? 'Andrea' : 'Boo';
+  }
+}
+
 // INITIAL STATE STRUCTURE (STABLE OBJECT REFERENCE)
 export const appState = {
   masterProfileId: "he",
@@ -73,30 +103,41 @@ export const appState = {
       Domingo: { done: false, watchData: null, sessions: [] }
     }
   },
-  activeDay: getTodayDayName(),
-  activeWorkoutDay: getTodayDayName(),
-  activeBooDay: getTodayDayName(),
+  deletedWorkoutSessionIds: [],
+  activeDay: "Lunes",
+  activeWorkoutDay: "Lunes",
+  activeExerciseDay: "Lunes",
+  activeBooDay: "Lunes",
   recipesDaysRange: "5",
   shoppingDaysRange: "5",
   checkedShoppingItems: {},
-  history: {
-    he: {},
-    she: {}
-  },
+  weightLogs: { he: [], she: [] },
+  history: { he: {}, she: {} },
+  lastCloudSync: null,
+  lastPurgeTimetoken: null,
   appleWatch: {
     syncMode: "real",
     autoSyncEnabled: true,
     syncIntervalSec: 6,
-    lastGlobalSync: new Date().toISOString(),
+    lastGlobalSync: null,
+    autoLaunchShortcutOnOpen: false,
+    shortcutName: "SincronizarSaludFitDuo",
+    shortcutWorkoutName: "SincronizarEntrenamientoFitDuo",
     metrics: JSON.parse(JSON.stringify(defaultWatchMetrics)),
     cloudReplica: JSON.parse(JSON.stringify(defaultCloudReplica)),
+    pendingWorkout: {
+      he: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null },
+      she: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null }
+    },
     syncLogs: []
   },
   booProgress: {
+    completedTasks: {},
     completedContinuous: {},
-    learnedTricks: [],
-    activeTrickId: null,
+    learnedTricks: ["t1_sit", "t2_paw"],
+    activeTrickId: "t3_eye_contact",
     moodLogs: {},
+    moduleStats: {},
     sessionNotes: {},
     accordions: {}
   },
@@ -110,7 +151,6 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
 
   const targetDate = dateIso || getLocalIsoDate();
   const currentEntry = appState.history[profileId][targetDate] || {};
-
   const activeMetrics = metricsData || appState.appleWatch?.metrics?.[profileId] || defaultWatchMetrics[profileId] || {};
   
   const todayDayName = getTodayDayName();
@@ -142,7 +182,6 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
   return updatedEntry;
 }
 
-// HELPER: GET MASTER PROFILE ID
 export function getMasterProfileId() {
   const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
   if (devicePref === 'he' || devicePref === 'she') {
@@ -151,7 +190,6 @@ export function getMasterProfileId() {
   return appState.masterProfileId === 'she' ? 'she' : 'he';
 }
 
-// LOAD STATE FROM LOCALSTORAGE
 export function loadSavedState() {
   const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
   if (saved) {
@@ -165,7 +203,6 @@ export function loadSavedState() {
     }
   }
 
-  // Device-specific master profile memory preference
   const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
   if (devicePref === 'he' || devicePref === 'she') {
     appState.masterProfileId = devicePref;
@@ -173,7 +210,6 @@ export function loadSavedState() {
     if (!appState.masterProfileId) appState.masterProfileId = 'he';
   }
 
-  // Active visual profile preference
   const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
   if (lastProfile === 'he' || lastProfile === 'she') {
     appState.activeProfileId = lastProfile;
@@ -181,7 +217,6 @@ export function loadSavedState() {
     appState.activeProfileId = appState.masterProfileId;
   }
 
-  // Ensure profiles structure & names exist
   if (!appState.profiles) appState.profiles = JSON.parse(JSON.stringify(INITIAL_PROFILES));
   if (!appState.profiles.he) appState.profiles.he = { ...INITIAL_PROFILES.he };
   if (!appState.profiles.she) appState.profiles.she = { ...INITIAL_PROFILES.she };
@@ -191,7 +226,6 @@ export function loadSavedState() {
   if (appState.profiles.she.name === "Ella (Andrea)") appState.profiles.she.name = "Andrea";
   if (appState.profiles.dog.name === "Boo (Border Collie)") appState.profiles.dog.name = "Boo";
 
-  // Ensure ring goals in metrics
   if (!appState.appleWatch) {
     appState.appleWatch = {
       syncMode: "real",
@@ -200,51 +234,27 @@ export function loadSavedState() {
       lastGlobalSync: new Date().toISOString(),
       metrics: JSON.parse(JSON.stringify(defaultWatchMetrics)),
       cloudReplica: JSON.parse(JSON.stringify(defaultCloudReplica)),
+      pendingWorkout: {
+        he: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null },
+        she: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null }
+      },
       syncLogs: []
     };
   }
+
   if (!appState.appleWatch.metrics) {
     appState.appleWatch.metrics = JSON.parse(JSON.stringify(defaultWatchMetrics));
   }
+  if (!appState.appleWatch.cloudReplica) {
+    appState.appleWatch.cloudReplica = JSON.parse(JSON.stringify(defaultCloudReplica));
+  }
+  if (!appState.appleWatch.pendingWorkout) {
+    appState.appleWatch.pendingWorkout = {
+      he: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null },
+      she: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null }
+    };
+  }
 
-  ['he', 'she'].forEach(pid => {
-    if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = { ...defaultWatchMetrics[pid] };
-    const m = appState.appleWatch.metrics[pid];
-    if (!m.moveGoal) m.moveGoal = m.targetKcal || (pid === 'he' ? 600 : 500);
-    if (!m.exerciseGoal) m.exerciseGoal = m.targetMin || 30;
-    if (!m.stepsGoal) m.stepsGoal = m.targetSteps || 10000;
-
-    // Reset old hardcoded demo metrics if user hasn't synced real data
-    if ((pid === 'he' && m.steps === 8450 && m.moveKcal === 480) || (pid === 'she' && m.steps === 9120 && m.moveKcal === 420)) {
-      m.steps = 0;
-      m.moveKcal = 0;
-      m.exerciseMin = 0;
-      m.distanceKm = 0;
-      m.hr = 0;
-      m.floors = 0;
-      m.sleep = '--';
-    }
-    if (m.floors === undefined || m.floors === null || m.floors === 14 || m.floors === 10) m.floors = 0;
-    if (!m.sleep || m.sleep === '7h 45m' || m.sleep === '8h 15m') m.sleep = '--';
-  });
-
-  ['he', 'she'].forEach(pid => {
-    if (appState.appleWatch?.cloudReplica?.[pid]) {
-      const rep = appState.appleWatch.cloudReplica[pid];
-      if ((pid === 'he' && rep.steps === 8450 && rep.moveKcal === 480) || (pid === 'she' && rep.steps === 9120 && rep.moveKcal === 420)) {
-        rep.steps = 0;
-        rep.moveKcal = 0;
-        rep.exerciseMin = 0;
-        rep.distanceKm = 0;
-        rep.hr = 0;
-        rep.floors = 0;
-        rep.sleep = '--';
-      }
-      if (rep.floors === 14 || rep.floors === 10) rep.floors = 0;
-      if (rep.sleep === '7h 45m' || rep.sleep === '8h 15m') rep.sleep = '--';
-    }
-  });
-  
   if (!appState.completedWorkouts) {
     appState.completedWorkouts = {
       he: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } },
@@ -275,72 +285,6 @@ export function loadSavedState() {
   }
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
-
-  const purgeFlag = localStorage.getItem("FITDUO_MOCK_PURGE_V2");
-  if (!purgeFlag) {
-    purgeAllHistoryAndReset(false);
-  }
-}
-
-export function purgeAllHistoryAndReset(notify = true) {
-  appState.history = { he: {}, she: {} };
-  if (!appState.appleWatch) {
-    appState.appleWatch = { syncMode: "real", autoSyncEnabled: true, syncIntervalSec: 6, lastGlobalSync: null, metrics: {}, cloudReplica: {}, syncLogs: [] };
-  }
-  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
-  if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = {};
-
-  ['he', 'she'].forEach(pid => {
-    appState.appleWatch.metrics[pid] = {
-      deviceName: pid === 'he' ? "Apple Watch Series 9" : "Apple Watch SE",
-      moveKcal: 0,
-      moveGoal: pid === 'he' ? 600 : 500,
-      targetKcal: pid === 'he' ? 600 : 500,
-      exerciseMin: 0,
-      exerciseGoal: 30,
-      targetMin: 30,
-      steps: 0,
-      stepsGoal: 10000,
-      targetSteps: 10000,
-      hr: 0,
-      distanceKm: 0,
-      floors: 0,
-      sleep: "--"
-    };
-    appState.appleWatch.cloudReplica[pid] = {
-      moveKcal: 0,
-      exerciseMin: 0,
-      steps: 0,
-      hr: 0,
-      distanceKm: 0,
-      floors: 0,
-      sleep: "--",
-      lastSync: null,
-      source: "Atajo Nube en 2º Plano"
-    };
-    if (appState.completedWorkouts?.[pid]) {
-      for (const day of Object.keys(appState.completedWorkouts[pid])) {
-        appState.completedWorkouts[pid][day] = { done: false, watchData: null, sessions: [] };
-      }
-    }
-  });
-
-  try {
-    localStorage.removeItem(LAST_REGISTERED_METRICS_KEY);
-    localStorage.removeItem(LAST_CLOUD_REPLICA_KEY);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
-    localStorage.setItem("FITDUO_MOCK_PURGE_V2", "done");
-  } catch (e) {}
-
-  if (typeof window !== 'undefined') {
-    if (typeof window.renderProgressView === 'function') window.renderProgressView();
-    if (typeof window.renderSummaryView === 'function') window.renderSummaryView();
-    if (typeof window.renderWorkoutsView === 'function') window.renderWorkoutsView();
-    if (typeof window.renderHealthView === 'function') window.renderHealthView();
-    if (notify && typeof window.showToast === 'function') {
-      window.showToast("Histórico y métricas purgados. Todo reiniciado a cero.", "info");
-    }
-  }
 }
 
 let pushDebounceTimer = null;
@@ -354,7 +298,6 @@ export function debouncedPushToCloud(delay = 1500) {
   }, delay);
 }
 
-// SAVE STATE TO LOCALSTORAGE & PUSH TO CLOUD
 export function saveState() {
   if (appState.appleWatch?.metrics) {
     ['he', 'she'].forEach(pid => {
@@ -371,14 +314,12 @@ export function saveState() {
   debouncedPushToCloud(1500);
 }
 
-// IOS HAPTIC FEEDBACK SIMULATOR
 export function triggerHapticTouch() {
   if (window.navigator && window.navigator.vibrate) {
     try { window.navigator.vibrate(15); } catch(e){}
   }
 }
 
-// FLOATING IOS TOAST NOTIFICATION SYSTEM
 export function showIosToast(message, iconClass = "fa-brands fa-apple") {
   const container = document.getElementById("ios-toast-container");
   if (!container) return;
@@ -400,7 +341,6 @@ export function showIosToast(message, iconClass = "fa-brands fa-apple") {
   }, 3500);
 }
 
-// DEBUG & DIAGNOSTIC LOGS ENGINE
 export function addDebugLog(message, type = 'info', data = null) {
   if (!appState.debugLogs) appState.debugLogs = [];
 
@@ -433,6 +373,10 @@ export function clearDebugLogs() {
   showIosToast("🗑️ Logs de diagnóstico limpiados", "fa-solid fa-trash-can");
 }
 
+export function copyDebugLogs() {
+  copyDebugLogsToClipboard();
+}
+
 export function copyDebugLogsToClipboard() {
   triggerHapticTouch();
   if (!appState.debugLogs || appState.debugLogs.length === 0) {
@@ -453,6 +397,11 @@ export function copyDebugLogsToClipboard() {
   } else {
     prompt("Copia manualmente los logs:", logText);
   }
+}
+
+export function closeDebugLogsModal() {
+  const modal = document.getElementById("logs-modal");
+  if (modal) modal.classList.remove("active");
 }
 
 export function renderDebugLogsView() {

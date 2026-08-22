@@ -4,7 +4,7 @@
  */
 
 import { appState, saveState, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from '../../data.js?v=0.14.0';
+import { BOO_TRAINING_MODULES, BOO_WEEKLY_SCHEDULE, BOO_CONTINUOUS_REINFORCEMENT, BOO_TRICKS_BACKLOG } from '../../data.js';
 
 export function selectBooDayFromDropdown(dayName) {
   try {
