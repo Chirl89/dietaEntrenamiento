@@ -422,19 +422,25 @@
             <p class="page-subtitle">Analítica de actividad física, consistencia mensual y vitrina de trofeos</p>
           </div>
 
-          <!-- SUB-PERÍODO SEGMENTED CONTROL -->
-          <div class="progress-segmented-bar">
-            <button type="button" class="progress-segment-btn active" id="prog-tab-7d" onclick="setProgressPeriod('7d')">
-              <i class="fa-solid fa-calendar-week"></i> 7 Días
-            </button>
-            <button type="button" class="progress-segment-btn" id="prog-tab-30d" onclick="setProgressPeriod('30d')">
-              <i class="fa-solid fa-calendar-days"></i> 30 Días
-            </button>
-            <button type="button" class="progress-segment-btn" id="prog-tab-heatmap" onclick="setProgressPeriod('heatmap')">
-              <i class="fa-solid fa-border-all"></i> Heatmap
-            </button>
-            <button type="button" class="progress-segment-btn" id="prog-tab-badges" onclick="setProgressPeriod('badges')">
-              <i class="fa-solid fa-trophy"></i> Logros
+          <!-- SUB-PERÍODO SEGMENTED CONTROL & PURGE ACTION -->
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div class="progress-segmented-bar">
+              <button type="button" class="progress-segment-btn active" id="prog-tab-7d" onclick="setProgressPeriod('7d')">
+                <i class="fa-solid fa-calendar-week"></i> 7 Días
+              </button>
+              <button type="button" class="progress-segment-btn" id="prog-tab-30d" onclick="setProgressPeriod('30d')">
+                <i class="fa-solid fa-calendar-days"></i> 30 Días
+              </button>
+              <button type="button" class="progress-segment-btn" id="prog-tab-heatmap" onclick="setProgressPeriod('heatmap')">
+                <i class="fa-solid fa-border-all"></i> Heatmap
+              </button>
+              <button type="button" class="progress-segment-btn" id="prog-tab-badges" onclick="setProgressPeriod('badges')">
+                <i class="fa-solid fa-trophy"></i> Logros
+              </button>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-sm" onclick="purgeAllHistoryAndReset(true)" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #fca5a5; font-size: 0.78rem; padding: 0.45rem 0.8rem; border-radius: 8px; cursor: pointer;" title="Limpiar y reiniciar todo el histórico a cero">
+              <i class="fa-solid fa-trash-can"></i> Purgar
             </button>
           </div>
         </div>

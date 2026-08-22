@@ -276,12 +276,71 @@ export function loadSavedState() {
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
 
+  const purgeFlag = localStorage.getItem("FITDUO_MOCK_PURGE_V2");
+  if (!purgeFlag) {
+    purgeAllHistoryAndReset(false);
+  }
+}
+
+export function purgeAllHistoryAndReset(notify = true) {
+  appState.history = { he: {}, she: {} };
+  if (!appState.appleWatch) {
+    appState.appleWatch = { syncMode: "real", autoSyncEnabled: true, syncIntervalSec: 6, lastGlobalSync: null, metrics: {}, cloudReplica: {}, syncLogs: [] };
+  }
+  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
+  if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = {};
+
   ['he', 'she'].forEach(pid => {
-    const todayIso = getLocalIsoDate();
-    if (!appState.history[pid][todayIso]) {
-      recordDailySnapshot(pid, todayIso);
+    appState.appleWatch.metrics[pid] = {
+      deviceName: pid === 'he' ? "Apple Watch Series 9" : "Apple Watch SE",
+      moveKcal: 0,
+      moveGoal: pid === 'he' ? 600 : 500,
+      targetKcal: pid === 'he' ? 600 : 500,
+      exerciseMin: 0,
+      exerciseGoal: 30,
+      targetMin: 30,
+      steps: 0,
+      stepsGoal: 10000,
+      targetSteps: 10000,
+      hr: 0,
+      distanceKm: 0,
+      floors: 0,
+      sleep: "--"
+    };
+    appState.appleWatch.cloudReplica[pid] = {
+      moveKcal: 0,
+      exerciseMin: 0,
+      steps: 0,
+      hr: 0,
+      distanceKm: 0,
+      floors: 0,
+      sleep: "--",
+      lastSync: null,
+      source: "Atajo Nube en 2º Plano"
+    };
+    if (appState.completedWorkouts?.[pid]) {
+      for (const day of Object.keys(appState.completedWorkouts[pid])) {
+        appState.completedWorkouts[pid][day] = { done: false, watchData: null, sessions: [] };
+      }
     }
   });
+
+  try {
+    localStorage.removeItem(LAST_REGISTERED_METRICS_KEY);
+    localStorage.removeItem(LAST_CLOUD_REPLICA_KEY);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+    localStorage.setItem("FITDUO_MOCK_PURGE_V2", "done");
+  } catch (e) {}
+
+  if (typeof window !== 'undefined') {
+    if (typeof window.renderProgressView === 'function') window.renderProgressView();
+    if (typeof window.renderSummaryView === 'function') window.renderSummaryView();
+    if (typeof window.renderWorkoutsView === 'function') window.renderWorkoutsView();
+    if (typeof window.renderHealthView === 'function') window.renderHealthView();
+    if (notify && typeof window.showToast === 'function') {
+      window.showToast("Histórico y métricas purgados. Todo reiniciado a cero.", "info");
+    }
+  }
 }
 
 let pushDebounceTimer = null;

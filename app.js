@@ -273,12 +273,71 @@ export function loadSavedState() {
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
 
+  const purgeFlag = localStorage.getItem("FITDUO_MOCK_PURGE_V2");
+  if (!purgeFlag) {
+    purgeAllHistoryAndReset(false);
+  }
+}
+
+export function purgeAllHistoryAndReset(notify = true) {
+  appState.history = { he: {}, she: {} };
+  if (!appState.appleWatch) {
+    appState.appleWatch = { syncMode: "real", autoSyncEnabled: true, syncIntervalSec: 6, lastGlobalSync: null, metrics: {}, cloudReplica: {}, syncLogs: [] };
+  }
+  if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
+  if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = {};
+
   ['he', 'she'].forEach(pid => {
-    const todayIso = getLocalIsoDate();
-    if (!appState.history[pid][todayIso]) {
-      recordDailySnapshot(pid, todayIso);
+    appState.appleWatch.metrics[pid] = {
+      deviceName: pid === 'he' ? "Apple Watch Series 9" : "Apple Watch SE",
+      moveKcal: 0,
+      moveGoal: pid === 'he' ? 600 : 500,
+      targetKcal: pid === 'he' ? 600 : 500,
+      exerciseMin: 0,
+      exerciseGoal: 30,
+      targetMin: 30,
+      steps: 0,
+      stepsGoal: 10000,
+      targetSteps: 10000,
+      hr: 0,
+      distanceKm: 0,
+      floors: 0,
+      sleep: "--"
+    };
+    appState.appleWatch.cloudReplica[pid] = {
+      moveKcal: 0,
+      exerciseMin: 0,
+      steps: 0,
+      hr: 0,
+      distanceKm: 0,
+      floors: 0,
+      sleep: "--",
+      lastSync: null,
+      source: "Atajo Nube en 2º Plano"
+    };
+    if (appState.completedWorkouts?.[pid]) {
+      for (const day of Object.keys(appState.completedWorkouts[pid])) {
+        appState.completedWorkouts[pid][day] = { done: false, watchData: null, sessions: [] };
+      }
     }
   });
+
+  try {
+    localStorage.removeItem(LAST_REGISTERED_METRICS_KEY);
+    localStorage.removeItem(LAST_CLOUD_REPLICA_KEY);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+    localStorage.setItem("FITDUO_MOCK_PURGE_V2", "done");
+  } catch (e) {}
+
+  if (typeof window !== 'undefined') {
+    if (typeof window.renderProgressView === 'function') window.renderProgressView();
+    if (typeof window.renderSummaryView === 'function') window.renderSummaryView();
+    if (typeof window.renderWorkoutsView === 'function') window.renderWorkoutsView();
+    if (typeof window.renderHealthView === 'function') window.renderHealthView();
+    if (notify && typeof window.showToast === 'function') {
+      window.showToast("Histórico y métricas purgados. Todo reiniciado a cero.", "info");
+    }
+  }
 }
 
 let pushDebounceTimer = null;
@@ -4219,12 +4278,52 @@ function renderPeriodCharts(historyData) {
   }
 }
 
+export let currentHeatmapYear = new Date().getFullYear();
+export let currentHeatmapMonth = new Date().getMonth();
+
+const MONTH_NAMES_ES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+];
+
+export function changeHeatmapMonth(delta) {
+  triggerHapticTouch();
+  currentHeatmapMonth += delta;
+  if (currentHeatmapMonth < 0) {
+    currentHeatmapMonth = 11;
+    currentHeatmapYear--;
+  } else if (currentHeatmapMonth > 11) {
+    currentHeatmapMonth = 0;
+    currentHeatmapYear++;
+  }
+  renderProgressContent();
+}
+
+export function setHeatmapMonth(monthIdx) {
+  triggerHapticTouch();
+  currentHeatmapMonth = parseInt(monthIdx);
+  renderProgressContent();
+}
+
+export function setHeatmapYear(yearVal) {
+  triggerHapticTouch();
+  currentHeatmapYear = parseInt(yearVal);
+  renderProgressContent();
+}
+
+export function resetHeatmapToCurrentMonth() {
+  triggerHapticTouch();
+  const now = new Date();
+  currentHeatmapYear = now.getFullYear();
+  currentHeatmapMonth = now.getMonth();
+  renderProgressContent();
+}
+
 function renderHeatmapView(pid, pName, container) {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  const year = currentHeatmapYear;
+  const month = currentHeatmapMonth;
+  const capitalizedMonth = MONTH_NAMES_ES[month];
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayWeekIdx = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -4268,28 +4367,28 @@ function renderHeatmapView(pid, pName, container) {
 
     let status = 'none';
     let statusColor = 'rgba(255,255,255,0.05)';
-    let tooltip = `${dayNum} ${capitalizedMonth}: Sin datos registrados`;
+    let tooltip = `${dayNum} de ${capitalizedMonth}: Sin datos registrados`;
 
     if (isFuture) {
       status = 'future';
       statusColor = 'rgba(255,255,255,0.02)';
-      tooltip = `${dayNum} ${capitalizedMonth}: Próximamente`;
+      tooltip = `${dayNum} de ${capitalizedMonth}: Próximamente`;
     } else if (entry && entry.hasData) {
       if (entry.isRestDay) {
         status = 'rest';
         statusColor = 'rgba(56, 189, 248, 0.4)';
         restDaysCount++;
-        tooltip = `${dayNum} ${capitalizedMonth}: Día de Descanso Programado (${(entry.steps || 0).toLocaleString()} pasos)`;
+        tooltip = `${dayNum} de ${capitalizedMonth}: Día de Descanso Programado (${(entry.steps || 0).toLocaleString()} pasos)`;
       } else if (entry.steps >= 10000 || (entry.completedWorkouts && entry.completedWorkouts.length > 0)) {
         status = 'completed';
         statusColor = 'rgba(16, 185, 129, 0.85)';
         completedDaysCount++;
-        tooltip = `${dayNum} ${capitalizedMonth}: ¡Meta Cumplida! (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
+        tooltip = `${dayNum} de ${capitalizedMonth}: ¡Meta Cumplida! (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
       } else if (entry.steps > 0 || entry.moveKcal > 0) {
         status = 'partial';
         statusColor = 'rgba(245, 158, 11, 0.75)';
         partialDaysCount++;
-        tooltip = `${dayNum} ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
+        tooltip = `${dayNum} de ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
       }
     }
 
@@ -4302,26 +4401,63 @@ function renderHeatmapView(pid, pName, container) {
     `);
   }
 
+  const monthOptions = MONTH_NAMES_ES.map((m, idx) => 
+    `<option value="${idx}" ${idx === month ? 'selected' : ''}>${m}</option>`
+  ).join('');
+
+  const thisYear = new Date().getFullYear();
+  const yearOptions = [thisYear - 1, thisYear, thisYear + 1].map(y => 
+    `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`
+  ).join('');
+
+  const isCurrentMonth = (year === now.getFullYear() && month === now.getMonth());
+
   container.innerHTML = `
     <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; margin-bottom: 2px;">
-            <i class="fa-solid fa-border-all" style="color: var(--accent-cyan);"></i> Matriz de Consistencia (${capitalizedMonth})
+          <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; margin-bottom: 2px; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-border-all" style="color: var(--accent-cyan);"></i> Matriz de Consistencia
           </h2>
           <p style="font-size: 0.8rem; color: var(--text-muted);">Visualización global del hábito y cumplimiento diario de ${pName}</p>
         </div>
-        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-          <span style="font-size: 0.78rem; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
-            🟢 ${completedDaysCount} Cumplidos
-          </span>
-          <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
-            ⚪ ${restDaysCount} Descansos
-          </span>
-          <span style="font-size: 0.78rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
-            🟡 ${partialDaysCount} Parciales
-          </span>
+
+        <!-- MONTH SELECTOR CONTROLS -->
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: rgba(0, 0, 0, 0.25); padding: 6px 10px; border-radius: 12px; border: 1px solid var(--border-color);">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.changeHeatmapMonth(-1)" style="padding: 4px 9px; min-height: 32px;" title="Mes anterior">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: #fff; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapMonth(this.value)">
+            ${monthOptions}
+          </select>
+
+          <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: #fff; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapYear(this.value)">
+            ${yearOptions}
+          </select>
+
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.changeHeatmapMonth(1)" style="padding: 4px 9px; min-height: 32px;" title="Mes siguiente">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+
+          ${!isCurrentMonth ? `
+            <button type="button" class="btn btn-sm" onclick="window.resetHeatmapToCurrentMonth()" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 6px; cursor: pointer;">
+              Mes Actual
+            </button>
+          ` : ''}
         </div>
+      </div>
+
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+        <span style="font-size: 0.78rem; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+          🟢 ${completedDaysCount} Cumplidos
+        </span>
+        <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+          ⚪ ${restDaysCount} Descansos
+        </span>
+        <span style="font-size: 0.78rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+          🟡 ${partialDaysCount} Parciales
+        </span>
       </div>
 
       <div class="heatmap-container">
@@ -4336,7 +4472,7 @@ function renderHeatmapView(pid, pName, container) {
       <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-top: 1.25rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-muted);">
         <div style="display: flex; align-items: center; gap: 0.4rem;">
           <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(16, 185, 129, 0.85);"></div>
-          <span>Meta Cumplida (>=10k o entreno)</span>
+          <span>Meta Cumplida</span>
         </div>
         <div style="display: flex; align-items: center; gap: 0.4rem;">
           <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(245, 158, 11, 0.75);"></div>
@@ -4348,7 +4484,7 @@ function renderHeatmapView(pid, pName, container) {
         </div>
         <div style="display: flex; align-items: center; gap: 0.4rem;">
           <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);"></div>
-          <span>Sin Datos</span>
+          <span>Sin Datos / Futuro</span>
         </div>
       </div>
     </div>
@@ -4620,6 +4756,11 @@ window.resolvePendingWorkoutManually = resolvePendingWorkoutManually;
 window.cancelPendingWorkoutManually = cancelPendingWorkoutManually;
 window.tryResolveCompletedWorkout = tryResolveCompletedWorkout;
 window.purgeCloudHistory = purgeCloudHistory;
+window.changeHeatmapMonth = changeHeatmapMonth;
+window.setHeatmapMonth = setHeatmapMonth;
+window.setHeatmapYear = setHeatmapYear;
+window.resetHeatmapToCurrentMonth = resetHeatmapToCurrentMonth;
+window.purgeAllHistoryAndReset = purgeAllHistoryAndReset;
 
 function initApp() {
   loadSavedState();
