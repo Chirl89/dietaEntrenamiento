@@ -1088,3 +1088,13 @@ export function handleHealthFileImport(event) {
   };
   reader.readAsText(file);
 }
+
+export function toggleShortcutGuide(guideId) {
+  try {
+    triggerHapticTouch();
+    const el = document.getElementById(guideId || "shortcut-guide-details");
+    if (el) {
+      el.classList.toggle("active");
+    }
+  } catch(e) {}
+}

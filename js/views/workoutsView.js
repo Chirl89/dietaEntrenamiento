@@ -10,6 +10,7 @@ import {
   getTodayDayName,
   triggerHapticTouch,
   showIosToast
+} from '../state.js';
 import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js';
 
 export function isDayCompleted(profileId, dayName) {
