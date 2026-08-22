@@ -2,19 +2,35 @@ import { appState, saveState, getMasterProfileId, getTodayDayName, getLocalIsoDa
 
 let progressStepsChartInstance = null;
 let progressExChartInstance = null;
-let currentProgressPeriod = '7d';
+export let currentProgressMainTab = 'data'; // 'data' | 'heatmap' | 'badges'
+export let currentTimePeriod = '7d';        // '7d' | '30d' | '1y' | 'all'
 
-export function setProgressPeriod(period) {
+export function setProgressMainTab(tab) {
   triggerHapticTouch();
-  currentProgressPeriod = period;
+  currentProgressMainTab = tab;
   
   document.querySelectorAll('.progress-segment-btn').forEach(btn => {
     btn.classList.remove('active');
   });
-  const activeBtn = document.getElementById(`prog-tab-${period}`);
+  const activeBtn = document.getElementById(`prog-tab-${tab}`);
   if (activeBtn) activeBtn.classList.add('active');
 
   renderProgressContent();
+}
+
+export function setTimePeriod(period) {
+  triggerHapticTouch();
+  currentTimePeriod = period;
+  renderProgressContent();
+}
+
+export function setProgressPeriod(periodOrTab) {
+  if (periodOrTab === 'heatmap' || periodOrTab === 'badges' || periodOrTab === 'data') {
+    setProgressMainTab(periodOrTab);
+  } else {
+    currentProgressMainTab = 'data';
+    setTimePeriod(periodOrTab);
+  }
 }
 
 // Generate / Retrieve history entries for a given number of days (Zero Baseline)
@@ -92,34 +108,73 @@ export function getHistoricalData(profileId, daysCount = 7) {
   return daysList;
 }
 
-// Calculate comprehensive profile statistics
-export function calculateProfileStats(profileId) {
+// Calculate comprehensive profile statistics with dynamic period comparison
+export function calculateProfileStats(profileId, period = '7d') {
   const pid = profileId || appState.activeProfileId || 'he';
-  const data7d = getHistoricalData(pid, 7);
-  const data30d = getHistoricalData(pid, 30);
+  
+  let daysCount = 7;
+  let prevDaysCount = 7;
+  let diffLabel = 'vs 7 días prev.';
 
+  if (period === '30d') {
+    daysCount = 30;
+    prevDaysCount = 30;
+    diffLabel = 'vs 30 días prev.';
+  } else if (period === '1y') {
+    daysCount = 365;
+    prevDaysCount = 365;
+    diffLabel = 'vs año anterior';
+  } else if (period === 'all') {
+    daysCount = 365 * 3;
+    prevDaysCount = 0;
+    diffLabel = 'histórico total';
+  }
+
+  // Retrieve total days: current window + previous comparison window
+  const totalDaysNeeded = daysCount + prevDaysCount;
+  const fullData = getHistoricalData(pid, totalDaysNeeded);
+
+  // Split into current period and previous period
+  const curData = fullData.slice(prevDaysCount);
+  const prevData = prevDaysCount > 0 ? fullData.slice(0, prevDaysCount) : [];
+
+  const curDaysWithData = curData.filter(d => d.hasData);
+  const prevDaysWithData = prevData.filter(d => d.hasData);
+
+  const avgSteps = curDaysWithData.length > 0 
+    ? Math.round(curDaysWithData.reduce((acc, d) => acc + (d.steps || 0), 0) / curDaysWithData.length) 
+    : (curData.reduce((acc, d) => acc + (d.steps || 0), 0) > 0 ? Math.round(curData.reduce((acc, d) => acc + (d.steps || 0), 0) / curData.length) : 0);
+
+  const avgStepsPrev = prevDaysWithData.length > 0 
+    ? Math.round(prevDaysWithData.reduce((acc, d) => acc + (d.steps || 0), 0) / prevDaysWithData.length) 
+    : (prevData.reduce((acc, d) => acc + (d.steps || 0), 0) > 0 ? Math.round(prevData.reduce((acc, d) => acc + (d.steps || 0), 0) / prevData.length) : 0);
+
+  const stepsDiffPct = (avgStepsPrev > 0 && avgSteps > 0) 
+    ? Math.round(((avgSteps - avgStepsPrev) / avgStepsPrev) * 100) 
+    : null;
+
+  const totalKcal = curData.reduce((acc, d) => acc + (d.moveKcal || 0), 0);
+  const totalExMin = curData.reduce((acc, d) => acc + (d.exerciseMin || 0), 0);
+  const totalDist = parseFloat(curData.reduce((acc, d) => acc + (d.distanceKm || 0), 0).toFixed(1));
+
+  // 7d & 30d specific metrics for backward compatibility with badges
+  const data7d = fullData.slice(-7);
+  const data30d = fullData.slice(-30);
   const daysWithData7d = data7d.filter(d => d.hasData);
   const daysWithData30d = data30d.filter(d => d.hasData);
-
   const avgSteps7d = daysWithData7d.length > 0 ? Math.round(daysWithData7d.reduce((acc, d) => acc + (d.steps || 0), 0) / daysWithData7d.length) : 0;
   const avgSteps30d = daysWithData30d.length > 0 ? Math.round(daysWithData30d.reduce((acc, d) => acc + (d.steps || 0), 0) / daysWithData30d.length) : 0;
-  const stepsDiffPct = (avgSteps30d > 0 && daysWithData7d.length > 0) ? Math.round(((avgSteps7d - avgSteps30d) / avgSteps30d) * 100) : 0;
-
   const totalKcal7d = data7d.reduce((acc, d) => acc + (d.moveKcal || 0), 0);
   const totalKcal30d = data30d.reduce((acc, d) => acc + (d.moveKcal || 0), 0);
-
   const totalExMin7d = data7d.reduce((acc, d) => acc + (d.exerciseMin || 0), 0);
   const totalExMin30d = data30d.reduce((acc, d) => acc + (d.exerciseMin || 0), 0);
-
   const totalDist7d = parseFloat(data7d.reduce((acc, d) => acc + (d.distanceKm || 0), 0).toFixed(1));
   const totalDist30d = parseFloat(data30d.reduce((acc, d) => acc + (d.distanceKm || 0), 0).toFixed(1));
-
-  // Workout adherence
   const workouts7d = data7d.filter(d => d.completedWorkouts && d.completedWorkouts.length > 0).length;
-  const targetWorkouts7d = 5; // 5 days planned
+  const targetWorkouts7d = 5;
   const adherencePct = Math.min(100, Math.round((workouts7d / targetWorkouts7d) * 100));
 
-  // Streaks calculation (Consecutive days >= 10,000 steps OR completed workout)
+  // Streaks calculation (Consecutive days >= 10,000 steps OR completed workout OR rest day)
   let currentStreak = 0;
   for (let i = data30d.length - 1; i >= 0; i--) {
     const d = data30d[i];
@@ -136,7 +191,7 @@ export function calculateProfileStats(profileId) {
   let prKcal = 0;
   let prKcalDate = '--';
 
-  data30d.forEach(d => {
+  fullData.forEach(d => {
     if (d.hasData && d.steps > prSteps) {
       prSteps = d.steps;
       prStepsDate = d.shortLabel;
@@ -148,9 +203,18 @@ export function calculateProfileStats(profileId) {
   });
 
   return {
+    period,
+    daysCount,
+    daysWithDataCount: curDaysWithData.length,
+    avgSteps,
+    avgStepsPrev,
+    stepsDiffPct,
+    diffLabel,
+    totalKcal,
+    totalExMin,
+    totalDist,
     avgSteps7d,
     avgSteps30d,
-    stepsDiffPct,
     daysWithData7dCount: daysWithData7d.length,
     daysWithData30dCount: daysWithData30d.length,
     totalKcal7d,
@@ -321,6 +385,140 @@ export function calculateBadges(profileId) {
   return badges;
 }
 
+export function getChartAggregatedData(pid, period) {
+  const MONTH_NAMES_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+  if (period === '7d') {
+    // 7 days daily aggregation
+    const data7d = getHistoricalData(pid, 7);
+    const labels = data7d.map(d => `${d.dayName.slice(0, 3)} ${d.shortLabel.split(' ')[0]}`);
+    const steps = data7d.map(d => d.steps);
+    const exerciseMin = data7d.map(d => d.exerciseMin);
+    return {
+      labels,
+      steps,
+      exerciseMin,
+      stepsTitle: 'Pasos Diarios (7 Días)',
+      exTitle: 'Minutos de Ejercicio Diarios',
+      stepsUnit: 'pasos',
+      exUnit: 'min',
+      stepsSuggestedMax: 10000,
+      exSuggestedMax: 30
+    };
+  }
+
+  if (period === '30d') {
+    // 30 days weekly aggregation (4-5 weeks)
+    const data30d = getHistoricalData(pid, 30);
+    const weekChunks = [];
+    const chunkSize = 7;
+    for (let i = 0; i < data30d.length; i += chunkSize) {
+      weekChunks.push(data30d.slice(i, i + chunkSize));
+    }
+
+    const labels = [];
+    const steps = [];
+    const exerciseMin = [];
+
+    weekChunks.forEach((chunk, idx) => {
+      const startDay = chunk[0].shortLabel.split(' ')[0];
+      const endDay = chunk[chunk.length - 1].shortLabel;
+      const label = `Sem ${idx + 1} (${startDay}-${endDay})`;
+      labels.push(label);
+
+      const daysWithData = chunk.filter(d => d.hasData);
+      const avgSteps = daysWithData.length > 0
+        ? Math.round(daysWithData.reduce((a, b) => a + b.steps, 0) / daysWithData.length)
+        : (chunk.reduce((a, b) => a + b.steps, 0) > 0 ? Math.round(chunk.reduce((a, b) => a + b.steps, 0) / chunk.length) : 0);
+      
+      const avgExMin = daysWithData.length > 0
+        ? Math.round(daysWithData.reduce((a, b) => a + b.exerciseMin, 0) / daysWithData.length)
+        : (chunk.reduce((a, b) => a + b.exerciseMin, 0) > 0 ? Math.round(chunk.reduce((a, b) => a + b.exerciseMin, 0) / chunk.length) : 0);
+
+      steps.push(avgSteps);
+      exerciseMin.push(avgExMin);
+    });
+
+    return {
+      labels,
+      steps,
+      exerciseMin,
+      stepsTitle: 'Media Diaria por Semanas (30 Días)',
+      exTitle: 'Media Ejercicio Semanal',
+      stepsUnit: 'pasos/día',
+      exUnit: 'min/día',
+      stepsSuggestedMax: 10000,
+      exSuggestedMax: 30
+    };
+  }
+
+  if (period === '1y' || period === 'all') {
+    // 12 months monthly aggregation
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const labels = [];
+    const steps = [];
+    const exerciseMin = [];
+
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(currentYear, currentMonth - i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const label = `${MONTH_NAMES_SHORT[m]} ${String(y).slice(-2)}`;
+      labels.push(label);
+
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      let monthStepsSum = 0;
+      let monthExMinSum = 0;
+      let monthDaysWithData = 0;
+
+      const historyMap = appState.history?.[pid] || {};
+
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const dateObj = new Date(y, m, dayNum);
+        if (dateObj > now) continue;
+        const dateIso = getLocalIsoDate(dateObj);
+        const entry = historyMap[dateIso];
+        if (entry && (entry.hasData || entry.steps > 0 || entry.moveKcal > 0)) {
+          monthStepsSum += (entry.steps || 0);
+          monthExMinSum += (entry.exerciseMin || 0);
+          monthDaysWithData++;
+        }
+      }
+
+      if (y === currentYear && m === currentMonth) {
+        const live = appState.appleWatch?.metrics?.[pid];
+        if (live && live.steps > 0 && monthDaysWithData === 0) {
+          monthStepsSum += live.steps;
+          monthExMinSum += (live.exerciseMin || 0);
+          monthDaysWithData++;
+        }
+      }
+
+      const avgSteps = monthDaysWithData > 0 ? Math.round(monthStepsSum / monthDaysWithData) : 0;
+      const avgExMin = monthDaysWithData > 0 ? Math.round(monthExMinSum / monthDaysWithData) : 0;
+
+      steps.push(avgSteps);
+      exerciseMin.push(avgExMin);
+    }
+
+    const titleSuffix = period === '1y' ? '(Último Año)' : '(Histórico)';
+    return {
+      labels,
+      steps,
+      exerciseMin,
+      stepsTitle: `Media Diaria por Meses ${titleSuffix}`,
+      exTitle: `Media Ejercicio por Meses ${titleSuffix}`,
+      stepsUnit: 'pasos/día',
+      exUnit: 'min/día',
+      stepsSuggestedMax: 10000,
+      exSuggestedMax: 30
+    };
+  }
+}
+
 export function renderProgressView() {
   const container = document.getElementById("progress-dynamic-container");
   if (!container) return;
@@ -334,42 +532,48 @@ export function renderProgressContent() {
 
   const pid = appState.activeProfileId || 'he';
   const pName = appState.profiles[pid]?.name || 'Carlos';
-  const stats = calculateProfileStats(pid);
 
-  if (currentProgressPeriod === '7d' || currentProgressPeriod === '30d') {
-    renderPeriodOverview(currentProgressPeriod, stats, pid, pName, container);
-  } else if (currentProgressPeriod === 'heatmap') {
+  if (currentProgressMainTab === 'data') {
+    renderPeriodOverview(currentTimePeriod, pid, pName, container);
+  } else if (currentProgressMainTab === 'heatmap') {
     renderHeatmapView(pid, pName, container);
-  } else if (currentProgressPeriod === 'badges') {
+  } else if (currentProgressMainTab === 'badges') {
     renderBadgesView(pid, pName, container);
   }
 }
 
-function renderPeriodOverview(period, stats, pid, pName, container) {
-  const daysCount = period === '7d' ? 7 : 30;
-  const historyData = getHistoricalData(pid, daysCount);
-  const periodLabel = period === '7d' ? 'Últimos 7 Días' : 'Últimos 30 Días';
-  const avgSteps = period === '7d' ? stats.avgSteps7d : stats.avgSteps30d;
-  const totalKcal = period === '7d' ? stats.totalKcal7d : stats.totalKcal30d;
-  const totalExMin = period === '7d' ? stats.totalExMin7d : stats.totalExMin30d;
-  const totalDist = period === '7d' ? stats.totalDist7d : stats.totalDist30d;
+function renderPeriodOverview(period, pid, pName, container) {
+  const stats = calculateProfileStats(pid, period);
+  const chartAgg = getChartAggregatedData(pid, period);
+  const historyData = getHistoricalData(pid, 7);
 
-  const stepsDiffBadge = stats.stepsDiffPct >= 0 
-    ? `<span style="font-size: 0.72rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 2px 6px; border-radius: 6px;"><i class="fa-solid fa-arrow-trend-up"></i> +${stats.stepsDiffPct}% vs mes</span>`
-    : `<span style="font-size: 0.72rem; color: var(--accent-rose); font-weight: 700; background: rgba(239, 68, 68, 0.15); padding: 2px 6px; border-radius: 6px;"><i class="fa-solid fa-arrow-trend-down"></i> ${stats.stepsDiffPct}% vs mes</span>`;
+  const periodLabels = {
+    '7d': 'Últimos 7 Días',
+    '30d': 'Últimos 30 Días',
+    '1y': 'Último Año',
+    'all': 'Histórico Completo'
+  };
+  const periodLabel = periodLabels[period] || 'Últimos 7 Días';
+
+  const stepsDiffBadge = stats.stepsDiffPct !== null
+    ? (stats.stepsDiffPct >= 0 
+        ? `<span style="font-size: 0.72rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 2px 6px; border-radius: 6px;"><i class="fa-solid fa-arrow-trend-up"></i> +${stats.stepsDiffPct}% ${stats.diffLabel}</span>`
+        : `<span style="font-size: 0.72rem; color: var(--accent-rose); font-weight: 700; background: rgba(239, 68, 68, 0.15); padding: 2px 6px; border-radius: 6px;"><i class="fa-solid fa-arrow-trend-down"></i> ${stats.stepsDiffPct}% ${stats.diffLabel}</span>`
+      )
+    : `<span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 2px 6px; border-radius: 6px;">-- ${stats.diffLabel}</span>`;
 
   container.innerHTML = `
     <!-- SUMMARY METRICS CARDS -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
       <div class="glass-card stat-summary-card">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
           <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Media de Pasos</span>
           <i class="fa-solid fa-shoe-prints" style="color: var(--accent-emerald);"></i>
         </div>
         <div style="font-size: 1.45rem; font-weight: 800; color: #fff; font-family: var(--font-heading);">
-          ${avgSteps.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">/ día</small>
+          ${stats.avgSteps.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">/ día</small>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.35rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.35rem; flex-wrap: wrap; gap: 0.3rem;">
           <span style="font-size: 0.75rem; color: var(--text-muted);">Meta: 10.000</span>
           ${stepsDiffBadge}
         </div>
@@ -381,10 +585,10 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
           <i class="fa-solid fa-fire" style="color: var(--accent-rose);"></i>
         </div>
         <div style="font-size: 1.45rem; font-weight: 800; color: #fff; font-family: var(--font-heading);">
-          ${totalKcal.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">kcal</small>
+          ${stats.totalKcal.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">kcal</small>
         </div>
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
-          Media: ~${Math.round(totalKcal / daysCount)} kcal / día
+          Media: ~${stats.daysWithDataCount > 0 ? Math.round(stats.totalKcal / stats.daysWithDataCount) : 0} kcal / día
         </div>
       </div>
 
@@ -394,7 +598,7 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
           <i class="fa-solid fa-stopwatch" style="color: var(--accent-amber);"></i>
         </div>
         <div style="font-size: 1.45rem; font-weight: 800; color: #fff; font-family: var(--font-heading);">
-          ${Math.floor(totalExMin / 60)}h ${totalExMin % 60}m
+          ${Math.floor(stats.totalExMin / 60)}h ${stats.totalExMin % 60}m
         </div>
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
           Total en ${periodLabel.toLowerCase()}
@@ -410,8 +614,30 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
           🔥 ${stats.currentStreak} Días
         </div>
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
-          Récord: ${stats.prSteps.toLocaleString()} pasos (${stats.prStepsDate})
+          Récord: ${stats.prSteps > 0 ? stats.prSteps.toLocaleString() + ' pasos (' + stats.prStepsDate + ')' : '--'}
         </div>
+      </div>
+    </div>
+
+    <!-- NESTED TIME PERIOD SELECTOR (BELOW SUMMARY CARDS) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+      <div class="time-period-selector" style="margin-bottom: 0;">
+        <button type="button" class="time-period-btn ${period === '7d' ? 'active' : ''}" onclick="window.setTimePeriod('7d')">
+          <i class="fa-solid fa-calendar-week"></i> 7 Días
+        </button>
+        <button type="button" class="time-period-btn ${period === '30d' ? 'active' : ''}" onclick="window.setTimePeriod('30d')">
+          <i class="fa-solid fa-calendar-days"></i> 30 Días
+        </button>
+        <button type="button" class="time-period-btn ${period === '1y' ? 'active' : ''}" onclick="window.setTimePeriod('1y')">
+          <i class="fa-solid fa-calendar"></i> 1 Año
+        </button>
+        <button type="button" class="time-period-btn ${period === 'all' ? 'active' : ''}" onclick="window.setTimePeriod('all')">
+          <i class="fa-solid fa-timeline"></i> Histórico
+        </button>
+      </div>
+
+      <div style="font-size: 0.78rem; color: var(--text-muted);">
+        Periodo: <strong style="color: var(--accent-cyan);">${periodLabel}</strong> (${pName})
       </div>
     </div>
 
@@ -420,9 +646,9 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
       <div class="glass-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
           <h3 style="font-family: var(--font-heading); font-size: 1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fa-solid fa-chart-simple" style="color: var(--accent-emerald);"></i> Pasos Diarios (${periodLabel})
+            <i class="fa-solid fa-chart-simple" style="color: var(--accent-emerald);"></i> ${chartAgg.stepsTitle}
           </h3>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">Objetivo 10k</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Objetivo 10k/día</span>
         </div>
         <div style="height: 240px; position: relative;">
           <canvas id="progressStepsChart"></canvas>
@@ -432,9 +658,9 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
       <div class="glass-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
           <h3 style="font-family: var(--font-heading); font-size: 1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fa-solid fa-heart-pulse" style="color: var(--accent-amber);"></i> Minutos de Ejercicio Diarios
+            <i class="fa-solid fa-heart-pulse" style="color: var(--accent-amber);"></i> ${chartAgg.exTitle}
           </h3>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">Objetivo 30 min</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Objetivo 30 min/día</span>
         </div>
         <div style="height: 240px; position: relative;">
           <canvas id="progressExerciseChart"></canvas>
@@ -490,20 +716,18 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
     </div>
   `;
 
-  // Render Charts with Chart.js
   setTimeout(() => {
-    renderPeriodCharts(historyData);
+    renderPeriodCharts(chartAgg);
   }, 50);
 }
 
-function renderPeriodCharts(historyData) {
-  if (typeof Chart === 'undefined') return;
+function renderPeriodCharts(chartAgg) {
+  if (typeof Chart === 'undefined' || !chartAgg) return;
 
-  const labels = historyData.map(d => `${d.dayName.slice(0, 2)} ${d.shortLabel.split(' ')[0]}`);
-  const stepsData = historyData.map(d => d.steps);
-  const exMinData = historyData.map(d => d.exerciseMin);
+  const labels = chartAgg.labels;
+  const stepsData = chartAgg.steps;
+  const exMinData = chartAgg.exerciseMin;
 
-  // Steps Chart
   const ctxSteps = document.getElementById("progressStepsChart");
   if (ctxSteps) {
     if (progressStepsChartInstance) progressStepsChartInstance.destroy();
@@ -527,7 +751,7 @@ function renderPeriodCharts(historyData) {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (ctx) => `${ctx.raw.toLocaleString()} pasos`
+              label: (ctx) => `${ctx.raw.toLocaleString()} ${chartAgg.stepsUnit}`
             }
           }
         },
@@ -536,7 +760,7 @@ function renderPeriodCharts(historyData) {
           y: { 
             ticks: { color: '#9ca3af', font: { size: 10 } }, 
             grid: { color: 'rgba(255,255,255,0.06)' },
-            suggestedMax: 10000,
+            suggestedMax: chartAgg.stepsSuggestedMax || 10000,
             beginAtZero: true
           }
         }
@@ -544,7 +768,6 @@ function renderPeriodCharts(historyData) {
     });
   }
 
-  // Exercise Minutes Chart
   const ctxEx = document.getElementById("progressExerciseChart");
   if (ctxEx) {
     if (progressExChartInstance) progressExChartInstance.destroy();
@@ -568,7 +791,7 @@ function renderPeriodCharts(historyData) {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (ctx) => `${ctx.raw} min`
+              label: (ctx) => `${ctx.raw} ${chartAgg.exUnit}`
             }
           }
         },
@@ -577,7 +800,7 @@ function renderPeriodCharts(historyData) {
           y: { 
             ticks: { color: '#9ca3af', font: { size: 10 } }, 
             grid: { color: 'rgba(255,255,255,0.06)' },
-            suggestedMax: 30,
+            suggestedMax: chartAgg.exSuggestedMax || 30,
             beginAtZero: true
           }
         }
@@ -892,6 +1115,8 @@ window.showDayDetailToast = function(dateIso, dayNum, monthName, steps, kcal, ex
 };
 
 window.setProgressPeriod = setProgressPeriod;
+window.setProgressMainTab = setProgressMainTab;
+window.setTimePeriod = setTimePeriod;
 window.changeHeatmapMonth = changeHeatmapMonth;
 window.setHeatmapMonth = setHeatmapMonth;
 window.setHeatmapYear = setHeatmapYear;
