@@ -4503,47 +4503,6 @@ function renderPeriodCharts(chartAgg) {
   }
 }
 
-  const ctxEx = document.getElementById("progressExerciseChart");
-  if (ctxEx) {
-    if (progressExChartInstance) progressExChartInstance.destroy();
-    progressExChartInstance = new Chart(ctxEx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Minutos Ejercicio',
-          data: exMinData,
-          backgroundColor: exMinData.map(v => v >= 30 ? 'rgba(168, 85, 247, 0.85)' : (v > 0 ? 'rgba(245, 158, 11, 0.7)' : 'rgba(255, 255, 255, 0.08)')),
-          borderColor: exMinData.map(v => v >= 30 ? '#a855f7' : (v > 0 ? '#f59e0b' : 'rgba(255, 255, 255, 0.15)')),
-          borderWidth: 1,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${ctx.raw} min`
-            }
-          }
-        },
-        scales: {
-          x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
-          y: { 
-            ticks: { color: '#9ca3af', font: { size: 10 } }, 
-            grid: { color: 'rgba(255,255,255,0.06)' },
-            suggestedMax: 30,
-            beginAtZero: true
-          }
-        }
-      }
-    });
-  }
-}
-
 export let currentHeatmapYear = new Date().getFullYear();
 export let currentHeatmapMonth = new Date().getMonth();
 
