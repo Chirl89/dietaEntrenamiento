@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Engine (v0.10.14)
+ * FitDuo & Collie Coach - Main Application Engine (v0.11.0)
  * Integrated Architecture: UI Views, State Machine, Local Storage & PubNub Cloud Sync
  */
 
@@ -12,7 +12,7 @@ import {
   BOO_WEEKLY_SCHEDULE as DATA_BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT as DATA_BOO_CONTINUOUS_REINFORCEMENT,
   BOO_TRICKS_BACKLOG as DATA_BOO_TRICKS_BACKLOG
-} from './data.js?v=0.10.14';
+} from './data.js?v=0.11.0';
 
 const INITIAL_PROFILES = DATA_INITIAL_PROFILES || window.INITIAL_PROFILES;
 const RECIPES_DATABASE = DATA_RECIPES_DATABASE || window.RECIPES_DATABASE;
@@ -1884,12 +1884,6 @@ export function mergeCloudDataIntoAppState(cloudData) {
           hasChanges = true;
         }
       }
-      if (dayObj.done || localDay.sessions.length > 0) {
-        localDay.done = true;
-        localDay.watchData = localDay.sessions[localDay.sessions.length - 1];
-      }
-    }
-  }
       if (dayObj.done || localDay.sessions.length > 0) {
         localDay.done = true;
         localDay.watchData = localDay.sessions[localDay.sessions.length - 1];

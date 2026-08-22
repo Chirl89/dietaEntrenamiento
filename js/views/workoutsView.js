@@ -1,5 +1,5 @@
 import { appState, saveState, getMasterProfileId, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
-import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.10.14';
+import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js?v=0.11.0';
 
 export function isDayCompleted(profileId, dayName) {
   const val = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -350,56 +350,6 @@ export function renderExerciseTableView() {
       <span><i class="fa-solid fa-location-dot" style="color:var(--accent-cyan);"></i> ${routine.location || 'En casa'}</span>
       <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i> ${routine.type || 'Fuerza'}</span>
       <span><i class="fa-solid fa-toolbox" style="color:var(--accent-violet);"></i> Equipamiento: ${(routine.equipment || []).join(", ")}</span>
-    </div>
-
-    <div class="table-responsive">
-      <table class="exercise-table">
-        <thead>
-          <tr>
-            <th>Ejercicio & Técnica</th>
-            <th>Series</th>
-            <th>Repeticiones / Tiempo</th>
-            <th>Descanso</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  container.appendChild(card);
-}
-
-  const card = document.createElement("div");
-  card.className = "glass-card";
-
-  const rows = routine.exercises.map(ex => `
-    <tr>
-      <td>
-        <div class="exercise-name">${ex.name}</div>
-        <div class="exercise-tech"><i class="fa-solid fa-lightbulb" style="color:var(--accent-amber);"></i> ${ex.technique}</div>
-      </td>
-      <td><strong style="color:var(--accent-emerald);">${ex.sets}</strong> series</td>
-      <td><strong>${ex.reps}</strong> reps</td>
-      <td><span style="color:var(--text-muted);">${ex.rest}</span></td>
-    </tr>
-  `).join("");
-
-  card.innerHTML = `
-    <div class="routine-header-box">
-      <div>
-        <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">${routine.title}</h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Enfoque: ${routine.focus}</p>
-      </div>
-      <span class="routine-badge"><i class="fa-solid fa-clock"></i> ${routine.duration} min (Juntos)</span>
-    </div>
-
-    <div style="display:flex; flex-wrap: wrap; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.85rem;">
-      <span><i class="fa-solid fa-location-dot" style="color:var(--accent-cyan);"></i> ${routine.location}</span>
-      <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i> ${routine.type}</span>
-      <span><i class="fa-solid fa-toolbox" style="color:var(--accent-violet);"></i> Equipamiento: ${routine.equipment.join(", ")}</span>
     </div>
 
     <div class="table-responsive">
