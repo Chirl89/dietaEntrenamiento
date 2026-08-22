@@ -742,8 +742,23 @@ export function renderSubtabSegmentedControl(categoryKey, activeTabId) {
   `).join("");
 }
 
+export function applyProfileTheme(profileId) {
+  const pid = profileId || appState.activeProfileId || "he";
+  document.documentElement.setAttribute("data-profile", pid);
+  if (document.body) {
+    document.body.setAttribute("data-profile", pid);
+  }
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) {
+    themeMeta.setAttribute("content", pid === "he" ? "#190c10" : "#0e1c30");
+  }
+}
+window.applyProfileTheme = applyProfileTheme;
+
 export function updateProfileSwitcherButtonsUI() {
   const profileId = appState.activeProfileId || "he";
+  applyProfileTheme(profileId);
+
   const btnHe = document.getElementById("btn-profile-he");
   const btnShe = document.getElementById("btn-profile-she");
   if (btnHe) btnHe.classList.toggle("active", profileId === "he");
@@ -795,6 +810,7 @@ export function switchProfile(profileId) {
   localStorage.setItem(LAST_ACTIVE_PROFILE_KEY, profileId);
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
 
+  applyProfileTheme(profileId);
   updateProfileSwitcherButtonsUI();
   renderAll();
 
