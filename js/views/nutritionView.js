@@ -59,6 +59,45 @@ export function selectDayFromDropdown(dayName) {
   }
 }
 
+export function navigateToRecipe(recipeId) {
+  try {
+    triggerHapticTouch();
+    if (!recipeId) return;
+
+    // 1. Switch to nutrition tab and recipes subtab
+    if (window.showTab) {
+      window.showTab("nutrition-recipes-view");
+    }
+
+    // 2. Ensure all recipes including weekend are rendered if needed
+    let targetCard = document.getElementById(`recipe-card-${recipeId}`);
+    if (!targetCard) {
+      setRecipesRange('7');
+      targetCard = document.getElementById(`recipe-card-${recipeId}`);
+    }
+
+    // 3. Scroll to target card smoothly and highlight with a pulse animation
+    if (targetCard) {
+      setTimeout(() => {
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetCard.classList.remove('recipe-highlight-pulse');
+        void targetCard.offsetWidth; // Trigger reflow for re-animation
+        targetCard.classList.add('recipe-highlight-pulse');
+        
+        setTimeout(() => {
+          targetCard.classList.remove('recipe-highlight-pulse');
+        }, 2200);
+        
+        // Auto-open preparation steps details
+        const details = targetCard.querySelector("details");
+        if (details) details.open = true;
+      }, 120);
+    }
+  } catch(e) {
+    console.error("Error navigating to recipe:", e);
+  }
+}
+
 export function renderNutritionMenuView() {
   try {
     const container = document.getElementById("meal-cards-container");
@@ -112,12 +151,20 @@ export function renderNutritionMenuView() {
           <div class="meal-card-type" style="color: ${slot.color}; font-size: 0.82rem; display: flex; align-items: center; gap: 0.4rem;">
             <i class="fa-solid ${slot.slotIcon}"></i> <strong>${slot.slotLabel}</strong> • ${meal.prepTime} min prep
           </div>
-          <span style="font-size: 0.75rem; color: var(--text-muted); background: var(--bg-card); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border-color);">
-            Plato ${idx + 1} de 5
-          </span>
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); background: var(--bg-card); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border-color);">
+              Plato ${idx + 1} de 5
+            </span>
+            <button type="button" class="btn-recipe-link" onclick="navigateToRecipe('${meal.id}')" title="Ver receta y preparación completa">
+              <i class="fa-solid fa-book-open"></i> Ver Receta <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem;"></i>
+            </button>
+          </div>
         </div>
 
-        <h3 class="meal-card-title" style="font-size: 1.15rem; margin-bottom: 0.6rem;">${meal.name}</h3>
+        <h3 class="meal-card-title clickable-meal-title" onclick="navigateToRecipe('${meal.id}')" style="font-size: 1.15rem; margin-bottom: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;" title="Haz clic para ver la receta">
+          <span>${meal.name}</span>
+          <i class="fa-solid fa-chevron-right" style="font-size: 0.85rem; color: var(--accent-cyan); opacity: 0.8;"></i>
+        </h3>
         
         <div class="meal-macros-pills" style="margin-bottom: 0.75rem;">
           <span class="macro-pill" style="color:var(--accent-amber); font-weight:600;"><i class="fa-solid fa-fire"></i> ${meal.calories} kcal</span>
@@ -209,6 +256,8 @@ export function renderNutritionRecipesView() {
     usedRecipes.forEach(({ meal, days }) => {
       const card = document.createElement("div");
       card.className = "glass-card recipe-batch-card";
+      card.id = `recipe-card-${meal.id}`;
+      card.dataset.recipeId = meal.id;
 
       const ingredientsHtml = meal.ingredients.map(ing => `
         <li><span>${ing.name}</span><strong>${ing.amount} ${ing.unit}</strong></li>

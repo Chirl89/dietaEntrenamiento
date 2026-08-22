@@ -1100,6 +1100,94 @@ body[data-profile="she"] .btn-primary:hover {
   border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
 }
 
+/* RECIPE LINK BUTTON & REDIRECTION STYLES */
+.btn-recipe-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: rgba(225, 29, 72, 0.08);
+  border: 1px solid var(--border-color);
+  padding: 3px 9px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+body[data-profile="she"] .btn-recipe-link {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.btn-recipe-link:hover {
+  background: var(--accent-cyan);
+  color: #ffffff;
+  border-color: var(--accent-cyan);
+  transform: translateX(2px);
+  box-shadow: 0 2px 10px rgba(225, 29, 72, 0.25);
+}
+
+body[data-profile="she"] .btn-recipe-link:hover {
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+}
+
+.clickable-meal-title {
+  transition: color 0.2s ease, transform 0.2s ease;
+  user-select: none;
+}
+
+.clickable-meal-title:hover {
+  color: var(--accent-cyan);
+}
+
+body[data-profile="she"] .clickable-meal-title:hover {
+  color: var(--accent-emerald);
+}
+
+.recipe-highlight-pulse {
+  animation: recipePulseGlow 2.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-color: var(--accent-cyan) !important;
+}
+
+body[data-profile="she"] .recipe-highlight-pulse {
+  animation: recipePulseGlowShe 2.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-color: var(--accent-emerald) !important;
+}
+
+@keyframes recipePulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.6);
+    transform: scale(1);
+  }
+  30% {
+    box-shadow: 0 0 26px 8px rgba(225, 29, 72, 0.4);
+    transform: scale(1.025);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+    transform: scale(1);
+  }
+}
+
+@keyframes recipePulseGlowShe {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6);
+    transform: scale(1);
+  }
+  30% {
+    box-shadow: 0 0 26px 8px rgba(37, 99, 235, 0.4);
+    transform: scale(1.025);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    transform: scale(1);
+  }
+}
+
 /* SHOPPING LIST VIEW */
 .shopping-header {
   display: flex;
