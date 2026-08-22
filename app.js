@@ -11,6 +11,10 @@ import {
   getMasterProfileId,
   getTodayDayName,
   getLocalIsoDate,
+  getDayNameFromDate,
+  getDateForDayNameInCurrentWeek,
+  checkDayRollover,
+  recordDailySnapshot,
   getProfileShortName,
   triggerHapticTouch,
   showIosToast,
@@ -376,6 +380,11 @@ const globalBindings = {
   setHeatmapYear,
   resetHeatmapToCurrentMonth,
 
+  getDayNameFromDate,
+  getDateForDayNameInCurrentWeek,
+  checkDayRollover,
+  recordDailySnapshot,
+
   populateSettingsInputs,
   saveCustomSettings,
   renderSettingsView,
@@ -392,6 +401,7 @@ Object.assign(window, globalBindings);
 export function initApp() {
   try {
     loadSavedState();
+    checkDayRollover();
     checkDeviceIdentityBanner();
     checkUrlParamsForWatchSync();
     startAppleWatchAutoSync();
@@ -405,6 +415,8 @@ export function initApp() {
 
     // Periodic sync: every 45s for cloud poll, every 5s for timestamp relative times
     setInterval(() => {
+      const rolled = checkDayRollover();
+      if (rolled && window.renderAll) window.renderAll();
       const syncTimeEl = document.getElementById("summary-watch-sync-time");
       if (syncTimeEl) syncTimeEl.innerText = formatSyncRelativeTime(appState.appleWatch?.lastGlobalSync);
     }, 5000);
@@ -415,18 +427,20 @@ export function initApp() {
 
     // Lifecycle events (iOS Safari background resume)
     window.addEventListener("pageshow", () => {
+      checkDayRollover();
       pullFromCloud(false);
       checkUrlParamsForWatchSync();
     });
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
+        checkDayRollover();
         pullFromCloud(false);
         checkUrlParamsForWatchSync();
       }
     });
 
-    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.14.0)");
+    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.15.0)");
   } catch(e) {
     console.error("Critical error during FitDuo initialization:", e);
   }

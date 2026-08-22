@@ -1,4 +1,4 @@
-import { appState, defaultWatchMetrics, defaultCloudReplica, LAST_ACTIVE_PROFILE_KEY, getMasterProfileId, saveState, triggerHapticTouch, showIosToast, getTodayDayName, addDebugLog } from './state.js';
+import { appState, defaultWatchMetrics, defaultCloudReplica, LAST_ACTIVE_PROFILE_KEY, getMasterProfileId, saveState, triggerHapticTouch, showIosToast, getTodayDayName, getLocalIsoDate, getDayNameFromDate, getDateForDayNameInCurrentWeek, recordDailySnapshot, addDebugLog } from './state.js';
 import { pushToCloud, pullFromCloud, getCloudSyncKey, addSyncConsoleLog } from './cloudSync.js';
 import { parseSmartMetricValue, parseSmartMetricFloatValue, parseSmartMetricArray, formatSmartSleepValue } from './utils.js';
 
@@ -119,37 +119,60 @@ export function triggerManualSync() {
   showIosToast(` ¡Datos de Apple Watch (${pName}) verificados! (${m.moveKcal} kcal - ${m.steps.toLocaleString()} pasos)`, "fa-solid fa-circle-check");
 }
 
-export function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], hrArr = []) {
+export function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], hrArr = [], stepsArr = []) {
   if (!Array.isArray(kcalArr) || kcalArr.length === 0) return;
   const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-  const todayIdx = (new Date().getDay() + 6) % 7;
+  const today = new Date();
+  const todayIdx = (today.getDay() + 6) % 7;
 
   for (let i = 0; i < kcalArr.length; i++) {
-    const pastDayIdx = (todayIdx - (kcalArr.length - 1 - i) + 7) % 7;
+    const pastDayOffset = kcalArr.length - 1 - i;
+    const d = new Date(today);
+    d.setDate(today.getDate() - pastDayOffset);
+    const targetDateIso = getLocalIsoDate(d);
+    const pastDayIdx = (todayIdx - pastDayOffset + 700) % 7;
     const targetDayName = days[pastDayIdx];
-    const kcalVal = kcalArr[i];
-    const durVal = (exMinArr && exMinArr[i]) ? exMinArr[i] : 45;
-    const hrVal = (hrArr && hrArr[i]) ? hrArr[i] : 138;
+    const kcalVal = kcalArr[i] || 0;
+    const durVal = (exMinArr && exMinArr[i]) ? exMinArr[i] : 0;
+    const hrVal = (hrArr && hrArr[i]) ? hrArr[i] : 0;
+    const stepsVal = (stepsArr && stepsArr[i]) ? stepsArr[i] : 0;
+
+    let isWorkout = false;
+    let workoutSession = null;
 
     if (kcalVal && kcalVal > 150) {
+      isWorkout = true;
       if (!appState.completedWorkouts[profileId]) appState.completedWorkouts[profileId] = {};
 
       const existing = appState.completedWorkouts[profileId][targetDayName];
       if (!existing || !existing.done || !existing.watchData) {
+        workoutSession = {
+          id: `hist_${targetDateIso}`,
+          deviceName: appState.appleWatch.metrics[profileId]?.deviceName || "Apple Watch",
+          durationMin: durVal || 45,
+          kcal: kcalVal,
+          avgHr: hrVal || 138,
+          maxHr: (hrVal || 138) + 22,
+          timestamp: "Salud iOS Sync",
+          autoSync: true
+        };
         appState.completedWorkouts[profileId][targetDayName] = {
           done: true,
-          watchData: {
-            deviceName: appState.appleWatch.metrics[profileId]?.deviceName || "Apple Watch",
-            durationMin: durVal,
-            kcal: kcalVal,
-            avgHr: hrVal,
-            maxHr: hrVal + 22,
-            timestamp: "Salud iOS Sync",
-            autoSync: true
-          }
+          watchData: workoutSession,
+          sessions: [workoutSession]
         };
       }
     }
+
+    recordDailySnapshot(profileId, targetDateIso, {
+      steps: stepsVal,
+      moveKcal: kcalVal,
+      exerciseMin: durVal,
+      hr: hrVal
+    }, {
+      isWorkoutDone: isWorkout,
+      sessions: workoutSession ? [workoutSession] : undefined
+    });
   }
 }
 
@@ -186,6 +209,7 @@ export function checkUrlParamsForWatchSync() {
   if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = { ...defaultWatchMetrics[pid] };
 
   const m = appState.appleWatch.metrics[pid];
+  m.date = getLocalIsoDate();
 
   addDebugLog("🔗 Parámetros de URL/Acceso Directo detectados al cargar la app", "url", Object.fromEntries(params));
 
@@ -284,13 +308,14 @@ export function checkUrlParamsForWatchSync() {
     updated = true;
   }
 
+  const stepsArr = parseSmartMetricArray(stepsRaw);
   const kcalArr = parseSmartMetricArray(kcalRaw);
   const exMinArr = parseSmartMetricArray(exMinRaw);
   const hrArr = parseSmartMetricArray(hrRaw);
-  if (kcalArr.length > 1) {
-    syncWeeklyWatchHistory(pid, kcalArr, exMinArr, hrArr);
+  if (kcalArr.length > 1 || stepsArr.length > 1) {
+    syncWeeklyWatchHistory(pid, kcalArr, exMinArr, hrArr, stepsArr);
     updated = true;
-    addDebugLog("📊 Historial de 7 días de Salud procesado desde URL", "health", { kcalArr, exMinArr, hrArr });
+    addDebugLog("📊 Historial semanal de Salud procesado desde URL", "health", { stepsArr, kcalArr, exMinArr, hrArr });
   }
 
   const isWorkoutSync = params.has("workout") || params.get("syncWorkout") === "true" || params.has("workoutKcal") || (params.has("duration") && params.has("avgHr"));
@@ -309,7 +334,13 @@ export function checkUrlParamsForWatchSync() {
     const wKcal = workoutKcalVal !== null ? workoutKcalVal : (kcalVal !== null ? kcalVal : 350);
     const avgH = workoutAvgHrVal !== null ? workoutAvgHrVal : (hrVal !== null ? hrVal : 140);
     const maxH = workoutMaxHrVal !== null ? workoutMaxHrVal : (m.maxHr || (avgH + 20));
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+    
+    let timeStr = params.get("time") || params.get("timestamp") || params.get("timeStr");
+    if (!timeStr) {
+      timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+    } else if (!timeStr.toLowerCase().includes("hs") && !timeStr.toLowerCase().includes("m") && timeStr.includes(":")) {
+      timeStr = timeStr.trim() + " hs";
+    }
 
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
@@ -318,6 +349,7 @@ export function checkUrlParamsForWatchSync() {
     let existingSessions = Array.isArray(existingDayWorkout.sessions) ? [...existingDayWorkout.sessions] : (existingDayWorkout.watchData ? [existingDayWorkout.watchData] : []);
 
     const newSession = {
+      id: `url_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
       deviceName: m.deviceName || `Apple Watch (${appState.profiles[pid].name.split(" ")[0]})`,
       durationMin: durMin,
       kcal: wKcal,
@@ -339,6 +371,12 @@ export function checkUrlParamsForWatchSync() {
       sessions: existingSessions
     };
     appState.activeWorkoutDay = targetDay;
+
+    if ((m.exerciseMin || 0) < durMin) m.exerciseMin = durMin;
+    if ((m.moveKcal || 0) < wKcal) m.moveKcal = wKcal;
+
+    const targetDateIso = getDateForDayNameInCurrentWeek(targetDay);
+    recordDailySnapshot(pid, targetDateIso);
     updated = true;
   }
 

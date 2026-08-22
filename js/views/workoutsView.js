@@ -5,38 +5,43 @@
 
 import {
   appState,
-  saveState,
   getMasterProfileId,
-  getTodayDayName,
+  saveState,
   triggerHapticTouch,
-  showIosToast
+  showIosToast,
+  getTodayDayName,
+  getLocalIsoDate,
+  getDayNameFromDate,
+  getDateForDayNameInCurrentWeek,
+  recordDailySnapshot,
+  defaultWatchMetrics
 } from '../state.js';
 import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js';
 
 export function isDayCompleted(profileId, dayName) {
-  const val = appState.completedWorkouts?.[profileId]?.[dayName];
-  if (!val) return false;
-  if (typeof val === 'boolean') return val;
-  if (typeof val === 'object') return !!val.done;
-  return false;
+  const dayData = appState.completedWorkouts?.[profileId]?.[dayName];
+  if (typeof dayData === 'object' && dayData !== null) {
+    return !!dayData.done;
+  }
+  return !!dayData;
 }
 
 export function getDayWatchData(profileId, dayName) {
-  const val = appState.completedWorkouts?.[profileId]?.[dayName];
-  if (val && typeof val === 'object' && val.watchData) {
-    return val.watchData;
+  const dayData = appState.completedWorkouts?.[profileId]?.[dayName];
+  if (typeof dayData === 'object' && dayData !== null && dayData.watchData) {
+    return dayData.watchData;
   }
   return null;
 }
 
 export function getDaySessions(profileId, dayName) {
-  const val = appState.completedWorkouts?.[profileId]?.[dayName];
-  if (val && typeof val === 'object') {
-    if (Array.isArray(val.sessions) && val.sessions.length > 0) {
-      return val.sessions;
+  const dayData = appState.completedWorkouts?.[profileId]?.[dayName];
+  if (typeof dayData === 'object' && dayData !== null) {
+    if (Array.isArray(dayData.sessions) && dayData.sessions.length > 0) {
+      return dayData.sessions;
     }
-    if (val.watchData) {
-      return [val.watchData];
+    if (dayData.watchData) {
+      return [dayData.watchData];
     }
   }
   return [];
@@ -69,6 +74,13 @@ export function deleteWorkoutSession(dayName, sessionIndex) {
       appState.appleWatch.pendingWorkout[pid].pending = false;
     }
 
+    const targetDate = getDateForDayNameInCurrentWeek(dayName);
+    recordDailySnapshot(pid, targetDate, null, {
+      isWorkoutDone: dayEntry.sessions.length > 0,
+      sessions: dayEntry.sessions,
+      completedWorkouts: dayEntry.sessions.length > 0 ? [dayName] : []
+    });
+
     saveState();
     if (window.renderAll) window.renderAll();
     showIosToast("🗑️ Sesión de entrenamiento eliminada", "fa-solid fa-trash-can");
@@ -88,15 +100,30 @@ export function toggleWorkoutDay(dayName) {
     }
 
     const currentDone = isDayCompleted(profileId, dayName);
+    const targetDate = getDateForDayNameInCurrentWeek(dayName);
 
     if (currentDone) {
       appState.completedWorkouts[profileId][dayName] = { done: false, watchData: null, sessions: [] };
+      recordDailySnapshot(profileId, targetDate, null, { isWorkoutDone: false, sessions: [], completedWorkouts: [] });
     } else {
+      const schedule = WEEKLY_WORKOUT_SCHEDULE?.[dayName] || {};
+      const defMin = schedule.duration || 35;
+      const defKcal = Math.round(defMin * 7.5);
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
+      const sessionObj = {
+        id: `manual_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        deviceName: "Rutina FitDuo",
+        durationMin: defMin,
+        kcal: defKcal,
+        timestamp: timeStr,
+        autoSync: false
+      };
       appState.completedWorkouts[profileId][dayName] = {
         done: true,
-        watchData: null,
-        sessions: []
+        watchData: sessionObj,
+        sessions: [sessionObj]
       };
+      recordDailySnapshot(profileId, targetDate);
     }
 
     saveState();
@@ -211,10 +238,15 @@ export function saveManualWorkoutSession(e) {
 
     const duration = parseInt(durInput?.value || "30", 10);
     const kcal = parseInt(kcalInput?.value || "250", 10);
-    const timestamp = timeInput?.value.trim() || (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
+    let rawTime = timeInput?.value?.trim();
+    let timestamp = rawTime || (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
+    if (timestamp && !timestamp.toLowerCase().includes("hs") && !timestamp.toLowerCase().includes("m") && timestamp.includes(":")) {
+      timestamp = timestamp + " hs";
+    }
 
     const pid = appState.activeProfileId;
     const today = getTodayDayName();
+    const todayIso = getLocalIsoDate();
 
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
@@ -238,6 +270,17 @@ export function saveManualWorkoutSession(e) {
     appState.completedWorkouts[pid][today].done = true;
     appState.completedWorkouts[pid][today].watchData = sessionObj;
 
+    // Update active metrics if they were lower
+    if (!appState.appleWatch) appState.appleWatch = {};
+    if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
+    if (!appState.appleWatch.metrics[pid]) appState.appleWatch.metrics[pid] = { ...defaultWatchMetrics[pid] };
+    const m = appState.appleWatch.metrics[pid];
+    const totalDayMin = appState.completedWorkouts[pid][today].sessions.reduce((acc, s) => acc + (s.durationMin || 0), 0);
+    const totalDayKcal = appState.completedWorkouts[pid][today].sessions.reduce((acc, s) => acc + (s.kcal || 0), 0);
+    if ((m.exerciseMin || 0) < totalDayMin) m.exerciseMin = totalDayMin;
+    if ((m.moveKcal || 0) < totalDayKcal) m.moveKcal = totalDayKcal;
+
+    recordDailySnapshot(pid, todayIso);
     saveState();
     closeManualWorkoutModal();
     if (window.renderAll) window.renderAll();
@@ -746,24 +789,30 @@ export function saveWorkoutWatchDataFromModal(e) {
     const kcal = parseInt(document.getElementById("edit-workout-kcal")?.value) || 400;
     const avgHr = parseInt(document.getElementById("edit-workout-avg-hr")?.value) || 140;
     const maxHr = parseInt(document.getElementById("edit-workout-max-hr")?.value) || 168;
-    const timestamp = document.getElementById("edit-workout-timestamp")?.value.trim() || "09:30 hs";
+    const timestamp = document.getElementById("edit-workout-timestamp")?.value.trim() || (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs");
 
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[pid]) appState.completedWorkouts[pid] = {};
 
-    appState.completedWorkouts[pid][dayName] = {
-      done: true,
-      watchData: {
-        deviceName: deviceName || `Apple Watch (${appState.profiles[pid]?.name?.split(" ")[0] || 'Carlos'})`,
-        durationMin,
-        kcal,
-        avgHr,
-        maxHr,
-        timestamp,
-        autoSync: false
-      }
+    const sessionObj = {
+      id: `edit_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      deviceName: deviceName || `Apple Watch (${appState.profiles[pid]?.name?.split(" ")[0] || 'Carlos'})`,
+      durationMin,
+      kcal,
+      avgHr,
+      maxHr,
+      timestamp,
+      autoSync: false
     };
 
+    appState.completedWorkouts[pid][dayName] = {
+      done: true,
+      watchData: sessionObj,
+      sessions: [sessionObj]
+    };
+
+    const targetDate = getDateForDayNameInCurrentWeek(dayName);
+    recordDailySnapshot(pid, targetDate);
     saveState();
     closeEditWorkoutWatchModal();
     if (window.renderAll) window.renderAll();

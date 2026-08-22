@@ -14,6 +14,10 @@ import {
   triggerHapticTouch,
   showIosToast,
   getTodayDayName,
+  getLocalIsoDate,
+  getDayNameFromDate,
+  getDateForDayNameInCurrentWeek,
+  recordDailySnapshot,
   saveState
 } from './state.js';
 import {
@@ -364,6 +368,8 @@ export function tryResolveCompletedWorkout(author, endKcalOverride = null, endEx
 
     pState.flag = "N/A";
     pState.pending = false;
+    const targetDateIso = getDateForDayNameInCurrentWeek(targetDay);
+    recordDailySnapshot(author, targetDateIso);
     addSyncConsoleLog(`🎯 FLAG -> "N/A" (Entrenamiento Cargado - ${author.toUpperCase()}): Fin(${finKcal} kcal) - Inicio(${initKcal} kcal) = +${finalKcal} kcal (+${finalDuration} min).`, "success");
     if (window.updateWorkoutPendingStatusBadge) window.updateWorkoutPendingStatusBadge();
     return true;
@@ -446,6 +452,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
   if (replicaUpdated) {
     rep.lastSync = new Date().toISOString();
     appState.appleWatch.lastGlobalSync = rep.lastSync;
+    m.date = getLocalIsoDate();
     hasChanges = true;
   }
 
@@ -587,6 +594,9 @@ export function mergeCloudDataIntoAppState(cloudData) {
         addSyncConsoleLog(`🏋️ SESIÓN DE ENTRENO AÑADIDA (${author.toUpperCase()}): ${sessionObj.durationMin} min · ${sessionObj.kcal} kcal`, "success");
       }
 
+      const targetDateIso = getDateForDayNameInCurrentWeek(targetDay);
+      recordDailySnapshot(author, targetDateIso);
+
       if (pState.flag === "true" || pState.flag === "false") {
         pState.flag = "N/A";
         pState.pending = false;
@@ -612,6 +622,22 @@ export function mergeCloudDataIntoAppState(cloudData) {
         const cloudDay = cloudData.history[pid][dateKey];
         if (cloudDay && typeof cloudDay === 'object') {
           const localDay = appState.history[pid][dateKey] || {};
+          
+          // Merge sessions list avoiding duplicates
+          const localSessions = Array.isArray(localDay.sessions) ? localDay.sessions : [];
+          const cloudSessions = Array.isArray(cloudDay.sessions) ? cloudDay.sessions : [];
+          const mergedSessions = [...localSessions];
+          for (const cs of cloudSessions) {
+            if (!cs) continue;
+            const exists = mergedSessions.some(ls =>
+              (ls.id && cs.id && ls.id === cs.id) ||
+              (ls.durationMin === cs.durationMin && ls.kcal === cs.kcal && ls.timestamp === cs.timestamp)
+            );
+            if (!exists) mergedSessions.push(cs);
+          }
+
+          const mergedWorkouts = Array.from(new Set([...(localDay.completedWorkouts || []), ...(cloudDay.completedWorkouts || [])]));
+
           appState.history[pid][dateKey] = {
             ...localDay,
             ...cloudDay,
@@ -621,7 +647,9 @@ export function mergeCloudDataIntoAppState(cloudData) {
             distanceKm: Math.max(localDay.distanceKm || 0, cloudDay.distanceKm || 0),
             floors: Math.max(localDay.floors || 0, cloudDay.floors || 0),
             sleep: (cloudDay.sleep && cloudDay.sleep !== '--') ? cloudDay.sleep : (localDay.sleep || '--'),
-            completedWorkouts: Array.from(new Set([...(localDay.completedWorkouts || []), ...(cloudDay.completedWorkouts || [])]))
+            completedWorkouts: mergedWorkouts,
+            sessions: mergedSessions,
+            hasData: (localDay.hasData || cloudDay.hasData || (localDay.steps || 0) > 0 || (cloudDay.steps || 0) > 0 || mergedWorkouts.length > 0 || mergedSessions.length > 0)
           };
           hasChanges = true;
         }

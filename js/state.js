@@ -44,11 +44,72 @@ export function getTodayDayName() {
 }
 
 export function getLocalIsoDate(date = new Date()) {
-  const d = (date instanceof Date && !isNaN(date.getTime())) ? date : new Date();
+  if (!date) date = new Date();
+  let d;
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    d = date;
+  } else if (typeof date === 'string') {
+    const trimmed = date.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    if (/^\d{15,18}$/.test(trimmed)) {
+      d = new Date(parseInt(trimmed, 10) / 10000);
+    } else {
+      d = new Date(trimmed);
+    }
+  } else if (typeof date === 'number') {
+    d = new Date(date > 10000000000000 ? date / 10000 : date);
+  } else {
+    d = new Date();
+  }
+  if (!d || isNaN(d.getTime())) d = new Date();
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function getDayNameFromDate(dateInput) {
+  const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  if (!dateInput) return getTodayDayName();
+  if (typeof dateInput === 'string' && days.includes(dateInput)) {
+    return dateInput;
+  }
+  let d;
+  if (dateInput instanceof Date) {
+    d = dateInput;
+  } else if (typeof dateInput === 'string') {
+    const trimmed = dateInput.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [y, m, day] = trimmed.split('-').map(Number);
+      d = new Date(y, m - 1, day);
+    } else if (/^\d{15,18}$/.test(trimmed)) {
+      d = new Date(parseInt(trimmed, 10) / 10000);
+    } else {
+      d = new Date(trimmed);
+    }
+  } else if (typeof dateInput === 'number') {
+    d = new Date(dateInput > 10000000000000 ? dateInput / 10000 : dateInput);
+  } else {
+    d = new Date();
+  }
+  if (!d || isNaN(d.getTime())) return getTodayDayName();
+  return days[d.getDay()];
+}
+
+export function getDateForDayNameInCurrentWeek(dayName) {
+  const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const targetIdx = days.indexOf(dayName);
+  if (targetIdx === -1) return getLocalIsoDate();
+
+  const now = new Date();
+  const currentDayOfWeekIdx = (now.getDay() + 6) % 7; // Monday = 0, Sunday = 6
+  const diffDays = targetIdx - currentDayOfWeekIdx;
+
+  const targetDate = new Date(now);
+  targetDate.setDate(now.getDate() + diffDays);
+  return getLocalIsoDate(targetDate);
 }
 
 export function getProfileShortName(pid) {
@@ -144,25 +205,113 @@ export const appState = {
   debugLogs: []
 };
 
+export function checkDayRollover() {
+  const todayIso = getLocalIsoDate();
+  let changed = false;
+
+  ['he', 'she'].forEach(pid => {
+    if (!appState.appleWatch?.metrics?.[pid]) return;
+    const m = appState.appleWatch.metrics[pid];
+    const metricDate = m.date || (m.lastSync ? getLocalIsoDate(m.lastSync) : null);
+
+    // If the metrics belong to a past day, finalize yesterday's snapshot before starting clean today
+    if (metricDate && metricDate !== todayIso) {
+      if (!appState.history) appState.history = { he: {}, she: {} };
+      if (!appState.history[pid]) appState.history[pid] = {};
+
+      const existingPastEntry = appState.history[pid][metricDate] || {};
+      const finalSteps = Math.max(Number(existingPastEntry.steps || 0), Number(m.steps || 0));
+      const finalKcal = Math.max(Number(existingPastEntry.moveKcal || 0), Number(m.moveKcal || 0));
+      const finalExMin = Math.max(Number(existingPastEntry.exerciseMin || 0), Number(m.exerciseMin || 0));
+
+      if (finalSteps > 0 || finalKcal > 0 || finalExMin > 0) {
+        recordDailySnapshot(pid, metricDate, {
+          steps: finalSteps,
+          moveKcal: finalKcal,
+          exerciseMin: finalExMin,
+          distanceKm: m.distanceKm || existingPastEntry.distanceKm || 0,
+          floors: m.floors || existingPastEntry.floors || 0,
+          sleep: (m.sleep && m.sleep !== '--') ? m.sleep : (existingPastEntry.sleep || "--"),
+          hr: m.hr || existingPastEntry.hr || 0
+        });
+      }
+
+      // Reset live metrics for the new day
+      m.date = todayIso;
+      m.steps = 0;
+      m.moveKcal = 0;
+      m.exerciseMin = 0;
+      m.distanceKm = 0;
+      m.floors = 0;
+      m.hr = 0;
+      m.sleep = "--";
+
+      if (appState.appleWatch.cloudReplica?.[pid]) {
+        const rep = appState.appleWatch.cloudReplica[pid];
+        rep.steps = 0;
+        rep.moveKcal = 0;
+        rep.exerciseMin = 0;
+        rep.distanceKm = 0;
+        rep.floors = 0;
+        rep.hr = 0;
+        rep.sleep = "--";
+      }
+
+      changed = true;
+    } else if (!m.date) {
+      m.date = todayIso;
+    }
+  });
+
+  return changed;
+}
+
 export function recordDailySnapshot(profileId, dateIso = null, metricsData = null, options = {}) {
   if (!profileId || (profileId !== 'he' && profileId !== 'she')) return null;
   if (!appState.history) appState.history = { he: {}, she: {} };
   if (!appState.history[profileId]) appState.history[profileId] = {};
 
-  const targetDate = dateIso || getLocalIsoDate();
+  const targetDate = dateIso ? getLocalIsoDate(dateIso) : getLocalIsoDate();
+  const targetDayName = getDayNameFromDate(targetDate);
   const currentEntry = appState.history[profileId][targetDate] || {};
-  const activeMetrics = metricsData || appState.appleWatch?.metrics?.[profileId] || defaultWatchMetrics[profileId] || {};
+  const activeMetrics = metricsData || (targetDate === getLocalIsoDate() ? appState.appleWatch?.metrics?.[profileId] : null) || defaultWatchMetrics[profileId] || {};
   
-  const todayDayName = getTodayDayName();
-  const dayWorkoutObj = appState.completedWorkouts?.[profileId]?.[todayDayName];
-  const isWorkoutDone = (typeof dayWorkoutObj === 'object' && dayWorkoutObj?.done) || dayWorkoutObj === true;
-  
+  // Look up workouts for this day
+  const dayWorkoutObj = appState.completedWorkouts?.[profileId]?.[targetDayName];
+  const isWorkoutDone = options.isWorkoutDone !== undefined 
+    ? options.isWorkoutDone 
+    : ((typeof dayWorkoutObj === 'object' && dayWorkoutObj?.done) || dayWorkoutObj === true || (currentEntry.completedWorkouts && currentEntry.completedWorkouts.length > 0));
+
+  const sessions = options.sessions !== undefined
+    ? options.sessions
+    : (dayWorkoutObj && Array.isArray(dayWorkoutObj.sessions) && dayWorkoutObj.sessions.length > 0 
+        ? dayWorkoutObj.sessions 
+        : (dayWorkoutObj?.watchData ? [dayWorkoutObj.watchData] : (currentEntry.sessions || [])));
+
+  // Calculate workout minutes and kcal from sessions
+  const workoutTotalMin = sessions.reduce((acc, s) => acc + (Number(s.durationMin) || 0), 0);
+  const workoutTotalKcal = sessions.reduce((acc, s) => acc + (Number(s.kcal) || 0), 0);
+
   const isRestDay = options.isRestDay !== undefined ? options.isRestDay : (currentEntry.isRestDay || false);
 
   const stepsVal = Number(activeMetrics.steps !== undefined ? activeMetrics.steps : (currentEntry.steps || 0));
-  const moveKcalVal = Number(activeMetrics.moveKcal !== undefined ? activeMetrics.moveKcal : (currentEntry.moveKcal || 0));
-  const exMinVal = Number(activeMetrics.exerciseMin !== undefined ? activeMetrics.exerciseMin : (currentEntry.exerciseMin || 0));
-  const hasData = stepsVal > 0 || moveKcalVal > 0 || exMinVal > 0 || isWorkoutDone || isRestDay;
+  const rawMoveKcal = Number(activeMetrics.moveKcal !== undefined ? activeMetrics.moveKcal : (currentEntry.moveKcal || 0));
+  const moveKcalVal = Math.max(rawMoveKcal, workoutTotalKcal);
+
+  const rawExMin = Number(activeMetrics.exerciseMin !== undefined ? activeMetrics.exerciseMin : (currentEntry.exerciseMin || 0));
+  const exMinVal = Math.max(rawExMin, workoutTotalMin);
+
+  const hasData = stepsVal > 0 || moveKcalVal > 0 || exMinVal > 0 || isWorkoutDone || sessions.length > 0 || isRestDay;
+
+  // Determine completedWorkouts list
+  let completedWorkoutsList = [];
+  if (options.completedWorkouts !== undefined) {
+    completedWorkoutsList = options.completedWorkouts;
+  } else if (isWorkoutDone || sessions.length > 0) {
+    completedWorkoutsList = [targetDayName];
+  } else if (Array.isArray(currentEntry.completedWorkouts) && currentEntry.completedWorkouts.length > 0) {
+    completedWorkoutsList = currentEntry.completedWorkouts;
+  }
 
   const updatedEntry = {
     steps: stepsVal,
@@ -172,7 +321,8 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
     floors: Number(activeMetrics.floors !== undefined ? activeMetrics.floors : (currentEntry.floors || 0)),
     sleep: activeMetrics.sleep || currentEntry.sleep || "--",
     hr: Number(activeMetrics.hr !== undefined ? activeMetrics.hr : (currentEntry.hr || 0)),
-    completedWorkouts: options.completedWorkouts !== undefined ? options.completedWorkouts : (currentEntry.completedWorkouts || (isWorkoutDone ? [todayDayName] : [])),
+    completedWorkouts: completedWorkoutsList,
+    sessions: sessions,
     isRestDay: isRestDay,
     hasData: hasData,
     lastUpdated: new Date().toISOString()
@@ -285,6 +435,8 @@ export function loadSavedState() {
   }
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
+
+  checkDayRollover();
 }
 
 let pushDebounceTimer = null;
@@ -299,11 +451,21 @@ export function debouncedPushToCloud(delay = 1500) {
 }
 
 export function saveState() {
-  if (appState.appleWatch?.metrics) {
-    ['he', 'she'].forEach(pid => {
-      recordDailySnapshot(pid);
+  ['he', 'she'].forEach(pid => {
+    // Snapshot today
+    recordDailySnapshot(pid);
+    
+    // Also ensure all completed workouts in current week are reflected in history
+    const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    days.forEach(dName => {
+      const dayObj = appState.completedWorkouts?.[pid]?.[dName];
+      if (dayObj && (dayObj.done || (Array.isArray(dayObj.sessions) && dayObj.sessions.length > 0) || dayObj.watchData)) {
+        const dIso = getDateForDayNameInCurrentWeek(dName);
+        recordDailySnapshot(pid, dIso);
+      }
     });
-  }
+  });
+
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
   if (appState.appleWatch?.metrics) {
     localStorage.setItem(LAST_REGISTERED_METRICS_KEY, JSON.stringify(appState.appleWatch.metrics));

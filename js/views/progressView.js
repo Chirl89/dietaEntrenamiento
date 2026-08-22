@@ -1,4 +1,4 @@
-import { appState, saveState, getMasterProfileId, getTodayDayName, getLocalIsoDate, triggerHapticTouch, showIosToast } from '../state.js';
+import { appState, saveState, getMasterProfileId, getTodayDayName, getLocalIsoDate, getDayNameFromDate, getDateForDayNameInCurrentWeek, triggerHapticTouch, showIosToast } from '../state.js';
 
 let progressStepsChartInstance = null;
 let progressExChartInstance = null;
@@ -41,28 +41,49 @@ export function getHistoricalData(profileId, daysCount = 7) {
 
   const daysList = [];
   const today = new Date();
-  const dayNamesEs = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
   for (let i = daysCount - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const dateIso = getLocalIsoDate(d);
-    const dayName = dayNamesEs[d.getDay()];
+    const dayName = getDayNameFromDate(d);
     const shortLabel = `${d.getDate()} ${d.toLocaleDateString('es-ES', { month: 'short' })}`;
 
     let entry = historyMap[dateIso];
 
+    // Check if there is workout data in completedWorkouts for current week
+    const currentWeekDateForDay = getDateForDayNameInCurrentWeek(dayName);
+    const isCurrentWeekDay = (currentWeekDateForDay === dateIso);
+    const dayWorkoutObj = isCurrentWeekDay ? appState.completedWorkouts?.[pid]?.[dayName] : null;
+    const isWorkoutDoneInWeek = dayWorkoutObj && (dayWorkoutObj.done || (Array.isArray(dayWorkoutObj.sessions) && dayWorkoutObj.sessions.length > 0));
+    const weekSessions = dayWorkoutObj && Array.isArray(dayWorkoutObj.sessions) ? dayWorkoutObj.sessions : (dayWorkoutObj?.watchData ? [dayWorkoutObj.watchData] : []);
+
+    const workoutSessions = (entry && Array.isArray(entry.sessions) && entry.sessions.length > 0) 
+      ? entry.sessions 
+      : weekSessions;
+
+    const workoutTotalMin = workoutSessions.reduce((acc, s) => acc + (Number(s.durationMin) || 0), 0);
+    const workoutTotalKcal = workoutSessions.reduce((acc, s) => acc + (Number(s.kcal) || 0), 0);
+
+    const hasWorkouts = (entry && Array.isArray(entry.completedWorkouts) && entry.completedWorkouts.length > 0) 
+      || isWorkoutDoneInWeek 
+      || workoutSessions.length > 0;
+
+    const completedWorkoutsList = hasWorkouts 
+      ? (entry?.completedWorkouts && entry.completedWorkouts.length > 0 ? entry.completedWorkouts : [dayName])
+      : [];
+
     if (i === 0) {
-      // Today: use actual live data from Apple Watch / shortcut or 0
-      const isTodayWorkoutDone = !!appState.completedWorkouts?.[pid]?.[dayName]?.done;
+      // Today: use live metrics merged with workout data and history
       const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
-      const moveKcal = Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0));
-      const exerciseMin = Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0));
+      const moveKcal = Math.max(Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0)), workoutTotalKcal);
+      const exerciseMin = Math.max(Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0)), workoutTotalMin);
       const distanceKm = parseFloat(Number(currentLive.distanceKm !== undefined ? currentLive.distanceKm : (entry?.distanceKm || 0)).toFixed(2));
       const floors = Number(currentLive.floors !== undefined ? currentLive.floors : (entry?.floors || 0));
       const sleep = currentLive.sleep || entry?.sleep || "--";
       const hr = Number(currentLive.hr !== undefined ? currentLive.hr : (entry?.hr || 0));
-      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || isTodayWorkoutDone;
+      const isRestDay = entry?.isRestDay || false;
+      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts || isRestDay;
 
       entry = {
         steps,
@@ -72,28 +93,42 @@ export function getHistoricalData(profileId, daysCount = 7) {
         floors,
         sleep,
         hr,
-        completedWorkouts: entry?.completedWorkouts || (isTodayWorkoutDone ? [dayName] : []),
-        isRestDay: entry?.isRestDay || false,
+        completedWorkouts: completedWorkoutsList,
+        sessions: workoutSessions,
+        isRestDay: isRestDay,
         hasData: hasData
       };
     } else if (!entry) {
-      // Clean zero baseline (no invented seed data)
+      const isRestDay = false;
+      const hasData = workoutTotalMin > 0 || workoutTotalKcal > 0 || hasWorkouts;
+
       entry = {
         steps: 0,
-        moveKcal: 0,
-        exerciseMin: 0,
+        moveKcal: workoutTotalKcal,
+        exerciseMin: workoutTotalMin,
         distanceKm: 0,
         floors: 0,
         sleep: "--",
         hr: 0,
-        completedWorkouts: [],
-        isRestDay: false,
-        hasData: false
+        completedWorkouts: completedWorkoutsList,
+        sessions: workoutSessions,
+        isRestDay: isRestDay,
+        hasData: hasData
       };
     } else {
+      const isRestDay = entry.isRestDay || false;
+      const moveKcal = Math.max(entry.moveKcal || 0, workoutTotalKcal);
+      const exerciseMin = Math.max(entry.exerciseMin || 0, workoutTotalMin);
+      const hasData = (entry.steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts || isRestDay);
+
       entry = {
         ...entry,
-        hasData: (entry.steps > 0 || entry.moveKcal > 0 || entry.exerciseMin > 0 || (entry.completedWorkouts && entry.completedWorkouts.length > 0))
+        moveKcal,
+        exerciseMin,
+        completedWorkouts: completedWorkoutsList,
+        sessions: workoutSessions,
+        isRestDay,
+        hasData
       };
     }
 
@@ -877,17 +912,20 @@ function renderHeatmapView(pid, pName, container) {
     const isFuture = d > now;
 
     let entry = historyMap[dateIso];
+    const dayName = getDayNameFromDate(d);
     if (isToday) {
-      const isTodayWorkoutDone = !!appState.completedWorkouts?.[pid]?.[d.toLocaleDateString('es-ES', { weekday: 'long' })]?.done;
+      const isTodayWorkoutDone = !!appState.completedWorkouts?.[pid]?.[dayName]?.done;
       const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
       const moveKcal = Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0));
       const exerciseMin = Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0));
-      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || isTodayWorkoutDone;
+      const hasWorkouts = (entry?.completedWorkouts && entry.completedWorkouts.length > 0) || isTodayWorkoutDone;
+      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts;
       entry = {
         steps,
         moveKcal,
         exerciseMin,
-        completedWorkouts: entry?.completedWorkouts || (isTodayWorkoutDone ? ["Entreno"] : []),
+        completedWorkouts: hasWorkouts ? [dayName] : [],
+        sessions: entry?.sessions || [],
         isRestDay: entry?.isRestDay || false,
         hasData: hasData
       };
