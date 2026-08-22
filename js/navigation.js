@@ -100,7 +100,7 @@ export function applyProfileTheme(profileId) {
   }
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) {
-    themeMeta.setAttribute("content", pid === "he" ? "#190c10" : "#0e1c30");
+    themeMeta.setAttribute("content", pid === "he" ? "#fdf2f4" : "#edf4fc");
   }
 }
 window.applyProfileTheme = applyProfileTheme;
