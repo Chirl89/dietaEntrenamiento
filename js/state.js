@@ -39,6 +39,14 @@ export function getTodayDayName() {
   return days[idx];
 }
 
+export function getLocalIsoDate(date = new Date()) {
+  const d = (date instanceof Date && !isNaN(date.getTime())) ? date : new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // INITIAL STATE STRUCTURE (STABLE OBJECT REFERENCE)
 export const appState = {
   masterProfileId: "he",
@@ -71,21 +79,9 @@ export const appState = {
   recipesDaysRange: "5",
   shoppingDaysRange: "5",
   checkedShoppingItems: {},
-  weightLogs: {
-    he: [
-      { date: "Semana -4", weight: 79.5 },
-      { date: "Semana -3", weight: 79.0 },
-      { date: "Semana -2", weight: 78.4 },
-      { date: "Semana -1", weight: 78.2 },
-      { date: "Hoy", weight: 78.0 }
-    ],
-    she: [
-      { date: "Semana -4", weight: 64.2 },
-      { date: "Semana -3", weight: 63.8 },
-      { date: "Semana -2", weight: 63.5 },
-      { date: "Semana -1", weight: 63.1 },
-      { date: "Hoy", weight: 63.0 }
-    ]
+  history: {
+    he: {},
+    she: {}
   },
   appleWatch: {
     syncMode: "real",
@@ -106,6 +102,39 @@ export const appState = {
   },
   debugLogs: []
 };
+
+export function recordDailySnapshot(profileId, dateIso = null, metricsData = null, options = {}) {
+  if (!profileId || (profileId !== 'he' && profileId !== 'she')) return null;
+  if (!appState.history) appState.history = { he: {}, she: {} };
+  if (!appState.history[profileId]) appState.history[profileId] = {};
+
+  const targetDate = dateIso || getLocalIsoDate();
+  const currentEntry = appState.history[profileId][targetDate] || {};
+
+  const activeMetrics = metricsData || appState.appleWatch?.metrics?.[profileId] || defaultWatchMetrics[profileId] || {};
+  
+  const todayDayName = getTodayDayName();
+  const dayWorkoutObj = appState.completedWorkouts?.[profileId]?.[todayDayName];
+  const isWorkoutDone = (typeof dayWorkoutObj === 'object' && dayWorkoutObj?.done) || dayWorkoutObj === true;
+  
+  const isRestDay = options.isRestDay !== undefined ? options.isRestDay : (currentEntry.isRestDay || false);
+
+  const updatedEntry = {
+    steps: Number(activeMetrics.steps !== undefined ? activeMetrics.steps : (currentEntry.steps || 0)),
+    moveKcal: Number(activeMetrics.moveKcal !== undefined ? activeMetrics.moveKcal : (currentEntry.moveKcal || 0)),
+    exerciseMin: Number(activeMetrics.exerciseMin !== undefined ? activeMetrics.exerciseMin : (currentEntry.exerciseMin || 0)),
+    distanceKm: parseFloat(Number(activeMetrics.distanceKm !== undefined ? activeMetrics.distanceKm : (currentEntry.distanceKm || 0)).toFixed(2)),
+    floors: Number(activeMetrics.floors !== undefined ? activeMetrics.floors : (currentEntry.floors || 0)),
+    sleep: activeMetrics.sleep || currentEntry.sleep || "--",
+    hr: Number(activeMetrics.hr !== undefined ? activeMetrics.hr : (currentEntry.hr || 0)),
+    completedWorkouts: options.completedWorkouts !== undefined ? options.completedWorkouts : (currentEntry.completedWorkouts || (isWorkoutDone ? [todayDayName] : [])),
+    isRestDay: isRestDay,
+    lastUpdated: new Date().toISOString()
+  };
+
+  appState.history[profileId][targetDate] = updatedEntry;
+  return updatedEntry;
+}
 
 // HELPER: GET MASTER PROFILE ID
 export function getMasterProfileId() {
@@ -214,6 +243,19 @@ export function loadSavedState() {
       }
     }
   });
+
+  if (!appState.history) {
+    appState.history = { he: {}, she: {} };
+  }
+  if (!appState.history.he) appState.history.he = {};
+  if (!appState.history.she) appState.history.she = {};
+
+  ['he', 'she'].forEach(pid => {
+    const todayIso = getLocalIsoDate();
+    if (!appState.history[pid][todayIso]) {
+      recordDailySnapshot(pid, todayIso);
+    }
+  });
 }
 
 let pushDebounceTimer = null;
@@ -229,6 +271,11 @@ export function debouncedPushToCloud(delay = 1500) {
 
 // SAVE STATE TO LOCALSTORAGE & PUSH TO CLOUD
 export function saveState() {
+  if (appState.appleWatch?.metrics) {
+    ['he', 'she'].forEach(pid => {
+      recordDailySnapshot(pid);
+    });
+  }
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
   if (appState.appleWatch?.metrics) {
     localStorage.setItem(LAST_REGISTERED_METRICS_KEY, JSON.stringify(appState.appleWatch.metrics));

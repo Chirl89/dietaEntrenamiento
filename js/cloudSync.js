@@ -428,6 +428,31 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
+  ['he', 'she'].forEach(pid => {
+    if (cloudData.history?.[pid] && typeof cloudData.history[pid] === 'object') {
+      if (!appState.history) appState.history = { he: {}, she: {} };
+      if (!appState.history[pid]) appState.history[pid] = {};
+      Object.keys(cloudData.history[pid]).forEach(dateKey => {
+        const cloudDay = cloudData.history[pid][dateKey];
+        if (cloudDay && typeof cloudDay === 'object') {
+          const localDay = appState.history[pid][dateKey] || {};
+          appState.history[pid][dateKey] = {
+            ...localDay,
+            ...cloudDay,
+            steps: Math.max(localDay.steps || 0, cloudDay.steps || 0),
+            moveKcal: Math.max(localDay.moveKcal || 0, cloudDay.moveKcal || 0),
+            exerciseMin: Math.max(localDay.exerciseMin || 0, cloudDay.exerciseMin || 0),
+            distanceKm: Math.max(localDay.distanceKm || 0, cloudDay.distanceKm || 0),
+            floors: Math.max(localDay.floors || 0, cloudDay.floors || 0),
+            sleep: (cloudDay.sleep && cloudDay.sleep !== '--') ? cloudDay.sleep : (localDay.sleep || '--'),
+            completedWorkouts: Array.from(new Set([...(localDay.completedWorkouts || []), ...(cloudDay.completedWorkouts || [])]))
+          };
+          hasChanges = true;
+        }
+      });
+    }
+  });
+
   if (cloudData.checkedShoppingItems && typeof cloudData.checkedShoppingItems === 'object') {
     if (!appState.checkedShoppingItems) appState.checkedShoppingItems = {};
     Object.keys(cloudData.checkedShoppingItems).forEach(k => {
@@ -454,12 +479,8 @@ export function mergeCloudDataIntoAppState(cloudData) {
   const mCurrent = appState.appleWatch?.metrics?.[author] || {};
   const w = appState.completedWorkouts?.[author] || {};
   const wDoneCount = Object.values(w).filter(val => val && (val === true || val.done)).length;
-  const weightLogs = appState.weightLogs?.[author] || [];
-  const lastWeight = Array.isArray(weightLogs) && weightLogs.length > 0 
-    ? weightLogs[weightLogs.length - 1].weight 
-    : 'N/A';
 
-  const logDetails = `📥 Datos de ${authorName} importados: ${mCurrent.steps || 0} pasos, ${mCurrent.moveKcal || 0} kcal, ${mCurrent.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos, peso ${lastWeight} kg`;
+  const logDetails = `📥 Datos de ${authorName} importados: ${mCurrent.steps || 0} pasos, ${mCurrent.moveKcal || 0} kcal, ${mCurrent.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos`;
   addSyncConsoleLog(logDetails, "success");
 
   if (hasChanges) {
@@ -519,10 +540,6 @@ export async function pushToCloud(showToast = false) {
     const m = appState.appleWatch?.metrics?.[masterPid] || {};
     const w = appState.completedWorkouts?.[masterPid] || {};
     const wDoneCount = Object.values(w).filter(val => val && (val === true || val.done)).length;
-    const weightLogs = appState.weightLogs?.[masterPid] || [];
-    const lastWeight = Array.isArray(weightLogs) && weightLogs.length > 0 
-      ? weightLogs[weightLogs.length - 1].weight 
-      : 'N/A';
 
     addSyncConsoleLog(`📤 Enviando datos de ${authorName} (${masterPid.toUpperCase()}): ${m.steps || 0} pasos, ${m.moveKcal || 0} kcal, ${m.exerciseMin || 0} min ejerc., ${wDoneCount} entrenamientos...`, "info");
     
@@ -542,8 +559,8 @@ export async function pushToCloud(showToast = false) {
       completedWorkouts: {
         [masterPid]: appState.completedWorkouts?.[masterPid] || {}
       },
-      weightLogs: {
-        [masterPid]: (appState.weightLogs?.[masterPid] || []).slice(-5)
+      history: {
+        [masterPid]: appState.history?.[masterPid] || {}
       },
       appleWatch: {
         metrics: {
@@ -551,6 +568,10 @@ export async function pushToCloud(showToast = false) {
             steps: m.steps || 0,
             moveKcal: m.moveKcal || 0,
             exerciseMin: m.exerciseMin || 0,
+            distanceKm: m.distanceKm || 0,
+            floors: m.floors || 0,
+            sleep: m.sleep || "--",
+            hr: m.hr || 70,
             targetCalories: m.targetCalories || 2000,
             targetMin: m.targetMin || 30,
             stepsGoal: m.stepsGoal || 10000

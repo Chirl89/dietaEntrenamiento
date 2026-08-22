@@ -13,7 +13,8 @@ export const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-summary",
     sidebarId: "sidebar-nav-summary",
     subtabs: [
-      { id: "summary-view", label: "Resumen Diario", icon: "fa-solid fa-gauge-high" }
+      { id: "summary-view", label: "Hoy", icon: "fa-solid fa-gauge-high" },
+      { id: "progress-view", label: "Histórico & Logros", icon: "fa-solid fa-chart-line" }
     ]
   },
   nutrition: {
