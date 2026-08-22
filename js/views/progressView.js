@@ -49,32 +49,17 @@ export function getHistoricalData(profileId, daysCount = 7) {
     const dayName = getDayNameFromDate(d);
     const shortLabel = `${d.getDate()} ${d.toLocaleDateString('es-ES', { month: 'short' })}`;
 
-    let entry = historyMap[dateIso];
-
-    // Check if there is workout data in completedWorkouts for current week
-    const currentWeekDateForDay = getDateForDayNameInCurrentWeek(dayName);
-    const isCurrentWeekDay = (currentWeekDateForDay === dateIso);
-    const dayWorkoutObj = isCurrentWeekDay ? appState.completedWorkouts?.[pid]?.[dayName] : null;
-    const isWorkoutDoneInWeek = dayWorkoutObj && (dayWorkoutObj.done || (Array.isArray(dayWorkoutObj.sessions) && dayWorkoutObj.sessions.length > 0));
-    const weekSessions = dayWorkoutObj && Array.isArray(dayWorkoutObj.sessions) ? dayWorkoutObj.sessions : (dayWorkoutObj?.watchData ? [dayWorkoutObj.watchData] : []);
-
-    const workoutSessions = (entry && Array.isArray(entry.sessions) && entry.sessions.length > 0) 
-      ? entry.sessions 
-      : weekSessions;
-
-    const workoutTotalMin = workoutSessions.reduce((acc, s) => acc + (Number(s.durationMin) || 0), 0);
-    const workoutTotalKcal = workoutSessions.reduce((acc, s) => acc + (Number(s.kcal) || 0), 0);
-
-    const hasWorkouts = (entry && Array.isArray(entry.completedWorkouts) && entry.completedWorkouts.length > 0) 
-      || isWorkoutDoneInWeek 
-      || workoutSessions.length > 0;
-
-    const completedWorkoutsList = hasWorkouts 
-      ? (entry?.completedWorkouts && entry.completedWorkouts.length > 0 ? entry.completedWorkouts : [dayName])
-      : [];
-
     if (i === 0) {
-      // Today: use live metrics merged with workout data and history
+      // Today: use live metrics merged with today's workouts and history
+      const todayWorkoutObj = appState.completedWorkouts?.[pid]?.[dayName];
+      const todaySessions = (todayWorkoutObj && Array.isArray(todayWorkoutObj.sessions) && todayWorkoutObj.sessions.length > 0)
+        ? todayWorkoutObj.sessions
+        : (todayWorkoutObj?.watchData ? [todayWorkoutObj.watchData] : (entry?.sessions || []));
+
+      const workoutTotalMin = todaySessions.reduce((acc, s) => acc + (Number(s.durationMin) || 0), 0);
+      const workoutTotalKcal = todaySessions.reduce((acc, s) => acc + (Number(s.kcal) || 0), 0);
+      const isWorkoutDone = (todayWorkoutObj && (todayWorkoutObj.done || todaySessions.length > 0)) || (entry?.completedWorkouts && entry.completedWorkouts.length > 0);
+
       const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
       const moveKcal = Math.max(Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0)), workoutTotalKcal);
       const exerciseMin = Math.max(Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0)), workoutTotalMin);
@@ -83,7 +68,7 @@ export function getHistoricalData(profileId, daysCount = 7) {
       const sleep = currentLive.sleep || entry?.sleep || "--";
       const hr = Number(currentLive.hr !== undefined ? currentLive.hr : (entry?.hr || 0));
       const isRestDay = entry?.isRestDay || false;
-      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts || isRestDay;
+      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || isWorkoutDone || isRestDay;
 
       entry = {
         steps,
@@ -93,42 +78,42 @@ export function getHistoricalData(profileId, daysCount = 7) {
         floors,
         sleep,
         hr,
-        completedWorkouts: completedWorkoutsList,
-        sessions: workoutSessions,
+        completedWorkouts: isWorkoutDone ? (entry?.completedWorkouts && entry.completedWorkouts.length > 0 ? entry.completedWorkouts : [dayName]) : [],
+        sessions: todaySessions,
         isRestDay: isRestDay,
         hasData: hasData
       };
-    } else if (!entry) {
-      const isRestDay = false;
-      const hasData = workoutTotalMin > 0 || workoutTotalKcal > 0 || hasWorkouts;
-
+    } else if (entry && (entry.hasData || (entry.steps || 0) > 0 || (entry.moveKcal || 0) > 0 || (entry.sessions && entry.sessions.length > 0))) {
+      // Past day with real recorded data
+      const pastSessions = Array.isArray(entry.sessions) ? entry.sessions : [];
+      const pastWorkouts = Array.isArray(entry.completedWorkouts) ? entry.completedWorkouts : [];
+      entry = {
+        steps: Number(entry.steps || 0),
+        moveKcal: Number(entry.moveKcal || 0),
+        exerciseMin: Number(entry.exerciseMin || 0),
+        distanceKm: Number(entry.distanceKm || 0),
+        floors: Number(entry.floors || 0),
+        sleep: entry.sleep || "--",
+        hr: Number(entry.hr || 0),
+        completedWorkouts: pastWorkouts,
+        sessions: pastSessions,
+        isRestDay: entry.isRestDay || false,
+        hasData: true
+      };
+    } else {
+      // Past day without recorded data: CLEAN ZERO BASELINE
       entry = {
         steps: 0,
-        moveKcal: workoutTotalKcal,
-        exerciseMin: workoutTotalMin,
+        moveKcal: 0,
+        exerciseMin: 0,
         distanceKm: 0,
         floors: 0,
         sleep: "--",
         hr: 0,
-        completedWorkouts: completedWorkoutsList,
-        sessions: workoutSessions,
-        isRestDay: isRestDay,
-        hasData: hasData
-      };
-    } else {
-      const isRestDay = entry.isRestDay || false;
-      const moveKcal = Math.max(entry.moveKcal || 0, workoutTotalKcal);
-      const exerciseMin = Math.max(entry.exerciseMin || 0, workoutTotalMin);
-      const hasData = (entry.steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts || isRestDay);
-
-      entry = {
-        ...entry,
-        moveKcal,
-        exerciseMin,
-        completedWorkouts: completedWorkoutsList,
-        sessions: workoutSessions,
-        isRestDay,
-        hasData
+        completedWorkouts: [],
+        sessions: [],
+        isRestDay: false,
+        hasData: false
       };
     }
 

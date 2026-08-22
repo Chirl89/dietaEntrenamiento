@@ -436,7 +436,50 @@ export function loadSavedState() {
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
 
+  // Auto-purge past dummy / invented data once
+  const PURGE_FLAG_KEY = "FITDUO_PURGE_PAST_DATA_V2";
+  if (!localStorage.getItem(PURGE_FLAG_KEY)) {
+    purgeHistoricalDataExceptToday();
+    localStorage.setItem(PURGE_FLAG_KEY, "true");
+  }
+
   checkDayRollover();
+}
+
+export function purgeHistoricalDataExceptToday() {
+  const todayIso = getLocalIsoDate();
+  const todayDayName = getTodayDayName();
+
+  ['he', 'she'].forEach(pid => {
+    if (appState.history) {
+      const todayEntry = appState.history[pid]?.[todayIso];
+      appState.history[pid] = {};
+      if (todayEntry && (todayEntry.hasData || todayEntry.steps > 0 || todayEntry.moveKcal > 0)) {
+        appState.history[pid][todayIso] = todayEntry;
+      } else {
+        recordDailySnapshot(pid, todayIso);
+      }
+    }
+
+    // Clean non-today workouts from the weekly schedule
+    const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    if (appState.completedWorkouts?.[pid]) {
+      days.forEach(dName => {
+        if (dName !== todayDayName) {
+          appState.completedWorkouts[pid][dName] = { done: false, watchData: null, sessions: [] };
+        }
+      });
+    }
+  });
+
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+  if (appState.appleWatch?.metrics) {
+    localStorage.setItem(LAST_REGISTERED_METRICS_KEY, JSON.stringify(appState.appleWatch.metrics));
+  }
+  if (appState.appleWatch?.cloudReplica) {
+    localStorage.setItem(LAST_CLOUD_REPLICA_KEY, JSON.stringify(appState.appleWatch.cloudReplica));
+  }
+  debouncedPushToCloud(500);
 }
 
 let pushDebounceTimer = null;
@@ -452,18 +495,8 @@ export function debouncedPushToCloud(delay = 1500) {
 
 export function saveState() {
   ['he', 'she'].forEach(pid => {
-    // Snapshot today
+    // Snapshot only today
     recordDailySnapshot(pid);
-    
-    // Also ensure all completed workouts in current week are reflected in history
-    const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-    days.forEach(dName => {
-      const dayObj = appState.completedWorkouts?.[pid]?.[dName];
-      if (dayObj && (dayObj.done || (Array.isArray(dayObj.sessions) && dayObj.sessions.length > 0) || dayObj.watchData)) {
-        const dIso = getDateForDayNameInCurrentWeek(dName);
-        recordDailySnapshot(pid, dIso);
-      }
-    });
   });
 
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));

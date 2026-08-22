@@ -15,6 +15,7 @@ import {
   getDateForDayNameInCurrentWeek,
   checkDayRollover,
   recordDailySnapshot,
+  purgeHistoricalDataExceptToday,
   getProfileShortName,
   triggerHapticTouch,
   showIosToast,
@@ -384,6 +385,7 @@ const globalBindings = {
   getDateForDayNameInCurrentWeek,
   checkDayRollover,
   recordDailySnapshot,
+  purgeHistoricalDataExceptToday,
 
   populateSettingsInputs,
   saveCustomSettings,

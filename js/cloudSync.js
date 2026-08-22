@@ -18,6 +18,7 @@ import {
   getDayNameFromDate,
   getDateForDayNameInCurrentWeek,
   recordDailySnapshot,
+  purgeHistoricalDataExceptToday,
   saveState
 } from './state.js';
 import {
@@ -802,7 +803,7 @@ export async function pullFromCloud(showToast = false) {
 
 export async function purgeCloudHistory() {
   triggerHapticTouch();
-  showIosToast("🧹 Purgando cola de la nube...", "fa-solid fa-broom");
+  showIosToast("🧹 Purgando historial y cola de la nube...", "fa-solid fa-broom");
   
   appState.lastPurgeTimetoken = String(Date.now() * 10000);
 
@@ -821,22 +822,9 @@ export async function purgeCloudHistory() {
     }
   }
 
-  if (!appState.deletedWorkoutSessionIds) appState.deletedWorkoutSessionIds = [];
-  if (appState.completedWorkouts) {
-    for (const p of ['he', 'she']) {
-      if (appState.completedWorkouts[p]) {
-        for (const [dayName, dayObj] of Object.entries(appState.completedWorkouts[p])) {
-          if (dayObj && Array.isArray(dayObj.sessions)) {
-            for (const sess of dayObj.sessions) {
-              if (sess.id) appState.deletedWorkoutSessionIds.push(sess.id);
-              appState.deletedWorkoutSessionIds.push(`${sess.durationMin}_${sess.kcal}_${sess.timestamp}_${p}_${dayName}`);
-            }
-          }
-        }
-      }
-    }
-  }
+  purgeHistoricalDataExceptToday();
 
+  if (!appState.deletedWorkoutSessionIds) appState.deletedWorkoutSessionIds = [];
   if (appState.appleWatch?.pendingWorkout) {
     for (const pid of ['he', 'she']) {
       if (appState.appleWatch.pendingWorkout[pid]) {
@@ -854,8 +842,8 @@ export async function purgeCloudHistory() {
   if (window.renderAll) window.renderAll();
   await pushToCloud(false);
 
-  addSyncConsoleLog("🧹 Cola purgada con éxito. Mensajes antiguos descartados y estados reseteados.", "success");
-  showIosToast("✅ Cola de la nube purgada por completo", "fa-solid fa-circle-check");
+  addSyncConsoleLog("🧹 Cola e histórico purgados con éxito. Solo se conserva la jornada de hoy.", "success");
+  showIosToast("✅ Historial purgado: solo se conserva hoy", "fa-solid fa-circle-check");
 }
 
 export function syncNowWithCloud() {
