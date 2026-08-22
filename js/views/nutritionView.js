@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Nutrition View Module (v0.14.0)
+ * FitDuo & Collie Coach - Nutrition View Module (v0.15.0)
  * Isolated Tab: Menú del Día, Recetas Batch Cooking, Lista de la Compra & Exclusiones.
  */
 
@@ -105,13 +105,6 @@ export function renderNutritionMenuView() {
       const card = document.createElement("div");
       card.className = "glass-card meal-card vertical-meal-card";
 
-      const ingredientsHtml = meal.ingredients.map(ing => `
-        <li>
-          <span>${ing.name}</span>
-          <strong>${ing.amount} ${ing.unit}</strong>
-        </li>
-      `).join("");
-
       const tagsHtml = meal.tags.map(t => `<span class="macro-pill">${t}</span>`).join(" ");
 
       card.innerHTML = `
@@ -134,13 +127,6 @@ export function renderNutritionMenuView() {
         </div>
 
         <div style="margin-bottom: 0.85rem;">${tagsHtml}</div>
-
-        <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;">
-          <i class="fa-solid fa-list-check"></i> Ingredientes necesarios:
-        </h4>
-        <ul class="ingredient-list">
-          ${ingredientsHtml}
-        </ul>
 
         <details style="font-size: 0.85rem; color: var(--accent-cyan); cursor: pointer; margin-top: 0.85rem; background: rgba(255,255,255,0.03); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
           <summary style="font-weight: 600; outline: none; display: flex; align-items: center; gap: 0.4rem;">
@@ -310,7 +296,7 @@ export function renderShoppingView() {
       dailyMeals.forEach(meal => {
         if (!meal) return;
         meal.ingredients.forEach(ing => {
-          const key = `${ing.name} (${ing.unit})`;
+          const key = `${ing.name}___${ing.unit}`;
           if (!aggregated[key]) {
             aggregated[key] = {
               name: ing.name,
@@ -330,25 +316,51 @@ export function renderShoppingView() {
       categories[item.category].push(item);
     });
 
-    Object.keys(categories).forEach(catName => {
+    const CATEGORY_ORDER = [
+      INGREDIENT_CATEGORIES.PRODUCE,
+      INGREDIENT_CATEGORIES.PROTEIN,
+      INGREDIENT_CATEGORIES.DAIRY,
+      INGREDIENT_CATEGORIES.GRAINS,
+      INGREDIENT_CATEGORIES.FATS,
+      INGREDIENT_CATEGORIES.PANTRY
+    ];
+
+    const CATEGORY_ICONS = {
+      [INGREDIENT_CATEGORIES.PRODUCE]: "fa-apple-whole",
+      [INGREDIENT_CATEGORIES.PROTEIN]: "fa-drumstick-bite",
+      [INGREDIENT_CATEGORIES.DAIRY]: "fa-egg",
+      [INGREDIENT_CATEGORIES.GRAINS]: "fa-bread-slice",
+      [INGREDIENT_CATEGORIES.FATS]: "fa-bottle-droplet",
+      [INGREDIENT_CATEGORIES.PANTRY]: "fa-jar"
+    };
+
+    const sortedCategoryNames = Object.keys(categories).sort((a, b) => {
+      const idxA = CATEGORY_ORDER.indexOf(a);
+      const idxB = CATEGORY_ORDER.indexOf(b);
+      return (idxA >= 0 ? idxA : 99) - (idxB >= 0 ? idxB : 99);
+    });
+
+    sortedCategoryNames.forEach(catName => {
       const catSection = document.createElement("div");
       catSection.className = "shopping-category";
+      const iconClass = CATEGORY_ICONS[catName] || "fa-basket-shopping";
 
       const itemsHtml = categories[catName].map(item => {
         const itemKey = item.name.toLowerCase();
         const isChecked = !!appState.checkedShoppingItems[itemKey];
+        const displayAmount = Math.round(item.amount * 10) / 10;
 
         return `
           <div class="shopping-item ${isChecked ? 'checked' : ''}" onclick="toggleShoppingItem('${itemKey}', this)">
             <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleShoppingItem('${itemKey}', this.parentNode);">
             <span class="shopping-item-name">${item.name}</span>
-            <span class="shopping-item-qty">${item.amount} ${item.unit}</span>
+            <span class="shopping-item-qty">${displayAmount} ${item.unit}</span>
           </div>
         `;
       }).join("");
 
       catSection.innerHTML = `
-        <h3 class="shopping-cat-title"><i class="fa-solid fa-basket-shopping"></i> ${catName}</h3>
+        <h3 class="shopping-cat-title"><i class="fa-solid ${iconClass}"></i> ${catName}</h3>
         <div class="shopping-items-grid">
           ${itemsHtml}
         </div>

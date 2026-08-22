@@ -48,12 +48,12 @@ export const INITIAL_PROFILES = {
 };
 
 export const INGREDIENT_CATEGORIES = {
-  PROTEIN: "Proteínas y Carnes/Pescados",
   PRODUCE: "Frutas y Verduras",
-  DAIRY: "Lácteos y Huevos",
-  GRAINS: "Cereales y Tubérculos",
+  PROTEIN: "Carnicería y Pescadería",
+  DAIRY: "Huevos y Lácteos",
+  GRAINS: "Panadería, Cereales y Legumbres",
   FATS: "Aceites, Frutos Secos y Semillas",
-  PANTRY: "Despensa y Especias"
+  PANTRY: "Despensa, Especias y Suplementos"
 };
 
 export const RECIPES_DATABASE = [
@@ -70,11 +70,11 @@ export const RECIPES_DATABASE = [
     tags: ["alto en proteína", "rápido", "dulce"],
     ingredients: [
       { name: "Copos de avena integrales", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Claras de huevo", amount: 150, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Huevo entero", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Plátano", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Arándanos frescos", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 3, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Claras de huevo pasteurizadas", amount: 150, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Huevos frescos (Clase L)", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Plátanos de Canarias", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Frutos rojos / Arándanos frescos", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 3, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Canela en polvo", amount: 2, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
@@ -95,12 +95,12 @@ export const RECIPES_DATABASE = [
     fats: 20,
     tags: ["salado", "grasas saludables", "rápido"],
     ingredients: [
-      { name: "Pan de centeno/masa madre integral", amount: 70, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Huevos frescos", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aguacate maduro", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Tomate en rodajas", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Semillas de chía o sésamo", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Sal de escamas y pimienta negra", amount: 1, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+      { name: "Pan 100% integral (masa madre / centeno)", amount: 70, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Huevos frescos (Clase L)", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aguacates", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Tomates de ensalada", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Semillas de chía, lino o sésamo", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Sal y pimienta negra", amount: 1, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
       "Tuesta las rebanadas de pan de centeno.",
@@ -120,11 +120,11 @@ export const RECIPES_DATABASE = [
     fats: 14,
     tags: ["ultra rápido", "sin cocinado", "alto en proteína"],
     ingredients: [
-      { name: "Yogur Griego 0% o Natural", amount: 220, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Proteína de suero (opcional) o Requesón", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Frutos rojos variados (fresas, frambuesas)", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Nueces picadas", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Semillas de lino molido", amount: 10, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Yogur Griego Natural 0%", amount: 220, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Proteína de suero (Whey Protein)", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Frutos rojos / Arándanos frescos", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Nueces al natural", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Semillas de chía, lino o sésamo", amount: 10, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "Mezcla en un bowl el yogur griego con la proteína/requesón hasta tener una crema homogénea.",
@@ -146,12 +146,12 @@ export const RECIPES_DATABASE = [
     tags: ["alto en proteína", "saciante", "perfecto para tupper"],
     ingredients: [
       { name: "Pechuga de pollo fileteada", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Quinoa cocida", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Calabacín en dados", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Pimiento rojo y verde", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Zanahoria picada", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Orégano, ajo en polvo y sal", amount: 2, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+      { name: "Quinoa", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Calabacín", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Pimientos (rojo y verde)", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Zanahorias", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Orégano y ajo en polvo", amount: 2, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
       "Cocina la quinoa en agua hirviendo con sal durante 12-15 minutos si no está precocida.",
@@ -172,10 +172,10 @@ export const RECIPES_DATABASE = [
     tags: ["omega 3", "antiinflamatorio", "saludable"],
     ingredients: [
       { name: "Lomo de salmón fresco", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Boniato/Camote troceado", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Brócoli en floretes", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Romero, tomillo y limón", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+      { name: "Boniato", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Brócoli", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Hierbas provenzales (romero/tomillo) y limón", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
       "Precalienta el horno a 200°C. Corta el boniato en gajos, adereza con AOVE, romero y sal, y hornea 20 min.",
@@ -195,13 +195,14 @@ export const RECIPES_DATABASE = [
     fats: 18,
     tags: ["legumbres", "rápido", "sin cocinado"],
     ingredients: [
-      { name: "Lentejas cocidas de bote (aclaradas)", amount: 200, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Atún claro al natural", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Lentejas cocidas en tarro", amount: 200, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Atún claro al natural (latas)", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
       { name: "Queso Feta o Burgos desnatado", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aguacate en cubos", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Aguacates", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Tomates cherry", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Pepino picado", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Vinagre de manzana y AOVE", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Pepino", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Vinagre de manzana", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
       "Aclara y escurre bien las lentejas cocidas.",
@@ -223,12 +224,12 @@ export const RECIPES_DATABASE = [
     fats: 16,
     tags: ["cena ligera", "bajo en carbohidratos", "rápido"],
     ingredients: [
-      { name: "Gambas peladas (frescas o descongeladas)", amount: 130, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Gambas peladas", amount: 130, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
       { name: "Espárragos verdes trigueros", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Huevos enteros", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Claras de huevo", amount: 100, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Diente de ajo laminado", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Huevos frescos (Clase L)", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Claras de huevo pasteurizadas", amount: 100, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Ajo", amount: 1, unit: "diente", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "Corta los espárragos retirando la parte leñosa y trocea el resto.",
@@ -248,11 +249,11 @@ export const RECIPES_DATABASE = [
     fats: 12,
     tags: ["plato estrella", "proteína magra"],
     ingredients: [
-      { name: "Carne picada de pavo/pollo 100%", amount: 170, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Espinacas frescas picadas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Patata mediana", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Hoja de lechuga, cebolla y tomate", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Carne picada de pavo o pollo", amount: 170, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Espinacas frescas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Patatas", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Lechuga variada y cebolla", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "Lava la patata, pínchala con un tenedor y cocínala envuelta en papel vegetal al microondas durante 6-7 min a máxima potencia.",
@@ -272,10 +273,10 @@ export const RECIPES_DATABASE = [
     fats: 14,
     tags: ["delicioso", "pescado blanco", "fácil"],
     ingredients: [
-      { name: "Lomo de merluza o bacalao desmigado", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Tortillas integrales de maíz/trigo", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Aguacate machacado", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Tomate y cebolla fina (pico de gallo)", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Lomos de merluza o bacalao", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Tortillas de trigo 100% integral", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Aguacates", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Tomate y cebolla", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Cilantro fresco y lima", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
     ],
     instructions: [
@@ -298,8 +299,8 @@ export const RECIPES_DATABASE = [
     fats: 10,
     tags: ["snack rápido", "energía pre-entreno"],
     ingredients: [
-      { name: "Manzana grande", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Mantequilla de cacahuete pura 100%", amount: 18, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Manzanas", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Mantequilla de cacahuete 100%", amount: 18, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Canela en polvo", amount: 1, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
@@ -318,8 +319,8 @@ export const RECIPES_DATABASE = [
     fats: 8,
     tags: ["alto en proteína", "post-entreno"],
     ingredients: [
-      { name: "Queso fresco batido 0% o Requesón", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Almendras crudas o tostadas sin sal", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Queso fresco batido 0%", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Almendras al natural", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Miel pura", amount: 8, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
@@ -338,10 +339,10 @@ export const RECIPES_DATABASE = [
     fats: 4,
     tags: ["post-entreno", "energético", "rápido"],
     ingredients: [
-      { name: "Plátano maduro", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Proteína de suero o queso 0%", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Leche o bebida vegetal sin azúcar", amount: 200, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Copos de avena", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS }
+      { name: "Plátanos de Canarias", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Proteína de suero (Whey Protein)", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Leche desnatada o bebida vegetal sin azúcar", amount: 200, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Copos de avena integrales", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS }
     ],
     instructions: [
       "Vierte la leche y la proteína en el vaso batidor.",
@@ -360,10 +361,10 @@ export const RECIPES_DATABASE = [
     fats: 3,
     tags: ["salado", "proteína magra", "rápido"],
     ingredients: [
-      { name: "Pan integral de masa madre", amount: 45, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Pechuga de pavo 90%+", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Tomate en rodajas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 3, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Pan 100% integral (masa madre / centeno)", amount: 45, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pavo lonchas (90%+ carne)", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Tomates de ensalada", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 3, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "Tuesta la rebanada de pan integral.",
@@ -384,7 +385,7 @@ export const RECIPES_DATABASE = [
     ingredients: [
       { name: "Tortitas de arroz integral", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.GRAINS },
       { name: "Mantequilla de almendra 100%", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Arándanos o frambuesas", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
+      { name: "Frutos rojos / Arándanos frescos", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
     ],
     instructions: [
       "Unta la mantequilla de almendra sobre las tortitas.",
