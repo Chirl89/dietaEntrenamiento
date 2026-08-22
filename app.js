@@ -33,13 +33,13 @@ export const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
 export const LAST_CLOUD_REPLICA_KEY = "FITDUO_LAST_CLOUD_REPLICA";
 
 export const defaultWatchMetrics = {
-  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2, floors: 0, sleep: "--" },
-  she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8, floors: 0, sleep: "--" }
+  he: { deviceName: "Apple Watch Series 9", moveKcal: 0, moveGoal: 600, targetKcal: 600, exerciseMin: 0, exerciseGoal: 30, targetMin: 30, steps: 0, stepsGoal: 10000, targetSteps: 10000, hr: 0, distanceKm: 0, floors: 0, sleep: "--" },
+  she: { deviceName: "Apple Watch SE", moveKcal: 0, moveGoal: 500, targetKcal: 500, exerciseMin: 0, exerciseGoal: 30, targetMin: 30, steps: 0, stepsGoal: 10000, targetSteps: 10000, hr: 0, distanceKm: 0, floors: 0, sleep: "--" }
 };
 
 export const defaultCloudReplica = {
-  he: { moveKcal: 480, exerciseMin: 35, steps: 8450, hr: 72, distanceKm: 6.2, floors: 0, sleep: "--", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" },
-  she: { moveKcal: 420, exerciseMin: 40, steps: 9120, hr: 68, distanceKm: 6.8, floors: 0, sleep: "--", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" }
+  he: { moveKcal: 0, exerciseMin: 0, steps: 0, hr: 0, distanceKm: 0, floors: 0, sleep: "--", lastSync: null, source: "Atajo Nube en 2º Plano" },
+  she: { moveKcal: 0, exerciseMin: 0, steps: 0, hr: 0, distanceKm: 0, floors: 0, sleep: "--", lastSync: null, source: "Atajo Nube en 2º Plano" }
 };
 
 export function getTodayDayName() {
@@ -122,20 +122,22 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
   
   const todayDayName = getTodayDayName();
   const dayWorkoutObj = appState.completedWorkouts?.[profileId]?.[todayDayName];
-  const isWorkoutDone = (typeof dayWorkoutObj === 'object' && dayWorkoutObj?.done) || dayWorkoutObj === true;
-  
-  const isRestDay = options.isRestDay !== undefined ? options.isRestDay : (currentEntry.isRestDay || false);
+  const stepsVal = Number(activeMetrics.steps !== undefined ? activeMetrics.steps : (currentEntry.steps || 0));
+  const moveKcalVal = Number(activeMetrics.moveKcal !== undefined ? activeMetrics.moveKcal : (currentEntry.moveKcal || 0));
+  const exMinVal = Number(activeMetrics.exerciseMin !== undefined ? activeMetrics.exerciseMin : (currentEntry.exerciseMin || 0));
+  const hasData = stepsVal > 0 || moveKcalVal > 0 || exMinVal > 0 || isWorkoutDone || isRestDay;
 
   const updatedEntry = {
-    steps: Number(activeMetrics.steps !== undefined ? activeMetrics.steps : (currentEntry.steps || 0)),
-    moveKcal: Number(activeMetrics.moveKcal !== undefined ? activeMetrics.moveKcal : (currentEntry.moveKcal || 0)),
-    exerciseMin: Number(activeMetrics.exerciseMin !== undefined ? activeMetrics.exerciseMin : (currentEntry.exerciseMin || 0)),
+    steps: stepsVal,
+    moveKcal: moveKcalVal,
+    exerciseMin: exMinVal,
     distanceKm: parseFloat(Number(activeMetrics.distanceKm !== undefined ? activeMetrics.distanceKm : (currentEntry.distanceKm || 0)).toFixed(2)),
     floors: Number(activeMetrics.floors !== undefined ? activeMetrics.floors : (currentEntry.floors || 0)),
     sleep: activeMetrics.sleep || currentEntry.sleep || "--",
     hr: Number(activeMetrics.hr !== undefined ? activeMetrics.hr : (currentEntry.hr || 0)),
     completedWorkouts: options.completedWorkouts !== undefined ? options.completedWorkouts : (currentEntry.completedWorkouts || (isWorkoutDone ? [todayDayName] : [])),
     isRestDay: isRestDay,
+    hasData: hasData,
     lastUpdated: new Date().toISOString()
   };
 
@@ -208,6 +210,17 @@ export function loadSavedState() {
     if (!m.moveGoal) m.moveGoal = m.targetKcal || (pid === 'he' ? 600 : 500);
     if (!m.exerciseGoal) m.exerciseGoal = m.targetMin || 30;
     if (!m.stepsGoal) m.stepsGoal = m.targetSteps || 10000;
+
+    // Reset old hardcoded demo metrics if user hasn't synced real data
+    if ((pid === 'he' && m.steps === 8450 && m.moveKcal === 480) || (pid === 'she' && m.steps === 9120 && m.moveKcal === 420)) {
+      m.steps = 0;
+      m.moveKcal = 0;
+      m.exerciseMin = 0;
+      m.distanceKm = 0;
+      m.hr = 0;
+      m.floors = 0;
+      m.sleep = '--';
+    }
     if (m.floors === undefined || m.floors === null || m.floors === 14 || m.floors === 10) m.floors = 0;
     if (!m.sleep || m.sleep === '7h 45m' || m.sleep === '8h 15m') m.sleep = '--';
   });
@@ -215,6 +228,15 @@ export function loadSavedState() {
   ['he', 'she'].forEach(pid => {
     if (appState.appleWatch?.cloudReplica?.[pid]) {
       const rep = appState.appleWatch.cloudReplica[pid];
+      if ((pid === 'he' && rep.steps === 8450 && rep.moveKcal === 480) || (pid === 'she' && rep.steps === 9120 && rep.moveKcal === 420)) {
+        rep.steps = 0;
+        rep.moveKcal = 0;
+        rep.exerciseMin = 0;
+        rep.distanceKm = 0;
+        rep.hr = 0;
+        rep.floors = 0;
+        rep.sleep = '--';
+      }
       if (rep.floors === 14 || rep.floors === 10) rep.floors = 0;
       if (rep.sleep === '7h 45m' || rep.sleep === '8h 15m') rep.sleep = '--';
     }
@@ -3668,40 +3690,47 @@ export function getHistoricalData(profileId, daysCount = 7) {
     let entry = historyMap[dateIso];
 
     if (i === 0) {
+      // Today: use actual live data from Apple Watch / shortcut or 0
       const isTodayWorkoutDone = !!appState.completedWorkouts?.[pid]?.[dayName]?.done;
-      entry = {
-        steps: Number(currentLive.steps || entry?.steps || 8500),
-        moveKcal: Number(currentLive.moveKcal || entry?.moveKcal || 520),
-        exerciseMin: Number(currentLive.exerciseMin || entry?.exerciseMin || 35),
-        distanceKm: parseFloat(Number(currentLive.distanceKm || entry?.distanceKm || 6.2).toFixed(2)),
-        floors: Number(currentLive.floors || entry?.floors || 0),
-        sleep: currentLive.sleep || entry?.sleep || "--",
-        hr: Number(currentLive.hr || entry?.hr || 70),
-        completedWorkouts: entry?.completedWorkouts || (isTodayWorkoutDone ? [dayName] : []),
-        isRestDay: entry?.isRestDay || (dayName === "Miércoles" || dayName === "Domingo"),
-        hasData: true
-      };
-    } else if (!entry) {
-      const seed = (d.getDate() * 13 + (pid === 'he' ? 7 : 11)) % 100;
-      const baseSteps = pid === 'he' ? 9200 : 8800;
-      const stepsVar = (seed - 50) * 45;
-      const steps = Math.max(3500, Math.round(baseSteps + stepsVar));
-      const moveKcal = Math.round(steps * 0.058);
-      const exerciseMin = steps > 9000 ? Math.round(35 + (seed % 25)) : Math.round(20 + (seed % 15));
-      const distanceKm = parseFloat((steps * 0.00075).toFixed(2));
-      const isRest = (dayName === "Miércoles" || dayName === "Domingo");
+      const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
+      const moveKcal = Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0));
+      const exerciseMin = Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0));
+      const distanceKm = parseFloat(Number(currentLive.distanceKm !== undefined ? currentLive.distanceKm : (entry?.distanceKm || 0)).toFixed(2));
+      const floors = Number(currentLive.floors !== undefined ? currentLive.floors : (entry?.floors || 0));
+      const sleep = currentLive.sleep || entry?.sleep || "--",
+      hr = Number(currentLive.hr !== undefined ? currentLive.hr : (entry?.hr || 0));
+      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || isTodayWorkoutDone;
 
       entry = {
-        steps: steps,
-        moveKcal: moveKcal,
-        exerciseMin: exerciseMin,
-        distanceKm: distanceKm,
-        floors: seed % 6,
-        sleep: `${7 + (seed % 2)}h ${10 + (seed % 40)}m`,
-        hr: 68 + (seed % 12),
-        completedWorkouts: !isRest && steps > 8000 ? [dayName] : [],
-        isRestDay: isRest,
+        steps,
+        moveKcal,
+        exerciseMin,
+        distanceKm,
+        floors,
+        sleep,
+        hr,
+        completedWorkouts: entry?.completedWorkouts || (isTodayWorkoutDone ? [dayName] : []),
+        isRestDay: entry?.isRestDay || false,
+        hasData: hasData
+      };
+    } else if (!entry) {
+      // Clean zero baseline (no invented seed data)
+      entry = {
+        steps: 0,
+        moveKcal: 0,
+        exerciseMin: 0,
+        distanceKm: 0,
+        floors: 0,
+        sleep: "--",
+        hr: 0,
+        completedWorkouts: [],
+        isRestDay: false,
         hasData: false
+      };
+    } else {
+      entry = {
+        ...entry,
+        hasData: (entry.steps > 0 || entry.moveKcal > 0 || entry.exerciseMin > 0 || (entry.completedWorkouts && entry.completedWorkouts.length > 0))
       };
     }
 
@@ -3721,9 +3750,12 @@ export function calculateProfileStats(profileId) {
   const data7d = getHistoricalData(pid, 7);
   const data30d = getHistoricalData(pid, 30);
 
-  const avgSteps7d = Math.round(data7d.reduce((acc, d) => acc + (d.steps || 0), 0) / 7);
-  const avgSteps30d = Math.round(data30d.reduce((acc, d) => acc + (d.steps || 0), 0) / 30);
-  const stepsDiffPct = avgSteps30d > 0 ? Math.round(((avgSteps7d - avgSteps30d) / avgSteps30d) * 100) : 0;
+  const daysWithData7d = data7d.filter(d => d.hasData);
+  const daysWithData30d = data30d.filter(d => d.hasData);
+
+  const avgSteps7d = daysWithData7d.length > 0 ? Math.round(daysWithData7d.reduce((acc, d) => acc + (d.steps || 0), 0) / daysWithData7d.length) : 0;
+  const avgSteps30d = daysWithData30d.length > 0 ? Math.round(daysWithData30d.reduce((acc, d) => acc + (d.steps || 0), 0) / daysWithData30d.length) : 0;
+  const stepsDiffPct = (avgSteps30d > 0 && daysWithData7d.length > 0) ? Math.round(((avgSteps7d - avgSteps30d) / avgSteps30d) * 100) : 0;
 
   const totalKcal7d = data7d.reduce((acc, d) => acc + (d.moveKcal || 0), 0);
   const totalKcal30d = data30d.reduce((acc, d) => acc + (d.moveKcal || 0), 0);
@@ -3741,7 +3773,7 @@ export function calculateProfileStats(profileId) {
   let currentStreak = 0;
   for (let i = data30d.length - 1; i >= 0; i--) {
     const d = data30d[i];
-    if (d.steps >= 10000 || (d.completedWorkouts && d.completedWorkouts.length > 0) || d.isRestDay) {
+    if (d.hasData && (d.steps >= 10000 || (d.completedWorkouts && d.completedWorkouts.length > 0) || d.isRestDay)) {
       currentStreak++;
     } else {
       break;
@@ -3749,16 +3781,16 @@ export function calculateProfileStats(profileId) {
   }
 
   let prSteps = 0;
-  let prStepsDate = '';
+  let prStepsDate = '--';
   let prKcal = 0;
-  let prKcalDate = '';
+  let prKcalDate = '--';
 
   data30d.forEach(d => {
-    if (d.steps > prSteps) {
+    if (d.hasData && d.steps > prSteps) {
       prSteps = d.steps;
       prStepsDate = d.shortLabel;
     }
-    if (d.moveKcal > prKcal) {
+    if (d.hasData && d.moveKcal > prKcal) {
       prKcal = d.moveKcal;
       prKcalDate = d.shortLabel;
     }
@@ -3768,6 +3800,8 @@ export function calculateProfileStats(profileId) {
     avgSteps7d,
     avgSteps30d,
     stepsDiffPct,
+    daysWithData7dCount: daysWithData7d.length,
+    daysWithData30dCount: daysWithData30d.length,
     totalKcal7d,
     totalKcal30d,
     totalExMin7d,
@@ -3798,8 +3832,10 @@ export function calculateBadges(profileId) {
   const todayEntry = data7d[data7d.length - 1];
   const partnerToday = partnerData7d[partnerData7d.length - 1];
 
-  const bothWorkoutsToday = (todayEntry?.completedWorkouts?.length > 0) && (partnerToday?.completedWorkouts?.length > 0);
+  const bothWorkoutsToday = (todayEntry?.hasData && todayEntry?.completedWorkouts?.length > 0) && (partnerToday?.hasData && partnerToday?.completedWorkouts?.length > 0);
+  const maxSteps7d = data7d.filter(d => d.hasData).reduce((max, d) => Math.max(max, d.steps || 0), 0);
   const sumSteps7d = data7d.reduce((acc, d) => acc + (d.steps || 0), 0);
+  const maxFloors = data30d.filter(d => d.hasData).reduce((max, d) => Math.max(max, d.floors || 0), 0);
 
   return [
     {
@@ -3886,9 +3922,9 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-stairs',
       color: '#a855f7',
       desc: 'Sube 10 pisos o más en un único día.',
-      unlocked: data30d.some(d => (d.floors || 0) >= 10),
-      progressPct: Math.min(100, Math.round((Math.max(...data30d.map(d => d.floors || 0)) / 10) * 100)),
-      progressText: `${Math.max(...data30d.map(d => d.floors || 0))} / 10 pisos`
+      unlocked: maxFloors >= 10,
+      progressPct: Math.min(100, Math.round((maxFloors / 10) * 100)),
+      progressText: `${maxFloors} / 10 pisos`
     },
     {
       id: 'duo_sync',
@@ -3898,7 +3934,7 @@ export function calculateBadges(profileId) {
       color: '#ec4899',
       desc: 'Carlos y Andrea completan su entrenamiento el mismo día.',
       unlocked: bothWorkoutsToday,
-      progressPct: bothWorkoutsToday ? 100 : 50,
+      progressPct: bothWorkoutsToday ? 100 : ((todayEntry?.hasData && todayEntry?.completedWorkouts?.length > 0) || (partnerToday?.hasData && partnerToday?.completedWorkouts?.length > 0) ? 50 : 0),
       progressText: bothWorkoutsToday ? '¡Conseguido hoy!' : 'Pendiente hoy'
     },
     {
@@ -3919,8 +3955,8 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-champagne-glasses',
       color: '#38bdf8',
       desc: 'Ambos superan 10.000 pasos durante el fin de semana.',
-      unlocked: (todayEntry.dayName === "Sábado" || todayEntry.dayName === "Domingo") && todayEntry.steps >= 10000 && partnerToday.steps >= 10000,
-      progressPct: (todayEntry.steps >= 10000 ? 50 : 0) + (partnerToday.steps >= 10000 ? 50 : 0),
+      unlocked: (todayEntry.dayName === "Sábado" || todayEntry.dayName === "Domingo") && todayEntry.hasData && partnerToday.hasData && todayEntry.steps >= 10000 && partnerToday.steps >= 10000,
+      progressPct: ((todayEntry.hasData && todayEntry.steps >= 10000) ? 50 : 0) + ((partnerToday.hasData && partnerToday.steps >= 10000) ? 50 : 0),
       progressText: 'Meta de fin de semana'
     }
   ];
@@ -3986,7 +4022,7 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
           ${totalKcal.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">kcal</small>
         </div>
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
-          Media: ~${Math.round(totalKcal / daysCount)} kcal / día
+          Media: ~${Math.round(totalKcal / (stats.daysWithData7dCount || 1))} kcal / día
         </div>
       </div>
 
@@ -4012,7 +4048,7 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
           🔥 ${stats.currentStreak} Días
         </div>
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
-          Récord: ${stats.prSteps.toLocaleString()} pasos (${stats.prStepsDate})
+          Récord: ${stats.prSteps > 0 ? stats.prSteps.toLocaleString() + ' pasos (' + stats.prStepsDate + ')' : '--'}
         </div>
       </div>
     </div>
@@ -4049,28 +4085,34 @@ function renderPeriodOverview(period, stats, pid, pName, container) {
       </h3>
       <div style="display: flex; flex-direction: column; gap: 0.6rem;">
         ${historyData.slice(-7).reverse().map(d => {
-          const isGoalMet = d.steps >= 10000;
-          const statusBadge = d.isRestDay
-            ? `<span style="font-size: 0.75rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-bed"></i> Descanso</span>`
-            : (isGoalMet
-                ? `<span style="font-size: 0.75rem; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Cumplido</span>`
-                : `<span style="font-size: 0.75rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-clock"></i> Parcial</span>`
+          const isGoalMet = d.hasData && d.steps >= 10000;
+          const statusBadge = !d.hasData
+            ? `<span style="font-size: 0.75rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border-color);"><i class="fa-solid fa-minus"></i> Sin datos</span>`
+            : (d.isRestDay
+                ? `<span style="font-size: 0.75rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-bed"></i> Descanso</span>`
+                : (isGoalMet
+                    ? `<span style="font-size: 0.75rem; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Cumplido</span>`
+                    : `<span style="font-size: 0.75rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-clock"></i> Parcial</span>`
+                  )
               );
           
-          const workoutsBadge = d.completedWorkouts && d.completedWorkouts.length > 0
+          const workoutsBadge = d.hasData && d.completedWorkouts && d.completedWorkouts.length > 0
             ? `<span style="font-size: 0.75rem; color: var(--accent-purple); background: rgba(168, 85, 247, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-dumbbell"></i> Entreno</span>`
             : '';
 
+          const stepsText = d.hasData ? `${d.steps.toLocaleString()} pasos` : `Sin actividad registrada`;
+          const detailsText = d.hasData ? `${d.moveKcal} kcal • ${d.exerciseMin} min ejerc. • ${d.distanceKm} km` : `Esperando sincronización de Apple Watch`;
+
           return `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); flex-wrap: wrap; gap: 0.5rem; opacity: ${d.hasData ? '1' : '0.65'};">
               <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff;">
                   <span>${d.dayName.slice(0, 3)}</span>
                   <span style="font-size: 0.65rem; color: var(--text-muted);">${d.shortLabel.split(' ')[0]}</span>
                 </div>
                 <div>
-                  <div style="font-size: 0.92rem; font-weight: 700; color: #fff;">${d.steps.toLocaleString()} pasos</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">${d.moveKcal} kcal • ${d.exerciseMin} min ejerc. • ${d.distanceKm} km</div>
+                  <div style="font-size: 0.92rem; font-weight: 700; color: ${d.hasData ? '#fff' : 'var(--text-secondary)'};">${stepsText}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">${detailsText}</div>
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -4106,8 +4148,8 @@ function renderPeriodCharts(historyData) {
         datasets: [{
           label: 'Pasos',
           data: stepsData,
-          backgroundColor: stepsData.map(v => v >= 10000 ? 'rgba(16, 185, 129, 0.85)' : 'rgba(6, 182, 212, 0.7)'),
-          borderColor: stepsData.map(v => v >= 10000 ? '#10b981' : '#06b6d4'),
+          backgroundColor: stepsData.map(v => v >= 10000 ? 'rgba(16, 185, 129, 0.85)' : (v > 0 ? 'rgba(6, 182, 212, 0.7)' : 'rgba(255, 255, 255, 0.08)')),
+          borderColor: stepsData.map(v => v >= 10000 ? '#10b981' : (v > 0 ? '#06b6d4' : 'rgba(255, 255, 255, 0.15)')),
           borderWidth: 1,
           borderRadius: 6
         }]
@@ -4128,7 +4170,8 @@ function renderPeriodCharts(historyData) {
           y: { 
             ticks: { color: '#9ca3af', font: { size: 10 } }, 
             grid: { color: 'rgba(255,255,255,0.06)' },
-            suggestedMax: 12000
+            suggestedMax: 10000,
+            beginAtZero: true
           }
         }
       }
@@ -4145,8 +4188,8 @@ function renderPeriodCharts(historyData) {
         datasets: [{
           label: 'Minutos Ejercicio',
           data: exMinData,
-          backgroundColor: exMinData.map(v => v >= 30 ? 'rgba(168, 85, 247, 0.85)' : 'rgba(245, 158, 11, 0.7)'),
-          borderColor: exMinData.map(v => v >= 30 ? '#a855f7' : '#f59e0b'),
+          backgroundColor: exMinData.map(v => v >= 30 ? 'rgba(168, 85, 247, 0.85)' : (v > 0 ? 'rgba(245, 158, 11, 0.7)' : 'rgba(255, 255, 255, 0.08)')),
+          borderColor: exMinData.map(v => v >= 30 ? '#a855f7' : (v > 0 ? '#f59e0b' : 'rgba(255, 255, 255, 0.15)')),
           borderWidth: 1,
           borderRadius: 6
         }]
@@ -4167,7 +4210,8 @@ function renderPeriodCharts(historyData) {
           y: { 
             ticks: { color: '#9ca3af', font: { size: 10 } }, 
             grid: { color: 'rgba(255,255,255,0.06)' },
-            suggestedMax: 60
+            suggestedMax: 30,
+            beginAtZero: true
           }
         }
       }
@@ -4207,34 +4251,30 @@ function renderHeatmapView(pid, pName, container) {
 
     let entry = historyMap[dateIso];
     if (isToday) {
+      const isTodayWorkoutDone = !!appState.completedWorkouts?.[pid]?.[d.toLocaleDateString('es-ES', { weekday: 'long' })]?.done;
+      const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
+      const moveKcal = Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0));
+      const exerciseMin = Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0));
+      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || isTodayWorkoutDone;
       entry = {
-        steps: Number(currentLive.steps || entry?.steps || 8500),
-        moveKcal: Number(currentLive.moveKcal || entry?.moveKcal || 520),
-        exerciseMin: Number(currentLive.exerciseMin || entry?.exerciseMin || 35),
-        completedWorkouts: entry?.completedWorkouts || [],
-        isRestDay: entry?.isRestDay || (d.getDay() === 0 || d.getDay() === 3)
-      };
-    } else if (!entry && !isFuture) {
-      const seed = (dayNum * 17 + (pid === 'he' ? 5 : 9)) % 100;
-      const isRest = (d.getDay() === 0 || d.getDay() === 3);
-      entry = {
-        steps: isRest ? 6200 : (seed > 20 ? 10400 : 7500),
-        moveKcal: isRest ? 380 : 590,
-        exerciseMin: isRest ? 15 : 45,
-        completedWorkouts: !isRest && seed > 20 ? ["Entreno"] : [],
-        isRestDay: isRest
+        steps,
+        moveKcal,
+        exerciseMin,
+        completedWorkouts: entry?.completedWorkouts || (isTodayWorkoutDone ? ["Entreno"] : []),
+        isRestDay: entry?.isRestDay || false,
+        hasData: hasData
       };
     }
 
     let status = 'none';
     let statusColor = 'rgba(255,255,255,0.05)';
-    let tooltip = `${dayNum} ${capitalizedMonth}: Sin datos`;
+    let tooltip = `${dayNum} ${capitalizedMonth}: Sin datos registrados`;
 
     if (isFuture) {
       status = 'future';
-      statusColor = 'rgba(255,255,255,0.03)';
+      statusColor = 'rgba(255,255,255,0.02)';
       tooltip = `${dayNum} ${capitalizedMonth}: Próximamente`;
-    } else if (entry) {
+    } else if (entry && entry.hasData) {
       if (entry.isRestDay) {
         status = 'rest';
         statusColor = 'rgba(56, 189, 248, 0.4)';
@@ -4245,11 +4285,11 @@ function renderHeatmapView(pid, pName, container) {
         statusColor = 'rgba(16, 185, 129, 0.85)';
         completedDaysCount++;
         tooltip = `${dayNum} ${capitalizedMonth}: ¡Meta Cumplida! (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
-      } else if (entry.steps > 3000 || entry.moveKcal > 200) {
+      } else if (entry.steps > 0 || entry.moveKcal > 0) {
         status = 'partial';
         statusColor = 'rgba(245, 158, 11, 0.75)';
         partialDaysCount++;
-        tooltip = `${dayNum} ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} pasos)`;
+        tooltip = `${dayNum} ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
       }
     }
 

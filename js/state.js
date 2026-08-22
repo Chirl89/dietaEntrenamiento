@@ -7,15 +7,15 @@ export const DEVICE_DEFAULT_PROFILE_KEY = "FITDUO_DEVICE_DEFAULT_PROFILE";
 export const LAST_REGISTERED_METRICS_KEY = "FITDUO_LAST_REGISTERED_METRICS";
 export const LAST_CLOUD_REPLICA_KEY = "FITDUO_LAST_CLOUD_REPLICA";
 
-// INITIAL FALLBACK METRICS
+// INITIAL FALLBACK METRICS (ZERO BASELINE)
 export const defaultWatchMetrics = {
-  he: { deviceName: "Apple Watch Series 9", moveKcal: 480, moveGoal: 600, targetKcal: 600, exerciseMin: 35, exerciseGoal: 30, targetMin: 30, steps: 8450, stepsGoal: 10000, targetSteps: 10000, hr: 72, distanceKm: 6.2, floors: 0, sleep: "--" },
-  she: { deviceName: "Apple Watch SE", moveKcal: 420, moveGoal: 500, targetKcal: 500, exerciseMin: 40, exerciseGoal: 30, targetMin: 30, steps: 9120, stepsGoal: 10000, targetSteps: 10000, hr: 68, distanceKm: 6.8, floors: 0, sleep: "--" }
+  he: { deviceName: "Apple Watch Series 9", moveKcal: 0, moveGoal: 600, targetKcal: 600, exerciseMin: 0, exerciseGoal: 30, targetMin: 30, steps: 0, stepsGoal: 10000, targetSteps: 10000, hr: 0, distanceKm: 0, floors: 0, sleep: "--" },
+  she: { deviceName: "Apple Watch SE", moveKcal: 0, moveGoal: 500, targetKcal: 500, exerciseMin: 0, exerciseGoal: 30, targetMin: 30, steps: 0, stepsGoal: 10000, targetSteps: 10000, hr: 0, distanceKm: 0, floors: 0, sleep: "--" }
 };
 
 export const defaultCloudReplica = {
-  he: { moveKcal: 480, exerciseMin: 35, steps: 8450, hr: 72, distanceKm: 6.2, floors: 0, sleep: "--", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" },
-  she: { moveKcal: 420, exerciseMin: 40, steps: 9120, hr: 68, distanceKm: 6.8, floors: 0, sleep: "--", lastSync: new Date().toISOString(), source: "Atajo Nube en 2º Plano" }
+  he: { moveKcal: 0, exerciseMin: 0, steps: 0, hr: 0, distanceKm: 0, floors: 0, sleep: "--", lastSync: null, source: "Atajo Nube en 2º Plano" },
+  she: { moveKcal: 0, exerciseMin: 0, steps: 0, hr: 0, distanceKm: 0, floors: 0, sleep: "--", lastSync: null, source: "Atajo Nube en 2º Plano" }
 };
 
 try {
@@ -119,16 +119,22 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
   
   const isRestDay = options.isRestDay !== undefined ? options.isRestDay : (currentEntry.isRestDay || false);
 
+  const stepsVal = Number(activeMetrics.steps !== undefined ? activeMetrics.steps : (currentEntry.steps || 0));
+  const moveKcalVal = Number(activeMetrics.moveKcal !== undefined ? activeMetrics.moveKcal : (currentEntry.moveKcal || 0));
+  const exMinVal = Number(activeMetrics.exerciseMin !== undefined ? activeMetrics.exerciseMin : (currentEntry.exerciseMin || 0));
+  const hasData = stepsVal > 0 || moveKcalVal > 0 || exMinVal > 0 || isWorkoutDone || isRestDay;
+
   const updatedEntry = {
-    steps: Number(activeMetrics.steps !== undefined ? activeMetrics.steps : (currentEntry.steps || 0)),
-    moveKcal: Number(activeMetrics.moveKcal !== undefined ? activeMetrics.moveKcal : (currentEntry.moveKcal || 0)),
-    exerciseMin: Number(activeMetrics.exerciseMin !== undefined ? activeMetrics.exerciseMin : (currentEntry.exerciseMin || 0)),
+    steps: stepsVal,
+    moveKcal: moveKcalVal,
+    exerciseMin: exMinVal,
     distanceKm: parseFloat(Number(activeMetrics.distanceKm !== undefined ? activeMetrics.distanceKm : (currentEntry.distanceKm || 0)).toFixed(2)),
     floors: Number(activeMetrics.floors !== undefined ? activeMetrics.floors : (currentEntry.floors || 0)),
     sleep: activeMetrics.sleep || currentEntry.sleep || "--",
     hr: Number(activeMetrics.hr !== undefined ? activeMetrics.hr : (currentEntry.hr || 0)),
     completedWorkouts: options.completedWorkouts !== undefined ? options.completedWorkouts : (currentEntry.completedWorkouts || (isWorkoutDone ? [todayDayName] : [])),
     isRestDay: isRestDay,
+    hasData: hasData,
     lastUpdated: new Date().toISOString()
   };
 
@@ -207,6 +213,17 @@ export function loadSavedState() {
     if (!m.moveGoal) m.moveGoal = m.targetKcal || (pid === 'he' ? 600 : 500);
     if (!m.exerciseGoal) m.exerciseGoal = m.targetMin || 30;
     if (!m.stepsGoal) m.stepsGoal = m.targetSteps || 10000;
+
+    // Reset old hardcoded demo metrics if user hasn't synced real data
+    if ((pid === 'he' && m.steps === 8450 && m.moveKcal === 480) || (pid === 'she' && m.steps === 9120 && m.moveKcal === 420)) {
+      m.steps = 0;
+      m.moveKcal = 0;
+      m.exerciseMin = 0;
+      m.distanceKm = 0;
+      m.hr = 0;
+      m.floors = 0;
+      m.sleep = '--';
+    }
     if (m.floors === undefined || m.floors === null || m.floors === 14 || m.floors === 10) m.floors = 0;
     if (!m.sleep || m.sleep === '7h 45m' || m.sleep === '8h 15m') m.sleep = '--';
   });
@@ -214,6 +231,15 @@ export function loadSavedState() {
   ['he', 'she'].forEach(pid => {
     if (appState.appleWatch?.cloudReplica?.[pid]) {
       const rep = appState.appleWatch.cloudReplica[pid];
+      if ((pid === 'he' && rep.steps === 8450 && rep.moveKcal === 480) || (pid === 'she' && rep.steps === 9120 && rep.moveKcal === 420)) {
+        rep.steps = 0;
+        rep.moveKcal = 0;
+        rep.exerciseMin = 0;
+        rep.distanceKm = 0;
+        rep.hr = 0;
+        rep.floors = 0;
+        rep.sleep = '--';
+      }
       if (rep.floors === 14 || rep.floors === 10) rep.floors = 0;
       if (rep.sleep === '7h 45m' || rep.sleep === '8h 15m') rep.sleep = '--';
     }
