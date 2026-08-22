@@ -588,8 +588,8 @@ function renderPeriodOverview(period, pid, pName, container) {
           <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Media de Pasos</span>
           <i class="fa-solid fa-shoe-prints" style="color: var(--accent-emerald);"></i>
         </div>
-        <div style="font-size: 1.45rem; font-weight: 800; color: #fff; font-family: var(--font-heading);">
-          ${stats.avgSteps.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">/ día</small>
+        <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-heading);">
+          ${stats.avgSteps.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">/ día</small>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.35rem; flex-wrap: wrap; gap: 0.3rem;">
           <span style="font-size: 0.75rem; color: var(--text-muted);">Meta: 10.000</span>
@@ -602,8 +602,8 @@ function renderPeriodOverview(period, pid, pName, container) {
           <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Gasto Activo Acumulado</span>
           <i class="fa-solid fa-fire" style="color: var(--accent-rose);"></i>
         </div>
-        <div style="font-size: 1.45rem; font-weight: 800; color: #fff; font-family: var(--font-heading);">
-          ${stats.totalKcal.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">kcal</small>
+        <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-heading);">
+          ${stats.totalKcal.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">kcal</small>
         </div>
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
           Media: ~${stats.daysWithDataCount > 0 ? Math.round(stats.totalKcal / stats.daysWithDataCount) : 0} kcal / día
@@ -615,7 +615,7 @@ function renderPeriodOverview(period, pid, pName, container) {
           <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Tiempo de Ejercicio</span>
           <i class="fa-solid fa-stopwatch" style="color: var(--accent-amber);"></i>
         </div>
-        <div style="font-size: 1.45rem; font-weight: 800; color: #fff; font-family: var(--font-heading);">
+        <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-heading);">
           ${Math.floor(stats.totalExMin / 60)}h ${stats.totalExMin % 60}m
         </div>
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
@@ -628,7 +628,7 @@ function renderPeriodOverview(period, pid, pName, container) {
           <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Racha Activa & PR</span>
           <i class="fa-solid fa-fire-flame-curved" style="color: var(--accent-cyan);"></i>
         </div>
-        <div style="font-size: 1.45rem; font-weight: 800; color: #fff; font-family: var(--font-heading);">
+        <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-heading);">
           🔥 ${stats.currentStreak} Días
         </div>
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
@@ -641,7 +641,7 @@ function renderPeriodOverview(period, pid, pName, container) {
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
       <div class="glass-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h3 style="font-family: var(--font-heading); font-size: 1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <h3 style="font-family: var(--font-heading); font-size: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
             <i class="fa-solid fa-chart-simple" style="color: var(--accent-emerald);"></i> ${chartAgg.stepsTitle}
           </h3>
           <span style="font-size: 0.75rem; color: var(--text-muted);">Objetivo 10k/día</span>
@@ -653,7 +653,7 @@ function renderPeriodOverview(period, pid, pName, container) {
 
       <div class="glass-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h3 style="font-family: var(--font-heading); font-size: 1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <h3 style="font-family: var(--font-heading); font-size: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
             <i class="fa-solid fa-heart-pulse" style="color: var(--accent-amber);"></i> ${chartAgg.exTitle}
           </h3>
           <span style="font-size: 0.75rem; color: var(--text-muted);">Objetivo 30 min/día</span>
@@ -666,38 +666,38 @@ function renderPeriodOverview(period, pid, pName, container) {
 
     <!-- DAILY LOGS TABLE / RECENT DAYS LIST -->
     <div class="glass-card" style="padding: 1.25rem;">
-      <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+      <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
         <i class="fa-solid fa-list-ul" style="color: var(--accent-cyan);"></i> Detalle de Jornadas Recientes (${pName})
       </h3>
       <div style="display: flex; flex-direction: column; gap: 0.6rem;">
         ${historyData.slice(-7).reverse().map(d => {
           const isGoalMet = d.hasData && d.steps >= 10000;
           const statusBadge = !d.hasData
-            ? `<span style="font-size: 0.75rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border-color);"><i class="fa-solid fa-minus"></i> Sin datos</span>`
+            ? `<span style="font-size: 0.75rem; color: var(--text-muted); background: rgba(0, 0, 0, 0.04); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border-color);"><i class="fa-solid fa-minus"></i> Sin datos</span>`
             : (d.isRestDay
-                ? `<span style="font-size: 0.75rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-bed"></i> Descanso</span>`
+                ? `<span style="font-size: 0.75rem; color: #0284c7; background: rgba(56, 189, 248, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-bed"></i> Descanso</span>`
                 : (isGoalMet
-                    ? `<span style="font-size: 0.75rem; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Cumplido</span>`
-                    : `<span style="font-size: 0.75rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-clock"></i> Parcial</span>`
+                    ? `<span style="font-size: 0.75rem; color: #16a34a; background: rgba(16, 185, 129, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Cumplido</span>`
+                    : `<span style="font-size: 0.75rem; color: #d97706; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-clock"></i> Parcial</span>`
                   )
               );
           
           const workoutsBadge = d.hasData && d.completedWorkouts && d.completedWorkouts.length > 0
-            ? `<span style="font-size: 0.75rem; color: var(--accent-purple); background: rgba(168, 85, 247, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-dumbbell"></i> Entreno</span>`
+            ? `<span style="font-size: 0.75rem; color: #9333ea; background: rgba(168, 85, 247, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-dumbbell"></i> Entreno</span>`
             : '';
 
           const stepsText = d.hasData ? `${d.steps.toLocaleString()} pasos` : `Sin actividad registrada`;
           const detailsText = d.hasData ? `${d.moveKcal} kcal • ${d.exerciseMin} min ejerc. • ${d.distanceKm} km` : `Esperando sincronización de Apple Watch`;
 
           return `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); flex-wrap: wrap; gap: 0.5rem; opacity: ${d.hasData ? '1' : '0.65'};">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); flex-wrap: wrap; gap: 0.5rem; opacity: ${d.hasData ? '1' : '0.65'};">
               <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff;">
+                <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(0,0,0,0.04); border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--text-main);">
                   <span>${d.dayName.slice(0, 3)}</span>
                   <span style="font-size: 0.65rem; color: var(--text-muted);">${d.shortLabel.split(' ')[0]}</span>
                 </div>
                 <div>
-                  <div style="font-size: 0.92rem; font-weight: 700; color: ${d.hasData ? '#fff' : 'var(--text-secondary)'};">${stepsText}</div>
+                  <div style="font-size: 0.92rem; font-weight: 700; color: ${d.hasData ? 'var(--text-main)' : 'var(--text-muted)'};">${stepsText}</div>
                   <div style="font-size: 0.75rem; color: var(--text-muted);">${detailsText}</div>
                 </div>
               </div>
@@ -752,10 +752,10 @@ function renderPeriodCharts(chartAgg) {
           }
         },
         scales: {
-          x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
+          x: { ticks: { color: 'var(--text-muted)', font: { size: 10 } }, grid: { display: false } },
           y: { 
-            ticks: { color: '#9ca3af', font: { size: 10 } }, 
-            grid: { color: 'rgba(255,255,255,0.06)' },
+            ticks: { color: 'var(--text-muted)', font: { size: 10 } }, 
+            grid: { color: 'rgba(156, 163, 175, 0.1)' },
             suggestedMax: chartAgg.stepsSuggestedMax || 10000,
             beginAtZero: true
           }
@@ -774,8 +774,8 @@ function renderPeriodCharts(chartAgg) {
         datasets: [{
           label: 'Minutos Ejercicio',
           data: exMinData,
-          backgroundColor: exMinData.map(v => v >= 30 ? 'rgba(168, 85, 247, 0.85)' : (v > 0 ? 'rgba(245, 158, 11, 0.7)' : 'rgba(255, 255, 255, 0.08)')),
-          borderColor: exMinData.map(v => v >= 30 ? '#a855f7' : (v > 0 ? '#f59e0b' : 'rgba(255, 255, 255, 0.15)')),
+          backgroundColor: exMinData.map(v => v >= 30 ? 'rgba(168, 85, 247, 0.85)' : (v > 0 ? 'rgba(245, 158, 11, 0.7)' : 'rgba(156, 163, 175, 0.1)')),
+          borderColor: exMinData.map(v => v >= 30 ? '#a855f7' : (v > 0 ? '#f59e0b' : 'rgba(156, 163, 175, 0.2)')),
           borderWidth: 1,
           borderRadius: 6
         }]
@@ -792,10 +792,10 @@ function renderPeriodCharts(chartAgg) {
           }
         },
         scales: {
-          x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
+          x: { ticks: { color: 'var(--text-muted)', font: { size: 10 } }, grid: { display: false } },
           y: { 
-            ticks: { color: '#9ca3af', font: { size: 10 } }, 
-            grid: { color: 'rgba(255,255,255,0.06)' },
+            ticks: { color: 'var(--text-muted)', font: { size: 10 } }, 
+            grid: { color: 'rgba(156, 163, 175, 0.1)' },
             suggestedMax: chartAgg.exSuggestedMax || 30,
             beginAtZero: true
           }
@@ -894,12 +894,12 @@ function renderHeatmapView(pid, pName, container) {
     }
 
     let status = 'none';
-    let statusColor = 'rgba(255,255,255,0.05)';
+    let statusColor = 'rgba(156, 163, 175, 0.1)';
     let tooltip = `${dayNum} de ${capitalizedMonth}: Sin datos registrados`;
 
     if (isFuture) {
       status = 'future';
-      statusColor = 'rgba(255,255,255,0.02)';
+      statusColor = 'rgba(156, 163, 175, 0.05)';
       tooltip = `${dayNum} de ${capitalizedMonth}: Próximamente`;
     } else if (entry && entry.hasData) {
       if (entry.isRestDay) {
@@ -944,7 +944,7 @@ function renderHeatmapView(pid, pName, container) {
     <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; margin-bottom: 2px; display: flex; align-items: center; gap: 0.5rem;">
+          <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 2px; display: flex; align-items: center; gap: 0.5rem;">
             <i class="fa-solid fa-border-all" style="color: var(--accent-cyan);"></i> Matriz de Consistencia
           </h2>
           <p style="font-size: 0.8rem; color: var(--text-muted);">Visualización global del hábito y cumplimiento diario de ${pName}</p>
@@ -956,11 +956,11 @@ function renderHeatmapView(pid, pName, container) {
             <i class="fa-solid fa-chevron-left"></i>
           </button>
 
-          <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: #fff; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapMonth(this.value)">
+          <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapMonth(this.value)">
             ${monthOptions}
           </select>
 
-          <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: #fff; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapYear(this.value)">
+          <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapYear(this.value)">
             ${yearOptions}
           </select>
 
@@ -1013,7 +1013,7 @@ function renderHeatmapView(pid, pName, container) {
           <span>Descanso Programado</span>
         </div>
         <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);"></div>
+          <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(156, 163, 175, 0.1); border: 1px solid var(--border-color);"></div>
           <span>Sin Datos / Futuro</span>
         </div>
       </div>
@@ -1037,10 +1037,10 @@ function renderBadgesView(pid, pName, container) {
             🏆
           </div>
           <div>
-            <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; margin-bottom: 2px;">
+            <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 2px;">
               Vitrina de Logros y Trofeos
             </h2>
-            <p style="font-size: 0.8rem; color: #e2e8f0;">
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
               Insignias de constancia individual y retos cooperativos en pareja
             </p>
           </div>
@@ -1057,19 +1057,19 @@ function renderBadgesView(pid, pName, container) {
       const catBadges = badges.filter(b => b.category === cat);
       return `
         <div style="margin-bottom: 1.75rem;">
-          <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+          <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
             ${cat === 'Racha' ? '🔥 Rachas de Constancia' : (cat === 'Individual' ? '🎖️ Hitos Individuales' : '👥 Logros FitDuo (En Pareja)')}
           </h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
             ${catBadges.map(b => `
               <div class="glass-card badge-card ${b.unlocked ? 'unlocked' : 'locked'}" style="padding: 1.1rem; border-radius: var(--radius-md); position: relative; overflow: hidden;">
                 <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
-                  <div class="badge-icon-box" style="width: 46px; height: 46px; border-radius: 12px; background: ${b.unlocked ? `linear-gradient(135deg, ${b.color}33, ${b.color}88)` : 'rgba(255,255,255,0.05)'}; border: 1px solid ${b.unlocked ? b.color : 'var(--border-color)'}; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: ${b.unlocked ? b.color : 'var(--text-muted)'}; flex-shrink: 0;">
+                  <div class="badge-icon-box" style="width: 46px; height: 46px; border-radius: 12px; background: ${b.unlocked ? `linear-gradient(135deg, ${b.color}33, ${b.color}88)` : 'rgba(156, 163, 175, 0.1)'}; border: 1px solid ${b.unlocked ? b.color : 'var(--border-color)'}; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: ${b.unlocked ? b.color : 'var(--text-muted)'}; flex-shrink: 0;">
                     <i class="${b.icon}"></i>
                   </div>
                   <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                      <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: ${b.unlocked ? '#fff' : 'var(--text-secondary)'}; margin: 0;">
+                      <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: ${b.unlocked ? 'var(--text-main)' : 'var(--text-muted)'}; margin: 0;">
                         ${b.title}
                       </h4>
                       ${b.unlocked 
@@ -1082,7 +1082,7 @@ function renderBadgesView(pid, pName, container) {
                     </p>
                     
                     <!-- PROGRESS BAR -->
-                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
+                    <div style="width: 100%; height: 6px; background: rgba(156, 163, 175, 0.1); border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
                       <div style="width: ${b.progressPct}%; height: 100%; background: ${b.unlocked ? b.color : 'var(--accent-cyan)'}; border-radius: 3px; transition: width 0.4s ease;"></div>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">

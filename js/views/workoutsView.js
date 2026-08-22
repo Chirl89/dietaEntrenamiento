@@ -227,7 +227,7 @@ export function renderWorkoutsView() {
       <div style="font-size: 2.8rem; margin-bottom: 0.75rem; color: var(--text-muted); opacity: 0.5;">
         <i class="fa-solid fa-dumbbell"></i>
       </div>
-      <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff; margin-bottom: 0.4rem;">
+      <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 0.4rem;">
         Hoy no se han registrado entrenamientos
       </h3>
       <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 1.5rem auto; line-height: 1.45;">
@@ -253,7 +253,7 @@ export function renderWorkoutsView() {
       <div class="watch-summary-title">
         <div class="watch-icon-glow"><i class="fa-solid fa-bolt"></i></div>
         <div>
-          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: #fff;">
+          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-main);">
             Entrenamientos Registrados Hoy (${today})
           </h3>
           <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
@@ -277,15 +277,15 @@ export function renderWorkoutsView() {
       </div>
     </div>
 
-    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
+    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
       <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
         <i class="fa-solid fa-list-check"></i> Desglose de Sesiones de Hoy:
       </div>
       <div style="display: flex; flex-direction: column; gap: 0.45rem;">
         ${sessions.map((s, idx) => `
-          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 0.55rem 0.85rem; border-radius: 8px; font-size: 0.83rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); padding: 0.55rem 0.85rem; border-radius: 8px; font-size: 0.83rem;">
             <div>
-              <span style="font-weight: 600; color: #fff;"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Sesión ${idx + 1}</span>
+              <span style="font-weight: 600; color: var(--text-main);"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Sesión ${idx + 1}</span>
               <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.4rem;">(${s.timestamp || '--'})</span>
               <span style="color: var(--text-muted); font-size: 0.72rem; margin-left: 0.3rem;">• ${s.deviceName || 'Apple Watch'}</span>
             </div>

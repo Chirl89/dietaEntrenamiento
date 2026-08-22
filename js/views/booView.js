@@ -111,7 +111,7 @@ export function openBooBacklogModal() {
             <div class="modal-header-title">
               <div style="font-size: 1.8rem;">🐕</div>
               <div>
-                <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: #fff;">Mapa de Adiestramiento de Boo 🐾</h3>
+                <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main);">Mapa de Adiestramiento de Boo 🐾</h3>
                 <p style="font-size: 0.78rem; color: var(--accent-amber);">Catálogo completo de trucos dominados y cola del backlog</p>
               </div>
             </div>
@@ -170,7 +170,7 @@ export function renderBooBacklogModalUI() {
           <div style="display: flex; align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 0;">
             <span style="font-weight: 700; font-size: 0.8rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.18); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;">#${idx + 1}</span>
             <div style="flex: 1; min-width: 0;">
-              <div style="font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.35; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
+              <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); line-height: 1.35; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
                 <i class="${t.icon}" style="color: ${t.badgeColor}; font-size: 0.9rem; margin-right: 0.35rem;"></i>${t.title}
               </div>
             </div>
@@ -206,7 +206,7 @@ export function renderBooBacklogModalUI() {
       <div style="display: flex; align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 0;">
         <span style="font-size: 1.1rem; color: var(--accent-emerald); flex-shrink: 0; margin-top: 2px;"><i class="fa-solid fa-medal"></i></span>
         <div style="flex: 1; min-width: 0;">
-          <div style="font-size: 0.9rem; font-weight: 700; color: #fff; line-height: 1.3;">${t.title}</div>
+          <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); line-height: 1.3;">${t.title}</div>
           <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; line-height: 1.35;">${t.summary}</div>
         </div>
       </div>
@@ -221,7 +221,7 @@ export function renderBooBacklogModalUI() {
     <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1.25rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <i class="fa-solid fa-graduation-cap" style="color: var(--accent-amber); font-size: 1.2rem;"></i>
-        <span style="font-size: 0.88rem; font-weight: 600; color: #fff;">Progreso Total del Backlog</span>
+        <span style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);">Progreso Total del Backlog</span>
       </div>
       <div style="display: flex; gap: 0.5rem;">
         <span style="font-size: 0.78rem; padding: 3px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); font-weight: 700;">
@@ -295,7 +295,7 @@ export function renderBooWorkoutView() {
           🐕
         </div>
         <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.25rem; color: #fff; margin-bottom: 2px;">
+          <h2 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-main); margin-bottom: 2px;">
             Boo <span style="font-size: 0.8rem; background: var(--bg-tertiary); color: var(--accent-amber); padding: 2px 8px; border-radius: 12px; font-weight: 500;">Border Collie • 3 años</span>
           </h2>
           <p style="color: var(--text-muted); font-size: 0.82rem;">
@@ -319,10 +319,10 @@ export function renderBooWorkoutView() {
     const isMastered = learnedTricks.includes(activeTrick.id);
     const activeTrickCard = document.createElement("div");
     activeTrickCard.className = "glass-card boo-active-trick-card";
-    activeTrickCard.style.cssText = "margin-bottom: 1.25rem; border: 1px solid var(--accent-amber); background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(19,26,42,0.95));";
+    activeTrickCard.style.cssText = "margin-bottom: 1.25rem; border: 1px solid var(--accent-amber); background: var(--bg-card);";
 
     const stepsListHtml = activeTrick.steps.map((step, idx) => `
-      <li style="margin-bottom: 0.45rem; font-size: 0.85rem; line-height: 1.4; color: var(--text-secondary); display: flex; gap: 0.5rem; align-items: flex-start;">
+      <li style="margin-bottom: 0.45rem; font-size: 0.85rem; line-height: 1.4; color: var(--text-muted); display: flex; gap: 0.5rem; align-items: flex-start;">
         <span style="background: ${activeTrick.badgeColor}; color: #000; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; flex-shrink: 0; margin-top: 2px;">${idx + 1}</span>
         <span>${step}</span>
       </li>
@@ -334,14 +334,14 @@ export function renderBooWorkoutView() {
           <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 12px; background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid var(--accent-amber);">
             <i class="fa-solid fa-bullseye"></i> OBJETIVO DE APRENDIZAJE DE HOY
           </span>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">Dificultad: <strong style="color:#fff;">${activeTrick.difficulty}</strong></span>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Dificultad: <strong style="color:var(--text-main);">${activeTrick.difficulty}</strong></span>
         </div>
         <span style="font-size: 0.8rem; font-weight: 600; color: var(--accent-cyan); background: var(--bg-tertiary); padding: 4px 10px; border-radius: 12px;">
           <i class="${activeTrick.icon}"></i> ${activeTrick.category}
         </span>
       </div>
 
-      <h3 style="font-family: var(--font-heading); font-size: 1.3rem; color: #fff; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
+      <h3 style="font-family: var(--font-heading); font-size: 1.3rem; color: var(--text-main); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
         ${activeTrick.title}
       </h3>
       <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
@@ -357,7 +357,7 @@ export function renderBooWorkoutView() {
         </ul>
       </div>
 
-      <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--accent-amber); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--text-secondary);">
+      <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--accent-amber); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--text-muted);">
         <strong style="color: var(--accent-amber);"><i class="fa-solid fa-lightbulb"></i> Consejo Collie:</strong> ${activeTrick.proTip}
       </div>
 
@@ -389,13 +389,13 @@ export function renderBooWorkoutView() {
             ${isDone ? '<i class="fa-solid fa-check"></i>' : ''}
           </div>
           <div>
-            <div style="font-weight: 600; font-size: 0.92rem; color: ${isDone ? 'var(--text-muted)' : 'var(--text-primary)'}; ${isDone ? 'text-decoration: line-through;' : ''}">
+            <div style="font-weight: 600; font-size: 0.92rem; color: ${isDone ? 'var(--text-muted)' : 'var(--text-main)'}; ${isDone ? 'text-decoration: line-through;' : ''}">
               <i class="${item.icon}" style="color: ${item.color};"></i> ${item.title}
             </div>
             <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${item.desc}</div>
           </div>
         </div>
-        <span class="btn-micro" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 12px; background: ${isDone ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)'}; color: ${isDone ? 'var(--accent-emerald)' : 'var(--text-secondary)'}; font-weight: 600;">
+        <span class="btn-micro" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 12px; background: ${isDone ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)'}; color: ${isDone ? 'var(--accent-emerald)' : 'var(--text-muted)'}; font-weight: 600;">
           ${isDone ? '¡Reforzado!' : 'Practicado hoy'}
         </span>
       </div>
@@ -407,7 +407,7 @@ export function renderBooWorkoutView() {
       <div style="display: flex; align-items: center; gap: 0.75rem;">
         <i class="fa-solid fa-arrows-rotate" style="font-size: 1.1rem; color: var(--accent-cyan);"></i>
         <div>
-          <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; margin: 0;">
+          <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin: 0;">
             🔄 Refuerzo Continuo del Paseo (${activeDay})
           </h4>
           <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">
@@ -432,7 +432,7 @@ export function renderBooWorkoutView() {
   moodCard.innerHTML = `
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem;">
       <div>
-        <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
           <i class="fa-solid fa-face-smile-wink" style="color: var(--accent-amber);"></i> Registro Emocional y Notas del Paseo (${activeDay})
         </h3>
         <p style="color: var(--text-muted); font-size: 0.8rem;">Registra la actitud de Boo hoy y anotaciones de su evolución</p>
