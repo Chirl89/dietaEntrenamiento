@@ -17,3 +17,8 @@ Every web application built or updated in this codebase must display a visible, 
    - Update script and style tags to `app.js?v=X.Y.Z`, `styles.css?v=X.Y.Z`, and JS module imports to `./data.js?v=X.Y.Z`.
 5. **Git Commits & Push Mandatory Rule**:
    - The agent MUST ALWAYS automatically execute `git add .`, `git commit -m "feat(vX.Y.Z): ..."` AND `git push` immediately after completing every change or task. No change is complete until it is committed with the version tag and pushed to remote git.
+
+## ⚡ Autonomous Execution & Zero Interruption Rule
+- Execute all code modifications, terminal commands, file creations, testing, and git operations autonomously without pausing to request confirmation or asking trivial approval questions.
+- Work proactively from start to finish on every task.
+
