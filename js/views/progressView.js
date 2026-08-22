@@ -563,8 +563,26 @@ function renderPeriodOverview(period, pid, pName, container) {
     : `<span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 2px 6px; border-radius: 6px;">-- ${stats.diffLabel}</span>`;
 
   container.innerHTML = `
+    <!-- TIME PERIOD SELECTOR (AL PRINCIPIO, CENTRADO) -->
+    <div class="time-period-selector-wrapper">
+      <div class="time-period-selector">
+        <button type="button" class="time-period-btn ${period === '7d' ? 'active' : ''}" onclick="window.setTimePeriod('7d')">
+          <i class="fa-solid fa-calendar-week"></i> 7 Días
+        </button>
+        <button type="button" class="time-period-btn ${period === '30d' ? 'active' : ''}" onclick="window.setTimePeriod('30d')">
+          <i class="fa-solid fa-calendar-days"></i> 30 Días
+        </button>
+        <button type="button" class="time-period-btn ${period === '1y' ? 'active' : ''}" onclick="window.setTimePeriod('1y')">
+          <i class="fa-solid fa-calendar"></i> 1 Año
+        </button>
+        <button type="button" class="time-period-btn ${period === 'all' ? 'active' : ''}" onclick="window.setTimePeriod('all')">
+          <i class="fa-solid fa-timeline"></i> Histórico
+        </button>
+      </div>
+    </div>
+
     <!-- SUMMARY METRICS CARDS -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
       <div class="glass-card stat-summary-card">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
           <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Media de Pasos</span>
@@ -616,28 +634,6 @@ function renderPeriodOverview(period, pid, pName, container) {
         <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
           Récord: ${stats.prSteps > 0 ? stats.prSteps.toLocaleString() + ' pasos (' + stats.prStepsDate + ')' : '--'}
         </div>
-      </div>
-    </div>
-
-    <!-- NESTED TIME PERIOD SELECTOR (BELOW SUMMARY CARDS) -->
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
-      <div class="time-period-selector" style="margin-bottom: 0;">
-        <button type="button" class="time-period-btn ${period === '7d' ? 'active' : ''}" onclick="window.setTimePeriod('7d')">
-          <i class="fa-solid fa-calendar-week"></i> 7 Días
-        </button>
-        <button type="button" class="time-period-btn ${period === '30d' ? 'active' : ''}" onclick="window.setTimePeriod('30d')">
-          <i class="fa-solid fa-calendar-days"></i> 30 Días
-        </button>
-        <button type="button" class="time-period-btn ${period === '1y' ? 'active' : ''}" onclick="window.setTimePeriod('1y')">
-          <i class="fa-solid fa-calendar"></i> 1 Año
-        </button>
-        <button type="button" class="time-period-btn ${period === 'all' ? 'active' : ''}" onclick="window.setTimePeriod('all')">
-          <i class="fa-solid fa-timeline"></i> Histórico
-        </button>
-      </div>
-
-      <div style="font-size: 0.78rem; color: var(--text-muted);">
-        Periodo: <strong style="color: var(--accent-cyan);">${periodLabel}</strong> (${pName})
       </div>
     </div>
 

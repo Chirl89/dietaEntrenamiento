@@ -2882,9 +2882,18 @@ body {
 /* ==========================================
    PROGRESS, HEATMAP & GAMIFICATION STYLES
    ========================================== */
+.progress-tabs-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+
 .progress-segmented-bar {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   padding: 4px;
@@ -2934,17 +2943,26 @@ body {
 }
 
 /* TIME PERIOD SELECTOR (DATA SUBVIEW) */
-.time-period-selector {
+.time-period-selector-wrapper {
   display: flex;
+  justify-content: center;
   align-items: center;
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+
+.time-period-selector {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   background: rgba(0, 0, 0, 0.35);
   padding: 4px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  width: fit-content;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .time-period-btn {
