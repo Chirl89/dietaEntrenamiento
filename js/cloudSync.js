@@ -661,22 +661,31 @@ export function mergeCloudDataIntoAppState(cloudData) {
   if (cloudData.weeklyMealPlans && typeof cloudData.weeklyMealPlans === 'object') {
     if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
     Object.keys(cloudData.weeklyMealPlans).forEach(wKey => {
-      if (cloudData.weeklyMealPlans[wKey]) {
-        if (!appState.weeklyMealPlans[wKey]) appState.weeklyMealPlans[wKey] = {};
-        Object.keys(cloudData.weeklyMealPlans[wKey]).forEach(d => {
-          appState.weeklyMealPlans[wKey][d] = { ...(appState.weeklyMealPlans[wKey][d] || {}), ...cloudData.weeklyMealPlans[wKey][d] };
+      const cloudWeek = cloudData.weeklyMealPlans[wKey];
+      if (cloudWeek && typeof cloudWeek === 'object') {
+        if (!appState.weeklyMealPlans[wKey]) {
+          appState.weeklyMealPlans[wKey] = {
+            Lunes: { desayuno: null, comida: null, merienda: null, cena: null },
+            Martes: { desayuno: null, comida: null, merienda: null, cena: null },
+            Miércoles: { desayuno: null, comida: null, merienda: null, cena: null },
+            Jueves: { desayuno: null, comida: null, merienda: null, cena: null },
+            Viernes: { desayuno: null, comida: null, merienda: null, cena: null },
+            Sábado: { desayuno: null, comida: null, merienda: null, cena: null },
+            Domingo: { desayuno: null, comida: null, merienda: null, cena: null }
+          };
+        }
+        Object.keys(cloudWeek).forEach(d => {
+          if (cloudWeek[d] && typeof cloudWeek[d] === 'object') {
+            if (!appState.weeklyMealPlans[wKey][d]) appState.weeklyMealPlans[wKey][d] = {};
+            ['desayuno', 'comida', 'merienda', 'cena'].forEach(slot => {
+              const cloudRecipeId = cloudWeek[d][slot];
+              if (cloudRecipeId && appState.weeklyMealPlans[wKey][d][slot] !== cloudRecipeId) {
+                appState.weeklyMealPlans[wKey][d][slot] = cloudRecipeId;
+                hasChanges = true;
+              }
+            });
+          }
         });
-        hasChanges = true;
-      }
-    });
-  } else if (cloudData.weeklyMealPlan && typeof cloudData.weeklyMealPlan === 'object') {
-    const curW = appState.activeNutritionWeekKey || 'current';
-    if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
-    if (!appState.weeklyMealPlans[curW]) appState.weeklyMealPlans[curW] = {};
-    Object.keys(cloudData.weeklyMealPlan).forEach(d => {
-      if (cloudData.weeklyMealPlan[d]) {
-        appState.weeklyMealPlans[curW][d] = { ...(appState.weeklyMealPlans[curW][d] || {}), ...cloudData.weeklyMealPlan[d] };
-        hasChanges = true;
       }
     });
   }

@@ -281,6 +281,7 @@ export function autoFillWeeklyPlan() {
     });
 
     saveState();
+    if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
     renderNutritionMenuView();
     renderShoppingView();
     showIosToast("✨ ¡Semana auto-completada con menú equilibrado!", "fa-solid fa-wand-magic-sparkles");
@@ -306,6 +307,7 @@ export function clearWeeklyPlan() {
         };
       });
       saveState();
+      if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
       renderNutritionMenuView();
       renderShoppingView();
       showIosToast("🗑️ Menú semanal vaciado", "fa-solid fa-trash-can");
@@ -326,6 +328,7 @@ export function removeMealFromSlot(dayName, slotKey) {
     
     currentWeeklyPlan[dayName][slotKey] = null;
     saveState();
+    if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
     renderNutritionMenuView();
     renderShoppingView();
     showIosToast(`Plato retirado de ${dayName} (${slotKey})`, "fa-solid fa-xmark");
@@ -746,7 +749,8 @@ function renderFullWeekGridView(container) {
 export function openRecipePickerModal(dayName, slotKey) {
   try {
     triggerHapticTouch();
-    activePickerContext = { day: dayName, slot: slotKey };
+    const currentWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    activePickerContext = { day: dayName, slot: slotKey, weekKey: currentWeekKey };
     
     // Map slot key to default category filter
     let defaultCat = "all";
@@ -788,14 +792,27 @@ export function closeRecipePickerModalOnBackdrop(event) {
 export function selectRecipeForActiveSlot(recipeId) {
   try {
     triggerHapticTouch();
-    const { day, slot } = activePickerContext;
+    const { day, slot, weekKey } = activePickerContext;
     if (!day || !slot) return;
+    const targetWeekKey = weekKey || appState.activeNutritionWeekKey || getCurrentWeekKey();
 
-    const currentWeeklyPlan = getActiveWeeklyPlan();
-    if (!currentWeeklyPlan[day]) currentWeeklyPlan[day] = {};
+    if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
+    if (!appState.weeklyMealPlans[targetWeekKey]) {
+      appState.weeklyMealPlans[targetWeekKey] = createEmptyWeeklyPlan();
+    }
+    if (!appState.weeklyMealPlans[targetWeekKey][day]) {
+      appState.weeklyMealPlans[targetWeekKey][day] = { desayuno: null, comida: null, merienda: null, cena: null };
+    }
 
-    currentWeeklyPlan[day][slot] = recipeId;
+    appState.weeklyMealPlans[targetWeekKey][day][slot] = recipeId;
+    if (targetWeekKey === (appState.activeNutritionWeekKey || getCurrentWeekKey())) {
+      appState.weeklyMealPlan = appState.weeklyMealPlans[targetWeekKey];
+    }
+
     saveState();
+    if (window.pushToCloud) {
+      window.pushToCloud(false).catch(() => {});
+    }
 
     closeRecipePickerModal();
     renderNutritionMenuView();
