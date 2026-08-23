@@ -43,15 +43,16 @@ export function getAllRecipes() {
 export function getFilteredRecipes() {
   try {
     const all = getAllRecipes();
-    if (!appState.exclusions || appState.exclusions.length === 0) return all;
+    if (!appState.exclusions || !Array.isArray(appState.exclusions) || appState.exclusions.length === 0) return all;
 
     return all.filter(recipe => {
-      const recipeText = (recipe.name + " " + (recipe.ingredients || []).map(i => i.name).join(" ")).toLowerCase();
-      return !appState.exclusions.some(ex => recipeText.includes(ex.toLowerCase()));
+      if (!recipe) return false;
+      const recipeText = ((recipe.name || "") + " " + (recipe.ingredients || []).map(i => i?.name || "").join(" ")).toLowerCase();
+      return !appState.exclusions.some(ex => ex && recipeText.includes(String(ex).toLowerCase()));
     });
   } catch(e) {
     console.error("Error in getFilteredRecipes:", e);
-    return RECIPES_DATABASE || [];
+    return getAllRecipes() || [];
   }
 }
 
@@ -61,7 +62,7 @@ export function getFilteredRecipes() {
 export function getRecipeById(id) {
   if (!id) return null;
   const all = getAllRecipes();
-  return all.find(r => r.id === id) || null;
+  return all.find(r => r && (r.id === id || String(r.id) === String(id))) || null;
 }
 
 /**
@@ -363,9 +364,12 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
     }
   });
 
+  const safeTargetCalories = Number(targetCalories) > 0 ? Number(targetCalories) : (appState.activeProfileId === 'he' ? 2150 : 1850);
+  const safeTargetProtein = Number(targetProtein) > 0 ? Number(targetProtein) : (appState.activeProfileId === 'he' ? 155 : 130);
+
   // Daily Nutritional Balance Bar
-  const kcalPercent = Math.min(Math.round((dayKcal / targetCalories) * 100), 100);
-  const protPercent = Math.min(Math.round((dayProtein / targetProtein) * 100), 100);
+  const kcalPercent = Math.min(Math.max(Math.round((dayKcal / safeTargetCalories) * 100), 0), 100);
+  const protPercent = Math.min(Math.max(Math.round((dayProtein / safeTargetProtein) * 100), 0), 100);
 
   const balanceCard = document.createElement("div");
   balanceCard.className = "glass-card daily-nutrition-balance-card";
@@ -375,12 +379,12 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
         <i class="fa-solid fa-chart-pie" style="color: var(--accent-cyan);"></i>
         <div>
           <h4>Balance Nutricional de ${dayName}</h4>
-          <p>Objetivo Diario: ${targetCalories} kcal • ${targetProtein}g Proteína</p>
+          <p>Objetivo Diario: ${safeTargetCalories} kcal • ${safeTargetProtein}g Proteína</p>
         </div>
       </div>
       <div class="balance-totals-chips">
-        <span class="macro-chip cal"><i class="fa-solid fa-fire"></i> <strong>${dayKcal}</strong> / ${targetCalories} kcal</span>
-        <span class="macro-chip prot"><i class="fa-solid fa-dumbbell"></i> <strong>${dayProtein}g</strong> / ${targetProtein}g Prot</span>
+        <span class="macro-chip cal"><i class="fa-solid fa-fire"></i> <strong>${dayKcal}</strong> / ${safeTargetCalories} kcal</span>
+        <span class="macro-chip prot"><i class="fa-solid fa-dumbbell"></i> <strong>${dayProtein}g</strong> / ${safeTargetProtein}g Prot</span>
         <span class="macro-chip carbs"><i class="fa-solid fa-wheat-awn"></i> <strong>${dayCarbs}g</strong> Carbs</span>
         <span class="macro-chip fats"><i class="fa-solid fa-droplet"></i> <strong>${dayFats}g</strong> Grasas</span>
       </div>

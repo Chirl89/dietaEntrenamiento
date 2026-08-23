@@ -2,7 +2,7 @@
  * FitDuo & Collie Coach - Global State & Persistence Engine (v0.16.0)
  */
 
-import { INITIAL_PROFILES } from '../data.js';
+import { INITIAL_PROFILES, RECIPES_DATABASE } from '../data.js';
 
 // STATE STORAGE KEYS
 export const LOCAL_STORAGE_KEY = "FITDUO_APP_STATE_V1";
@@ -452,6 +452,13 @@ export function loadSavedState() {
     days.forEach(d => {
       if (!appState.weeklyMealPlan[d] || typeof appState.weeklyMealPlan[d] !== 'object') {
         appState.weeklyMealPlan[d] = { ...(DEFAULT_WEEKLY_MEAL_PLAN[d] || {}) };
+      } else {
+        ['desayuno', 'comida', 'merienda', 'cena'].forEach(slot => {
+          const rId = appState.weeklyMealPlan[d][slot];
+          if (rId && !RECIPES_DATABASE.some(r => r.id === rId) && !(appState.customRecipes || []).some(r => r.id === rId)) {
+            appState.weeklyMealPlan[d][slot] = DEFAULT_WEEKLY_MEAL_PLAN[d]?.[slot] || null;
+          }
+        });
       }
     });
   }
