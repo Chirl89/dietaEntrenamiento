@@ -152,22 +152,22 @@ export function calculateProfileStats(profileId, period = '7d') {
 
   // Retrieve total days: current window + previous comparison window
   const totalDaysNeeded = daysCount + prevDaysCount;
-  const fullData = getHistoricalData(pid, totalDaysNeeded);
+  const fullData = getHistoricalData(pid, totalDaysNeeded) || [];
 
   // Split into current period and previous period
-  const curData = fullData.slice(prevDaysCount);
+  const curData = prevDaysCount > 0 ? fullData.slice(prevDaysCount) : fullData;
   const prevData = prevDaysCount > 0 ? fullData.slice(0, prevDaysCount) : [];
 
-  const curDaysWithData = curData.filter(d => d.hasData);
-  const prevDaysWithData = prevData.filter(d => d.hasData);
+  const curDaysWithData = curData.filter(d => d && d.hasData);
+  const prevDaysWithData = prevData.filter(d => d && d.hasData);
 
   const avgSteps = curDaysWithData.length > 0 
     ? Math.round(curDaysWithData.reduce((acc, d) => acc + (d.steps || 0), 0) / curDaysWithData.length) 
-    : (curData.reduce((acc, d) => acc + (d.steps || 0), 0) > 0 ? Math.round(curData.reduce((acc, d) => acc + (d.steps || 0), 0) / curData.length) : 0);
+    : (curData.length > 0 && curData.reduce((acc, d) => acc + (d.steps || 0), 0) > 0 ? Math.round(curData.reduce((acc, d) => acc + (d.steps || 0), 0) / curData.length) : 0);
 
   const avgStepsPrev = prevDaysWithData.length > 0 
     ? Math.round(prevDaysWithData.reduce((acc, d) => acc + (d.steps || 0), 0) / prevDaysWithData.length) 
-    : (prevData.reduce((acc, d) => acc + (d.steps || 0), 0) > 0 ? Math.round(prevData.reduce((acc, d) => acc + (d.steps || 0), 0) / prevData.length) : 0);
+    : (prevData.length > 0 && prevData.reduce((acc, d) => acc + (d.steps || 0), 0) > 0 ? Math.round(prevData.reduce((acc, d) => acc + (d.steps || 0), 0) / prevData.length) : 0);
 
   const stepsDiffPct = (avgStepsPrev > 0 && avgSteps > 0) 
     ? Math.round(((avgSteps - avgStepsPrev) / avgStepsPrev) * 100) 
@@ -180,8 +180,8 @@ export function calculateProfileStats(profileId, period = '7d') {
   // 7d & 30d specific metrics for backward compatibility with badges
   const data7d = fullData.slice(-7);
   const data30d = fullData.slice(-30);
-  const daysWithData7d = data7d.filter(d => d.hasData);
-  const daysWithData30d = data30d.filter(d => d.hasData);
+  const daysWithData7d = data7d.filter(d => d && d.hasData);
+  const daysWithData30d = data30d.filter(d => d && d.hasData);
   const avgSteps7d = daysWithData7d.length > 0 ? Math.round(daysWithData7d.reduce((acc, d) => acc + (d.steps || 0), 0) / daysWithData7d.length) : 0;
   const avgSteps30d = daysWithData30d.length > 0 ? Math.round(daysWithData30d.reduce((acc, d) => acc + (d.steps || 0), 0) / daysWithData30d.length) : 0;
   const totalKcal7d = data7d.reduce((acc, d) => acc + (d.moveKcal || 0), 0);
@@ -190,7 +190,7 @@ export function calculateProfileStats(profileId, period = '7d') {
   const totalExMin30d = data30d.reduce((acc, d) => acc + (d.exerciseMin || 0), 0);
   const totalDist7d = parseFloat(data7d.reduce((acc, d) => acc + (d.distanceKm || 0), 0).toFixed(1));
   const totalDist30d = parseFloat(data30d.reduce((acc, d) => acc + (d.distanceKm || 0), 0).toFixed(1));
-  const workouts7d = data7d.filter(d => d.completedWorkouts && d.completedWorkouts.length > 0).length;
+  const workouts7d = data7d.filter(d => d && d.completedWorkouts && d.completedWorkouts.length > 0).length;
   const targetWorkouts7d = 5;
   const adherencePct = Math.min(100, Math.round((workouts7d / targetWorkouts7d) * 100));
 
@@ -198,7 +198,7 @@ export function calculateProfileStats(profileId, period = '7d') {
   let currentStreak = 0;
   for (let i = data30d.length - 1; i >= 0; i--) {
     const d = data30d[i];
-    if (d.hasData && (d.steps >= 10000 || (d.completedWorkouts && d.completedWorkouts.length > 0) || d.isRestDay)) {
+    if (d && d.hasData && (d.steps >= 10000 || (d.completedWorkouts && d.completedWorkouts.length > 0) || d.isRestDay)) {
       currentStreak++;
     } else {
       break;
@@ -212,13 +212,13 @@ export function calculateProfileStats(profileId, period = '7d') {
   let prKcalDate = '--';
 
   fullData.forEach(d => {
-    if (d.hasData && d.steps > prSteps) {
+    if (d && d.hasData && (d.steps || 0) > prSteps) {
       prSteps = d.steps;
-      prStepsDate = d.shortLabel;
+      prStepsDate = d.shortLabel || '--';
     }
-    if (d.hasData && d.moveKcal > prKcal) {
+    if (d && d.hasData && (d.moveKcal || 0) > prKcal) {
       prKcal = d.moveKcal;
-      prKcalDate = d.shortLabel;
+      prKcalDate = d.shortLabel || '--';
     }
   });
 
@@ -226,31 +226,31 @@ export function calculateProfileStats(profileId, period = '7d') {
     period,
     daysCount,
     daysWithDataCount: curDaysWithData.length,
-    avgSteps,
-    avgStepsPrev,
+    avgSteps: avgSteps || 0,
+    avgStepsPrev: avgStepsPrev || 0,
     stepsDiffPct,
     diffLabel,
-    totalKcal,
-    totalExMin,
-    totalDist,
-    avgSteps7d,
-    avgSteps30d,
+    totalKcal: totalKcal || 0,
+    totalExMin: totalExMin || 0,
+    totalDist: totalDist || 0,
+    avgSteps7d: avgSteps7d || 0,
+    avgSteps30d: avgSteps30d || 0,
     daysWithData7dCount: daysWithData7d.length,
     daysWithData30dCount: daysWithData30d.length,
-    totalKcal7d,
-    totalKcal30d,
-    totalExMin7d,
-    totalExMin30d,
-    totalDist7d,
-    totalDist30d,
-    workouts7d,
+    totalKcal7d: totalKcal7d || 0,
+    totalKcal30d: totalKcal30d || 0,
+    totalExMin7d: totalExMin7d || 0,
+    totalExMin30d: totalExMin30d || 0,
+    totalDist7d: totalDist7d || 0,
+    totalDist30d: totalDist30d || 0,
+    workouts7d: workouts7d || 0,
     targetWorkouts7d,
-    adherencePct,
-    currentStreak,
-    prSteps,
-    prStepsDate,
-    prKcal,
-    prKcalDate
+    adherencePct: adherencePct || 0,
+    currentStreak: currentStreak || 0,
+    prSteps: prSteps || 0,
+    prStepsDate: prStepsDate || '--',
+    prKcal: prKcal || 0,
+    prKcalDate: prKcalDate || '--'
   };
 }
 
@@ -259,19 +259,28 @@ export function calculateBadges(profileId) {
   const pid = profileId || appState.activeProfileId || 'he';
   const partnerPid = pid === 'he' ? 'she' : 'he';
 
-  const stats = calculateProfileStats(pid);
-  const data7d = getHistoricalData(pid, 7);
-  const data30d = getHistoricalData(pid, 30);
-  const partnerData7d = getHistoricalData(partnerPid, 7);
+  const stats = calculateProfileStats(pid) || {};
+  const data7d = getHistoricalData(pid, 7) || [];
+  const data30d = getHistoricalData(pid, 30) || [];
+  const partnerData7d = getHistoricalData(partnerPid, 7) || [];
 
   const totalStepsCombined7d = data7d.reduce((a, b) => a + (b.steps || 0), 0) + partnerData7d.reduce((a, b) => a + (b.steps || 0), 0);
-  const todayEntry = data7d[data7d.length - 1];
-  const partnerToday = partnerData7d[partnerData7d.length - 1];
+  const todayEntry = data7d.length > 0 ? data7d[data7d.length - 1] : { dayName: getTodayDayName(), steps: 0, moveKcal: 0, exerciseMin: 0, hasData: false, completedWorkouts: [] };
+  const partnerToday = partnerData7d.length > 0 ? partnerData7d[partnerData7d.length - 1] : { dayName: getTodayDayName(), steps: 0, moveKcal: 0, exerciseMin: 0, hasData: false, completedWorkouts: [] };
 
-  const bothWorkoutsToday = (todayEntry?.hasData && todayEntry?.completedWorkouts?.length > 0) && (partnerToday?.hasData && partnerToday?.completedWorkouts?.length > 0);
+  const isTodayWorkoutDone = !!(todayEntry?.hasData && Array.isArray(todayEntry.completedWorkouts) && todayEntry.completedWorkouts.length > 0);
+  const isPartnerWorkoutDone = !!(partnerToday?.hasData && Array.isArray(partnerToday.completedWorkouts) && partnerToday.completedWorkouts.length > 0);
+  const bothWorkoutsToday = isTodayWorkoutDone && isPartnerWorkoutDone;
+
   const maxSteps7d = data7d.filter(d => d.hasData).reduce((max, d) => Math.max(max, d.steps || 0), 0);
   const sumSteps7d = data7d.reduce((acc, d) => acc + (d.steps || 0), 0);
   const maxFloors = data30d.filter(d => d.hasData).reduce((max, d) => Math.max(max, d.floors || 0), 0);
+  const currentStreak = stats.currentStreak || 0;
+  const totalDist7d = stats.totalDist7d || 0;
+  const prKcal = stats.prKcal || 0;
+
+  const isWeekendToday = todayEntry?.dayName === "Sábado" || todayEntry?.dayName === "Domingo";
+  const bothMetWeekend = !!(isWeekendToday && (todayEntry?.steps || 0) >= 10000 && (partnerToday?.steps || 0) >= 10000);
 
   const badges = [
     // RACHAS
@@ -282,9 +291,9 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-fire-flame-curved',
       color: '#f59e0b',
       desc: 'Cumple objetivos o entrena 3 días seguidos.',
-      unlocked: stats.currentStreak >= 3,
-      progressPct: Math.min(100, Math.round((stats.currentStreak / 3) * 100)),
-      progressText: `${Math.min(3, stats.currentStreak)} / 3 días`
+      unlocked: currentStreak >= 3,
+      progressPct: Math.min(100, Math.round((currentStreak / 3) * 100)),
+      progressText: `${Math.min(3, currentStreak)} / 3 días`
     },
     {
       id: 'streak_7d',
@@ -293,9 +302,9 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-fire',
       color: '#ef4444',
       desc: 'Mantén una racha de 7 días consecutivos.',
-      unlocked: stats.currentStreak >= 7,
-      progressPct: Math.min(100, Math.round((stats.currentStreak / 7) * 100)),
-      progressText: `${Math.min(7, stats.currentStreak)} / 7 días`
+      unlocked: currentStreak >= 7,
+      progressPct: Math.min(100, Math.round((currentStreak / 7) * 100)),
+      progressText: `${Math.min(7, currentStreak)} / 7 días`
     },
     {
       id: 'streak_14d',
@@ -304,9 +313,9 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-bolt',
       color: '#8b5cf6',
       desc: 'Supera 2 semanas completas de consistencia.',
-      unlocked: stats.currentStreak >= 14,
-      progressPct: Math.min(100, Math.round((stats.currentStreak / 14) * 100)),
-      progressText: `${Math.min(14, stats.currentStreak)} / 14 días`
+      unlocked: currentStreak >= 14,
+      progressPct: Math.min(100, Math.round((currentStreak / 14) * 100)),
+      progressText: `${Math.min(14, currentStreak)} / 14 días`
     },
     {
       id: 'streak_30d',
@@ -315,9 +324,9 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-crown',
       color: '#fbbf24',
       desc: 'Un mes completo de disciplina diaria ininterrumpida.',
-      unlocked: stats.currentStreak >= 30,
-      progressPct: Math.min(100, Math.round((stats.currentStreak / 30) * 100)),
-      progressText: `${Math.min(30, stats.currentStreak)} / 30 días`
+      unlocked: currentStreak >= 30,
+      progressPct: Math.min(100, Math.round((currentStreak / 30) * 100)),
+      progressText: `${Math.min(30, currentStreak)} / 30 días`
     },
 
     // HITOS INDIVIDUALES
@@ -339,9 +348,9 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-person-running',
       color: '#06b6d4',
       desc: 'Acumula más de 42 km de distancia recorrida.',
-      unlocked: stats.totalDist7d >= 42,
-      progressPct: Math.min(100, Math.round((stats.totalDist7d / 42) * 100)),
-      progressText: `${stats.totalDist7d} / 42.0 km`
+      unlocked: totalDist7d >= 42,
+      progressPct: Math.min(100, Math.round((totalDist7d / 42) * 100)),
+      progressText: `${totalDist7d} / 42.0 km`
     },
     {
       id: 'badge_volcano',
@@ -350,9 +359,9 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-volcano',
       color: '#f97316',
       desc: 'Quema más de 800 kcal activas en una sola jornada.',
-      unlocked: stats.prKcal >= 800,
-      progressPct: Math.min(100, Math.round((stats.prKcal / 800) * 100)),
-      progressText: `${stats.prKcal} / 800 kcal máx`
+      unlocked: prKcal >= 800,
+      progressPct: Math.min(100, Math.round((prKcal / 800) * 100)),
+      progressText: `${prKcal} / 800 kcal máx`
     },
     {
       id: 'badge_climber',
@@ -375,7 +384,7 @@ export function calculateBadges(profileId) {
       color: '#ec4899',
       desc: 'Carlos y Andrea completan su entrenamiento el mismo día.',
       unlocked: bothWorkoutsToday,
-      progressPct: bothWorkoutsToday ? 100 : ((todayEntry?.hasData && todayEntry?.completedWorkouts?.length > 0) || (partnerToday?.hasData && partnerToday?.completedWorkouts?.length > 0) ? 50 : 0),
+      progressPct: bothWorkoutsToday ? 100 : (isTodayWorkoutDone || isPartnerWorkoutDone ? 50 : 0),
       progressText: bothWorkoutsToday ? '¡Conseguido hoy!' : 'Pendiente hoy'
     },
     {
@@ -396,8 +405,8 @@ export function calculateBadges(profileId) {
       icon: 'fa-solid fa-champagne-glasses',
       color: '#38bdf8',
       desc: 'Ambos superan 10.000 pasos durante el fin de semana.',
-      unlocked: (todayEntry.dayName === "Sábado" || todayEntry.dayName === "Domingo") && todayEntry.hasData && partnerToday.hasData && todayEntry.steps >= 10000 && partnerToday.steps >= 10000,
-      progressPct: ((todayEntry.hasData && todayEntry.steps >= 10000) ? 50 : 0) + ((partnerToday.hasData && partnerToday.steps >= 10000) ? 50 : 0),
+      unlocked: bothMetWeekend,
+      progressPct: (((todayEntry?.steps || 0) >= 10000 ? 50 : 0) + ((partnerToday?.steps || 0) >= 10000 ? 50 : 0)),
       progressText: 'Meta de fin de semana'
     }
   ];
@@ -547,33 +556,45 @@ export function renderProgressView() {
 }
 
 export function renderProgressContent() {
-  const container = document.getElementById("progress-dynamic-container");
-  if (!container) return;
+  try {
+    const container = document.getElementById("progress-dynamic-container");
+    if (!container) return;
 
-  const pid = appState.activeProfileId || 'he';
-  const pName = appState.profiles[pid]?.name || 'Carlos';
+    const pid = appState.activeProfileId || 'he';
+    const pName = appState.profiles?.[pid]?.name || (pid === 'he' ? 'Carlos' : 'Andrea');
 
-  if (currentProgressMainTab === 'data') {
-    renderPeriodOverview(currentTimePeriod, pid, pName, container);
-  } else if (currentProgressMainTab === 'heatmap') {
-    renderHeatmapView(pid, pName, container);
-  } else if (currentProgressMainTab === 'badges') {
-    renderBadgesView(pid, pName, container);
+    // Sync sub-tab segmented buttons UI
+    document.querySelectorAll('.progress-segment-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    const activeBtn = document.getElementById(`prog-tab-${currentProgressMainTab}`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    if (currentProgressMainTab === 'data') {
+      renderPeriodOverview(currentTimePeriod, pid, pName, container);
+    } else if (currentProgressMainTab === 'heatmap') {
+      renderHeatmapView(pid, pName, container);
+    } else if (currentProgressMainTab === 'badges') {
+      renderBadgesView(pid, pName, container);
+    }
+  } catch(err) {
+    console.error("Error in renderProgressContent:", err);
   }
 }
 
 function renderPeriodOverview(period, pid, pName, container) {
-  const stats = calculateProfileStats(pid, period);
-  const chartAgg = getChartAggregatedData(pid, period);
-  const historyData = getHistoricalData(pid, 7);
+  try {
+    const stats = calculateProfileStats(pid, period);
+    const chartAgg = getChartAggregatedData(pid, period);
+    const historyData = getHistoricalData(pid, 7);
 
-  const periodLabels = {
-    '7d': 'Últimos 7 Días',
-    '30d': 'Últimos 30 Días',
-    '1y': 'Último Año',
-    'all': 'Histórico Completo'
-  };
-  const periodLabel = periodLabels[period] || 'Últimos 7 Días';
+    const periodLabels = {
+      '7d': 'Últimos 7 Días',
+      '30d': 'Últimos 30 Días',
+      '1y': 'Último Año',
+      'all': 'Histórico Completo'
+    };
+    const periodLabel = periodLabels[period] || 'Últimos 7 Días';
 
   const stepsDiffBadge = stats.stepsDiffPct !== null
     ? (stats.stepsDiffPct >= 0 
@@ -735,6 +756,10 @@ function renderPeriodOverview(period, pid, pName, container) {
   setTimeout(() => {
     renderPeriodCharts(chartAgg);
   }, 50);
+  } catch(e) {
+    console.error("Error in renderPeriodOverview:", e);
+    container.innerHTML = `<div class="glass-card" style="padding: 1.5rem; text-align: center; color: var(--text-muted);"><i class="fa-solid fa-chart-line" style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-cyan);"></i><p>Cargando datos de actividad...</p></div>`;
+  }
 }
 
 function renderPeriodCharts(chartAgg) {
@@ -867,260 +892,270 @@ export function resetHeatmapToCurrentMonth() {
 }
 
 function renderHeatmapView(pid, pName, container) {
-  const now = new Date();
-  const year = currentHeatmapYear;
-  const month = currentHeatmapMonth;
-  const capitalizedMonth = MONTH_NAMES_ES[month];
+  try {
+    const now = new Date();
+    const year = currentHeatmapYear;
+    const month = currentHeatmapMonth;
+    const capitalizedMonth = MONTH_NAMES_ES[month];
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayWeekIdx = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayWeekIdx = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
 
-  const historyMap = appState.history?.[pid] || {};
-  const currentLive = appState.appleWatch?.metrics?.[pid] || {};
-  const todayIso = getLocalIsoDate(now);
+    const historyMap = appState.history?.[pid] || {};
+    const currentLive = appState.appleWatch?.metrics?.[pid] || {};
+    const todayIso = getLocalIsoDate(now);
 
-  const dayCells = [];
+    const dayCells = [];
 
-  // Padding for month start
-  for (let p = 0; p < firstDayWeekIdx; p++) {
-    dayCells.push(`<div class="heatmap-tile empty"></div>`);
-  }
-
-  let completedDaysCount = 0;
-  let partialDaysCount = 0;
-  let restDaysCount = 0;
-
-  for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
-    const d = new Date(year, month, dayNum);
-    const dateIso = getLocalIsoDate(d);
-    const isToday = dateIso === todayIso;
-    const isFuture = d > now;
-
-    let entry = historyMap[dateIso];
-    const dayName = getDayNameFromDate(d);
-    if (isToday) {
-      const isTodayWorkoutDone = !!appState.completedWorkouts?.[pid]?.[dayName]?.done;
-      const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
-      const moveKcal = Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0));
-      const exerciseMin = Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0));
-      const hasWorkouts = (entry?.completedWorkouts && entry.completedWorkouts.length > 0) || isTodayWorkoutDone;
-      const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts;
-      entry = {
-        steps,
-        moveKcal,
-        exerciseMin,
-        completedWorkouts: hasWorkouts ? [dayName] : [],
-        sessions: entry?.sessions || [],
-        isRestDay: entry?.isRestDay || false,
-        hasData: hasData
-      };
+    // Padding for month start
+    for (let p = 0; p < firstDayWeekIdx; p++) {
+      dayCells.push(`<div class="heatmap-tile empty"></div>`);
     }
 
-    let status = 'none';
-    let statusColor = 'rgba(156, 163, 175, 0.1)';
-    let tooltip = `${dayNum} de ${capitalizedMonth}: Sin datos registrados`;
+    let completedDaysCount = 0;
+    let partialDaysCount = 0;
+    let restDaysCount = 0;
 
-    if (isFuture) {
-      status = 'future';
-      statusColor = 'rgba(156, 163, 175, 0.05)';
-      tooltip = `${dayNum} de ${capitalizedMonth}: Próximamente`;
-    } else if (entry && entry.hasData) {
-      if (entry.isRestDay) {
-        status = 'rest';
-        statusColor = 'rgba(56, 189, 248, 0.4)';
-        restDaysCount++;
-        tooltip = `${dayNum} de ${capitalizedMonth}: Día de Descanso Programado (${(entry.steps || 0).toLocaleString()} pasos)`;
-      } else if (entry.steps >= 10000 || (entry.completedWorkouts && entry.completedWorkouts.length > 0)) {
-        status = 'completed';
-        statusColor = 'rgba(16, 185, 129, 0.85)';
-        completedDaysCount++;
-        tooltip = `${dayNum} de ${capitalizedMonth}: ¡Meta Cumplida! (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
-      } else if (entry.steps > 0 || entry.moveKcal > 0) {
-        status = 'partial';
-        statusColor = 'rgba(245, 158, 11, 0.75)';
-        partialDaysCount++;
-        tooltip = `${dayNum} de ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
+    for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+      const d = new Date(year, month, dayNum);
+      const dateIso = getLocalIsoDate(d);
+      const isToday = dateIso === todayIso;
+      const isFuture = d > now;
+
+      let entry = historyMap[dateIso];
+      const dayName = getDayNameFromDate(d);
+      if (isToday) {
+        const isTodayWorkoutDone = !!appState.completedWorkouts?.[pid]?.[dayName]?.done;
+        const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
+        const moveKcal = Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0));
+        const exerciseMin = Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0));
+        const hasWorkouts = (entry?.completedWorkouts && entry.completedWorkouts.length > 0) || isTodayWorkoutDone;
+        const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts;
+        entry = {
+          steps,
+          moveKcal,
+          exerciseMin,
+          completedWorkouts: hasWorkouts ? [dayName] : [],
+          sessions: entry?.sessions || [],
+          isRestDay: entry?.isRestDay || false,
+          hasData: hasData
+        };
       }
+
+      let status = 'none';
+      let statusColor = 'rgba(156, 163, 175, 0.1)';
+      let tooltip = `${dayNum} de ${capitalizedMonth}: Sin datos registrados`;
+
+      if (isFuture) {
+        status = 'future';
+        statusColor = 'rgba(156, 163, 175, 0.05)';
+        tooltip = `${dayNum} de ${capitalizedMonth}: Próximamente`;
+      } else if (entry && entry.hasData) {
+        if (entry.isRestDay) {
+          status = 'rest';
+          statusColor = 'rgba(56, 189, 248, 0.4)';
+          restDaysCount++;
+          tooltip = `${dayNum} de ${capitalizedMonth}: Día de Descanso Programado (${(entry.steps || 0).toLocaleString()} pasos)`;
+        } else if (entry.steps >= 10000 || (entry.completedWorkouts && entry.completedWorkouts.length > 0)) {
+          status = 'completed';
+          statusColor = 'rgba(16, 185, 129, 0.85)';
+          completedDaysCount++;
+          tooltip = `${dayNum} de ${capitalizedMonth}: ¡Meta Cumplida! (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
+        } else if (entry.steps > 0 || entry.moveKcal > 0) {
+          status = 'partial';
+          statusColor = 'rgba(245, 158, 11, 0.75)';
+          partialDaysCount++;
+          tooltip = `${dayNum} de ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
+        }
+      }
+
+      const todayBorder = isToday ? 'border: 2px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);' : '';
+
+      dayCells.push(`
+        <div class="heatmap-tile ${status} ${isToday ? 'today' : ''}" style="background: ${statusColor}; ${todayBorder}" title="${tooltip}" onclick="window.showDayDetailToast('${dateIso}', ${dayNum}, '${capitalizedMonth}', ${(entry?.steps || 0)}, ${(entry?.moveKcal || 0)}, ${(entry?.exerciseMin || 0)}, ${!!entry?.isRestDay})">
+          <span class="heatmap-day-num">${dayNum}</span>
+        </div>
+      `);
     }
 
-    const todayBorder = isToday ? 'border: 2px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);' : '';
+    const monthOptions = MONTH_NAMES_ES.map((m, idx) => 
+      `<option value="${idx}" ${idx === month ? 'selected' : ''}>${m}</option>`
+    ).join('');
 
-    dayCells.push(`
-      <div class="heatmap-tile ${status} ${isToday ? 'today' : ''}" style="background: ${statusColor}; ${todayBorder}" title="${tooltip}" onclick="window.showDayDetailToast('${dateIso}', ${dayNum}, '${capitalizedMonth}', ${(entry?.steps || 0)}, ${(entry?.moveKcal || 0)}, ${(entry?.exerciseMin || 0)}, ${!!entry?.isRestDay})">
-        <span class="heatmap-day-num">${dayNum}</span>
-      </div>
-    `);
-  }
+    const thisYear = new Date().getFullYear();
+    const yearOptions = [thisYear - 1, thisYear, thisYear + 1].map(y => 
+      `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`
+    ).join('');
 
-  const monthOptions = MONTH_NAMES_ES.map((m, idx) => 
-    `<option value="${idx}" ${idx === month ? 'selected' : ''}>${m}</option>`
-  ).join('');
+    const isCurrentMonth = (year === now.getFullYear() && month === now.getMonth());
 
-  const thisYear = new Date().getFullYear();
-  const yearOptions = [thisYear - 1, thisYear, thisYear + 1].map(y => 
-    `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`
-  ).join('');
+    container.innerHTML = `
+      <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 2px; display: flex; align-items: center; gap: 0.5rem;">
+              <i class="fa-solid fa-border-all" style="color: var(--accent-cyan);"></i> Matriz de Consistencia
+            </h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Visualización global del hábito y cumplimiento diario de ${pName}</p>
+          </div>
 
-  const isCurrentMonth = (year === now.getFullYear() && month === now.getMonth());
-
-  container.innerHTML = `
-    <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 2px; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fa-solid fa-border-all" style="color: var(--accent-cyan);"></i> Matriz de Consistencia
-          </h2>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">Visualización global del hábito y cumplimiento diario de ${pName}</p>
-        </div>
-
-        <!-- MONTH SELECTOR CONTROLS -->
-        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: rgba(0, 0, 0, 0.25); padding: 6px 10px; border-radius: 12px; border: 1px solid var(--border-color);">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="window.changeHeatmapMonth(-1)" style="padding: 4px 9px; min-height: 32px;" title="Mes anterior">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-
-          <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapMonth(this.value)">
-            ${monthOptions}
-          </select>
-
-          <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapYear(this.value)">
-            ${yearOptions}
-          </select>
-
-          <button type="button" class="btn btn-secondary btn-sm" onclick="window.changeHeatmapMonth(1)" style="padding: 4px 9px; min-height: 32px;" title="Mes siguiente">
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
-
-          ${!isCurrentMonth ? `
-            <button type="button" class="btn btn-sm" onclick="window.resetHeatmapToCurrentMonth()" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 6px; cursor: pointer;">
-              Mes Actual
+          <!-- MONTH SELECTOR CONTROLS -->
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: rgba(0, 0, 0, 0.25); padding: 6px 10px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.changeHeatmapMonth(-1)" style="padding: 4px 9px; min-height: 32px;" title="Mes anterior">
+              <i class="fa-solid fa-chevron-left"></i>
             </button>
-          ` : ''}
-        </div>
-      </div>
 
-      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
-        <span style="font-size: 0.78rem; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
-          🟢 ${completedDaysCount} Cumplidos
-        </span>
-        <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
-          ⚪ ${restDaysCount} Descansos
-        </span>
-        <span style="font-size: 0.78rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
-          🟡 ${partialDaysCount} Parciales
-        </span>
-      </div>
+            <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapMonth(this.value)">
+              ${monthOptions}
+            </select>
 
-      <!-- HEATMAP CALENDAR GRID -->
-      <div class="heatmap-container">
-        <div class="heatmap-weekdays-row">
-          <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
-        </div>
-        <div class="heatmap-tiles-grid">
-          ${dayCells.join('')}
-        </div>
-      </div>
+            <select class="custom-select" style="padding: 4px 8px; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;" onchange="window.setHeatmapYear(this.value)">
+              ${yearOptions}
+            </select>
 
-      <!-- HEATMAP LEGEND -->
-      <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-top: 1.25rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-muted);">
-        <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(16, 185, 129, 0.85);"></div>
-          <span>Meta Cumplida</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.changeHeatmapMonth(1)" style="padding: 4px 9px; min-height: 32px;" title="Mes siguiente">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+            ${!isCurrentMonth ? `
+              <button type="button" class="btn btn-sm" onclick="window.resetHeatmapToCurrentMonth()" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 6px; cursor: pointer;">
+                Mes Actual
+              </button>
+            ` : ''}
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(245, 158, 11, 0.75);"></div>
-          <span>Actividad Parcial</span>
+
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+          <span style="font-size: 0.78rem; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+            🟢 ${completedDaysCount} Cumplidos
+          </span>
+          <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+            ⚪ ${restDaysCount} Descansos
+          </span>
+          <span style="font-size: 0.78rem; color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+            🟡 ${partialDaysCount} Parciales
+          </span>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(56, 189, 248, 0.4);"></div>
-          <span>Descanso Programado</span>
+
+        <!-- HEATMAP CALENDAR GRID -->
+        <div class="heatmap-container">
+          <div class="heatmap-weekdays-row">
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+          </div>
+          <div class="heatmap-tiles-grid">
+            ${dayCells.join('')}
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(156, 163, 175, 0.1); border: 1px solid var(--border-color);"></div>
-          <span>Sin Datos / Futuro</span>
+
+        <!-- HEATMAP LEGEND -->
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-top: 1.25rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-muted);">
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(16, 185, 129, 0.85);"></div>
+            <span>Meta Cumplida</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(245, 158, 11, 0.75);"></div>
+            <span>Actividad Parcial</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(56, 189, 248, 0.4);"></div>
+            <span>Descanso Programado</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(156, 163, 175, 0.1); border: 1px solid var(--border-color);"></div>
+            <span>Sin Datos / Futuro</span>
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
+  } catch(e) {
+    console.error("Error rendering heatmap view:", e);
+    container.innerHTML = `<div class="glass-card" style="padding: 1.5rem; text-align: center; color: var(--text-muted);"><i class="fa-solid fa-border-all" style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-cyan);"></i><p>Cargando matriz de consistencia...</p></div>`;
+  }
 }
 
 function renderBadgesView(pid, pName, container) {
-  const badges = calculateBadges(pid);
-  const unlockedCount = badges.filter(b => b.unlocked).length;
-  const totalCount = badges.length;
+  try {
+    const badges = calculateBadges(pid) || [];
+    const unlockedCount = badges.filter(b => b && b.unlocked).length;
+    const totalCount = badges.length;
 
-  const categories = ['Racha', 'Individual', 'FitDuo (Pareja)'];
+    const categories = ['Racha', 'Individual', 'FitDuo (Pareja)'];
 
-  container.innerHTML = `
-    <!-- BADGES HERO BANNER -->
-    <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(16, 185, 129, 0.15)); border: 1px solid rgba(245, 158, 11, 0.3);">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <div style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #ef4444); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #fff; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
-            🏆
+    container.innerHTML = `
+      <!-- BADGES HERO BANNER -->
+      <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(16, 185, 129, 0.15)); border: 1px solid rgba(245, 158, 11, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #ef4444); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #fff; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+              🏆
+            </div>
+            <div>
+              <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 2px;">
+                Vitrina de Logros y Trofeos
+              </h2>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">
+                Insignias de constancia individual y retos cooperativos en pareja
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 2px;">
-              Vitrina de Logros y Trofeos
-            </h2>
-            <p style="font-size: 0.8rem; color: var(--text-muted);">
-              Insignias de constancia individual y retos cooperativos en pareja
-            </p>
+          <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.4); padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+            <span style="font-size: 1.1rem; font-weight: 800; color: var(--accent-amber); font-family: var(--font-heading);">${unlockedCount} / ${totalCount}</span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">Desbloqueados</span>
           </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.4); padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
-          <span style="font-size: 1.1rem; font-weight: 800; color: var(--accent-amber); font-family: var(--font-heading);">${unlockedCount} / ${totalCount}</span>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">Desbloqueados</span>
         </div>
       </div>
-    </div>
 
-    <!-- BADGES CATEGORIES -->
-    ${categories.map(cat => {
-      const catBadges = badges.filter(b => b.category === cat);
-      return `
-        <div style="margin-bottom: 1.75rem;">
-          <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-            ${cat === 'Racha' ? '🔥 Rachas de Constancia' : (cat === 'Individual' ? '🎖️ Hitos Individuales' : '👥 Logros FitDuo (En Pareja)')}
-          </h3>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-            ${catBadges.map(b => `
-              <div class="glass-card badge-card ${b.unlocked ? 'unlocked' : 'locked'}" style="padding: 1.1rem; border-radius: var(--radius-md); position: relative; overflow: hidden;">
-                <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
-                  <div class="badge-icon-box" style="width: 46px; height: 46px; border-radius: 12px; background: ${b.unlocked ? `linear-gradient(135deg, ${b.color}33, ${b.color}88)` : 'rgba(156, 163, 175, 0.1)'}; border: 1px solid ${b.unlocked ? b.color : 'var(--border-color)'}; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: ${b.unlocked ? b.color : 'var(--text-muted)'}; flex-shrink: 0;">
-                    <i class="${b.icon}"></i>
-                  </div>
-                  <div style="flex: 1;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                      <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: ${b.unlocked ? 'var(--text-main)' : 'var(--text-muted)'}; margin: 0;">
-                        ${b.title}
-                      </h4>
-                      ${b.unlocked 
-                        ? `<span style="font-size: 0.7rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16,185,129,0.15); padding: 2px 8px; border-radius: 10px;"><i class="fa-solid fa-check"></i> Desbloqueado</span>`
-                        : `<span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;"><i class="fa-solid fa-lock"></i> Bloqueado</span>`
-                      }
+      <!-- BADGES CATEGORIES -->
+      ${categories.map(cat => {
+        const catBadges = badges.filter(b => b && b.category === cat);
+        return `
+          <div style="margin-bottom: 1.75rem;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+              ${cat === 'Racha' ? '🔥 Rachas de Constancia' : (cat === 'Individual' ? '🎖️ Hitos Individuales' : '👥 Logros FitDuo (En Pareja)')}
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+              ${catBadges.map(b => `
+                <div class="glass-card badge-card ${b.unlocked ? 'unlocked' : 'locked'}" style="padding: 1.1rem; border-radius: var(--radius-md); position: relative; overflow: hidden;">
+                  <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+                    <div class="badge-icon-box" style="width: 46px; height: 46px; border-radius: 12px; background: ${b.unlocked ? `linear-gradient(135deg, ${b.color}33, ${b.color}88)` : 'rgba(156, 163, 175, 0.1)'}; border: 1px solid ${b.unlocked ? b.color : 'var(--border-color)'}; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: ${b.unlocked ? b.color : 'var(--text-muted)'}; flex-shrink: 0;">
+                      <i class="${b.icon}"></i>
                     </div>
-                    <p style="font-size: 0.78rem; color: var(--text-muted); margin: 3px 0 8px 0; line-height: 1.3;">
-                      ${b.desc}
-                    </p>
-                    
-                    <!-- PROGRESS BAR -->
-                    <div style="width: 100%; height: 6px; background: rgba(156, 163, 175, 0.1); border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
-                      <div style="width: ${b.progressPct}%; height: 100%; background: ${b.unlocked ? b.color : 'var(--accent-cyan)'}; border-radius: 3px; transition: width 0.4s ease;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
-                      <span>Progreso: ${b.progressPct}%</span>
-                      <span>${b.progressText}</span>
+                    <div style="flex: 1;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                        <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: ${b.unlocked ? 'var(--text-main)' : 'var(--text-muted)'}; margin: 0;">
+                          ${b.title}
+                        </h4>
+                        ${b.unlocked 
+                          ? `<span style="font-size: 0.7rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16,185,129,0.15); padding: 2px 8px; border-radius: 10px;"><i class="fa-solid fa-check"></i> Desbloqueado</span>`
+                          : `<span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;"><i class="fa-solid fa-lock"></i> Bloqueado</span>`
+                        }
+                      </div>
+                      <p style="font-size: 0.78rem; color: var(--text-muted); margin: 3px 0 8px 0; line-height: 1.3;">
+                        ${b.desc}
+                      </p>
+                      
+                      <!-- PROGRESS BAR -->
+                      <div style="width: 100%; height: 6px; background: rgba(156, 163, 175, 0.1); border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
+                        <div style="width: ${b.progressPct}%; height: 100%; background: ${b.unlocked ? b.color : 'var(--accent-cyan)'}; border-radius: 3px; transition: width 0.4s ease;"></div>
+                      </div>
+                      <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
+                        <span>Progreso: ${b.progressPct}%</span>
+                        <span>${b.progressText}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            `).join('')}
+              `).join('')}
+            </div>
           </div>
-        </div>
-      `;
-    }).join('')}
-  `;
+        `;
+      }).join('')}
+    `;
+  } catch(e) {
+    console.error("Error rendering badges view:", e);
+    container.innerHTML = `<div class="glass-card" style="padding: 1.5rem; text-align: center; color: var(--text-muted);"><i class="fa-solid fa-trophy" style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-amber);"></i><p>Cargando vitrina de logros...</p></div>`;
+  }
 }
 
 // Global helper for day details toast
