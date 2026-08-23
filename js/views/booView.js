@@ -182,9 +182,32 @@ export function renderBooBacklogModalUI() {
       advanced: { label: "Trucos Avanzados", icon: "fa-solid fa-wand-magic-sparkles", color: "var(--accent-amber)", items: [] }
     };
 
+    const categoryMap = {
+      mental: "mental",
+      "Estimulación Mental & Olfato": "mental",
+      "Cobro y Juego": "mental",
+      "Adiestramiento con Marca": "mental",
+      agility: "agility",
+      "Habilidades Motoras & Agility": "agility",
+      "Habilidad Básica": "agility",
+      "Propiocepción & Juego": "agility",
+      "Agilidad": "agility",
+      selfcontrol: "selfcontrol",
+      "Autocontrol & Calma": "selfcontrol",
+      "Gestión Emocional": "selfcontrol",
+      "Autocontrol Emocional": "selfcontrol",
+      "Obediencia Avanzada": "selfcontrol",
+      "Obediencia y Vínculo": "selfcontrol",
+      "Paseo Estructurado": "selfcontrol",
+      advanced: "advanced",
+      "Trucos Avanzados": "advanced",
+      "Truco Divertido": "advanced"
+    };
+
     (BOO_TRICKS_BACKLOG || []).forEach(trick => {
-      if (categories[trick.category]) {
-        categories[trick.category].items.push(trick);
+      const catKey = categoryMap[trick.category] || (categories[trick.category] ? trick.category : "advanced");
+      if (categories[catKey]) {
+        categories[catKey].items.push(trick);
       } else {
         categories.advanced.items.push(trick);
       }
@@ -216,6 +239,8 @@ export function renderBooBacklogModalUI() {
       cat.items.forEach(item => {
         const isMastered = learned.includes(item.id);
         const isActive = activeId === item.id;
+        const trickDesc = item.desc || item.summary || "";
+        const trickDiff = item.difficulty || "Básico";
 
         html += `
           <div style="display: flex; justify-content: space-between; align-items: center; background: ${isActive ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${isActive ? 'var(--accent-amber)' : 'var(--border-color)'}; padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.82rem;">
@@ -223,9 +248,9 @@ export function renderBooBacklogModalUI() {
               <div style="font-weight: 600; color: ${isMastered ? 'var(--accent-emerald)' : (isActive ? 'var(--accent-amber)' : 'var(--text-main)')}; display: flex; align-items: center; gap: 0.4rem;">
                 ${isMastered ? '<i class="fa-solid fa-circle-check"></i>' : (isActive ? '<i class="fa-solid fa-bullseye"></i>' : '<i class="fa-regular fa-circle"></i>')}
                 ${item.title}
-                <span style="font-size: 0.7rem; font-weight: normal; color: var(--text-muted); padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,0.3);">${item.difficulty}</span>
+                <span style="font-size: 0.7rem; font-weight: normal; color: var(--text-muted); padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,0.3);">${trickDiff}</span>
               </div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${item.desc}</div>
+              ${trickDesc ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${trickDesc}</div>` : ''}
             </div>
             <div style="display: flex; gap: 0.4rem;">
               ${!isMastered ? `
@@ -269,19 +294,25 @@ export function renderBooWorkoutView() {
     }
 
     const dayPlan = (BOO_WEEKLY_SCHEDULE || {})[activeDay] || (BOO_WEEKLY_SCHEDULE && BOO_WEEKLY_SCHEDULE["Lunes"]) || {
-      theme: "Paseo Estructurado y Olfato",
-      primaryModuleId: "reactivity",
-      focusText: "Gestión de estímulos y enfoque con correa floja",
+      theme: "Autocontrol Emocional & Correa Relajada",
+      focusTitle: "Lunes: Autocontrol Emocional & Correa Relajada",
+      focusText: "Gestión de impulsos con pelota y técnicas de paseo en calma sin tirones",
       dailyTasks: [
-        { id: "task_1", title: "Paseo de descompresión 20 min", detail: "Dejar olfatear sin tirones con correa larga de 3m" },
-        { id: "task_2", title: "Semáforo visual de perros", detail: "Premiar contacto visual al ver otro perro a distancia segura" }
+        { id: "b_lun_1", title: "Autocontrol con Pelota", detail: "10 min de espera y quieto con pelota antes del lanzamiento", duration: "10 min" },
+        { id: "b_lun_2", title: "Paseo Sin Tirones", detail: "20 min de paseo con técnica de estatua (parar al sentir tensión)", duration: "20 min" },
+        { id: "b_lun_3", title: "Refuerzo Positivo de Llamada", detail: "5 llamadas intermedias con premio y soltado inmediato", duration: "Paseo" }
       ]
     };
 
-    const primaryModule = (BOO_TRAINING_MODULES || {})[dayPlan.primaryModuleId] || {};
+    const themeTitle = dayPlan.theme || dayPlan.focusTitle || `Plan de Adiestramiento • ${activeDay}`;
+    const focusDescription = dayPlan.focusText || dayPlan.summary || dayPlan.focus || 'Enfoque en calma, autocontrol y comunicación con correa floja';
+    const rawTasks = Array.isArray(dayPlan.dailyTasks) && dayPlan.dailyTasks.length > 0
+      ? dayPlan.dailyTasks
+      : (Array.isArray(dayPlan.tasks) ? dayPlan.tasks : []);
+
     const learnedTricks = appState.booProgress?.learnedTricks || [];
     const activeTrickId = appState.booProgress?.activeTrickId || (BOO_TRICKS_BACKLOG && BOO_TRICKS_BACKLOG[0] ? BOO_TRICKS_BACKLOG[0].id : null);
-    const activeTrick = (BOO_TRICKS_BACKLOG || []).find(t => t.id === activeTrickId) || (BOO_TRICKS_BACKLOG && BOO_TRICKS_BACKLOG[0]) || { title: "Contacto Visual", desc: "Mirar a los ojos a la orden 'Mírame'" };
+    const activeTrick = (BOO_TRICKS_BACKLOG || []).find(t => t.id === activeTrickId) || (BOO_TRICKS_BACKLOG && BOO_TRICKS_BACKLOG[0]) || { id: "trick_default", title: "Contacto Visual", desc: "Mirar a los ojos a la orden 'Mírame'", summary: "Mirar a los ojos a la orden 'Mírame'" };
 
     let html = `
       <div class="glass-card" style="margin-bottom: 1.25rem; border-left: 4px solid var(--accent-amber);">
@@ -291,10 +322,10 @@ export function renderBooWorkoutView() {
               Plan de Adiestramiento • ${activeDay}
             </div>
             <h2 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-main); margin-top: 2px;">
-              🐾 ${dayPlan.theme}
+              🐾 ${themeTitle}
             </h2>
             <p style="color: var(--text-muted); font-size: 0.83rem; margin-top: 2px;">
-              ${dayPlan.focusText}
+              ${focusDescription}
             </p>
           </div>
           <button type="button" class="btn-secondary-sm" onclick="openBooBacklogModal()" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; padding: 0.5rem 0.9rem; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">
@@ -304,10 +335,10 @@ export function renderBooWorkoutView() {
 
         <div style="background: rgba(0,0,0,0.15); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1rem;">
           <div style="font-weight: 700; font-size: 0.88rem; color: var(--accent-amber); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid fa-bullseye"></i> Truco Activo en Desarrollo: <strong>${activeTrick.title}</strong>
+            <i class="fa-solid fa-bullseye"></i> Truco Activo en Desarrollo: <strong>${activeTrick.title || 'Truco'}</strong>
           </div>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem;">
-            ${activeTrick.desc}
+            ${activeTrick.desc || activeTrick.summary || ''}
           </p>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button type="button" class="btn-primary" onclick="markTrickMastered('${activeTrick.id}')" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 6px; color: #fff; cursor: pointer;">
@@ -324,18 +355,22 @@ export function renderBooWorkoutView() {
             <i class="fa-solid fa-list-check" style="color: var(--accent-cyan);"></i> Ejercicios Específicos de Hoy:
           </h4>
           <div style="display: flex; flex-direction: column; gap: 0.45rem;">
-            ${(dayPlan.dailyTasks || []).map((t, idx) => {
-              const isChecked = !!appState.booProgress?.completedTasks?.[`${activeDay}_${t.id || idx}`];
+            ${rawTasks.map((t, idx) => {
+              const taskId = t.id || `task_${idx}`;
+              const isChecked = !!appState.booProgress?.completedTasks?.[`${activeDay}_${taskId}`];
+              const taskTitle = t.title || t.text || `Ejercicio ${idx + 1}`;
+              const taskDetail = t.detail || (t.duration ? `Duración: ${t.duration}` : '');
               return `
-                <div style="display: flex; align-items: flex-start; gap: 0.6rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 0.65rem 0.85rem; border-radius: 8px; cursor: pointer;" onclick="toggleBooTask('${activeDay}_${t.id || idx}', '${activeDay}')">
-                  <input type="checkbox" ${isChecked ? 'checked' : ''} style="margin-top: 3px; cursor: pointer;" onclick="event.stopPropagation(); toggleBooTask('${activeDay}_${t.id || idx}', '${activeDay}')">
+                <div style="display: flex; align-items: flex-start; gap: 0.6rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 0.65rem 0.85rem; border-radius: 8px; cursor: pointer;" onclick="toggleBooTask('${activeDay}_${taskId}', '${activeDay}')">
+                  <input type="checkbox" ${isChecked ? 'checked' : ''} style="margin-top: 3px; cursor: pointer;" onclick="event.stopPropagation(); toggleBooTask('${activeDay}_${taskId}', '${activeDay}')">
                   <div style="flex: 1;">
                     <div style="font-size: 0.85rem; font-weight: 600; color: ${isChecked ? 'var(--text-muted)' : 'var(--text-main)'}; text-decoration: ${isChecked ? 'line-through' : 'none'};">
-                      ${t.title}
+                      ${taskTitle}
                     </div>
+                    ${taskDetail ? `
                     <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 1px;">
-                      ${t.detail}
-                    </div>
+                      ${taskDetail}
+                    </div>` : ''}
                   </div>
                 </div>
               `;
@@ -353,17 +388,19 @@ export function renderBooWorkoutView() {
         </p>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.65rem;">
           ${(BOO_CONTINUOUS_REINFORCEMENT || []).map((item, idx) => {
-            const isChecked = !!appState.booProgress?.completedContinuous?.[`${activeDay}_${item.id || idx}`];
+            const itemId = item.id || `cont_${idx}`;
+            const isChecked = !!appState.booProgress?.completedContinuous?.[`${activeDay}_${itemId}`];
             return `
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer;" onclick="toggleContinuousItem('${item.id || idx}', '${activeDay}')">
-                <input type="checkbox" ${isChecked ? 'checked' : ''} style="margin-top: 3px; cursor: pointer;" onclick="event.stopPropagation(); toggleContinuousItem('${item.id || idx}', '${activeDay}')">
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer;" onclick="toggleContinuousItem('${itemId}', '${activeDay}')">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} style="margin-top: 3px; cursor: pointer;" onclick="event.stopPropagation(); toggleContinuousItem('${itemId}', '${activeDay}')">
                 <div>
                   <div style="font-size: 0.84rem; font-weight: 600; color: ${isChecked ? 'var(--accent-emerald)' : 'var(--text-main)'};">
-                    ${item.title}
+                    ${item.title || ''}
                   </div>
                   <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-                    ${item.desc}
+                    ${item.desc || item.detail || ''}
                   </div>
+                  ${item.tip ? `<div style="font-size: 0.72rem; color: var(--accent-amber); margin-top: 3px;"><i class="fa-solid fa-lightbulb"></i> ${item.tip}</div>` : ''}
                 </div>
               </div>
             `;

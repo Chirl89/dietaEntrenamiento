@@ -477,6 +477,33 @@ export function renderWorkoutsView() {
   }
 }
 
+export function formatExerciseReps(reps) {
+  if (reps === undefined || reps === null || reps === "") return "-";
+  const str = String(reps).trim();
+  const lower = str.toLowerCase();
+
+  const hasUnit = lower.includes("min") ||
+                  lower.includes("seg") ||
+                  lower.includes("reps") ||
+                  lower.includes("rep") ||
+                  lower.includes("paso") ||
+                  lower.includes("libre") ||
+                  lower.includes("flex") ||
+                  lower.includes("sentadilla") ||
+                  lower.includes("lado") ||
+                  lower.includes("pierna") ||
+                  lower.includes("alternad") ||
+                  lower.includes("bloque") ||
+                  lower.includes("c/u") ||
+                  /[a-zA-Z]/.test(str);
+
+  if (hasUnit) {
+    return str;
+  }
+
+  return `${str} reps`;
+}
+
 export function renderExerciseTableView() {
   try {
     const container = document.getElementById("exercise-routines-container");
@@ -502,8 +529,8 @@ export function renderExerciseTableView() {
           <div class="exercise-name">${ex.name}</div>
           <div class="exercise-tech"><i class="fa-solid fa-lightbulb" style="color:var(--accent-amber);"></i> ${ex.technique || ''}</div>
         </td>
-        <td><strong style="color:var(--accent-emerald);">${ex.sets}</strong> series</td>
-        <td><strong>${ex.reps}</strong> reps</td>
+        <td><strong style="color:var(--accent-emerald);">${ex.sets}</strong> ${ex.sets === 1 ? 'serie' : 'series'}</td>
+        <td><strong>${formatExerciseReps(ex.reps)}</strong></td>
         <td><span style="color:var(--text-muted);">${ex.rest}</span></td>
       </tr>
     `).join("");
@@ -696,7 +723,7 @@ export function renderWorkoutTracker() {
             </summary>
             <ul class="day-exercise-mini-list" style="margin-top: 0.4rem; padding-left: 1rem; color: var(--text-muted); line-height: 1.5;">
               ${routine.exercises ? routine.exercises.map(ex => `
-                <li style="margin-bottom: 2px;"><strong>${ex.name}</strong> (${ex.sets} series x ${ex.reps})</li>
+                <li style="margin-bottom: 2px;"><strong>${ex.name}</strong> (${ex.sets} ${ex.sets === 1 ? 'serie' : 'series'} x ${formatExerciseReps(ex.reps)})</li>
               `).join('') : '<li>Descanso</li>'}
             </ul>
           </details>

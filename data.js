@@ -422,7 +422,7 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     exercises: [
       { name: "Paseo Activo de Calentamiento", sets: 1, reps: "10 min", rest: "-", technique: "Caminata ligera a ritmo vivo mientras Boo olfatea." },
       { name: "Fartlek: 1 min trote + 2 min caminata (5 Bloques)", sets: 5, reps: "3 min c/u", rest: "En caminata", technique: "Intercala trote suave a ritmo conversacional con caminata rápida." },
-      { name: "Circuito en Banco: Step-ups + Flexiones en banco", sets: 3, reps: "10/pierna + 10 flex", rest: "45 seg", technique: "Carlos y Andrea se turnan mientras Boo realiza 'Sentado/Quieto'." },
+      { name: "Circuito en Banco: Step-ups + Flexiones en banco", sets: 3, reps: "10 / pierna + 10 flex", rest: "45 seg", technique: "Carlos y Andrea se turnan mientras Boo realiza 'Sentado/Quieto'." },
       { name: "Estiramientos de Enfriamiento", sets: 1, reps: "5 min", rest: "-", technique: "Estiramiento de cuádriceps, gemelos e isquios." }
     ],
     routeDetails: {
@@ -463,7 +463,7 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     focus: "Recuperación muscular y movilidad de cadera/espalda",
     exercises: [
       { name: "Paseo Tranquilo de Olfateo con Boo", sets: 1, reps: "25 min", rest: "-", technique: "Paseo a ritmo suave permitiendo que Boo explore a su aire." },
-      { name: "Movilidad Columna 'Gato-Vaca'", sets: 2, reps: "10 repeticiones", rest: "30 seg", technique: "Moviliza la espalda suavemente para liberar tensión." },
+      { name: "Movilidad Columna 'Gato-Vaca'", sets: 2, reps: "10", rest: "30 seg", technique: "Moviliza la espalda suavemente para liberar tensión." },
       { name: "Estiramiento de Psoas e Isquios", sets: 2, reps: "30 seg / lado", rest: "30 seg", technique: "Relaja flexores de cadera tras horas de postura sentado." }
     ],
     routeDetails: {
@@ -489,7 +489,7 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
       { name: "Face Pulls con Banda Elástica", sets: 3, reps: "15", rest: "45 seg", technique: "Tira de la banda hacia la cara abriendo codos hacia afuera." },
       { name: "Fondos de Tríceps en Silla", sets: 3, reps: "8 - 10", rest: "60 seg", technique: "Flexiona codos a 90º hacia atrás y empuja para subir." },
       { name: "Superman para Cadena Posterior", sets: 3, reps: "10 (2s arriba)", rest: "45 seg", technique: "Despega ligeramente pecho y muslos del suelo sintiendo activación." },
-      { name: "Plancha Lateral Modificada", sets: 3, reps: "15-20s / lado", rest: "45 seg", technique: "Apoya antebrazo y rodilla inferior alineando el tronco." }
+      { name: "Plancha Lateral Modificada", sets: 3, reps: "15 - 20 seg / lado", rest: "45 seg", technique: "Apoya antebrazo y rodilla inferior alineando el tronco." }
     ]
   },
   Sábado: {
@@ -502,7 +502,7 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     focus: "Gasto calórico elevado, resistencia y diversión con Boo",
     exercises: [
       { name: "Marcha Activa a Ritmo Vivo (5.5 km/h)", sets: 1, reps: "25 min", rest: "-", technique: "Paso firme apretando glúteos en subidas." },
-      { name: "Parada de Agilidad con Boo + Sentadillas", sets: 3, reps: "15 sentadillas", rest: "60 seg", technique: "Mientras Boo hace juegos de buscar el juguete, realizáis sentadillas y flexiones." },
+      { name: "Parada de Agilidad con Boo + Sentadillas", sets: 3, reps: "15", rest: "60 seg", technique: "Mientras Boo hace juegos de buscar el juguete, realizáis sentadillas y flexiones." },
       { name: "Caminata de Regreso y Enfriamiento", sets: 1, reps: "20 min", rest: "-", technique: "Ritmo progresivamente más suave." }
     ],
     routeDetails: {
@@ -615,65 +615,79 @@ export const BOO_TRAINING_MODULES = [
 export const BOO_WEEKLY_SCHEDULE = {
   Lunes: {
     day: "Lunes",
+    theme: "Autocontrol Emocional & Correa Relajada",
     focusTitle: "Lunes: Autocontrol Emocional & Correa Relajada",
+    focusText: "Gestión de impulsos con pelota y técnicas de paseo en calma sin tirones",
     tasks: [
-      { id: "b_lun_1", module: "ansiedad_pelota", text: "10 min de espera y quieto con pelota antes del lanzamiento", duration: "10 min" },
-      { id: "b_lun_2", module: "paseo_relajado", text: "Paseo con técnica de estatua (parar al sentir tensión en correa)", duration: "20 min" },
-      { id: "b_lun_3", module: "llamada_positiva", text: "5 llamadas intermedias durante el paseo con premio y soltado inmediato", duration: "Paseo" }
+      { id: "b_lun_1", module: "ansiedad_pelota", title: "Autocontrol con Pelota", text: "10 min de espera y quieto con pelota antes del lanzamiento", detail: "10 min de espera y quieto con pelota antes del lanzamiento (orden de liberación '¡Ya!')", duration: "10 min" },
+      { id: "b_lun_2", module: "paseo_relajado", title: "Paseo Sin Tirones (Técnica Estatua)", text: "Paseo con técnica de estatua (parar al sentir tensión en correa)", detail: "20 min de paseo deteniéndose al sentir tensión y avanzando con correa floja en 'U'", duration: "20 min" },
+      { id: "b_lun_3", module: "llamada_positiva", title: "Refuerzo Positivo de Llamada", text: "5 llamadas intermedias durante el paseo con premio y soltado inmediato", detail: "5 llamadas intermedias durante el paseo con premio de alto valor y soltado inmediato", duration: "Paseo" }
     ]
   },
   Martes: {
     day: "Martes",
+    theme: "Agilidad en Parque & Refuerzo de Llamada",
     focusTitle: "Martes: Agilidad en Parque & Refuerzo de Llamada",
+    focusText: "Entrenamiento dinámico en parque combinando llamadas de control y atención voluntaria",
     tasks: [
-      { id: "b_mar_1", module: "llamada_positiva", text: "8 llamadas de control con 'Engancha, premia y suelta' en el parque", duration: "15 min" },
-      { id: "b_mar_2", module: "paseo_junto", text: "Paseo en parque practicando 'Mírame' con cambios de ritmo", duration: "20 min" },
-      { id: "b_mar_3", module: "ansiedad_pelota", text: "Juego de Frisbee/Pelota solo bajo orden de liberación ('¡Ya!')", duration: "10 min" }
+      { id: "b_mar_1", module: "llamada_positiva", title: "Engancha, Premia y Suelta", text: "8 llamadas de control con 'Engancha, premia y suelta' en el parque", detail: "8 llamadas de control con 'Engancha, premia y suelta' durante el tiempo de parque", duration: "15 min" },
+      { id: "b_mar_2", module: "paseo_junto", title: "Paseo con Cambios de Ritmo ('Mírame')", text: "Paseo en parque practicando 'Mírame' con cambios de ritmo", detail: "Paseo en parque practicando contacto visual espontáneo con aceleraciones y frenadas", duration: "20 min" },
+      { id: "b_mar_3", module: "ansiedad_pelota", title: "Juego de Pelota/Frisbee con Liberación", text: "Juego de Frisbee/Pelota solo bajo orden de liberación ('¡Ya!')", detail: "Lanzamiento de frisbee/pelota solo tras orden '¡Ya!' y tras mantener el quieto en calma", duration: "10 min" }
     ]
   },
   Miércoles: {
     day: "Miércoles",
+    theme: "Contacto Visual Voluntario & Caminata Junto",
     focusTitle: "Miércoles: Contacto Visual Voluntario & Caminata Junto",
+    focusText: "Enfoque en guías durante entorno urbano y reducción de estímulos externos",
     tasks: [
-      { id: "b_mie_1", module: "paseo_junto", text: "Premiar 15 contactos visuales espontáneos durante el paseo urbano", duration: "20 min" },
-      { id: "b_mie_2", module: "ansiedad_pelota", text: "Sesión de autocontrol: guardar pelota tras la espalda si hay excitación", duration: "10 min" },
-      { id: "b_mie_3", module: "paseo_relajado", text: "Práctica de giros de 180º en calle tranquila", duration: "15 min" }
+      { id: "b_mie_1", module: "paseo_junto", title: "Contacto Visual Espontáneo", text: "Premiar 15 contactos visuales espontáneos durante el paseo urbano", detail: "Premiar 15 contactos visuales voluntarios de Boo durante el recorrido urbano", duration: "20 min" },
+      { id: "b_mie_2", module: "ansiedad_pelota", title: "Autocontrol y Desconexión", text: "Sesión de autocontrol: guardar pelota tras la espalda si hay excitación", detail: "Sesión de autocontrol: guardar la pelota tras la espalda si aparece sobreexcitación", duration: "10 min" },
+      { id: "b_mie_3", module: "paseo_relajado", title: "Giros de 180º sin Tirones", text: "Práctica de giros de 180º en calle tranquila", detail: "Práctica de giros de 180º en calle tranquila para mantener a Boo pendiente de la dirección", duration: "15 min" }
     ]
   },
   Jueves: {
     day: "Jueves",
+    theme: "Paseo de Olfateo Calmo & Llamadas de Juego",
     focusTitle: "Jueves: Paseo de Olfateo Calmo & Llamadas de Juego",
+    focusText: "Reducción de cortisol mediante olfateo libre y asociación positiva de fin de paseo",
     tasks: [
-      { id: "b_jue_1", module: "paseo_relajado", text: "Paseo largo de olfateo libre a ritmo pausado (reducción de cortisol)", duration: "25 min" },
-      { id: "b_jue_2", module: "llamada_positiva", text: "Llamada con premio 'Jackpot' de pavo al finalizar el paseo", duration: "5 min" },
-      { id: "b_jue_3", module: "paseo_junto", text: "Refuerzo de posición 'Junto' a la altura del muslo", duration: "10 min" }
+      { id: "b_jue_1", module: "paseo_relajado", title: "Paseo de Olfateo de Descompresión", text: "Paseo largo de olfateo libre a ritmo pausado (reducción de cortisol)", detail: "Paseo largo de olfateo libre a ritmo pausado con correa de 3m (reduce el estrés canino)", duration: "25 min" },
+      { id: "b_jue_2", module: "llamada_positiva", title: "Llamada Jackpot al Cierre", text: "Llamada con premio 'Jackpot' de pavo al finalizar el paseo", detail: "Llamada final con premio especial 'Jackpot' de pavo al concluir el paseo", duration: "5 min" },
+      { id: "b_jue_3", module: "paseo_junto", title: "Posición 'Junto' al Muslo", text: "Refuerzo de posición 'Junto' a la altura del muslo", detail: "Refuerzo positivo de la posición pegada a la pierna con entrega de premio en el muslo", duration: "10 min" }
     ]
   },
   Viernes: {
     day: "Viernes",
+    theme: "Circuito de Calma & Desconexión de Pelota",
     focusTitle: "Viernes: Circuito de Calma & Desconexión de Pelota",
+    focusText: "Ejercicios de calma con distractores y paseo con correa destensada en U",
     tasks: [
-      { id: "b_vie_1", module: "ansiedad_pelota", text: "Semáforo de pelota: Sentado -> Botar pelota -> Liberación calmada", duration: "15 min" },
-      { id: "b_vie_2", module: "paseo_relajado", text: "Paseo atada practicando correa floja en forma de U", duration: "20 min" },
-      { id: "b_vie_3", module: "llamada_positiva", text: "6 llamadas de prueba sin cierre de paseo", duration: "Paseo" }
+      { id: "b_vie_1", module: "ansiedad_pelota", title: "Semáforo de la Pelota", text: "Semáforo de pelota: Sentado -> Botar pelota -> Liberación calmada", detail: "Sentado -> Botar pelota suavemente en el suelo -> Liberación serena a la orden '¡Ya!'", duration: "15 min" },
+      { id: "b_vie_2", module: "paseo_relajado", title: "Correa Floja en U", text: "Paseo atada practicando correa floja en forma de U", detail: "Paseo atada manteniendo la curva en U en la correa en todo momento", duration: "20 min" },
+      { id: "b_vie_3", module: "llamada_positiva", title: "Llamadas de Prueba", text: "6 llamadas de prueba sin cierre de paseo", detail: "6 llamadas intermedias premiadas y liberadas inmediatamente para seguir jugando", duration: "Paseo" }
     ]
   },
   Sábado: {
     day: "Sábado",
+    theme: "Trail / Monte & Llamada en Distracción Real",
     focusTitle: "Sábado: Trail/Monte & Llamada en Distracción Real",
+    focusText: "Respuesta a la llamada en entorno natural con olores intensos y sendero compartido",
     tasks: [
-      { id: "b_sab_1", module: "llamada_positiva", text: "Práctica de llamada de retorno con alta distracción en el monte", duration: "25 min" },
-      { id: "b_sab_2", module: "paseo_junto", text: "Caminata al lado en tramos estrechos del sendero", duration: "20 min" },
-      { id: "b_sab_3", module: "ansiedad_pelota", text: "Juego de buscar la pelota en hierba alta (olfateo + autocontrol)", duration: "15 min" }
+      { id: "b_sab_1", module: "llamada_positiva", title: "Llamada con Alta Distracción", text: "Práctica de llamada de retorno con alta distracción en el monte", detail: "Práctica de llamada de retorno con olores y estímulos naturales en el monte", duration: "25 min" },
+      { id: "b_sab_2", module: "paseo_junto", title: "Caminata Junto en Tramos Estrechos", text: "Caminata al lado en tramos estrechos del sendero", detail: "Caminar al lado en senderos estrechos coordinando el paso con arnés de canicross", duration: "20 min" },
+      { id: "b_sab_3", module: "ansiedad_pelota", title: "Búsqueda de Pelota en Hierba Alta", text: "Juego de buscar la pelota en hierba alta (olfateo + autocontrol)", detail: "Juegos de olfato y cobro en vegetación estimulando la mente de Border Collie", duration: "15 min" }
     ]
   },
   Domingo: {
     day: "Domingo",
+    theme: "Paseo en Familia & Vínculo Positivo",
     focusTitle: "Domingo: Paseo en Familia & Vínculo Positivo",
+    focusText: "Sesión lúdica y relajante en familia fortaleciendo el vínculo emocional",
     tasks: [
-      { id: "b_dom_1", module: "llamada_positiva", text: "Llamadas lúdicas compartidas entre Carlos y Andrea", duration: "15 min" },
-      { id: "b_dom_2", module: "paseo_relajado", text: "Paseo relajado sin prisas disfrutando de la naturaleza", duration: "25 min" },
-      { id: "b_dom_3", module: "ansiedad_pelota", text: "Masaje de relajación y soltado de tensión tras los paseos", duration: "10 min" }
+      { id: "b_dom_1", module: "llamada_positiva", title: "Llamadas Cruzadas en Familia", text: "Llamadas lúdicas compartidas entre Carlos y Andrea", detail: "Llamadas lúdicas alternadas entre Carlos y Andrea premiando la llegada con entusiasmo", duration: "15 min" },
+      { id: "b_dom_2", module: "paseo_relajado", title: "Paseo Libre y Regenerativo", text: "Paseo relajado sin prisas disfrutando de la naturaleza", detail: "Paseo relajado sin exigencias disfrutando del entorno y permitiendo libre exploración", duration: "25 min" },
+      { id: "b_dom_3", module: "ansiedad_pelota", title: "Masaje de Relajación Canina", text: "Masaje de relajación y soltado de tensión tras los paseos", detail: "Masaje de soltado muscular y caricias suaves en el lomo y pecho tras la caminata", duration: "10 min" }
     ]
   }
 };
@@ -685,6 +699,7 @@ export const BOO_CONTINUOUS_REINFORCEMENT = [
     icon: "fa-solid fa-eye",
     color: "var(--accent-cyan)",
     desc: "Premiar cada vez que Boo se gire a mirar a Carlos o Andrea espontáneamente durante el paseo.",
+    detail: "Premiar cada vez que Boo se gire a mirar a Carlos o Andrea espontáneamente durante el paseo.",
     tip: "Entregar siempre el premio junto al muslo para reforzar la zona de paseo pegada al guía."
   },
   {
@@ -693,6 +708,7 @@ export const BOO_CONTINUOUS_REINFORCEMENT = [
     icon: "fa-solid fa-dog",
     color: "var(--accent-purple)",
     desc: "Técnica de la estatua: Parar en seco al sentir tensión en la correa. Avanzar solo cuando la correa cuelga en curva ('U').",
+    detail: "Técnica de la estatua: Parar en seco al sentir tensión en la correa. Avanzar solo cuando la correa cuelga en curva ('U').",
     tip: "No dar tirones hacia atrás. Mantenerse firme como un árbol enseña a Boo a buscar la flojedad por sí misma."
   },
   {
@@ -701,6 +717,7 @@ export const BOO_CONTINUOUS_REINFORCEMENT = [
     icon: "fa-solid fa-bullhorn",
     color: "var(--accent-emerald)",
     desc: "Realizar 8 de cada 10 llamadas durante el paseo para dar una súper chuche, enganchar 5s y SOLTARLA A JUGAR de nuevo.",
+    detail: "Realizar 8 de cada 10 llamadas durante el paseo para dar una súper chuche, enganchar 5s y SOLTARLA A JUGAR de nuevo.",
     tip: "Nunca llamar solo para regañar o únicamente al terminar el paseo. Asociar la llamada a fiesta y libertad."
   }
 ];
@@ -709,11 +726,12 @@ export const BOO_TRICKS_BACKLOG = [
   {
     id: "trick_pelota_autocontrol",
     title: "Gestión de Ansiedad con Pelota (Autocontrol)",
-    category: "Gestión Emocional",
+    category: "selfcontrol",
     difficulty: "Intermedio",
     icon: "fa-solid fa-baseball",
     badgeColor: "var(--accent-amber)",
     summary: "Aprender a esperar en calma antes de ir a por la pelota tras la orden de liberación ('¡Ya!').",
+    desc: "Aprender a esperar en calma antes de ir a por la pelota tras la orden de liberación ('¡Ya!').",
     steps: [
       "Mostrar pelota estática a la altura del pecho. Si Boo salta o ladra, ocultarla tras la espalda.",
       "Pedir 'Sentado' + 'Quieto' a 2 metros de distancia.",
@@ -725,11 +743,12 @@ export const BOO_TRICKS_BACKLOG = [
   {
     id: "trick_dar_pata",
     title: "Dar las dos patas (Izquierda y Derecha)",
-    category: "Habilidad Básica",
+    category: "agility",
     difficulty: "Fácil",
     icon: "fa-solid fa-paw",
     badgeColor: "var(--accent-cyan)",
     summary: "Enseñar a Boo a dar la pata izquierda ('Pata') y la derecha ('La otra').",
+    desc: "Enseñar a Boo a dar la pata izquierda ('Pata') y la derecha ('La otra').",
     steps: [
       "Con Boo sentada, mostrar premio en el puño cerrado a la altura de su pecho.",
       "Esperar a que toque la mano con la pata. En cuanto la toque, decir '¡Muy bien!' y abrir la mano.",
@@ -740,11 +759,12 @@ export const BOO_TRICKS_BACKLOG = [
   {
     id: "trick_tumbado_distancia",
     title: "Tumbado a Distancia con Señal de Mano",
-    category: "Obediencia Avanzada",
+    category: "selfcontrol",
     difficulty: "Intermedio",
     icon: "fa-solid fa-hand",
     badgeColor: "var(--accent-emerald)",
     summary: "Conseguir que Boo se tumbe al ver la mano extendida hacia abajo desde 3-5 metros.",
+    desc: "Conseguir que Boo se tumbe al ver la mano extendida hacia abajo desde 3-5 metros.",
     steps: [
       "Practicar orden 'Plaza/Tumbado' de cerca acompañando con movimiento llano de mano.",
       "Dar medio paso atrás antes de hacer la señal visual.",
@@ -755,11 +775,12 @@ export const BOO_TRICKS_BACKLOG = [
   {
     id: "trick_giro_360",
     title: "Giro 360º sobre sí misma ('Spin')",
-    category: "Propiocepción & Juego",
+    category: "agility",
     difficulty: "Fácil",
     icon: "fa-solid fa-rotate-right",
     badgeColor: "var(--accent-purple)",
     summary: "Girar un círculo completo hacia la derecha ('Gira') y hacia la izquierda ('Twist').",
+    desc: "Girar un círculo completo hacia la derecha ('Gira') y hacia la izquierda ('Twist').",
     steps: [
       "Guiar el hocico de Boo con un premio haciendo un círculo completo a su alrededor.",
       "Marcar '¡Muy bien!' al completar el giro y entregar premio.",
@@ -770,11 +791,12 @@ export const BOO_TRICKS_BACKLOG = [
   {
     id: "trick_slalom_piernas",
     title: "Caminar entre las piernas (Slalom en marcha)",
-    category: "Agilidad",
+    category: "agility",
     difficulty: "Intermedio",
     icon: "fa-solid fa-person-walking",
     badgeColor: "var(--accent-rose)",
     summary: "Pasar en forma de 8 entre las piernas de Carlos o Andrea mientras caminan.",
+    desc: "Pasar en forma de 8 entre las piernas de Carlos o Andrea mientras caminan.",
     steps: [
       "Dar un paso adelante con la pierna derecha y guiar a Boo a pasar por debajo con premio.",
       "Dar un paso con la pierna izquierda y guiar el siguiente cruce.",
@@ -785,11 +807,12 @@ export const BOO_TRICKS_BACKLOG = [
   {
     id: "trick_traer_soltar",
     title: "Traer objeto y entregar en la mano",
-    category: "Cobro y Juego",
+    category: "mental",
     difficulty: "Intermedio",
     icon: "fa-solid fa-hand-holding-heart",
     badgeColor: "var(--accent-amber)",
     summary: "Entregar el juguete suavemente en la palma abierta en lugar de soltarlo en el suelo.",
+    desc: "Entregar el juguete suavemente en la palma abierta en lugar de soltarlo en el suelo.",
     steps: [
       "Colocar la palma abierta bajo su barbilla cuando regresa con el objeto.",
       "Decir 'Dame' o 'Suelta' intercambiando por un premio de alto valor.",
@@ -800,11 +823,12 @@ export const BOO_TRICKS_BACKLOG = [
   {
     id: "trick_targeting_nariz",
     title: "Tocar diana (Targeting con el hocico)",
-    category: "Adiestramiento con Marca",
+    category: "mental",
     difficulty: "Fácil",
     icon: "fa-solid fa-bullseye",
     badgeColor: "var(--accent-cyan)",
     summary: "Tocar la palma de la mano o un objetivo específico con la trufa.",
+    desc: "Tocar la palma de la mano o un objetivo específico con la trufa.",
     steps: [
       "Presentar la palma abierta a 5 cm del hocico.",
       "Por curiosidad Boo la olerá. En cuanto toque con la nariz, marcar '¡Toca!' y premiar.",
@@ -815,11 +839,12 @@ export const BOO_TRICKS_BACKLOG = [
   {
     id: "trick_rodar",
     title: "Hacerse la muerta / Rodar ('Roll over')",
-    category: "Truco Divertido",
+    category: "advanced",
     difficulty: "Avanzado",
     icon: "fa-solid fa-arrows-spin",
     badgeColor: "var(--accent-emerald)",
     summary: "Desde la posición tumbada, girar sobre la espalda hasta volver a quedar tumbada.",
+    desc: "Desde la posición tumbada, girar sobre la espalda hasta volver a quedar tumbada.",
     steps: [
       "Con Boo tumbada, guiar el premio desde la nariz hacia su hombro para que incline el cuerpo.",
       "Continuar el movimiento de la mano sobre su lomo obligándola a dar la vuelta.",
