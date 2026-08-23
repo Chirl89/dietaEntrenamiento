@@ -1437,6 +1437,35 @@ body[data-profile="she"] .btn-generate-shopping-glow:hover {
   line-height: 1.6;
 }
 
+/* WORKOUT & EXERCISE DAY TABS */
+.weekly-days-tabs, .day-tabs-scroll {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.day-tab {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.day-tab.active {
+  background: var(--accent-emerald);
+  color: #000000;
+  border-color: var(--accent-emerald);
+  font-weight: 700;
+}
+
 /* FULL WEEK MATRIX GRID */
 .planner-week-matrix-grid {
   display: grid;
@@ -2157,7 +2186,10 @@ body[data-profile="she"] .routine-badge {
     justify-content: center;
     padding: 0.5rem;
     font-size: 0.8rem;
-  }/* IPHONE MOBILE TOP BAR */
+  }
+}
+
+/* IPHONE MOBILE TOP BAR */
 .ios-top-bar {
   display: none; /* Shown via media queries on mobile screens */
   position: fixed;
