@@ -132,6 +132,79 @@ export const RECIPES_DATABASE = [
       "Listo para consumir inmediatamente."
     ]
   },
+  {
+    id: "d4",
+    name: "Porridge Proteico de Avena, Vainilla, Plátano y Chía",
+    type: "desayuno",
+    prepTime: 8,
+    calories: 410,
+    protein: 27,
+    carbs: 58,
+    fats: 8,
+    tags: ["saciante", "energía lenta", "dulce"],
+    ingredients: [
+      { name: "Copos de avena integrales", amount: 55, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Leche desnatada o bebida vegetal sin azúcar", amount: 180, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Proteína de suero (Whey Protein)", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Plátanos de Canarias", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Semillas de chía, lino o sésamo", amount: 8, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Canela en polvo", amount: 2, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Calienta la leche con la avena a fuego medio durante 4-5 minutos removiendo constantemente.",
+      "Retira del fuego y mezcla la proteína de suero y la canela hasta que quede cremoso.",
+      "Sirve en un bol y decora con rodajas de plátano y semillas de chía."
+    ]
+  },
+  {
+    id: "d5",
+    name: "Tortilla Francesa con Espinacas Baby, Champiñones y Queso Feta",
+    type: "desayuno",
+    prepTime: 10,
+    calories: 390,
+    protein: 26,
+    carbs: 12,
+    fats: 24,
+    tags: ["salado", "bajo en carb", "alto en proteína"],
+    ingredients: [
+      { name: "Huevos frescos (Clase L)", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Claras de huevo pasteurizadas", amount: 80, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Espinacas frescas", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Champiñones laminados", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Queso Feta o Burgos desnatado", amount: 35, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "Saltea los champiñones y las espinacas con unas gotas de AOVE durante 3 minutos.",
+      "Bate los huevos con las claras y viértelos sobre las verduras en la sartén.",
+      "Añade el queso feta desmenuzado por encima y dobla la tortilla en media luna.",
+      "Cocina hasta que quede jugosa por dentro."
+    ]
+  },
+  {
+    id: "d6",
+    name: "Tostadas de Centeno con Requesón 0%, Fresas y Miel Pura",
+    type: "desayuno",
+    prepTime: 5,
+    calories: 360,
+    protein: 24,
+    carbs: 48,
+    fats: 6,
+    tags: ["ultra rápido", "dulce", "alto en proteína"],
+    ingredients: [
+      { name: "Pan 100% integral (masa madre / centeno)", amount: 70, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Queso fresco batido 0%", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Fresas o Frutos Rojos", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Miel pura", amount: 10, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Nueces al natural", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "Tuesta las rebanadas de pan de centeno.",
+      "Unta generosamente el requesón o queso batido escurrido sobre las tostadas.",
+      "Coloca las fresas cortadas en láminas y nueces picadas.",
+      "Riega con un hilo fino de miel pura."
+    ]
+  },
 
   // ALMUERZOS / COMIDAS
   {
@@ -211,6 +284,109 @@ export const RECIPES_DATABASE = [
       "Aliña con una cucharadita de AOVE, vinagre de manzana, sal y orégano."
     ]
   },
+  {
+    id: "c4",
+    name: "Poke Bowl de Salmón Fresco, Arroz Integral, Edamame y Mango",
+    type: "comida",
+    prepTime: 15,
+    calories: 560,
+    protein: 39,
+    carbs: 56,
+    fats: 18,
+    tags: ["fresco", "alto en proteína", "omega 3"],
+    ingredients: [
+      { name: "Lomo de salmón fresco", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Arroz integral", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Edamame desgranado o soja", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Mango maduro", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aguacates", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Semillas de chía, lino o sésamo", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Salsa de soja baja en sal", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Corta el salmón fresco en dados y marina 5 min con salsa de soja.",
+      "Sirve una base de arroz integral cocido en un bol amplio.",
+      "Distribuye armónicamente el salmón, el edamame cocido, el mango en dados y el aguacate.",
+      "Espolvorea semillas de sésamo por encima."
+    ]
+  },
+  {
+    id: "c5",
+    name: "Arroz Integral Salteado con Ternera Magra, Setas y Pimientos",
+    type: "comida",
+    prepTime: 20,
+    calories: 540,
+    protein: 44,
+    carbs: 54,
+    fats: 14,
+    tags: ["alto en hierro", "fuerza", "tupper"],
+    ingredients: [
+      { name: "Filetes de ternera magra", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Arroz integral", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Champiñones laminados", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Pimientos (rojo y verde)", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Cebolla", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Ajo y perejil picado", amount: 3, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Corta la ternera magra en tiras finas.",
+      "Saltea en sartén o wok con AOVE la cebolla, los pimientos y las setas a fuego alto durante 5 minutos.",
+      "Añade la ternera y sella a fuego vivo durante 2-3 minutos sin resecar.",
+      "Incorpora el arroz integral cocido, remueve todo junto y espolvorea perejil fresco."
+    ]
+  },
+  {
+    id: "c6",
+    name: "Pasta 100% Integral con Pavo Picado, Salsa de Tomate Casera y Albahaca",
+    type: "comida",
+    prepTime: 18,
+    calories: 530,
+    protein: 43,
+    carbs: 58,
+    fats: 12,
+    tags: ["italiano fit", "saciante", "post-entreno"],
+    ingredients: [
+      { name: "Carne picada de pavo o pollo", amount: 170, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Pasta 100% integral", amount: 75, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Tomate triturado natural", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Cebolla y ajo", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Queso parmesano rallado", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Albahaca y orégano", amount: 2, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Hierve la pasta integral en abundante agua con sal durante 8-10 minutos al dente.",
+      "Sofríe la cebolla y el ajo con AOVE, añade la carne picada de pavo y cocina hasta dorar.",
+      "Vierte el tomate triturado, orégano y albahaca, dejando reducir a fuego medio 8 minutos.",
+      "Mezcla la pasta con la salsa y espolvorea el queso parmesano."
+    ]
+  },
+  {
+    id: "c7",
+    name: "Garbanzos Salteados con Espinacas Frescas, Gambas y Pimentón",
+    type: "comida",
+    prepTime: 12,
+    calories: 490,
+    protein: 36,
+    carbs: 48,
+    fats: 14,
+    tags: ["legumbres", "rápido", "tradicional fit"],
+    ingredients: [
+      { name: "Garbanzos cocidos en tarro", amount: 200, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Gambas peladas", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Espinacas frescas", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Ajo", amount: 2, unit: "diente", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Pimentón dulce de la Vera", amount: 3, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Aclara y escurre los garbanzos cocidos.",
+      "Dora los ajos laminados en una sartén con AOVE.",
+      "Añade las gambas peladas y saltea 2 min. Añade las espinacas hasta que reduzcan de volumen.",
+      "Incorpora los garbanzos y el pimentón dulce, removiendo 3 minutos a fuego medio."
+    ]
+  },
 
   // CENAS
   {
@@ -240,7 +416,7 @@ export const RECIPES_DATABASE = [
   },
   {
     id: "cn2",
-    name: "Hamburguesa Casera de Pavo y Espinacas con Ensalada Mixta y Patata al Microondas",
+    name: "Hamburguesa Casera de Pavo y Espinacas con Ensalada Mixta y Patata",
     type: "cena",
     prepTime: 18,
     calories: 430,
@@ -264,7 +440,7 @@ export const RECIPES_DATABASE = [
   },
   {
     id: "cn3",
-    name: "Tacos de Merluza/Bacalao al Horno con Guacamole Casero y Pico de Gallo",
+    name: "Tacos de Merluza al Horno con Guacamole Casero y Pico de Gallo",
     type: "cena",
     prepTime: 20,
     calories: 410,
@@ -284,6 +460,106 @@ export const RECIPES_DATABASE = [
       "Templa las tortillas en una sartén seca unos segundos por lado.",
       "Monta cada tortilla con una base de aguacate, el pescado desmigado y el pico de gallo.",
       "Añade gotas de lima fresca y cilantro por encima."
+    ]
+  },
+  {
+    id: "cn4",
+    name: "Suprema de Lubina al Horno con Calabacín y Tomates Cherry",
+    type: "cena",
+    prepTime: 20,
+    calories: 380,
+    protein: 38,
+    carbs: 14,
+    fats: 16,
+    tags: ["ligero", "pescado blanco", "omega 3"],
+    ingredients: [
+      { name: "Filetes de lubina o dorada", amount: 190, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Calabacín", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Tomates cherry", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Orégano y ajo en polvo", amount: 2, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Corta el calabacín en rodajas finas y colócalo en una bandeja de horno junto a los tomates cherry.",
+      "Coloca encima los filetes de lubina limpios.",
+      "Riega con el AOVE, ajo en polvo, orégano y sal.",
+      "Hornea a 190°C durante 14-16 minutos hasta que el pescado esté tierno y jugoso."
+    ]
+  },
+  {
+    id: "cn5",
+    name: "Crema de Calabaza y Zanahoria con Pollo Desmigado y Pipas de Calabaza",
+    type: "cena",
+    prepTime: 22,
+    calories: 390,
+    protein: 37,
+    carbs: 30,
+    fats: 12,
+    tags: ["reconfortante", "digestión fácil", "otoño/invierno"],
+    ingredients: [
+      { name: "Pechuga de pollo fileteada", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Calabaza troceada", amount: 200, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Zanahorias", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Queso fresco batido 0%", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Semillas de calabaza", amount: 10, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "Cuece la calabaza y la zanahoria en agua con sal durante 15 minutos hasta que estén tiernas.",
+      "Tritura las verduras junto con el queso batido y el AOVE hasta conseguir una crema sedosa.",
+      "Haz la pechuga de pollo a la plancha y desmígala con dos tenedores.",
+      "Sirve la crema caliente coronada con el pollo desmigado y las pipas de calabaza crujientes."
+    ]
+  },
+  {
+    id: "cn6",
+    name: "Ensalada Templada de Pollo Crujiente, Manzana y Nueces",
+    type: "cena",
+    prepTime: 12,
+    calories: 420,
+    protein: 39,
+    carbs: 25,
+    fats: 17,
+    tags: ["fresco", "crujiente", "alto en proteína"],
+    ingredients: [
+      { name: "Pechuga de pollo fileteada", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Lechuga variada y cebolla", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Manzanas", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Queso Feta o Burgos desnatado", amount: 35, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Nueces al natural", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Mostaza de Dijon y vinagre", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Corta la pechuga en tiras y saltea en sartén caliente con AOVE hasta que esté bien dorada y crujiente.",
+      "En un bol pon la base de brotes tiernos, la manzana cortada en gajos finos y el queso desmenuzado.",
+      "Añade el pollo templado y las nueces.",
+      "Aliña con una vinagreta ligera de mostaza de Dijon, vinagre y sal."
+    ]
+  },
+  {
+    id: "cn7",
+    name: "Wok Ligero de Langostinos con Fideos de Arroz y Verduras",
+    type: "cena",
+    prepTime: 15,
+    calories: 400,
+    protein: 35,
+    carbs: 45,
+    fats: 8,
+    tags: ["asiático fit", "rápido", "bajo en grasa"],
+    ingredients: [
+      { name: "Gambas peladas", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Fideos de arroz", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pimientos (rojo y verde)", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Calabacín", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Salsa de soja baja en sal", amount: 12, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Hidrata los fideos de arroz en agua hirviendo durante 4 minutos y escurre.",
+      "Saltea en wok o sartén amplia con AOVE las verduras cortadas en juliana a fuego muy vivo durante 4 min.",
+      "Añade los langostinos y saltea 2 min más.",
+      "Incorpora los fideos, añade la salsa de soja y saltea todo junto 1 minuto."
     ]
   },
 
@@ -390,6 +666,49 @@ export const RECIPES_DATABASE = [
     instructions: [
       "Unta la mantequilla de almendra sobre las tortitas.",
       "Decora con los frutos rojos frescos por encima."
+    ]
+  },
+  {
+    id: "s6",
+    name: "Yogur Proteico con Nueces y Semillas de Lino",
+    type: "snack",
+    prepTime: 2,
+    calories: 210,
+    protein: 16,
+    carbs: 12,
+    fats: 11,
+    tags: ["ultra rápido", "grasas buenas", "saciedad"],
+    ingredients: [
+      { name: "Yogur Griego Natural 0%", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Nueces al natural", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Semillas de chía, lino o sésamo", amount: 6, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "Sirve el yogur en un vaso o bol pequeño.",
+      "Añade las nueces troceadas y espolvorea las semillas."
+    ]
+  },
+  {
+    id: "s7",
+    name: "Hummus Casero con Bastoncitos de Zanahoria y Pepino",
+    type: "snack",
+    prepTime: 5,
+    calories: 180,
+    protein: 8,
+    carbs: 22,
+    fats: 7,
+    tags: ["vegetal", "fibra", "crujiente"],
+    ingredients: [
+      { name: "Garbanzos cocidos en tarro", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Zanahorias", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Pepino", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra (AOVE)", amount: 4, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Pimentón dulce de la Vera", amount: 1, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Tritura los garbanzos con el AOVE, un chorrito de agua, sal y pimentón.",
+      "Corta la zanahoria y el pepino en bastoncitos alargados (crudités).",
+      "Dipea los vegetales en el hummus recién preparado."
     ]
   }
 ];

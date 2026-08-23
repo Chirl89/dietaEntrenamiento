@@ -138,12 +138,27 @@ export function getProfileShortName(pid) {
   }
 }
 
+// DEFAULT WEEKLY MEAL PLAN TEMPLATE
+export const DEFAULT_WEEKLY_MEAL_PLAN = {
+  Lunes: { desayuno: "d1", comida: "c1", merienda: "s1", cena: "cn1" },
+  Martes: { desayuno: "d2", comida: "c2", merienda: "s2", cena: "cn2" },
+  Miércoles: { desayuno: "d3", comida: "c3", merienda: "s3", cena: "cn3" },
+  Jueves: { desayuno: "d4", comida: "c4", merienda: "s4", cena: "cn4" },
+  Viernes: { desayuno: "d5", comida: "c5", merienda: "s5", cena: "cn5" },
+  Sábado: { desayuno: "d6", comida: "c6", merienda: "s6", cena: "cn6" },
+  Domingo: { desayuno: "d2", comida: "c7", merienda: "s7", cena: "cn7" }
+};
+
 // INITIAL STATE STRUCTURE (STABLE OBJECT REFERENCE)
 export const appState = {
   masterProfileId: "he",
   activeProfileId: "he",
   profiles: JSON.parse(JSON.stringify(INITIAL_PROFILES)),
   exclusions: [],
+  weeklyMealPlan: JSON.parse(JSON.stringify(DEFAULT_WEEKLY_MEAL_PLAN)),
+  customRecipes: [],
+  shoppingExtras: [],
+  nutritionViewMode: "day",
   completedWorkouts: {
     he: {
       Lunes: { done: false, watchData: null, sessions: [] },
@@ -170,7 +185,7 @@ export const appState = {
   activeExerciseDay: "Lunes",
   activeBooDay: "Lunes",
   recipesDaysRange: "5",
-  shoppingDaysRange: "5",
+  shoppingDaysRange: "7",
   checkedShoppingItems: {},
   weightLogs: { he: [], she: [] },
   history: { he: {}, she: {} },
@@ -429,6 +444,30 @@ export function loadSavedState() {
       }
     }
   });
+
+  if (!appState.weeklyMealPlan || typeof appState.weeklyMealPlan !== 'object') {
+    appState.weeklyMealPlan = JSON.parse(JSON.stringify(DEFAULT_WEEKLY_MEAL_PLAN));
+  } else {
+    const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    days.forEach(d => {
+      if (!appState.weeklyMealPlan[d] || typeof appState.weeklyMealPlan[d] !== 'object') {
+        appState.weeklyMealPlan[d] = { ...(DEFAULT_WEEKLY_MEAL_PLAN[d] || {}) };
+      }
+    });
+  }
+
+  if (!Array.isArray(appState.customRecipes)) {
+    appState.customRecipes = [];
+  }
+  if (!Array.isArray(appState.shoppingExtras)) {
+    appState.shoppingExtras = [];
+  }
+  if (!appState.checkedShoppingItems || typeof appState.checkedShoppingItems !== 'object') {
+    appState.checkedShoppingItems = {};
+  }
+  if (!appState.shoppingDaysRange) {
+    appState.shoppingDaysRange = "7";
+  }
 
   if (!appState.history) {
     appState.history = { he: {}, she: {} };

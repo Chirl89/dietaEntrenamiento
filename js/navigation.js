@@ -38,9 +38,9 @@ export const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-nutrition",
     sidebarId: "sidebar-nav-nutrition",
     subtabs: [
-      { id: "nutrition-menu-view", label: "Menú del Día", icon: "fa-solid fa-utensils" },
-      { id: "nutrition-recipes-view", label: "Recetas", icon: "fa-solid fa-book-open" },
-      { id: "nutrition-shopping-view", label: "Lista de la Compra", icon: "fa-solid fa-cart-shopping" }
+      { id: "nutrition-menu-view", label: "Plan Semanal", icon: "fa-solid fa-calendar-week" },
+      { id: "nutrition-recipes-view", label: "Backlog Recetas", icon: "fa-solid fa-book-open" },
+      { id: "nutrition-shopping-view", label: "Lista Compra", icon: "fa-solid fa-cart-shopping" }
     ]
   },
   workouts: {

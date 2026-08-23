@@ -1,22 +1,53 @@
 /**
- * FitDuo & Collie Coach - Nutrition View Module (v0.15.0)
- * Isolated Tab: Menú del Día, Recetas Batch Cooking, Lista de la Compra & Exclusiones.
+ * FitDuo & Collie Coach - Nutrition View Module (v0.19.0)
+ * Interactive Weekly Meal Planner, Recipe Backlog & Smart Shopping List Generator.
  */
 
-import { appState, saveState, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
+import {
+  appState,
+  saveState,
+  getTodayDayName,
+  getProfileShortName,
+  triggerHapticTouch,
+  showIosToast,
+  DEFAULT_WEEKLY_MEAL_PLAN
+} from '../state.js';
 import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js';
 
-export function renderExclusions() {}
-export function addExclusion() {}
-export function removeExclusion() {}
+// MEAL SLOTS DEFINITION
+export const MEAL_SLOTS = [
+  { key: "desayuno", label: "DESAYUNO", icon: "fa-sun", color: "var(--accent-amber)" },
+  { key: "comida", label: "COMIDA / ALMUERZO", icon: "fa-utensils", color: "var(--accent-cyan)" },
+  { key: "merienda", label: "MERIENDA / SNACK", icon: "fa-apple-whole", color: "var(--accent-emerald)" },
+  { key: "cena", label: "CENA", icon: "fa-moon", color: "var(--accent-rose)" }
+];
 
+export const DAYS_OF_WEEK = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+// Active picker target state
+let activePickerContext = { day: "Lunes", slot: "comida" };
+let activeBacklogCategoryFilter = "all";
+let activeBacklogSearchQuery = "";
+
+/**
+ * Returns all available recipes (base database + custom user recipes)
+ */
+export function getAllRecipes() {
+  const custom = Array.isArray(appState.customRecipes) ? appState.customRecipes : [];
+  return [...RECIPES_DATABASE, ...custom];
+}
+
+/**
+ * Returns filtered recipes taking exclusions into account
+ */
 export function getFilteredRecipes() {
   try {
-    if (!appState.exclusions || appState.exclusions.length === 0) return RECIPES_DATABASE;
+    const all = getAllRecipes();
+    if (!appState.exclusions || appState.exclusions.length === 0) return all;
 
-    return RECIPES_DATABASE.filter(recipe => {
-      const recipeText = (recipe.name + " " + recipe.ingredients.map(i => i.name).join(" ")).toLowerCase();
-      return !appState.exclusions.some(ex => recipeText.includes(ex));
+    return all.filter(recipe => {
+      const recipeText = (recipe.name + " " + (recipe.ingredients || []).map(i => i.name).join(" ")).toLowerCase();
+      return !appState.exclusions.some(ex => recipeText.includes(ex.toLowerCase()));
     });
   } catch(e) {
     console.error("Error in getFilteredRecipes:", e);
@@ -24,20 +55,34 @@ export function getFilteredRecipes() {
   }
 }
 
+/**
+ * Safely find recipe by ID
+ */
+export function getRecipeById(id) {
+  if (!id) return null;
+  const all = getAllRecipes();
+  return all.find(r => r.id === id) || null;
+}
+
+/**
+ * Quick open today's nutrition planner
+ */
 export function openTodayNutrition() {
   try {
     triggerHapticTouch();
     const today = getTodayDayName();
     appState.activeDay = today;
-    const selectElem = document.getElementById("nutrition-day-select");
-    if (selectElem) selectElem.value = today;
-    if (window.showTab) window.showTab("nutrition-menu-view", document.getElementById("dock-btn-nutrition"));
+    if (window.showTab) window.showTab("nutrition-menu-view");
+    renderNutritionMenuView();
   } catch(e) {
     console.error("Error opening today nutrition:", e);
   }
 }
 
-export function selectDay(dayName, btnElem) {
+/**
+ * Select active day in weekly planner
+ */
+export function selectDay(dayName) {
   try {
     triggerHapticTouch();
     appState.activeDay = dayName;
@@ -50,156 +95,653 @@ export function selectDay(dayName, btnElem) {
 }
 
 export function selectDayFromDropdown(dayName) {
+  selectDay(dayName);
+}
+
+/**
+ * Toggle view mode between day-by-day and full week grid
+ */
+export function toggleNutritionViewMode(mode) {
   try {
     triggerHapticTouch();
-    appState.activeDay = dayName;
+    appState.nutritionViewMode = mode;
+    saveState();
     renderNutritionMenuView();
   } catch(e) {
-    console.error("Error selecting day from dropdown:", e);
+    console.error("Error toggling nutrition view mode:", e);
   }
 }
 
-export function navigateToRecipe(recipeId) {
+/**
+ * Auto-fill weekly plan with a balanced healthy rotation
+ */
+export function autoFillWeeklyPlan() {
   try {
     triggerHapticTouch();
-    if (!recipeId) return;
+    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
 
-    // 1. Switch to nutrition tab and recipes subtab
-    if (window.showTab) {
-      window.showTab("nutrition-recipes-view");
-    }
+    const available = getFilteredRecipes();
+    const breakfasts = available.filter(r => r.type === "desayuno");
+    const lunches = available.filter(r => r.type === "comida");
+    const dinners = available.filter(r => r.type === "cena");
+    const snacks = available.filter(r => r.type === "snack");
 
-    // 2. Ensure all recipes including weekend are rendered if needed
-    let targetCard = document.getElementById(`recipe-card-${recipeId}`);
-    if (!targetCard) {
-      setRecipesRange('7');
-      targetCard = document.getElementById(`recipe-card-${recipeId}`);
-    }
+    DAYS_OF_WEEK.forEach((day, idx) => {
+      appState.weeklyMealPlan[day] = {
+        desayuno: (breakfasts[idx % (breakfasts.length || 1)] || breakfasts[0])?.id || "d1",
+        comida: (lunches[idx % (lunches.length || 1)] || lunches[0])?.id || "c1",
+        merienda: (snacks[idx % (snacks.length || 1)] || snacks[0])?.id || "s1",
+        cena: (dinners[idx % (dinners.length || 1)] || dinners[0])?.id || "cn1"
+      };
+    });
 
-    // 3. Scroll to target card smoothly and highlight with a pulse animation
-    if (targetCard) {
-      setTimeout(() => {
-        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        targetCard.classList.remove('recipe-highlight-pulse');
-        void targetCard.offsetWidth; // Trigger reflow for re-animation
-        targetCard.classList.add('recipe-highlight-pulse');
-        
-        setTimeout(() => {
-          targetCard.classList.remove('recipe-highlight-pulse');
-        }, 2200);
-        
-        // Auto-open preparation steps details
-        const details = targetCard.querySelector("details");
-        if (details) details.open = true;
-      }, 120);
-    }
+    saveState();
+    renderNutritionMenuView();
+    renderShoppingView();
+    showIosToast("✨ ¡Semana auto-completada con menú equilibrado!", "fa-solid fa-wand-magic-sparkles");
   } catch(e) {
-    console.error("Error navigating to recipe:", e);
+    console.error("Error in autoFillWeeklyPlan:", e);
   }
 }
 
+/**
+ * Clear all meal slots in weekly plan
+ */
+export function clearWeeklyPlan() {
+  try {
+    triggerHapticTouch();
+    if (confirm("¿Estás seguro de que quieres vaciar la planificación de toda la semana?")) {
+      if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
+      DAYS_OF_WEEK.forEach(day => {
+        appState.weeklyMealPlan[day] = {
+          desayuno: null,
+          comida: null,
+          merienda: null,
+          cena: null
+        };
+      });
+      saveState();
+      renderNutritionMenuView();
+      renderShoppingView();
+      showIosToast("🗑️ Menú semanal vaciado", "fa-solid fa-trash-can");
+    }
+  } catch(e) {
+    console.error("Error clearing weekly plan:", e);
+  }
+}
+
+/**
+ * Remove meal from specific slot
+ */
+export function removeMealFromSlot(dayName, slotKey) {
+  try {
+    triggerHapticTouch();
+    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
+    if (!appState.weeklyMealPlan[dayName]) appState.weeklyMealPlan[dayName] = {};
+    
+    appState.weeklyMealPlan[dayName][slotKey] = null;
+    saveState();
+    renderNutritionMenuView();
+    renderShoppingView();
+    showIosToast(`Plato retirado de ${dayName} (${slotKey})`, "fa-solid fa-xmark");
+  } catch(e) {
+    console.error("Error removing meal from slot:", e);
+  }
+}
+
+/**
+ * Generate and navigate to Shopping List
+ */
+export function generateShoppingListFromPlan() {
+  try {
+    triggerHapticTouch();
+    if (window.showTab) {
+      window.showTab("nutrition-shopping-view");
+    }
+    renderShoppingView();
+    showIosToast("🛒 ¡Lista de la compra generada a partir de tu plan semanal!", "fa-solid fa-cart-shopping");
+  } catch(e) {
+    console.error("Error generating shopping list:", e);
+  }
+}
+
+/**
+ * Copy weekly menu to clipboard formatted for WhatsApp / Apple Notes
+ */
+export function copyWeeklyMenuToClipboard() {
+  try {
+    triggerHapticTouch();
+    let text = "🥗 PLAN SEMANAL DE NUTRICIÓN - FITDUO 🥑\n";
+    text += `Para: ${getProfileShortName(appState.activeProfileId || 'he')}\n\n`;
+
+    DAYS_OF_WEEK.forEach(day => {
+      const plan = appState.weeklyMealPlan?.[day] || {};
+      text += `📅 === ${day.toUpperCase()} ===\n`;
+      MEAL_SLOTS.forEach(slot => {
+        const recipeId = plan[slot.key];
+        const recipe = getRecipeById(recipeId);
+        if (recipe) {
+          text += `  • ${slot.label}: ${recipe.name} (${recipe.calories} kcal | ${recipe.protein}g P)\n`;
+        } else {
+          text += `  • ${slot.label}: (Sin asignar)\n`;
+        }
+      });
+      text += "\n";
+    });
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showIosToast("📋 ¡Menú semanal copiado al portapapeles!", "fa-solid fa-copy");
+      }).catch(() => {
+        prompt("Copia el menú semanal:", text);
+      });
+    } else {
+      prompt("Copia el menú semanal:", text);
+    }
+  } catch(e) {
+    console.error("Error copying weekly menu:", e);
+  }
+}
+
+/**
+ * Calculate total meal count in week
+ */
+export function getWeeklyScheduledCount() {
+  let count = 0;
+  if (!appState.weeklyMealPlan) return 0;
+  DAYS_OF_WEEK.forEach(d => {
+    const p = appState.weeklyMealPlan[d] || {};
+    MEAL_SLOTS.forEach(s => {
+      if (p[s.key]) count++;
+    });
+  });
+  return count;
+}
+
+/**
+ * RENDER SUBTAB 1: WEEKLY PLANNER VIEW
+ */
 export function renderNutritionMenuView() {
   try {
     const container = document.getElementById("meal-cards-container");
     if (!container) return;
     container.innerHTML = "";
 
-    const availableRecipes = getFilteredRecipes();
-    
-    if (availableRecipes.length === 0) {
-      container.innerHTML = `
-        <div class="glass-card" style="text-align:center; padding: 2rem;">
-          <p style="color: var(--accent-rose);">⚠️ Habéis excluido demasiados alimentos y no hay recetas disponibles en la base de datos.</p>
+    const activeDay = appState.activeDay || getTodayDayName();
+    const viewMode = appState.nutritionViewMode || "day";
+    const profileId = appState.activeProfileId || "he";
+    const userProfile = appState.profiles?.[profileId] || {};
+    const targetCalories = userProfile.targetCalories || (profileId === 'he' ? 2150 : 1850);
+    const targetProtein = userProfile.protein || (profileId === 'he' ? 155 : 130);
+
+    const totalScheduled = getWeeklyScheduledCount();
+
+    // 1. Render Top Planner Toolbar & Header Controls
+    const toolbar = document.createElement("div");
+    toolbar.className = "planner-top-toolbar";
+    toolbar.innerHTML = `
+      <div class="planner-actions-bar">
+        <button type="button" class="btn-generate-shopping-glow" onclick="generateShoppingListFromPlan()">
+          <i class="fa-solid fa-cart-shopping"></i> Generar Lista de la Compra
+          <span class="shopping-count-badge">${totalScheduled}/28 platos</span>
+        </button>
+
+        <div class="planner-quick-tools">
+          <button type="button" class="btn-planner-tool" onclick="autoFillWeeklyPlan()" title="Auto-rellenar semana con platos variados">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Auto-completar</span>
+          </button>
+          <button type="button" class="btn-planner-tool" onclick="copyWeeklyMenuToClipboard()" title="Copiar menú semanal a texto">
+            <i class="fa-solid fa-share-nodes"></i> <span>Compartir</span>
+          </button>
+          <button type="button" class="btn-planner-tool danger" onclick="clearWeeklyPlan()" title="Vaciar semana">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
         </div>
-      `;
-      return;
+      </div>
+
+      <!-- VIEW MODE SWITCHER & DAYS BAR -->
+      <div class="planner-days-bar-wrapper">
+        <div class="planner-days-scroll">
+          ${DAYS_OF_WEEK.map(dayName => {
+            const dayPlan = appState.weeklyMealPlan?.[dayName] || {};
+            const filledCount = MEAL_SLOTS.filter(s => !!dayPlan[s.key]).length;
+            const isSelected = (viewMode === 'day' && activeDay === dayName);
+            const isToday = (getTodayDayName() === dayName);
+
+            return `
+              <button type="button" class="planner-day-pill ${isSelected ? 'active' : ''} ${isToday ? 'is-today' : ''}" onclick="selectDay('${dayName}')">
+                <span class="day-pill-name">${dayName.substring(0, 3)}</span>
+                <span class="day-pill-badge ${filledCount === 4 ? 'complete' : ''}">${filledCount}/4</span>
+              </button>
+            `;
+          }).join("")}
+        </div>
+
+        <div class="planner-view-toggle">
+          <button type="button" class="btn-view-toggle ${viewMode === 'day' ? 'active' : ''}" onclick="toggleNutritionViewMode('day')" title="Vista Detallada por Día">
+            <i class="fa-solid fa-calendar-day"></i> Día
+          </button>
+          <button type="button" class="btn-view-toggle ${viewMode === 'week' ? 'active' : ''}" onclick="toggleNutritionViewMode('week')" title="Vista Tablero Semanal Completo">
+            <i class="fa-solid fa-calendar-week"></i> Semana
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(toolbar);
+
+    // 2. Render Plan Content according to View Mode
+    if (viewMode === "day") {
+      renderDayDetailView(container, activeDay, targetCalories, targetProtein);
+    } else {
+      renderFullWeekGridView(container);
     }
 
-    const breakfasts = availableRecipes.filter(r => r.type === "desayuno");
-    const lunches = availableRecipes.filter(r => r.type === "comida");
-    const dinners = availableRecipes.filter(r => r.type === "cena");
-    const snacks = availableRecipes.filter(r => r.type === "snack");
-
-    const dayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-    const currentDay = appState.activeDay || getTodayDayName();
-    const dayIndex = dayNames.indexOf(currentDay) >= 0 ? dayNames.indexOf(currentDay) : 0;
-
-    const selectElem = document.getElementById("nutrition-day-select");
-    if (selectElem && selectElem.value !== currentDay) {
-      selectElem.value = currentDay;
-    }
-
-    const mealSlots = [
-      { slotLabel: "DESAYUNO", slotIcon: "fa-sun", color: "var(--accent-amber)", meal: breakfasts[dayIndex % (breakfasts.length || 1)] || RECIPES_DATABASE[0] },
-      { slotLabel: "SNACK 1 (MAÑANA)", slotIcon: "fa-apple-whole", color: "var(--accent-emerald)", meal: snacks[dayIndex % (snacks.length || 1)] || RECIPES_DATABASE[8] },
-      { slotLabel: "COMIDA", slotIcon: "fa-utensils", color: "var(--accent-cyan)", meal: lunches[dayIndex % (lunches.length || 1)] || RECIPES_DATABASE[3] },
-      { slotLabel: "SNACK 2 (TARDE)", slotIcon: "fa-cookie-bite", color: "var(--accent-purple)", meal: snacks[(dayIndex + 1) % (snacks.length || 1)] || RECIPES_DATABASE[9] },
-      { slotLabel: "CENA", slotIcon: "fa-moon", color: "var(--accent-rose)", meal: dinners[dayIndex % (dinners.length || 1)] || RECIPES_DATABASE[6] }
-    ];
-
-    mealSlots.forEach((slot, idx) => {
-      const meal = slot.meal;
-      if (!meal) return;
-
-      const card = document.createElement("div");
-      card.className = "glass-card meal-card vertical-meal-card";
-
-      const tagsHtml = meal.tags.map(t => `<span class="macro-pill">${t}</span>`).join(" ");
-
-      card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
-          <div class="meal-card-type" style="color: ${slot.color}; font-size: 0.82rem; display: flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid ${slot.slotIcon}"></i> <strong>${slot.slotLabel}</strong> • ${meal.prepTime} min prep
-          </div>
-          <div style="display: flex; align-items: center; gap: 0.45rem;">
-            <span style="font-size: 0.75rem; color: var(--text-muted); background: var(--bg-card); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border-color);">
-              Plato ${idx + 1} de 5
-            </span>
-            <button type="button" class="btn-recipe-link" onclick="navigateToRecipe('${meal.id}')" title="Ver receta y preparación completa">
-              <i class="fa-solid fa-book-open"></i> Ver Receta <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem;"></i>
-            </button>
-          </div>
-        </div>
-
-        <h3 class="meal-card-title clickable-meal-title" onclick="navigateToRecipe('${meal.id}')" style="font-size: 1.15rem; margin-bottom: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;" title="Haz clic para ver la receta">
-          <span>${meal.name}</span>
-          <i class="fa-solid fa-chevron-right" style="font-size: 0.85rem; color: var(--accent-cyan); opacity: 0.8;"></i>
-        </h3>
-        
-        <div class="meal-macros-pills" style="margin-bottom: 0.75rem;">
-          <span class="macro-pill" style="color:var(--accent-amber); font-weight:600;"><i class="fa-solid fa-fire"></i> ${meal.calories} kcal</span>
-          <span class="macro-pill" style="color:var(--accent-emerald); font-weight:600;"><i class="fa-solid fa-dumbbell"></i> ${meal.protein}g Proteína</span>
-          <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${meal.carbs}g Carbs</span>
-          <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${meal.fats}g Grasas</span>
-        </div>
-
-        <div style="margin-bottom: 0.85rem;">${tagsHtml}</div>
-
-        <details style="font-size: 0.85rem; color: var(--accent-cyan); cursor: pointer; margin-top: 0.85rem; background: rgba(255,255,255,0.03); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-          <summary style="font-weight: 600; outline: none; display: flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid fa-kitchen-set"></i> Ver Pasos de Preparación
-          </summary>
-          <ol style="margin-top: 0.6rem; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.6;">
-            ${meal.instructions.map(step => `<li style="margin-bottom: 0.3rem;">${step}</li>`).join("")}
-          </ol>
-        </details>
-      `;
-      container.appendChild(card);
-    });
   } catch(e) {
     console.error("Error rendering Nutrition Menu View:", e);
   }
 }
 
+/**
+ * Render Day-by-Day focused detail view
+ */
+function renderDayDetailView(container, dayName, targetCalories, targetProtein) {
+  const dayPlan = appState.weeklyMealPlan?.[dayName] || {};
+  let dayKcal = 0;
+  let dayProtein = 0;
+  let dayCarbs = 0;
+  let dayFats = 0;
+
+  // Calculate day total macros
+  MEAL_SLOTS.forEach(slot => {
+    const rId = dayPlan[slot.key];
+    const r = getRecipeById(rId);
+    if (r) {
+      dayKcal += Number(r.calories || 0);
+      dayProtein += Number(r.protein || 0);
+      dayCarbs += Number(r.carbs || 0);
+      dayFats += Number(r.fats || 0);
+    }
+  });
+
+  // Daily Nutritional Balance Bar
+  const kcalPercent = Math.min(Math.round((dayKcal / targetCalories) * 100), 100);
+  const protPercent = Math.min(Math.round((dayProtein / targetProtein) * 100), 100);
+
+  const balanceCard = document.createElement("div");
+  balanceCard.className = "glass-card daily-nutrition-balance-card";
+  balanceCard.innerHTML = `
+    <div class="balance-header">
+      <div class="balance-title">
+        <i class="fa-solid fa-chart-pie" style="color: var(--accent-cyan);"></i>
+        <div>
+          <h4>Balance Nutricional de ${dayName}</h4>
+          <p>Objetivo Diario: ${targetCalories} kcal • ${targetProtein}g Proteína</p>
+        </div>
+      </div>
+      <div class="balance-totals-chips">
+        <span class="macro-chip cal"><i class="fa-solid fa-fire"></i> <strong>${dayKcal}</strong> / ${targetCalories} kcal</span>
+        <span class="macro-chip prot"><i class="fa-solid fa-dumbbell"></i> <strong>${dayProtein}g</strong> / ${targetProtein}g Prot</span>
+        <span class="macro-chip carbs"><i class="fa-solid fa-wheat-awn"></i> <strong>${dayCarbs}g</strong> Carbs</span>
+        <span class="macro-chip fats"><i class="fa-solid fa-droplet"></i> <strong>${dayFats}g</strong> Grasas</span>
+      </div>
+    </div>
+
+    <div class="balance-progress-bars">
+      <div class="balance-bar-row">
+        <span class="bar-label">Calorías (${kcalPercent}%)</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill cal" style="width: ${kcalPercent}%;"></div>
+        </div>
+      </div>
+      <div class="balance-bar-row">
+        <span class="bar-label">Proteína (${protPercent}%)</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill prot" style="width: ${protPercent}%;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(balanceCard);
+
+  // Render 4 Interactive Meal Slots for Active Day
+  const slotsStack = document.createElement("div");
+  slotsStack.className = "vertical-meal-stack";
+
+  MEAL_SLOTS.forEach((slot, idx) => {
+    const recipeId = dayPlan[slot.key];
+    const recipe = getRecipeById(recipeId);
+
+    const slotCard = document.createElement("div");
+    slotCard.className = `glass-card meal-card vertical-meal-card slot-card ${recipe ? 'has-recipe' : 'is-empty'}`;
+
+    if (recipe) {
+      const tagsHtml = (recipe.tags || []).map(t => `<span class="macro-pill">${t}</span>`).join(" ");
+
+      slotCard.innerHTML = `
+        <div class="slot-card-header">
+          <div class="meal-card-type" style="color: ${slot.color};">
+            <i class="fa-solid ${slot.icon}"></i> <strong>${slot.label}</strong> • ${recipe.prepTime || 15} min prep
+          </div>
+          <div class="slot-actions-group">
+            <button type="button" class="btn-slot-action edit" onclick="openRecipePickerModal('${dayName}', '${slot.key}')" title="Cambiar receta">
+              <i class="fa-solid fa-rotate"></i> Cambiar
+            </button>
+            <button type="button" class="btn-slot-action view" onclick="openRecipeDetailModal('${recipe.id}')" title="Ver receta y preparación">
+              <i class="fa-solid fa-book-open"></i> Ver
+            </button>
+            <button type="button" class="btn-slot-action remove" onclick="removeMealFromSlot('${dayName}', '${slot.key}')" title="Quitar de este día">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <h3 class="meal-card-title clickable-meal-title" onclick="openRecipeDetailModal('${recipe.id}')">
+          <span>${recipe.name}</span>
+          <i class="fa-solid fa-chevron-right" style="font-size: 0.85rem; color: var(--accent-cyan); opacity: 0.8;"></i>
+        </h3>
+
+        <div class="meal-macros-pills">
+          <span class="macro-pill" style="color:var(--accent-amber); font-weight:600;"><i class="fa-solid fa-fire"></i> ${recipe.calories} kcal</span>
+          <span class="macro-pill" style="color:var(--accent-emerald); font-weight:600;"><i class="fa-solid fa-dumbbell"></i> ${recipe.protein}g Proteína</span>
+          <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${recipe.carbs}g Carbs</span>
+          <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${recipe.fats}g Grasas</span>
+        </div>
+
+        ${tagsHtml ? `<div style="margin-bottom: 0.6rem;">${tagsHtml}</div>` : ''}
+
+        <details class="recipe-prep-details">
+          <summary>
+            <i class="fa-solid fa-kitchen-set"></i> Ver Pasos de Preparación (${(recipe.instructions || []).length} pasos)
+          </summary>
+          <ol class="recipe-prep-steps">
+            ${(recipe.instructions || []).map(step => `<li>${step}</li>`).join("")}
+          </ol>
+        </details>
+      `;
+    } else {
+      // Empty Slot Call-To-Action Card
+      slotCard.innerHTML = `
+        <div class="empty-slot-content" onclick="openRecipePickerModal('${dayName}', '${slot.key}')">
+          <div class="empty-slot-icon" style="color: ${slot.color};">
+            <i class="fa-solid ${slot.icon}"></i>
+          </div>
+          <div class="empty-slot-text">
+            <h4>${slot.label} (Sin Asignar)</h4>
+            <p>Toca para seleccionar un plato del backlog de recetas</p>
+          </div>
+          <button type="button" class="btn-empty-slot-add">
+            <i class="fa-solid fa-plus"></i> Añadir Receta
+          </button>
+        </div>
+      `;
+    }
+
+    slotsStack.appendChild(slotCard);
+  });
+
+  container.appendChild(slotsStack);
+}
+
+/**
+ * Render Full Week Matrix View (7 columns grid)
+ */
+function renderFullWeekGridView(container) {
+  const gridWrapper = document.createElement("div");
+  gridWrapper.className = "planner-week-matrix-grid";
+
+  DAYS_OF_WEEK.forEach(dayName => {
+    const dayPlan = appState.weeklyMealPlan?.[dayName] || {};
+    const col = document.createElement("div");
+    col.className = `matrix-day-column ${appState.activeDay === dayName ? 'active-col' : ''}`;
+
+    const slotsHtml = MEAL_SLOTS.map(slot => {
+      const rId = dayPlan[slot.key];
+      const r = getRecipeById(rId);
+
+      if (r) {
+        return `
+          <div class="matrix-meal-cell has-meal" onclick="openRecipePickerModal('${dayName}', '${slot.key}')">
+            <div class="matrix-cell-header" style="color:${slot.color};">
+              <i class="fa-solid ${slot.icon}"></i> <span>${slot.key.toUpperCase()}</span>
+            </div>
+            <div class="matrix-meal-name">${r.name}</div>
+            <div class="matrix-meal-meta">${r.calories} kcal • ${r.protein}g P</div>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="matrix-meal-cell empty-meal" onclick="openRecipePickerModal('${dayName}', '${slot.key}')">
+            <span style="color:${slot.color}; font-size:0.7rem;"><i class="fa-solid ${slot.icon}"></i> ${slot.key.toUpperCase()}</span>
+            <span class="matrix-add-plus"><i class="fa-solid fa-plus"></i> Elegir</span>
+          </div>
+        `;
+      }
+    }).join("");
+
+    col.innerHTML = `
+      <div class="matrix-col-header" onclick="selectDay('${dayName}')">
+        <strong>${dayName}</strong>
+        <small>${getTodayDayName() === dayName ? 'HOY' : ''}</small>
+      </div>
+      <div class="matrix-col-slots">
+        ${slotsHtml}
+      </div>
+    `;
+
+    gridWrapper.appendChild(col);
+  });
+
+  container.appendChild(gridWrapper);
+}
+
+/**
+ * OPEN RECIPE PICKER MODAL (From Weekly Planner Slot)
+ */
+export function openRecipePickerModal(dayName, slotKey) {
+  try {
+    triggerHapticTouch();
+    activePickerContext = { day: dayName, slot: slotKey };
+    
+    // Map slot key to default category filter
+    let defaultCat = "all";
+    if (slotKey === "desayuno") defaultCat = "desayuno";
+    else if (slotKey === "comida") defaultCat = "comida";
+    else if (slotKey === "cena") defaultCat = "cena";
+    else if (slotKey === "merienda") defaultCat = "snack";
+    
+    activeBacklogCategoryFilter = defaultCat;
+    activeBacklogSearchQuery = "";
+
+    const modal = document.getElementById("recipe-picker-modal");
+    if (!modal) {
+      createRecipePickerModalDOM();
+    }
+    
+    renderRecipePickerModalContent();
+    const modalElem = document.getElementById("recipe-picker-modal");
+    if (modalElem) modalElem.classList.add("active");
+  } catch(e) {
+    console.error("Error opening recipe picker modal:", e);
+  }
+}
+
+export function closeRecipePickerModal() {
+  const modal = document.getElementById("recipe-picker-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+export function closeRecipePickerModalOnBackdrop(event) {
+  if (event.target.id === "recipe-picker-modal") {
+    closeRecipePickerModal();
+  }
+}
+
+/**
+ * Assign recipe to the active picker slot and update state
+ */
+export function selectRecipeForActiveSlot(recipeId) {
+  try {
+    triggerHapticTouch();
+    const { day, slot } = activePickerContext;
+    if (!day || !slot) return;
+
+    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
+    if (!appState.weeklyMealPlan[day]) appState.weeklyMealPlan[day] = {};
+
+    appState.weeklyMealPlan[day][slot] = recipeId;
+    saveState();
+
+    closeRecipePickerModal();
+    renderNutritionMenuView();
+    renderShoppingView();
+
+    const recipe = getRecipeById(recipeId);
+    showIosToast(`✅ ${recipe ? recipe.name : 'Plato'} asignado a ${day} (${slot})`, "fa-solid fa-circle-check");
+  } catch(e) {
+    console.error("Error selecting recipe for active slot:", e);
+  }
+}
+
+/**
+ * Create Recipe Picker Modal DOM if not present
+ */
+function createRecipePickerModalDOM() {
+  const modal = document.createElement("div");
+  modal.id = "recipe-picker-modal";
+  modal.className = "modal-overlay";
+  modal.onclick = closeRecipePickerModalOnBackdrop;
+  modal.innerHTML = `
+    <div class="glass-modal recipe-picker-modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <i class="fa-solid fa-book-open" style="color: var(--accent-emerald); font-size: 1.3rem;"></i>
+          <div>
+            <h3 id="picker-modal-title">Elegir del Backlog de Recetas</h3>
+            <p id="picker-modal-subtitle">Selecciona una receta para añadir a tu semana</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeRecipePickerModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="picker-search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="picker-search-input" placeholder="Buscar por nombre o ingrediente..." oninput="onPickerSearchInput(this.value)">
+      </div>
+
+      <div class="picker-category-filters" id="picker-category-filters">
+        <button type="button" class="picker-cat-btn ${activeBacklogCategoryFilter === 'all' ? 'active' : ''}" onclick="setPickerCategoryFilter('all')">Todas</button>
+        <button type="button" class="picker-cat-btn ${activeBacklogCategoryFilter === 'desayuno' ? 'active' : ''}" onclick="setPickerCategoryFilter('desayuno')">☀️ Desayunos</button>
+        <button type="button" class="picker-cat-btn ${activeBacklogCategoryFilter === 'comida' ? 'active' : ''}" onclick="setPickerCategoryFilter('comida')">🥗 Comidas</button>
+        <button type="button" class="picker-cat-btn ${activeBacklogCategoryFilter === 'cena' ? 'active' : ''}" onclick="setPickerCategoryFilter('cena')">🌙 Cenas</button>
+        <button type="button" class="picker-cat-btn ${activeBacklogCategoryFilter === 'snack' ? 'active' : ''}" onclick="setPickerCategoryFilter('snack')">🍎 Snacks</button>
+      </div>
+
+      <div class="picker-recipes-list" id="picker-recipes-list">
+        <!-- Renders dynamically -->
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+export function onPickerSearchInput(query) {
+  activeBacklogSearchQuery = query;
+  renderRecipePickerModalContent();
+}
+
+export function setPickerCategoryFilter(cat) {
+  triggerHapticTouch();
+  activeBacklogCategoryFilter = cat;
+  const filterContainer = document.getElementById("picker-category-filters");
+  if (filterContainer) {
+    filterContainer.querySelectorAll(".picker-cat-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("onclick")?.includes(`'${cat}'`));
+    });
+  }
+  renderRecipePickerModalContent();
+}
+
+/**
+ * Render recipes list in picker modal
+ */
+function renderRecipePickerModalContent() {
+  const container = document.getElementById("picker-recipes-list");
+  if (!container) return;
+
+  const subtitle = document.getElementById("picker-modal-subtitle");
+  if (subtitle && activePickerContext.day && activePickerContext.slot) {
+    subtitle.innerText = `Asignando a: ${activePickerContext.day} • ${activePickerContext.slot.toUpperCase()}`;
+  }
+
+  const all = getFilteredRecipes();
+  const query = (activeBacklogSearchQuery || "").toLowerCase().trim();
+  const cat = activeBacklogCategoryFilter || "all";
+
+  const matching = all.filter(recipe => {
+    // Category match
+    if (cat !== "all" && recipe.type !== cat) return false;
+    // Query match
+    if (query) {
+      const matchName = (recipe.name || "").toLowerCase().includes(query);
+      const matchIng = (recipe.ingredients || []).some(i => (i.name || "").toLowerCase().includes(query));
+      const matchTags = (recipe.tags || []).some(t => t.toLowerCase().includes(query));
+      if (!matchName && !matchIng && !matchTags) return false;
+    }
+    return true;
+  });
+
+  if (matching.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        <i class="fa-solid fa-utensils" style="font-size: 2rem; opacity: 0.3; margin-bottom: 0.5rem; display:block;"></i>
+        <p>No se han encontrado recetas que coincidan con la búsqueda.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const currentSelectedRecipeId = appState.weeklyMealPlan?.[activePickerContext.day]?.[activePickerContext.slot];
+
+  container.innerHTML = matching.map(recipe => {
+    const isCurrentlySelected = (currentSelectedRecipeId === recipe.id);
+    const tagsHtml = (recipe.tags || []).slice(0, 3).map(t => `<span class="macro-pill">${t}</span>`).join(" ");
+
+    return `
+      <div class="picker-recipe-item ${isCurrentlySelected ? 'currently-active' : ''}">
+        <div class="picker-item-main">
+          <div class="picker-item-type">
+            <span class="type-pill ${recipe.type}">${recipe.type.toUpperCase()}</span>
+            <span class="prep-time"><i class="fa-regular fa-clock"></i> ${recipe.prepTime || 15} min</span>
+            ${isCurrentlySelected ? '<span class="active-badge">✓ Asignada actualmente</span>' : ''}
+          </div>
+          <h4 class="picker-item-title">${recipe.name}</h4>
+          <div class="picker-item-macros">
+            <span style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${recipe.calories} kcal</span>
+            <span style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${recipe.protein}g Prot</span>
+            <span style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${recipe.carbs}g Carbs</span>
+            <span style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${recipe.fats}g Grasas</span>
+          </div>
+          <div style="margin-top: 0.35rem;">${tagsHtml}</div>
+        </div>
+
+        <div class="picker-item-action">
+          <button type="button" class="btn-select-recipe ${isCurrentlySelected ? 'selected' : ''}" onclick="selectRecipeForActiveSlot('${recipe.id}')">
+            <i class="fa-solid ${isCurrentlySelected ? 'fa-check' : 'fa-plus'}"></i> ${isCurrentlySelected ? 'Asignada' : 'Seleccionar'}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+/**
+ * RENDER SUBTAB 2: RECIPES BACKLOG CATALOGUE
+ */
 export function setRecipesRange(range) {
   try {
     triggerHapticTouch();
     appState.recipesDaysRange = range;
     saveState();
-    const btn5 = document.getElementById("recipes-range-5");
-    const btn7 = document.getElementById("recipes-range-7");
-    if (btn5) btn5.classList.toggle("active", range === '5');
-    if (btn7) btn7.classList.toggle("active", range === '7');
     renderNutritionRecipesView();
   } catch(e) {
     console.error("Error setting recipes range:", e);
@@ -212,88 +754,486 @@ export function renderNutritionRecipesView() {
     if (!container) return;
     container.innerHTML = "";
 
-    const range = appState.recipesDaysRange || '5';
-    const dayNames = range === '5' 
-      ? ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
-      : ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const all = getAllRecipes();
+    const query = (activeBacklogSearchQuery || "").toLowerCase().trim();
+    const cat = activeBacklogCategoryFilter || "all";
 
-    const btn5 = document.getElementById("recipes-range-5");
-    const btn7 = document.getElementById("recipes-range-7");
-    if (btn5) btn5.classList.toggle("active", range === '5');
-    if (btn7) btn7.classList.toggle("active", range === '7');
+    // 1. Render Catalog Header Tools (Search, Categories & Add Recipe Button)
+    const headerWrapper = document.createElement("div");
+    headerWrapper.className = "backlog-header-controls";
+    headerWrapper.innerHTML = `
+      <div class="backlog-search-row">
+        <div class="picker-search-bar" style="margin-bottom: 0; flex: 1;">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" value="${activeBacklogSearchQuery}" placeholder="Buscar en el catálogo de recetas o ingredientes..." oninput="onBacklogCatalogSearch(this.value)">
+        </div>
 
-    const availableRecipes = getFilteredRecipes();
-    const usedRecipes = new Map();
+        <button type="button" class="btn-primary" onclick="openCreateRecipeModal()">
+          <i class="fa-solid fa-plus"></i> Nueva Receta
+        </button>
+      </div>
 
-    dayNames.forEach((dayName, idx) => {
-      const breakfasts = availableRecipes.filter(r => r.type === "desayuno");
-      const lunches = availableRecipes.filter(r => r.type === "comida");
-      const dinners = availableRecipes.filter(r => r.type === "cena");
-      const snacks = availableRecipes.filter(r => r.type === "snack");
+      <div class="backlog-filters-row">
+        <div class="picker-category-filters" style="margin-bottom: 0;">
+          <button type="button" class="picker-cat-btn ${cat === 'all' ? 'active' : ''}" onclick="setBacklogCatalogCategory('all')">Todas (${all.length})</button>
+          <button type="button" class="picker-cat-btn ${cat === 'desayuno' ? 'active' : ''}" onclick="setBacklogCatalogCategory('desayuno')">☀️ Desayunos</button>
+          <button type="button" class="picker-cat-btn ${cat === 'comida' ? 'active' : ''}" onclick="setBacklogCatalogCategory('comida')">🥗 Comidas</button>
+          <button type="button" class="picker-cat-btn ${cat === 'cena' ? 'active' : ''}" onclick="setBacklogCatalogCategory('cena')">🌙 Cenas</button>
+          <button type="button" class="picker-cat-btn ${cat === 'snack' ? 'active' : ''}" onclick="setBacklogCatalogCategory('snack')">🍎 Snacks</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(headerWrapper);
 
-      const dailyMeals = [
-        breakfasts[idx % (breakfasts.length || 1)],
-        lunches[idx % (lunches.length || 1)],
-        dinners[idx % (dinners.length || 1)],
-        snacks[idx % (snacks.length || 1)],
-        snacks[(idx + 1) % (snacks.length || 1)]
-      ];
-
-      dailyMeals.forEach(m => {
-        if (m && !usedRecipes.has(m.id)) {
-          usedRecipes.set(m.id, { meal: m, days: [dayName] });
-        } else if (m && usedRecipes.has(m.id)) {
-          usedRecipes.get(m.id).days.push(dayName);
-        }
-      });
+    // 2. Filter Recipes
+    const filtered = all.filter(recipe => {
+      if (cat !== "all" && recipe.type !== cat) return false;
+      if (query) {
+        const matchName = (recipe.name || "").toLowerCase().includes(query);
+        const matchIng = (recipe.ingredients || []).some(i => (i.name || "").toLowerCase().includes(query));
+        const matchTags = (recipe.tags || []).some(t => t.toLowerCase().includes(query));
+        if (!matchName && !matchIng && !matchTags) return false;
+      }
+      return true;
     });
 
-    if (usedRecipes.size === 0) {
-      container.innerHTML = `<div class="glass-card"><p style="color:var(--text-muted);">No hay recetas registradas.</p></div>`;
+    if (filtered.length === 0) {
+      const emptyDiv = document.createElement("div");
+      emptyDiv.className = "glass-card";
+      emptyDiv.style.cssText = "text-align:center; padding: 2.5rem; color: var(--text-muted); grid-column: 1 / -1;";
+      emptyDiv.innerHTML = `
+        <i class="fa-solid fa-kitchen-set" style="font-size: 2.5rem; opacity: 0.3; margin-bottom: 0.8rem; display:block;"></i>
+        <p>No se encontraron recetas con los filtros actuales.</p>
+        <button type="button" class="btn-primary" onclick="setBacklogCatalogCategory('all'); onBacklogCatalogSearch('');" style="margin-top: 1rem;">
+          Limpiar Filtros
+        </button>
+      `;
+      container.appendChild(emptyDiv);
       return;
     }
 
-    usedRecipes.forEach(({ meal, days }) => {
+    // 3. Render Recipe Cards Grid
+    const grid = document.createElement("div");
+    grid.className = "recipes-grid";
+
+    filtered.forEach(meal => {
       const card = document.createElement("div");
       card.className = "glass-card recipe-batch-card";
       card.id = `recipe-card-${meal.id}`;
       card.dataset.recipeId = meal.id;
 
-      const ingredientsHtml = meal.ingredients.map(ing => `
+      const ingredientsHtml = (meal.ingredients || []).map(ing => `
         <li><span>${ing.name}</span><strong>${ing.amount} ${ing.unit}</strong></li>
       `).join("");
 
+      const isCustom = (appState.customRecipes || []).some(r => r.id === meal.id);
+
       card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.4rem;">
-          <span class="meal-card-type"><i class="fa-solid fa-fire-burner"></i> ${meal.type.toUpperCase()} • ${meal.prepTime} min</span>
-          <span style="font-size:0.75rem; color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-calendar-check"></i> ${days.join(", ")}</span>
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.4rem;">
+            <span class="meal-card-type"><i class="fa-solid fa-fire-burner"></i> ${meal.type.toUpperCase()} • ${meal.prepTime || 15} min</span>
+            ${isCustom ? '<span style="font-size:0.7rem; background:rgba(16,185,129,0.15); color:var(--accent-emerald); padding:2px 8px; border-radius:10px; font-weight:700;">★ Personalizada</span>' : ''}
+          </div>
+          
+          <h3 class="meal-card-title">${meal.name}</h3>
+
+          <div class="meal-macros-pills">
+            <span class="macro-pill" style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${meal.calories} kcal</span>
+            <span class="macro-pill" style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${meal.protein}g Prot</span>
+            <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${meal.carbs}g Carbs</span>
+            <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${meal.fats}g Grasas</span>
+          </div>
+
+          <h4 style="font-size:0.85rem; color:var(--text-muted); margin:0.75rem 0 0.4rem 0;"><i class="fa-solid fa-basket-shopping"></i> Ingredientes:</h4>
+          <ul class="ingredient-list">${ingredientsHtml}</ul>
+
+          <details style="font-size:0.85rem; color:var(--accent-cyan); cursor:pointer; margin-top:0.75rem; background:rgba(255,255,255,0.03); padding:0.6rem 0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+            <summary style="font-weight:600;"><i class="fa-solid fa-kitchen-set"></i> Preparación Paso a Paso (${(meal.instructions || []).length} pasos)</summary>
+            <ol style="margin-top:0.5rem; padding-left:1.2rem; color:var(--text-muted); line-height:1.5;">
+              ${(meal.instructions || []).map(s => `<li>${s}</li>`).join("")}
+            </ol>
+          </details>
         </div>
-        <h3 class="meal-card-title">${meal.name}</h3>
 
-        <div class="meal-macros-pills">
-          <span class="macro-pill" style="color:var(--accent-amber);">${meal.calories} kcal</span>
-          <span class="macro-pill" style="color:var(--accent-emerald);">${meal.protein}g Prot</span>
-          <span class="macro-pill" style="color:var(--accent-cyan);">${meal.carbs}g Carbs</span>
-          <span class="macro-pill" style="color:var(--accent-violet);">${meal.fats}g Grasas</span>
+        <div class="recipe-card-footer" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+          <button type="button" class="btn-primary" onclick="openAssignRecipeModal('${meal.id}')" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; flex: 1;">
+            <i class="fa-solid fa-calendar-plus"></i> Asignar a un Día
+          </button>
+          ${isCustom ? `
+            <button type="button" class="btn-slot-action remove" onclick="deleteCustomRecipe('${meal.id}')" title="Eliminar receta personal">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          ` : ''}
         </div>
-
-        <h4 style="font-size:0.85rem; color:var(--text-muted); margin:0.6rem 0 0.4rem 0;">Ingredientes requeridos:</h4>
-        <ul class="ingredient-list">${ingredientsHtml}</ul>
-
-        <details style="font-size:0.85rem; color:var(--accent-cyan); cursor:pointer; margin-top:0.75rem; background:rgba(255,255,255,0.03); padding:0.6rem 0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
-          <summary style="font-weight:600;">Paso a Paso & Batch Prep</summary>
-          <ol style="margin-top:0.5rem; padding-left:1.2rem; color:var(--text-muted); line-height:1.5;">
-            ${meal.instructions.map(s => `<li>${s}</li>`).join("")}
-          </ol>
-        </details>
       `;
-      container.appendChild(card);
+
+      grid.appendChild(card);
     });
+
+    container.appendChild(grid);
   } catch(e) {
     console.error("Error rendering Nutrition Recipes View:", e);
   }
 }
 
+export function onBacklogCatalogSearch(query) {
+  activeBacklogSearchQuery = query;
+  renderNutritionRecipesView();
+}
+
+export function setBacklogCatalogCategory(cat) {
+  triggerHapticTouch();
+  activeBacklogCategoryFilter = cat;
+  renderNutritionRecipesView();
+}
+
+/**
+ * QUICK ASSIGN MODAL: Assign any recipe from backlog to a day
+ */
+export function openAssignRecipeModal(recipeId) {
+  try {
+    triggerHapticTouch();
+    const recipe = getRecipeById(recipeId);
+    if (!recipe) return;
+
+    const daysHtml = DAYS_OF_WEEK.map(d => `<option value="${d}">${d}</option>`).join("");
+    const defaultSlot = (recipe.type === "desayuno") ? "desayuno" : (recipe.type === "comida") ? "comida" : (recipe.type === "cena") ? "cena" : "merienda";
+
+    let modal = document.getElementById("assign-recipe-quick-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "assign-recipe-quick-modal";
+      modal.className = "modal-overlay";
+      document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+      <div class="glass-modal" style="max-width: 440px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-header-title">
+            <i class="fa-solid fa-calendar-plus" style="color: var(--accent-emerald); font-size: 1.3rem;"></i>
+            <div>
+              <h3>Asignar Receta al Plan</h3>
+              <p>${recipe.name}</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close-btn" onclick="document.getElementById('assign-recipe-quick-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" style="padding-top: 1rem;">
+          <form onsubmit="saveQuickAssignRecipe(event, '${recipe.id}')">
+            <div class="form-group">
+              <label><i class="fa-solid fa-calendar-day"></i> Día de la Semana:</label>
+              <select id="quick-assign-day" class="custom-select" style="width: 100%;">
+                ${daysHtml}
+              </select>
+            </div>
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <label><i class="fa-solid fa-utensils"></i> Momento / Comida:</label>
+              <select id="quick-assign-slot" class="custom-select" style="width: 100%;">
+                <option value="desayuno" ${defaultSlot === 'desayuno' ? 'selected' : ''}>☀️ Desayuno</option>
+                <option value="comida" ${defaultSlot === 'comida' ? 'selected' : ''}>🥗 Comida / Almuerzo</option>
+                <option value="merienda" ${defaultSlot === 'merienda' ? 'selected' : ''}>🍎 Merienda / Snack</option>
+                <option value="cena" ${defaultSlot === 'cena' ? 'selected' : ''}>🌙 Cena</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 1.25rem; width: 100%; justify-content: center;">
+              <i class="fa-solid fa-check"></i> Confirmar Asignación
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("active");
+  } catch(e) {
+    console.error("Error opening assign recipe modal:", e);
+  }
+}
+
+export function saveQuickAssignRecipe(event, recipeId) {
+  event.preventDefault();
+  try {
+    triggerHapticTouch();
+    const day = document.getElementById("quick-assign-day")?.value || "Lunes";
+    const slot = document.getElementById("quick-assign-slot")?.value || "comida";
+
+    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
+    if (!appState.weeklyMealPlan[day]) appState.weeklyMealPlan[day] = {};
+
+    appState.weeklyMealPlan[day][slot] = recipeId;
+    saveState();
+
+    const modal = document.getElementById("assign-recipe-quick-modal");
+    if (modal) modal.classList.remove("active");
+
+    renderNutritionMenuView();
+    renderShoppingView();
+
+    const recipe = getRecipeById(recipeId);
+    showIosToast(`✅ ${recipe ? recipe.name : 'Plato'} asignado a ${day} (${slot})`, "fa-solid fa-circle-check");
+  } catch(e) {
+    console.error("Error saving quick assign recipe:", e);
+  }
+}
+
+/**
+ * RECIPE DETAIL MODAL
+ */
+export function openRecipeDetailModal(recipeId) {
+  try {
+    triggerHapticTouch();
+    const recipe = getRecipeById(recipeId);
+    if (!recipe) return;
+
+    let modal = document.getElementById("recipe-detail-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "recipe-detail-modal";
+      modal.className = "modal-overlay";
+      document.body.appendChild(modal);
+    }
+
+    const ingredientsHtml = (recipe.ingredients || []).map(ing => `
+      <li style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px dashed var(--border-color); font-size: 0.88rem;">
+        <span>${ing.name}</span>
+        <strong>${ing.amount} ${ing.unit}</strong>
+      </li>
+    `).join("");
+
+    const stepsHtml = (recipe.instructions || []).map((s, idx) => `
+      <li style="margin-bottom: 0.6rem; line-height: 1.5; font-size: 0.88rem; color: var(--text-secondary);">
+        <strong style="color: var(--accent-cyan);">Paso ${idx + 1}:</strong> ${s}
+      </li>
+    `).join("");
+
+    modal.innerHTML = `
+      <div class="glass-modal" style="max-width: 540px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-header-title">
+            <i class="fa-solid fa-kitchen-set" style="color: var(--accent-cyan); font-size: 1.3rem;"></i>
+            <div>
+              <h3>${recipe.name}</h3>
+              <p>${recipe.type.toUpperCase()} • ${recipe.prepTime || 15} min prep</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close-btn" onclick="document.getElementById('recipe-detail-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="modal-body" style="padding-top: 1rem;">
+          <div class="meal-macros-pills" style="margin-bottom: 1rem;">
+            <span class="macro-pill" style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${recipe.calories} kcal</span>
+            <span class="macro-pill" style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${recipe.protein}g Proteína</span>
+            <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${recipe.carbs}g Carbs</span>
+            <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${recipe.fats}g Grasas</span>
+          </div>
+
+          <h4 style="margin: 1rem 0 0.5rem 0; font-size: 0.95rem; color: var(--accent-emerald);"><i class="fa-solid fa-basket-shopping"></i> Ingredientes necesarios:</h4>
+          <ul style="list-style:none; padding: 0;">${ingredientsHtml}</ul>
+
+          <h4 style="margin: 1.25rem 0 0.5rem 0; font-size: 0.95rem; color: var(--accent-cyan);"><i class="fa-solid fa-list-ol"></i> Pasos de preparación:</h4>
+          <ol style="padding-left: 1rem;">${stepsHtml}</ol>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
+            <button type="button" class="btn-primary" onclick="document.getElementById('recipe-detail-modal').classList.remove('active'); openAssignRecipeModal('${recipe.id}');" style="flex: 1; justify-content: center;">
+              <i class="fa-solid fa-calendar-plus"></i> Asignar a un Día
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("active");
+  } catch(e) {
+    console.error("Error opening recipe detail modal:", e);
+  }
+}
+
+/**
+ * CREATE CUSTOM RECIPE MODAL
+ */
+export function openCreateRecipeModal() {
+  try {
+    triggerHapticTouch();
+    let modal = document.getElementById("create-recipe-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "create-recipe-modal";
+      modal.className = "modal-overlay";
+      document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+      <div class="glass-modal" style="max-width: 520px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-header-title">
+            <i class="fa-solid fa-plus" style="color: var(--accent-emerald); font-size: 1.3rem;"></i>
+            <div>
+              <h3>Añadir Nueva Receta</h3>
+              <p>Crea tu plato personalizado con ingredientes y macros</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close-btn" onclick="document.getElementById('create-recipe-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="modal-body" style="padding-top: 1rem;">
+          <form onsubmit="saveCustomRecipeFromModal(event)">
+            <div class="form-group">
+              <label>Nombre de la Receta *</label>
+              <input type="text" id="new-recipe-name" class="ios-input" placeholder="ej. Wrap de Pollo con Salsa Tzatziki" required>
+            </div>
+
+            <div class="form-grid-2" style="margin-top: 0.75rem;">
+              <div class="form-group">
+                <label>Tipo de Plato</label>
+                <select id="new-recipe-type" class="custom-select" style="width: 100%;">
+                  <option value="comida">🥗 Comida / Almuerzo</option>
+                  <option value="cena">🌙 Cena</option>
+                  <option value="desayuno">☀️ Desayuno</option>
+                  <option value="snack">🍎 Snack / Merienda</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tiempo de Preparación (min)</label>
+                <input type="number" id="new-recipe-prep" class="ios-input" value="15" required min="1" max="180">
+              </div>
+            </div>
+
+            <div class="form-grid-2" style="margin-top: 0.75rem;">
+              <div class="form-group">
+                <label>Calorías (kcal)</label>
+                <input type="number" id="new-recipe-kcal" class="ios-input" placeholder="ej. 480" required min="10" max="2500">
+              </div>
+              <div class="form-group">
+                <label>Proteína (g)</label>
+                <input type="number" id="new-recipe-prot" class="ios-input" placeholder="ej. 42" required min="0" max="200">
+              </div>
+            </div>
+
+            <div class="form-grid-2" style="margin-top: 0.75rem;">
+              <div class="form-group">
+                <label>Carbohidratos (g)</label>
+                <input type="number" id="new-recipe-carbs" class="ios-input" placeholder="ej. 45" value="30" min="0" max="300">
+              </div>
+              <div class="form-group">
+                <label>Grasas (g)</label>
+                <input type="number" id="new-recipe-fats" class="ios-input" placeholder="ej. 14" value="12" min="0" max="200">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <label>Ingredientes (Un ingrediente por línea: Nombre, Cantidad, Unidad)</label>
+              <textarea id="new-recipe-ingredients" class="ios-input" rows="4" placeholder="Pechuga de pollo, 180, g&#10;Aguacate, 50, g&#10;Tortillas integrales, 2, ud" style="font-family: monospace; font-size: 0.82rem;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <label>Pasos de preparación (Un paso por línea)</label>
+              <textarea id="new-recipe-steps" class="ios-input" rows="3" placeholder="1. Cocinar el pollo a la plancha.&#10;2. Montar en la tortilla con los vegetales."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary" style="margin-top: 1.25rem; width: 100%; justify-content: center; padding: 0.75rem;">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar Receta en el Backlog
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("active");
+  } catch(e) {
+    console.error("Error opening create recipe modal:", e);
+  }
+}
+
+export function saveCustomRecipeFromModal(event) {
+  event.preventDefault();
+  try {
+    triggerHapticTouch();
+    const name = document.getElementById("new-recipe-name")?.value.trim();
+    if (!name) return;
+
+    const type = document.getElementById("new-recipe-type")?.value || "comida";
+    const prepTime = Number(document.getElementById("new-recipe-prep")?.value || 15);
+    const calories = Number(document.getElementById("new-recipe-kcal")?.value || 450);
+    const protein = Number(document.getElementById("new-recipe-prot")?.value || 35);
+    const carbs = Number(document.getElementById("new-recipe-carbs")?.value || 30);
+    const fats = Number(document.getElementById("new-recipe-fats")?.value || 12);
+
+    const rawIng = document.getElementById("new-recipe-ingredients")?.value || "";
+    const rawSteps = document.getElementById("new-recipe-steps")?.value || "";
+
+    const parsedIng = rawIng.split("\n").filter(l => l.trim()).map(line => {
+      const parts = line.split(",").map(p => p.trim());
+      return {
+        name: parts[0] || "Ingrediente",
+        amount: Number(parts[1]) || 1,
+        unit: parts[2] || "ud",
+        category: INGREDIENT_CATEGORIES.PRODUCE
+      };
+    });
+
+    const parsedSteps = rawSteps.split("\n").filter(l => l.trim()).map(s => s.replace(/^\d+\.\s*/, ''));
+
+    const newRecipe = {
+      id: "custom_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+      name: name,
+      type: type,
+      prepTime: prepTime,
+      calories: calories,
+      protein: protein,
+      carbs: carbs,
+      fats: fats,
+      tags: ["personalizada", "alto en proteína"],
+      ingredients: parsedIng.length > 0 ? parsedIng : [{ name: name, amount: 1, unit: "ración", category: INGREDIENT_CATEGORIES.PANTRY }],
+      instructions: parsedSteps.length > 0 ? parsedSteps : ["Preparar y servir."]
+    };
+
+    if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+    appState.customRecipes.push(newRecipe);
+    saveState();
+
+    const modal = document.getElementById("create-recipe-modal");
+    if (modal) modal.classList.remove("active");
+
+    renderNutritionRecipesView();
+    showIosToast(`🎉 ¡Receta "${name}" creada con éxito!`, "fa-solid fa-circle-check");
+  } catch(e) {
+    console.error("Error saving custom recipe:", e);
+  }
+}
+
+export function deleteCustomRecipe(recipeId) {
+  try {
+    triggerHapticTouch();
+    if (confirm("¿Deseas eliminar esta receta personalizada de tu catálogo?")) {
+      appState.customRecipes = (appState.customRecipes || []).filter(r => r.id !== recipeId);
+      
+      // Clean from weekly plan
+      if (appState.weeklyMealPlan) {
+        DAYS_OF_WEEK.forEach(d => {
+          if (appState.weeklyMealPlan[d]) {
+            MEAL_SLOTS.forEach(s => {
+              if (appState.weeklyMealPlan[d][s.key] === recipeId) {
+                appState.weeklyMealPlan[d][s.key] = null;
+              }
+            });
+          }
+        });
+      }
+
+      saveState();
+      renderNutritionRecipesView();
+      renderNutritionMenuView();
+      renderShoppingView();
+      showIosToast("🗑️ Receta eliminada", "fa-solid fa-trash-can");
+    }
+  } catch(e) {
+    console.error("Error deleting custom recipe:", e);
+  }
+}
+
+/**
+ * RENDER SUBTAB 3: SMART SHOPPING LIST VIEW
+ */
 export function setShoppingRange(range) {
   try {
     triggerHapticTouch();
@@ -315,8 +1255,8 @@ export function renderShoppingView() {
     if (!container) return;
     container.innerHTML = "";
 
-    const range = appState.shoppingDaysRange || '5';
-    const dayNames = range === '5' 
+    const range = appState.shoppingDaysRange || '7';
+    const dayNames = range === '5'
       ? ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
       : ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -325,40 +1265,34 @@ export function renderShoppingView() {
     if (btn5) btn5.classList.toggle("active", range === '5');
     if (btn7) btn7.classList.toggle("active", range === '7');
 
-    const availableRecipes = getFilteredRecipes();
     const aggregated = {};
+    let totalMealsCount = 0;
 
-    dayNames.forEach((d, idx) => {
-      const breakfasts = availableRecipes.filter(r => r.type === "desayuno");
-      const lunches = availableRecipes.filter(r => r.type === "comida");
-      const dinners = availableRecipes.filter(r => r.type === "cena");
-      const snacks = availableRecipes.filter(r => r.type === "snack");
-
-      const dailyMeals = [
-        breakfasts[idx % (breakfasts.length || 1)],
-        lunches[idx % (lunches.length || 1)],
-        dinners[idx % (dinners.length || 1)],
-        snacks[idx % (snacks.length || 1)],
-        snacks[(idx + 1) % (snacks.length || 1)]
-      ];
-
-      dailyMeals.forEach(meal => {
+    // Aggregate ingredients from weeklyMealPlan for selected days
+    dayNames.forEach(day => {
+      const plan = appState.weeklyMealPlan?.[day] || {};
+      MEAL_SLOTS.forEach(slot => {
+        const recipeId = plan[slot.key];
+        const meal = getRecipeById(recipeId);
         if (!meal) return;
-        meal.ingredients.forEach(ing => {
-          const key = `${ing.name}___${ing.unit}`;
+
+        totalMealsCount++;
+        (meal.ingredients || []).forEach(ing => {
+          const key = `${(ing.name || "").trim().toLowerCase()}___${(ing.unit || "").trim().toLowerCase()}`;
           if (!aggregated[key]) {
             aggregated[key] = {
               name: ing.name,
               amount: 0,
-              unit: ing.unit,
+              unit: ing.unit || "ud",
               category: ing.category || INGREDIENT_CATEGORIES.PANTRY
             };
           }
-          aggregated[key].amount += ing.amount;
+          aggregated[key].amount += Number(ing.amount || 0);
         });
       });
     });
 
+    // Group by category
     const categories = {};
     Object.values(aggregated).forEach(item => {
       if (!categories[item.category]) categories[item.category] = [];
@@ -383,6 +1317,46 @@ export function renderShoppingView() {
       [INGREDIENT_CATEGORIES.PANTRY]: "fa-jar"
     };
 
+    // Render Summary Banner
+    const totalItemsCount = Object.keys(aggregated).length + (appState.shoppingExtras || []).length;
+    const summaryBanner = document.createElement("div");
+    summaryBanner.className = "shopping-summary-banner glass-card";
+    summaryBanner.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+        <div>
+          <span style="font-size:0.78rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Planificación Activa</span>
+          <h3 style="font-family:var(--font-heading); font-size:1.1rem; color:var(--accent-emerald);">
+            🛒 ${totalItemsCount} productos para ${totalMealsCount} comidas planificadas (${range === '5' ? '5 días' : '7 días'})
+          </h3>
+        </div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button type="button" class="btn-planner-tool" onclick="openAddExtraShoppingModal()">
+            <i class="fa-solid fa-plus"></i> Añadir Extra
+          </button>
+          <button type="button" class="btn-planner-tool" onclick="clearCheckedShoppingItems()">
+            <i class="fa-solid fa-rotate-left"></i> Desmarcar Todo
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(summaryBanner);
+
+    if (totalItemsCount === 0) {
+      const emptyDiv = document.createElement("div");
+      emptyDiv.className = "glass-card";
+      emptyDiv.style.cssText = "text-align:center; padding: 2.5rem; color: var(--text-muted); margin-top: 1rem;";
+      emptyDiv.innerHTML = `
+        <i class="fa-solid fa-cart-arrow-down" style="font-size: 2.5rem; opacity: 0.3; margin-bottom: 0.8rem; display:block;"></i>
+        <p>No hay comidas programadas para los días seleccionados.</p>
+        <button type="button" class="btn-primary" onclick="window.showTab('nutrition-menu-view')" style="margin-top: 1rem;">
+          Ir al Plan Semanal y Elegir Recetas
+        </button>
+      `;
+      container.appendChild(emptyDiv);
+      return;
+    }
+
+    // Render Categorized Sections
     const sortedCategoryNames = Object.keys(categories).sort((a, b) => {
       const idxA = CATEGORY_ORDER.indexOf(a);
       const idxB = CATEGORY_ORDER.indexOf(b);
@@ -395,8 +1369,8 @@ export function renderShoppingView() {
       const iconClass = CATEGORY_ICONS[catName] || "fa-basket-shopping";
 
       const itemsHtml = categories[catName].map(item => {
-        const itemKey = item.name.toLowerCase();
-        const isChecked = !!appState.checkedShoppingItems[itemKey];
+        const itemKey = item.name.toLowerCase().trim();
+        const isChecked = !!appState.checkedShoppingItems?.[itemKey];
         const displayAmount = Math.round(item.amount * 10) / 10;
 
         return `
@@ -409,7 +1383,7 @@ export function renderShoppingView() {
       }).join("");
 
       catSection.innerHTML = `
-        <h3 class="shopping-cat-title"><i class="fa-solid ${iconClass}"></i> ${catName}</h3>
+        <h3 class="shopping-cat-title"><i class="fa-solid ${iconClass}"></i> ${catName} <small style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${categories[catName].length})</small></h3>
         <div class="shopping-items-grid">
           ${itemsHtml}
         </div>
@@ -417,11 +1391,42 @@ export function renderShoppingView() {
 
       container.appendChild(catSection);
     });
+
+    // Render Manual Extras if any
+    const extras = Array.isArray(appState.shoppingExtras) ? appState.shoppingExtras : [];
+    if (extras.length > 0) {
+      const extraSection = document.createElement("div");
+      extraSection.className = "shopping-category";
+      extraSection.innerHTML = `
+        <h3 class="shopping-cat-title"><i class="fa-solid fa-basket-shopping"></i> Extras y Artículos Manuales <small style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${extras.length})</small></h3>
+        <div class="shopping-items-grid">
+          ${extras.map((ex, idx) => {
+            const exKey = `extra_${ex.name.toLowerCase().trim()}`;
+            const isChecked = !!appState.checkedShoppingItems?.[exKey];
+            return `
+              <div class="shopping-item ${isChecked ? 'checked' : ''}" onclick="toggleShoppingItem('${exKey}', this)">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleShoppingItem('${exKey}', this.parentNode);">
+                <span class="shopping-item-name">${ex.name}</span>
+                <span class="shopping-item-qty">${ex.amount || ''} ${ex.unit || ''}</span>
+                <button type="button" onclick="event.stopPropagation(); removeShoppingExtra(${idx})" style="border:none; background:transparent; color:var(--accent-rose); cursor:pointer; font-size:0.75rem; margin-left:0.25rem;">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+      container.appendChild(extraSection);
+    }
+
   } catch(e) {
     console.error("Error rendering Shopping View:", e);
   }
 }
 
+/**
+ * Toggle checked item in shopping list
+ */
 export function toggleShoppingItem(itemKey, elem) {
   try {
     triggerHapticTouch();
@@ -438,17 +1443,70 @@ export function toggleShoppingItem(itemKey, elem) {
   }
 }
 
+export function clearCheckedShoppingItems() {
+  try {
+    triggerHapticTouch();
+    appState.checkedShoppingItems = {};
+    saveState();
+    renderShoppingView();
+    showIosToast("🔄 Todos los productos desmarcados", "fa-solid fa-rotate-left");
+  } catch(e) {
+    console.error("Error clearing checked shopping items:", e);
+  }
+}
+
+/**
+ * Add Extra Shopping Item Modal
+ */
+export function openAddExtraShoppingModal() {
+  try {
+    triggerHapticTouch();
+    const item = prompt("Introduce el nombre del producto extra (ej. Café molido, Agua, Papel de cocina):");
+    if (!item || !item.trim()) return;
+
+    if (!Array.isArray(appState.shoppingExtras)) appState.shoppingExtras = [];
+    appState.shoppingExtras.push({
+      name: item.trim(),
+      amount: "1",
+      unit: "ud"
+    });
+    saveState();
+    renderShoppingView();
+    showIosToast(`➕ "${item}" añadido a la lista`, "fa-solid fa-cart-plus");
+  } catch(e) {
+    console.error("Error adding extra shopping item:", e);
+  }
+}
+
+export function removeShoppingExtra(index) {
+  try {
+    triggerHapticTouch();
+    if (Array.isArray(appState.shoppingExtras)) {
+      appState.shoppingExtras.splice(index, 1);
+      saveState();
+      renderShoppingView();
+    }
+  } catch(e) {
+    console.error("Error removing shopping extra:", e);
+  }
+}
+
+/**
+ * Copy Shopping List to Clipboard
+ */
 export function copyShoppingList() {
   try {
     triggerHapticTouch();
     let text = "🛒 LISTA DE LA COMPRA - FITDUO & COLLIE 🛒\n\n";
 
     document.querySelectorAll(".shopping-category").forEach(cat => {
-      const title = cat.querySelector(".shopping-cat-title").innerText;
+      const titleElem = cat.querySelector(".shopping-cat-title");
+      if (!titleElem) return;
+      const title = titleElem.innerText.replace(/\s*\(\d+\)$/, '').trim();
       text += `\n--- ${title} ---\n`;
       cat.querySelectorAll(".shopping-item").forEach(item => {
-        const name = item.querySelector(".shopping-item-name").innerText;
-        const qty = item.querySelector(".shopping-item-qty").innerText;
+        const name = item.querySelector(".shopping-item-name")?.innerText || "";
+        const qty = item.querySelector(".shopping-item-qty")?.innerText || "";
         const checked = item.classList.contains("checked") ? "[X]" : "[ ]";
         text += `${checked} ${name}: ${qty}\n`;
       });
@@ -467,3 +1525,8 @@ export function copyShoppingList() {
     console.error("Error copying shopping list:", e);
   }
 }
+
+// Backwards compatibility stubs
+export function renderExclusions() {}
+export function addExclusion() {}
+export function removeExclusion() {}

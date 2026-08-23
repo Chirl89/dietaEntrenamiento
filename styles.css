@@ -1017,31 +1017,730 @@ body[data-profile="she"] .btn-primary:hover {
   justify-content: space-between;
 }
 
-.weekly-days-tabs {
-  display: flex;
-  gap: 0.4rem;
-  overflow-x: auto;
-  padding-bottom: 0.4rem;
+/* =========================================================
+   NUTRITION: WEEKLY PLANNER, BACKLOG & SHOPPING LIST
+   ========================================================= */
+
+/* TOP PLANNER TOOLBAR */
+.planner-top-toolbar {
   margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 
-.day-tab {
+.planner-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-generate-shopping-glow {
+  background: linear-gradient(135deg, #e11d48, #f43f5e);
+  color: #ffffff;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.6rem 1.15rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35);
+  transition: all 0.25s ease;
+}
+
+body[data-profile="she"] .btn-generate-shopping-glow {
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+}
+
+.btn-generate-shopping-glow:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.45);
+}
+
+body[data-profile="she"] .btn-generate-shopping-glow:hover {
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+}
+
+.shopping-count-badge {
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+}
+
+.planner-quick-tools {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-planner-tool {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-muted);
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.btn-planner-tool:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-main);
+  border-color: var(--border-glow);
+  transform: translateY(-1px);
+}
+
+.btn-planner-tool.danger:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* DAYS BAR & VIEW TOGGLE */
+.planner-days-bar-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.planner-days-scroll {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.planner-day-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  cursor: pointer;
+  min-width: 52px;
+  transition: var(--transition);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+}
+
+.planner-day-pill:hover {
+  border-color: var(--border-glow);
+  transform: translateY(-1px);
+}
+
+.planner-day-pill.active {
+  background: var(--accent-emerald) !important;
+  border-color: var(--accent-emerald) !important;
+  box-shadow: 0 2px 10px var(--accent-emerald-glow) !important;
+}
+
+.planner-day-pill.active .day-pill-name,
+.planner-day-pill.active .day-pill-badge {
+  color: #ffffff !important;
+}
+
+.planner-day-pill.is-today:not(.active) {
+  border-color: var(--accent-cyan);
+}
+
+.day-pill-name {
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.day-pill-badge {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+.day-pill-badge.complete {
+  color: var(--accent-emerald);
+}
+
+.planner-view-toggle {
+  display: flex;
+  background: var(--bg-card);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  gap: 3px;
+}
+
+.btn-view-toggle {
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  padding: 4px 9px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: var(--transition);
+}
+
+.btn-view-toggle.active {
+  background: var(--accent-emerald);
+  color: #ffffff;
+  box-shadow: 0 1px 6px var(--accent-emerald-glow);
+}
+
+/* DAILY NUTRITION BALANCE CARD */
+.daily-nutrition-balance-card {
+  margin-bottom: 1.15rem;
+  padding: 1rem;
+}
+
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.balance-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.balance-title h4 {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.balance-title p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.balance-totals-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.macro-chip {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-main);
+}
+
+.balance-progress-bars {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.balance-bar-row {
+  flex: 1;
+  min-width: 140px;
+}
+
+.bar-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  display: block;
+}
+
+.progress-bar-bg {
+  background: rgba(0, 0, 0, 0.06);
+  height: 6px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill.cal {
+  background: linear-gradient(90deg, #f59e0b, #e11d48);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-bar-fill.prot {
+  background: linear-gradient(90deg, #10b981, #06b6d4);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* SLOT CARDS */
+.slot-card.has-recipe {
+  border-left: 4px solid var(--accent-emerald);
+}
+
+.slot-card.is-empty {
+  border: 1.5px dashed var(--border-color);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.slot-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.slot-actions-group {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.btn-slot-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-slot-action:hover {
+  color: var(--text-main);
+  background: var(--bg-card-hover);
+  border-color: var(--border-glow);
+}
+
+.btn-slot-action.remove:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.empty-slot-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  transition: transform 0.2s ease;
+}
+
+.empty-slot-content:hover {
+  transform: translateX(3px);
+}
+
+.empty-slot-icon {
+  font-size: 1.4rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-slot-text {
+  flex: 1;
+}
+
+.empty-slot-text h4 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.empty-slot-text p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.btn-empty-slot-add {
+  background: var(--accent-emerald);
+  color: #ffffff;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-shadow: 0 2px 6px var(--accent-emerald-glow);
+}
+
+/* RECIPE PREP DETAILS */
+.recipe-prep-details {
+  font-size: 0.85rem;
+  color: var(--accent-cyan);
+  cursor: pointer;
+  margin-top: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.recipe-prep-details summary {
+  font-weight: 600;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.recipe-prep-steps {
+  margin-top: 0.6rem;
+  padding-left: 1.2rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* FULL WEEK MATRIX GRID */
+.planner-week-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(130px, 1fr));
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.matrix-day-column {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 130px;
+}
+
+.matrix-day-column.active-col {
+  border-color: var(--accent-emerald);
+  box-shadow: 0 0 0 1px var(--accent-emerald);
+}
+
+.matrix-col-header {
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.35rem;
+  cursor: pointer;
+}
+
+.matrix-col-header strong {
   font-size: 0.82rem;
+  display: block;
+  color: var(--text-main);
+}
+
+.matrix-col-header small {
+  font-size: 0.65rem;
+  color: var(--accent-emerald);
+  font-weight: 700;
+}
+
+.matrix-col-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.matrix-meal-cell {
+  padding: 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.matrix-meal-cell.has-meal {
+  background: var(--bg-primary);
+}
+
+.matrix-meal-cell.has-meal:hover {
+  border-color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
+
+.matrix-meal-cell.empty-meal {
+  border-style: dashed;
+  opacity: 0.7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.matrix-cell-header {
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.matrix-meal-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.75rem;
+}
+
+.matrix-meal-meta {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* RECIPE PICKER MODAL */
+.recipe-picker-modal-card {
+  max-width: 580px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-search-bar {
+  position: relative;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.picker-search-bar i {
+  position: absolute;
+  left: 12px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.picker-search-bar input {
+  width: 100%;
+  padding: 0.55rem 0.85rem 0.55rem 2.2rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+}
+
+.picker-category-filters {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.picker-cat-btn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
   white-space: nowrap;
   transition: var(--transition);
 }
 
-.day-tab.active {
+.picker-cat-btn.active {
   background: var(--accent-emerald);
-  color: #000;
+  color: #ffffff;
   border-color: var(--accent-emerald);
+}
+
+.picker-recipes-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 400px;
+  padding-right: 2px;
+}
+
+.picker-recipe-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  gap: 0.75rem;
+  transition: var(--transition);
+}
+
+.picker-recipe-item:hover {
+  border-color: var(--border-glow);
+  background: var(--bg-card-hover);
+}
+
+.picker-recipe-item.currently-active {
+  border-color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.picker-item-main {
+  flex: 1;
+}
+
+.picker-item-type {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.72rem;
+}
+
+.type-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--accent-cyan);
+}
+
+.type-pill.desayuno { color: var(--accent-amber); }
+.type-pill.comida { color: var(--accent-cyan); }
+.type-pill.cena { color: var(--accent-rose); }
+.type-pill.snack { color: var(--accent-emerald); }
+
+.active-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.12);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.picker-item-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.picker-item-macros {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+}
+
+.btn-select-recipe {
+  border: none;
+  background: var(--accent-emerald);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.btn-select-recipe.selected {
+  background: rgba(16, 185, 129, 0.2);
+  color: #16a34a;
+  border: 1px solid #16a34a;
+}
+
+.btn-select-recipe:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* BACKLOG CATALOGUE TOOLS */
+.backlog-header-controls {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.backlog-search-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.backlog-filters-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shopping-summary-banner {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-left: 4px solid var(--accent-emerald);
+}
+
+.recipes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+}
+
+.recipe-batch-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .meal-cards-grid {

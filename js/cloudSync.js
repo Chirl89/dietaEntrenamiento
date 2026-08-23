@@ -658,6 +658,42 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
+  if (cloudData.weeklyMealPlan && typeof cloudData.weeklyMealPlan === 'object') {
+    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
+    Object.keys(cloudData.weeklyMealPlan).forEach(d => {
+      if (cloudData.weeklyMealPlan[d]) {
+        appState.weeklyMealPlan[d] = { ...(appState.weeklyMealPlan[d] || {}), ...cloudData.weeklyMealPlan[d] };
+        hasChanges = true;
+      }
+    });
+  }
+
+  if (Array.isArray(cloudData.customRecipes) && cloudData.customRecipes.length > 0) {
+    if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+    cloudData.customRecipes.forEach(cr => {
+      if (cr && cr.id && !appState.customRecipes.some(r => r.id === cr.id)) {
+        appState.customRecipes.push(cr);
+        hasChanges = true;
+      }
+    });
+  }
+
+  if (Array.isArray(cloudData.shoppingExtras) && cloudData.shoppingExtras.length > 0) {
+    if (!Array.isArray(appState.shoppingExtras)) appState.shoppingExtras = [];
+    cloudData.shoppingExtras.forEach(se => {
+      if (se && se.name && !appState.shoppingExtras.some(e => e.name === se.name)) {
+        appState.shoppingExtras.push(se);
+        hasChanges = true;
+      }
+    });
+  }
+
+  if (cloudData.checkedShoppingItems && typeof cloudData.checkedShoppingItems === 'object') {
+    if (!appState.checkedShoppingItems) appState.checkedShoppingItems = {};
+    Object.assign(appState.checkedShoppingItems, cloudData.checkedShoppingItems);
+    hasChanges = true;
+  }
+
   if (hasChanges) {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
   }
@@ -690,7 +726,11 @@ export async function pushToCloud(showToast = false) {
       timestamp: new Date().toISOString(),
       appleWatch: { metrics: { [masterPid]: m } },
       completedWorkouts: { [masterPid]: appState.completedWorkouts?.[masterPid] || {} },
-      history: { [masterPid]: appState.history?.[masterPid] || {} }
+      history: { [masterPid]: appState.history?.[masterPid] || {} },
+      weeklyMealPlan: appState.weeklyMealPlan || {},
+      customRecipes: appState.customRecipes || [],
+      shoppingExtras: appState.shoppingExtras || [],
+      checkedShoppingItems: appState.checkedShoppingItems || {}
     };
 
     const urlSafeData = toUrlSafeB64(compactPayload);
