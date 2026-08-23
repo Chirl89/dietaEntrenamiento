@@ -100,6 +100,61 @@ export function selectDayFromDropdown(dayName) {
 }
 
 /**
+ * Navigate to a specific recipe in backlog catalogue and show details
+ */
+export function navigateToRecipe(recipeId) {
+  try {
+    triggerHapticTouch();
+    if (window.showTab) {
+      window.showTab("nutrition-recipes-view");
+    }
+    setTimeout(() => {
+      openRecipeDetailModal(recipeId);
+      const card = document.getElementById(`recipe-card-${recipeId}`);
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.classList.add("recipe-card-highlight");
+        setTimeout(() => card.classList.remove("recipe-card-highlight"), 2000);
+      }
+    }, 100);
+  } catch(e) {
+    console.error("Error navigating to recipe:", e);
+  }
+}
+
+export function renderExclusions() {}
+
+export function addExclusion(ingredient) {
+  try {
+    triggerHapticTouch();
+    if (!appState.exclusions) appState.exclusions = [];
+    if (ingredient && !appState.exclusions.includes(ingredient)) {
+      appState.exclusions.push(ingredient);
+      saveState();
+      renderNutritionMenuView();
+      renderNutritionRecipesView();
+      showIosToast(`🚫 Ingrediente "${ingredient}" excluido`, "fa-solid fa-ban");
+    }
+  } catch(e) {
+    console.error("Error adding exclusion:", e);
+  }
+}
+
+export function removeExclusion(ingredient) {
+  try {
+    triggerHapticTouch();
+    if (!appState.exclusions) appState.exclusions = [];
+    appState.exclusions = appState.exclusions.filter(ex => ex !== ingredient);
+    saveState();
+    renderNutritionMenuView();
+    renderNutritionRecipesView();
+    showIosToast(`Ingrediente "${ingredient}" readmitido`, "fa-solid fa-check");
+  } catch(e) {
+    console.error("Error removing exclusion:", e);
+  }
+}
+
+/**
  * Toggle view mode between day-by-day and full week grid
  */
 export function toggleNutritionViewMode(mode) {
