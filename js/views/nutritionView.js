@@ -1584,8 +1584,3 @@ export function copyShoppingList() {
     console.error("Error copying shopping list:", e);
   }
 }
-
-// Backwards compatibility stubs
-export function renderExclusions() {}
-export function addExclusion() {}
-export function removeExclusion() {}
