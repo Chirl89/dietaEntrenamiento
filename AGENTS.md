@@ -33,4 +33,3 @@ Every change, feature, fix, or update in this codebase **MUST ALWAYS** increment
 - Execute all code modifications, terminal commands, file creations, testing, and git operations autonomously without pausing to request confirmation or asking trivial approval questions.
 - Work proactively from start to finish on every task.
 
-<!-- version-hook-active -->

@@ -1,0 +1,49 @@
+#!/bin/sh
+# FitDuo & Collie Coach - Git Prepare-Commit-Msg Hook
+# Automatically ensures that commit messages contain the version tag (vX.Y.Z)
+
+COMMIT_MSG_FILE="$1"
+COMMIT_SOURCE="$2"
+
+# Don't alter merge or rebase messages
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ]; then
+    exit 0
+fi
+
+if [ -f "$COMMIT_MSG_FILE" ]; then
+    FIRST_LINE=$(head -n 1 "$COMMIT_MSG_FILE")
+    
+    # Check if commit message already has version
+    if ! echo "$FIRST_LINE" | grep -qE 'v[0-9]+\.[0-9]+\.[0-9]+'; then
+        ROOT_DIR="$(git rev-parse --show-toplevel)"
+        VERSION_JSON="$ROOT_DIR/version.json"
+        
+        if [ -f "$VERSION_JSON" ]; then
+            CURRENT_VERSION=$(grep -o '"version": *"[^"]*"' "$VERSION_JSON" | head -1 | cut -d'"' -f4)
+            if [ -n "$CURRENT_VERSION" ]; then
+                # If message starts with type prefix like feat: / fix: / etc., transform to feat(vX.Y.Z):
+                if echo "$FIRST_LINE" | grep -qE '^[a-zA-Z]+:'; then
+                    TYPE=$(echo "$FIRST_LINE" | cut -d: -f1)
+                    REST=$(echo "$FIRST_LINE" | cut -d: -f2-)
+                    NEW_FIRST_LINE="${TYPE}(v${CURRENT_VERSION}):${REST}"
+                elif echo "$FIRST_LINE" | grep -qE '^[a-zA-Z]+\([^)]+\):'; then
+                    TYPE=$(echo "$FIRST_LINE" | cut -d\( -f1)
+                    REST=$(echo "$FIRST_LINE" | cut -d: -f2-)
+                    NEW_FIRST_LINE="${TYPE}(v${CURRENT_VERSION}):${REST}"
+                else
+                    NEW_FIRST_LINE="feat(v${CURRENT_VERSION}): $FIRST_LINE"
+                fi
+                
+                # Replace first line in commit message file
+                REST_OF_FILE=$(tail -n +2 "$COMMIT_MSG_FILE")
+                if [ -n "$REST_OF_FILE" ]; then
+                    printf "%s\n%s\n" "$NEW_FIRST_LINE" "$REST_OF_FILE" > "$COMMIT_MSG_FILE"
+                else
+                    printf "%s\n" "$NEW_FIRST_LINE" > "$COMMIT_MSG_FILE"
+                fi
+            fi
+        fi
+    fi
+fi
+
+exit 0
