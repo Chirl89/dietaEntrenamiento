@@ -356,140 +356,167 @@ export function getMasterProfileId() {
 }
 
 export function loadSavedState() {
-  const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (parsed && typeof parsed === 'object') {
-        Object.assign(appState, parsed);
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          Object.assign(appState, parsed);
+        }
+      } catch (e) {
+        console.warn("Could not parse saved state, using defaults.");
       }
-    } catch (e) {
-      console.warn("Could not parse saved state, using defaults.");
     }
+  } catch(e) {
+    console.warn("localStorage read failed:", e);
   }
 
-  const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
-  if (devicePref === 'he' || devicePref === 'she') {
-    appState.masterProfileId = devicePref;
-  } else {
-    if (!appState.masterProfileId) appState.masterProfileId = 'he';
+  try {
+    const devicePref = localStorage.getItem(DEVICE_DEFAULT_PROFILE_KEY);
+    if (devicePref === 'he' || devicePref === 'she') {
+      appState.masterProfileId = devicePref;
+    } else {
+      if (!appState.masterProfileId) appState.masterProfileId = 'he';
+    }
+  } catch(e) { appState.masterProfileId = 'he'; }
+
+  try {
+    const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
+    if (lastProfile === 'he' || lastProfile === 'she') {
+      appState.activeProfileId = lastProfile;
+    } else if (!appState.activeProfileId) {
+      appState.activeProfileId = appState.masterProfileId || 'he';
+    }
+  } catch(e) { appState.activeProfileId = 'he'; }
+
+  try {
+    if (!appState.profiles || typeof appState.profiles !== 'object') {
+      appState.profiles = JSON.parse(JSON.stringify(INITIAL_PROFILES));
+    }
+    if (!appState.profiles.he) appState.profiles.he = { ...INITIAL_PROFILES.he };
+    if (!appState.profiles.she) appState.profiles.she = { ...INITIAL_PROFILES.she };
+    if (!appState.profiles.dog) appState.profiles.dog = { ...INITIAL_PROFILES.dog };
+
+    if (appState.profiles.he.name === "Él (Carlos)") appState.profiles.he.name = "Carlos";
+    if (appState.profiles.she.name === "Ella (Andrea)") appState.profiles.she.name = "Andrea";
+    if (appState.profiles.dog.name === "Boo (Border Collie)") appState.profiles.dog.name = "Boo";
+  } catch(e) {
+    appState.profiles = JSON.parse(JSON.stringify(INITIAL_PROFILES));
   }
 
-  const lastProfile = localStorage.getItem(LAST_ACTIVE_PROFILE_KEY);
-  if (lastProfile === 'he' || lastProfile === 'she') {
-    appState.activeProfileId = lastProfile;
-  } else if (!appState.activeProfileId) {
-    appState.activeProfileId = appState.masterProfileId;
-  }
+  try {
+    if (!appState.appleWatch) {
+      appState.appleWatch = {
+        syncMode: "real",
+        autoSyncEnabled: true,
+        syncIntervalSec: 6,
+        lastGlobalSync: new Date().toISOString(),
+        metrics: JSON.parse(JSON.stringify(defaultWatchMetrics)),
+        cloudReplica: JSON.parse(JSON.stringify(defaultCloudReplica)),
+        pendingWorkout: {
+          he: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null },
+          she: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null }
+        },
+        syncLogs: []
+      };
+    }
 
-  if (!appState.profiles) appState.profiles = JSON.parse(JSON.stringify(INITIAL_PROFILES));
-  if (!appState.profiles.he) appState.profiles.he = { ...INITIAL_PROFILES.he };
-  if (!appState.profiles.she) appState.profiles.she = { ...INITIAL_PROFILES.she };
-  if (!appState.profiles.dog) appState.profiles.dog = { ...INITIAL_PROFILES.dog };
-
-  if (appState.profiles.he.name === "Él (Carlos)") appState.profiles.he.name = "Carlos";
-  if (appState.profiles.she.name === "Ella (Andrea)") appState.profiles.she.name = "Andrea";
-  if (appState.profiles.dog.name === "Boo (Border Collie)") appState.profiles.dog.name = "Boo";
-
-  if (!appState.appleWatch) {
-    appState.appleWatch = {
-      syncMode: "real",
-      autoSyncEnabled: true,
-      syncIntervalSec: 6,
-      lastGlobalSync: new Date().toISOString(),
-      metrics: JSON.parse(JSON.stringify(defaultWatchMetrics)),
-      cloudReplica: JSON.parse(JSON.stringify(defaultCloudReplica)),
-      pendingWorkout: {
+    if (!appState.appleWatch.metrics) {
+      appState.appleWatch.metrics = JSON.parse(JSON.stringify(defaultWatchMetrics));
+    }
+    if (!appState.appleWatch.cloudReplica) {
+      appState.appleWatch.cloudReplica = JSON.parse(JSON.stringify(defaultCloudReplica));
+    }
+    if (!appState.appleWatch.pendingWorkout) {
+      appState.appleWatch.pendingWorkout = {
         he: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null },
         she: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null }
-      },
-      syncLogs: []
-    };
-  }
+      };
+    }
+  } catch(e) {}
 
-  if (!appState.appleWatch.metrics) {
-    appState.appleWatch.metrics = JSON.parse(JSON.stringify(defaultWatchMetrics));
-  }
-  if (!appState.appleWatch.cloudReplica) {
-    appState.appleWatch.cloudReplica = JSON.parse(JSON.stringify(defaultCloudReplica));
-  }
-  if (!appState.appleWatch.pendingWorkout) {
-    appState.appleWatch.pendingWorkout = {
-      he: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null },
-      she: { flag: "N/A", pending: false, datos_inicio_entrenamiento: null, datos_fin_entrenamiento: null, startedAt: null, endedAt: null }
-    };
-  }
+  try {
+    if (!appState.completedWorkouts || typeof appState.completedWorkouts !== 'object') {
+      appState.completedWorkouts = {
+        he: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } },
+        she: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } }
+      };
+    }
 
-  if (!appState.completedWorkouts) {
-    appState.completedWorkouts = {
-      he: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } },
-      she: { Lunes: { done: false, watchData: null, sessions: [] }, Martes: { done: false, watchData: null, sessions: [] }, Miércoles: { done: false, watchData: null, sessions: [] }, Jueves: { done: false, watchData: null, sessions: [] }, Viernes: { done: false, watchData: null, sessions: [] }, Sábado: { done: false, watchData: null, sessions: [] }, Domingo: { done: false, watchData: null, sessions: [] } }
-    };
-  }
-
-  ['he', 'she'].forEach(pid => {
-    if (appState.completedWorkouts?.[pid]) {
-      for (const [day, dayObj] of Object.entries(appState.completedWorkouts[pid])) {
-        if (dayObj && Array.isArray(dayObj.sessions) && dayObj.sessions.length > 1) {
-          const uniqueSessions = [];
-          for (const s of dayObj.sessions) {
-            const exists = uniqueSessions.some(u =>
-              (u.id && s.id && u.id === s.id) ||
-              (u.durationMin === s.durationMin && u.kcal === s.kcal && u.timestamp === s.timestamp)
-            );
-            if (!exists) uniqueSessions.push(s);
+    ['he', 'she'].forEach(pid => {
+      if (appState.completedWorkouts?.[pid]) {
+        for (const [day, dayObj] of Object.entries(appState.completedWorkouts[pid])) {
+          if (dayObj && Array.isArray(dayObj.sessions) && dayObj.sessions.length > 1) {
+            const uniqueSessions = [];
+            for (const s of dayObj.sessions) {
+              const exists = uniqueSessions.some(u =>
+                (u.id && s.id && u.id === s.id) ||
+                (u.durationMin === s.durationMin && u.kcal === s.kcal && u.timestamp === s.timestamp)
+              );
+              if (!exists) uniqueSessions.push(s);
+            }
+            dayObj.sessions = uniqueSessions;
           }
-          dayObj.sessions = uniqueSessions;
         }
       }
-    }
-  });
-
-  if (!appState.weeklyMealPlan || typeof appState.weeklyMealPlan !== 'object') {
-    appState.weeklyMealPlan = JSON.parse(JSON.stringify(DEFAULT_WEEKLY_MEAL_PLAN));
-  } else {
-    const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-    days.forEach(d => {
-      if (!appState.weeklyMealPlan[d] || typeof appState.weeklyMealPlan[d] !== 'object') {
-        appState.weeklyMealPlan[d] = { ...(DEFAULT_WEEKLY_MEAL_PLAN[d] || {}) };
-      } else {
-        ['desayuno', 'comida', 'merienda', 'cena'].forEach(slot => {
-          const rId = appState.weeklyMealPlan[d][slot];
-          if (rId && !RECIPES_DATABASE.some(r => r.id === rId) && !(appState.customRecipes || []).some(r => r.id === rId)) {
-            appState.weeklyMealPlan[d][slot] = DEFAULT_WEEKLY_MEAL_PLAN[d]?.[slot] || null;
-          }
-        });
-      }
     });
+  } catch(e) {}
+
+  const fallbackMealPlan = {
+    Lunes: { desayuno: "d1", comida: "c1", merienda: "s1", cena: "cn1" },
+    Martes: { desayuno: "d2", comida: "c2", merienda: "s2", cena: "cn2" },
+    Miércoles: { desayuno: "d3", comida: "c3", merienda: "s3", cena: "cn3" },
+    Jueves: { desayuno: "d4", comida: "c4", merienda: "s4", cena: "cn4" },
+    Viernes: { desayuno: "d5", comida: "c5", merienda: "s5", cena: "cn5" },
+    Sábado: { desayuno: "d6", comida: "c6", merienda: "s6", cena: "cn6" },
+    Domingo: { desayuno: "d2", comida: "c7", merienda: "s7", cena: "cn7" }
+  };
+
+  try {
+    if (!appState.weeklyMealPlan || typeof appState.weeklyMealPlan !== 'object') {
+      appState.weeklyMealPlan = JSON.parse(JSON.stringify(fallbackMealPlan));
+    } else {
+      const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+      days.forEach(d => {
+        if (!appState.weeklyMealPlan[d] || typeof appState.weeklyMealPlan[d] !== 'object') {
+          appState.weeklyMealPlan[d] = { ...(fallbackMealPlan[d] || {}) };
+        } else {
+          ['desayuno', 'comida', 'merienda', 'cena'].forEach(slot => {
+            const rId = appState.weeklyMealPlan[d][slot];
+            if (rId && Array.isArray(RECIPES_DATABASE) && !RECIPES_DATABASE.some(r => r && (r.id === rId || String(r.id) === String(rId))) && !(appState.customRecipes || []).some(r => r && (r.id === rId || String(r.id) === String(rId)))) {
+              appState.weeklyMealPlan[d][slot] = fallbackMealPlan[d]?.[slot] || null;
+            }
+          });
+        }
+      });
+    }
+  } catch(e) {
+    appState.weeklyMealPlan = JSON.parse(JSON.stringify(fallbackMealPlan));
   }
 
-  if (!Array.isArray(appState.customRecipes)) {
-    appState.customRecipes = [];
-  }
-  if (!Array.isArray(appState.shoppingExtras)) {
-    appState.shoppingExtras = [];
-  }
+  if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+  if (!Array.isArray(appState.shoppingExtras)) appState.shoppingExtras = [];
   if (!appState.checkedShoppingItems || typeof appState.checkedShoppingItems !== 'object') {
     appState.checkedShoppingItems = {};
   }
-  if (!appState.shoppingDaysRange) {
-    appState.shoppingDaysRange = "7";
-  }
+  if (!appState.shoppingDaysRange) appState.shoppingDaysRange = "7";
 
-  if (!appState.history) {
-    appState.history = { he: {}, she: {} };
-  }
+  if (!appState.history) appState.history = { he: {}, she: {} };
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
 
-  // Auto-purge past dummy / invented data once
-  const PURGE_FLAG_KEY = "FITDUO_PURGE_PAST_DATA_V2";
-  if (!localStorage.getItem(PURGE_FLAG_KEY)) {
-    purgeHistoricalDataExceptToday();
-    localStorage.setItem(PURGE_FLAG_KEY, "true");
-  }
+  try {
+    const PURGE_FLAG_KEY = "FITDUO_PURGE_PAST_DATA_V2";
+    if (!localStorage.getItem(PURGE_FLAG_KEY)) {
+      purgeHistoricalDataExceptToday();
+      localStorage.setItem(PURGE_FLAG_KEY, "true");
+    }
+  } catch(e) {}
 
-  checkDayRollover();
+  try {
+    checkDayRollover();
+  } catch(e) {}
 }
 
 export function purgeHistoricalDataExceptToday() {
