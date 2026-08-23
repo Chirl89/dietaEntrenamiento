@@ -3,22 +3,32 @@
 ## 📌 Automatic Project Versioning Guideline
 
 ### Overview
-Every web application built or updated in this codebase must display a visible, modern Version Badge in the UI (brand header, sidebar footer, and mobile top bar) and use the version string for asset cache busting (`?v=X.Y.Z`).
+Every change, feature, fix, or update in this codebase **MUST ALWAYS** increment the project version and reflect it in `version.json`, `js/version.js`, `index.html`, and `app.js`, as well as cache-busting strings (`?v=X.Y.Z`).
 
-### Versioning Rules:
+### Strict Versioning Rules:
 1. **Conversation Level (Minor Version)**:
-   - Each NEW conversation opened by the user increments the minor version (`v0.1`, `v0.2`, `v0.3`...).
-2. **Iteration Level (Patch Version)**:
-   - Each edit/commit within the SAME conversation increments ONLY the patch version (`v0.6.9` -> `v0.6.10` -> `v0.6.11`...).
-   - CRITICAL: NEVER bump the minor version (e.g. from `v0.6.9` to `v0.7.0`) during patch iterations. When patch reaches `.9`, ALWAYS continue with `.10`, `.11`, `.12`, etc. The minor version (`v0.6` -> `v0.7`) is ONLY incremented when a NEW conversation is started.
-3. **UI Display**:
-   - Show `<span class="version-badge">vX.Y.Z</span>` in the brand header, sidebar footer, and mobile header.
-4. **Asset Cache Busting**:
-   - Update script and style tags to `app.js?v=X.Y.Z`, `styles.css?v=X.Y.Z`, and JS module imports to `./data.js?v=X.Y.Z`.
+   - The first commit of each NEW conversation increments the MINOR version (`v0.16.0` -> `v0.17.0`, `v0.17.0` -> `v0.18.0`).
+2. **Iteration / Push Level (Patch Version)**:
+   - EVERY single edit, commit, and push within the SAME conversation increments the PATCH version (`v0.17.0` -> `v0.17.1` -> `v0.17.2`...).
+   - **RULE**: There are NEVER two consecutive pushes or commits with the same version number. Every push MUST have a higher version than the previous one.
+3. **Automated Version Bumper Script**:
+   - Before committing, always run:
+     ```powershell
+     powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1 -Type patch
+     ```
+     (or `-Type minor` for new conversation start).
+   - Alternatively, Git pre-commit hooks located in `.githooks/` are configured to automatically bump and stage version files if not already bumped.
+4. **UI Display & Cache Busting**:
+   - All `.app-version-tag` badges, header badges, and sidebar footer tags will automatically display `vX.Y.Z`.
+   - Asset URLs (`styles.css?v=X.Y.Z`, `app.js?v=X.Y.Z`) are updated to guarantee immediate cache-invalidation on mobile Safari / PWA.
 5. **Git Commits & Push Mandatory Rule**:
-   - The agent MUST ALWAYS automatically execute `git add .`, `git commit -m "feat(vX.Y.Z): ..."` AND `git push` immediately after completing every change or task. No change is complete until it is committed with the version tag and pushed to remote git.
+   - The agent MUST ALWAYS execute:
+     1. Bump version: `powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1 -Type patch` (or minor)
+     2. Stage all: `git add .`
+     3. Commit with version: `git commit -m "feat(vX.Y.Z): <description>"` or `git commit -m "fix(vX.Y.Z): <description>"`
+     4. Push: `git push`
+   - No task is finished until pushed to `origin/main`.
 
 ## ⚡ Autonomous Execution & Zero Interruption Rule
 - Execute all code modifications, terminal commands, file creations, testing, and git operations autonomously without pausing to request confirmation or asking trivial approval questions.
 - Work proactively from start to finish on every task.
-

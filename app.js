@@ -1,9 +1,14 @@
 /**
- * FitDuo & Collie Coach - Main Application Orchestrator (v0.16.0)
+ * FitDuo & Collie Coach - Main Application Orchestrator (v0.17.0)
  * Clean modular entry point. Coordinates state, routing, Apple Watch telemetry, cloud sync, and views.
  */
 
 // 1. Core State & Utilities
+import {
+  APP_VERSION,
+  applyAppVersionToDOM
+} from './js/version.js';
+
 import {
   appState,
   saveState,
@@ -393,7 +398,9 @@ const globalBindings = {
 
   handleChatKeyPress,
   sendChatMessage,
-  generateBotReply
+  generateBotReply,
+  APP_VERSION,
+  applyAppVersionToDOM
 };
 
 // Immediate global binding
@@ -402,6 +409,7 @@ Object.assign(window, globalBindings);
 // 7. App Initialization & Lifecycle
 export function initApp() {
   try {
+    applyAppVersionToDOM();
     loadSavedState();
     checkDayRollover();
     checkDeviceIdentityBanner();
@@ -442,7 +450,7 @@ export function initApp() {
       }
     });
 
-    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.16.0)");
+    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.17.0)");
   } catch(e) {
     console.error("Critical error during FitDuo initialization:", e);
   }

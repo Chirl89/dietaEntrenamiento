@@ -1,0 +1,33 @@
+#!/bin/sh
+# FitDuo & Collie Coach - Git Pre-Commit Hook
+# Automatically ensures that every commit bumps the version if not already bumped.
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+SCRIPTS_DIR="$ROOT_DIR/scripts"
+
+# Check if there are staged changes
+STAGED_FILES="$(git diff --cached --name-only)"
+if [ -z "$STAGED_FILES" ]; then
+    exit 0
+fi
+
+# Check if version.json is already staged
+VERSION_STAGED="$(echo "$STAGED_FILES" | grep -E '^version\.json$')"
+
+if [ -z "$VERSION_STAGED" ]; then
+    echo "=========================================================="
+    echo " [FitDuo Auto-Versioning] Bumping version for commit..."
+    echo "=========================================================="
+    
+    if command -v powershell.exe >/dev/null 2>&1; then
+        powershell.exe -ExecutionPolicy Bypass -File "$SCRIPTS_DIR/bump-version.ps1" -Type patch
+    elif [ -f "$SCRIPTS_DIR/bump-version.sh" ]; then
+        sh "$SCRIPTS_DIR/bump-version.sh" patch
+    fi
+    
+    # Stage the version files so they become part of this commit
+    git -C "$ROOT_DIR" add version.json js/version.js index.html app.js
+    echo " [FitDuo Auto-Versioning] Version bumped and staged successfully."
+fi
+
+exit 0

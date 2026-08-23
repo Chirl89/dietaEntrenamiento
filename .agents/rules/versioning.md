@@ -1,8 +1,9 @@
 # Versioning Rule
 
-Every project edit must display a visible version badge in the UI and update cache-busting version strings (`?v=X.Y.Z`).
+Every edit, commit, and push MUST ALWAYS increment the application version.
 
-- New conversation = minor version bump (`v0.1` -> `v0.2`).
-- Iteration within same conversation = patch version bump (`v0.1.0` -> `v0.1.1` -> `v0.1.2`).
-- Mandatory Git Step: ALWAYS run `git add .`, `git commit -m "feat(vX.Y.Z): ..."` and `git push` automatically after completing every edit.
-
+- Start of new conversation: minor bump (`v0.16.0` -> `v0.17.0`).
+- Every iteration / commit / push within the conversation: patch bump (`v0.17.0` -> `v0.17.1` -> `v0.17.2`).
+- Script to run before commit: `powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1`
+- Mandatory Git Step: ALWAYS commit with `feat(vX.Y.Z): ...` or `fix(vX.Y.Z): ...` and run `git push` autonomously.
+- No commit or push may ever occur without incrementing the version.

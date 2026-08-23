@@ -1,0 +1,15 @@
+#!/bin/sh
+# FitDuo & Collie Coach - Git Pre-Push Hook
+# Verifies version consistency before pushing to remote repository
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+VERSION_JSON="$ROOT_DIR/version.json"
+
+if [ -f "$VERSION_JSON" ]; then
+    CURRENT_VERSION=$(grep -o '"version": *"[^"]*"' "$VERSION_JSON" | head -1 | cut -d'"' -f4)
+    echo "=========================================================="
+    echo " [FitDuo Git Pre-Push] Pushing FitDuo version: v$CURRENT_VERSION"
+    echo "=========================================================="
+fi
+
+exit 0
