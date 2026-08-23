@@ -1595,7 +1595,7 @@ export function renderShoppingView() {
         <div>
           <span style="font-size:0.78rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Planificación Activa</span>
           <h3 style="font-family:var(--font-heading); font-size:1.1rem; color:var(--accent-emerald);">
-            🛒 ${totalItemsCount} productos para ${totalMealsCount} comidas planificadas (${range === '5' ? '5 días' : '7 días'})
+            🛒 ${totalItemsCount} productos para ${totalMealsCount} comidas planificadas
           </h3>
         </div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
