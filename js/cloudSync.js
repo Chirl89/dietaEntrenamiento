@@ -661,8 +661,9 @@ export function mergeCloudDataIntoAppState(cloudData) {
   if (cloudData.weeklyMealPlans && typeof cloudData.weeklyMealPlans === 'object') {
     const cloudTs = Number(cloudData.mealPlansLastModified || (cloudData.timestamp ? new Date(cloudData.timestamp).getTime() : 0));
     const localTs = Number(appState.mealPlansLastModified || 0);
+    const CLEAN_SLATE_TIMESTAMP = 1756000000000;
 
-    if (cloudTs > localTs || (!localTs && cloudTs > 0)) {
+    if (cloudTs >= CLEAN_SLATE_TIMESTAMP && cloudTs > localTs) {
       if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
       Object.keys(cloudData.weeklyMealPlans).forEach(wKey => {
         const cloudWeek = cloudData.weeklyMealPlans[wKey];

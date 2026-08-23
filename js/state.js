@@ -543,13 +543,19 @@ export function loadSavedState() {
     appState.activeNutritionWeekKey = curWeekKey;
   }
 
-  if (!appState.weeklyMealPlans || typeof appState.weeklyMealPlans !== 'object') {
+  // ONE-TIME RESET: Ensure all meal plans are 100% empty by default
+  const MEAL_PLANS_CLEAN_SLATE_KEY = "FITDUO_MEAL_PLANS_CLEAN_SLATE_V2";
+  if (!localStorage.getItem(MEAL_PLANS_CLEAN_SLATE_KEY)) {
     appState.weeklyMealPlans = {};
+    appState.weeklyMealPlans[curWeekKey] = createEmptyWeeklyPlan();
+    appState.weeklyMealPlan = appState.weeklyMealPlans[curWeekKey];
+    appState.mealPlansLastModified = Date.now();
+    localStorage.setItem(MEAL_PLANS_CLEAN_SLATE_KEY, "true");
+    saveState();
   }
 
-  // Migrate legacy single weeklyMealPlan if present
-  if (appState.weeklyMealPlan && typeof appState.weeklyMealPlan === 'object' && !appState.weeklyMealPlans[curWeekKey]) {
-    appState.weeklyMealPlans[curWeekKey] = JSON.parse(JSON.stringify(appState.weeklyMealPlan));
+  if (!appState.weeklyMealPlans || typeof appState.weeklyMealPlans !== 'object') {
+    appState.weeklyMealPlans = {};
   }
 
   // Ensure every existing plan in weeklyMealPlans has all 7 days with valid/empty slots

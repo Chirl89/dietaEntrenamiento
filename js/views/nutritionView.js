@@ -300,15 +300,12 @@ export function clearWeeklyPlan() {
   try {
     triggerHapticTouch();
     if (confirm("¿Estás seguro de que quieres vaciar la planificación de toda esta semana?")) {
-      const currentWeeklyPlan = getActiveWeeklyPlan();
-      DAYS_OF_WEEK.forEach(day => {
-        currentWeeklyPlan[day] = {
-          desayuno: null,
-          comida: null,
-          merienda: null,
-          cena: null
-        };
-      });
+      const targetWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+      if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
+      appState.weeklyMealPlans[targetWeekKey] = createEmptyWeeklyPlan();
+      if (targetWeekKey === (appState.activeNutritionWeekKey || getCurrentWeekKey())) {
+        appState.weeklyMealPlan = appState.weeklyMealPlans[targetWeekKey];
+      }
       appState.mealPlansLastModified = Date.now();
       saveState();
       if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
@@ -327,10 +324,19 @@ export function clearWeeklyPlan() {
 export function removeMealFromSlot(dayName, slotKey) {
   try {
     triggerHapticTouch();
-    const currentWeeklyPlan = getActiveWeeklyPlan();
-    if (!currentWeeklyPlan[dayName]) currentWeeklyPlan[dayName] = {};
+    const targetWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
+    if (!appState.weeklyMealPlans[targetWeekKey]) {
+      appState.weeklyMealPlans[targetWeekKey] = createEmptyWeeklyPlan();
+    }
+    if (!appState.weeklyMealPlans[targetWeekKey][dayName]) {
+      appState.weeklyMealPlans[targetWeekKey][dayName] = { desayuno: null, comida: null, merienda: null, cena: null };
+    }
     
-    currentWeeklyPlan[dayName][slotKey] = null;
+    appState.weeklyMealPlans[targetWeekKey][dayName][slotKey] = null;
+    if (targetWeekKey === (appState.activeNutritionWeekKey || getCurrentWeekKey())) {
+      appState.weeklyMealPlan = appState.weeklyMealPlans[targetWeekKey];
+    }
     appState.mealPlansLastModified = Date.now();
     saveState();
     if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
