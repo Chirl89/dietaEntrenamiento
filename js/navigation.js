@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Navigation & Router Module (v0.14.0)
+ * FitDuo & Collie Coach - Navigation & Router Module (v0.16.0)
  * Isolated Tab Switching, Segmented Controls, Profile State & Global Orchestration.
  */
 

@@ -1,3 +1,7 @@
+/**
+ * FitDuo & Collie Coach - Progress, Statistics & Badges View Module (v0.16.0)
+ */
+
 import { appState, saveState, getMasterProfileId, getTodayDayName, getLocalIsoDate, getDayNameFromDate, getDateForDayNameInCurrentWeek, triggerHapticTouch, showIosToast } from '../state.js';
 
 let progressStepsChartInstance = null;
@@ -48,6 +52,8 @@ export function getHistoricalData(profileId, daysCount = 7) {
     const dateIso = getLocalIsoDate(d);
     const dayName = getDayNameFromDate(d);
     const shortLabel = `${d.getDate()} ${d.toLocaleDateString('es-ES', { month: 'short' })}`;
+
+    let entry = historyMap[dateIso] || null;
 
     if (i === 0) {
       // Today: use live metrics merged with today's workouts and history

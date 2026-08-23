@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Global State & Persistence Engine (v0.14.0)
+ * FitDuo & Collie Coach - Global State & Persistence Engine (v0.16.0)
  */
 
 import { INITIAL_PROFILES } from '../data.js';

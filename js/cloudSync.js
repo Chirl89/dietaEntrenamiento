@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Cloud Sync Engine (v0.14.0)
+ * FitDuo & Collie Coach - Cloud Sync Engine (v0.16.0)
  * Multi-device PubNub background sync, differential workout resolution, and cloud diagnostics.
  */
 
