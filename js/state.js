@@ -259,6 +259,7 @@ export const appState = {
   activeBooDay: "Lunes",
   recipesDaysRange: "5",
   shoppingDaysRange: "7",
+  selectedShoppingDays: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
   checkedShoppingItems: {},
   weightLogs: { he: [], she: [] },
   history: { he: {}, she: {} },
@@ -581,6 +582,9 @@ export function loadSavedState() {
   if (!Array.isArray(appState.shoppingExtras)) appState.shoppingExtras = [];
   if (!appState.checkedShoppingItems || typeof appState.checkedShoppingItems !== 'object') {
     appState.checkedShoppingItems = {};
+  }
+  if (!Array.isArray(appState.selectedShoppingDays) || appState.selectedShoppingDays.length === 0) {
+    appState.selectedShoppingDays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
   }
   if (!appState.shoppingDaysRange) appState.shoppingDaysRange = "7";
 

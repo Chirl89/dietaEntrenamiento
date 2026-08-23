@@ -1473,10 +1473,61 @@ export function deleteCustomRecipe(recipeId) {
   }
 }
 
-/**
- * RENDER SUBTAB 3: SMART SHOPPING LIST VIEW
- */
 export function setShoppingRange() {}
+
+export function toggleShoppingDay(dayName) {
+  try {
+    triggerHapticTouch();
+    if (!Array.isArray(appState.selectedShoppingDays)) {
+      appState.selectedShoppingDays = [...DAYS_OF_WEEK];
+    }
+    const idx = appState.selectedShoppingDays.indexOf(dayName);
+    if (idx >= 0) {
+      appState.selectedShoppingDays.splice(idx, 1);
+    } else {
+      appState.selectedShoppingDays.push(dayName);
+    }
+    saveState();
+    renderShoppingView();
+  } catch(e) {
+    console.error("Error toggling shopping day:", e);
+  }
+}
+
+export function toggleAllShoppingDays() {
+  try {
+    triggerHapticTouch();
+    if (!Array.isArray(appState.selectedShoppingDays)) {
+      appState.selectedShoppingDays = [...DAYS_OF_WEEK];
+    }
+    if (appState.selectedShoppingDays.length === DAYS_OF_WEEK.length) {
+      appState.selectedShoppingDays = [];
+    } else {
+      appState.selectedShoppingDays = [...DAYS_OF_WEEK];
+    }
+    saveState();
+    renderShoppingView();
+  } catch(e) {
+    console.error("Error toggling all shopping days:", e);
+  }
+}
+
+export function setShoppingDaysPreset(preset) {
+  try {
+    triggerHapticTouch();
+    if (preset === 'workdays') {
+      appState.selectedShoppingDays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+    } else if (preset === 'weekend') {
+      appState.selectedShoppingDays = ["Sábado", "Domingo"];
+    } else {
+      appState.selectedShoppingDays = [...DAYS_OF_WEEK];
+    }
+    saveState();
+    renderShoppingView();
+  } catch(e) {
+    console.error("Error setting shopping days preset:", e);
+  }
+}
 
 export function renderShoppingView() {
   try {
@@ -1491,12 +1542,20 @@ export function renderShoppingView() {
     const week3Key = getOffsetWeekKey(curWeekKey, 3);
     const isCurrentWeek = (activeWeekKey === curWeekKey);
 
+    if (!Array.isArray(appState.selectedShoppingDays)) {
+      appState.selectedShoppingDays = [...DAYS_OF_WEEK];
+    }
+    const selectedDays = appState.selectedShoppingDays;
+    const isAllSelected = (selectedDays.length === DAYS_OF_WEEK.length);
+    const isWorkdaysSelected = (selectedDays.length === 5 && ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].every(d => selectedDays.includes(d)));
+    const isWeekendSelected = (selectedDays.length === 2 && ["Sábado", "Domingo"].every(d => selectedDays.includes(d)));
+
     const currentWeeklyPlan = getActiveWeeklyPlan();
     const aggregated = {};
     let totalMealsCount = 0;
 
-    // Aggregate ingredients from all days of the currently selected weekly plan
-    DAYS_OF_WEEK.forEach(day => {
+    // Aggregate ingredients only from selected days of the weekly plan
+    selectedDays.forEach(day => {
       const plan = currentWeeklyPlan?.[day] || {};
       MEAL_SLOTS.forEach(slot => {
         const recipeId = plan[slot.key];
@@ -1519,10 +1578,10 @@ export function renderShoppingView() {
       });
     });
 
-    // Top Week Indicator & Selector for Shopping List
+    // 1. Top Week Indicator & Selector for Shopping List
     const weekHeader = document.createElement("div");
     weekHeader.className = "planner-week-nav-bar";
-    weekHeader.style.cssText = "margin-bottom: 1.25rem;";
+    weekHeader.style.cssText = "margin-bottom: 0.85rem;";
     weekHeader.innerHTML = `
       <div class="week-nav-controls">
         <button type="button" class="btn-week-nav" onclick="prevNutritionWeek(); renderShoppingView();" title="Semana Anterior">
@@ -1560,6 +1619,53 @@ export function renderShoppingView() {
       </div>
     `;
     container.appendChild(weekHeader);
+
+    // 2. Interactive Day Selection Card for Shopping List
+    const dayFilterCard = document.createElement("div");
+    dayFilterCard.className = "shopping-day-filter-card glass-card";
+    dayFilterCard.innerHTML = `
+      <div class="day-filter-header">
+        <div class="day-filter-title">
+          <i class="fa-solid fa-calendar-check" style="color: var(--accent-emerald);"></i>
+          <span>Días a incluir en la lista:</span>
+          <span class="day-filter-count-badge">${selectedDays.length}/7 días</span>
+        </div>
+
+        <div class="day-filter-presets">
+          <button type="button" class="btn-preset-pill ${isAllSelected ? 'active' : ''}" onclick="toggleAllShoppingDays()">
+            <i class="fa-solid ${isAllSelected ? 'fa-circle-check' : 'fa-circle'}"></i> Toda la Semana
+          </button>
+          <button type="button" class="btn-preset-pill ${isWorkdaysSelected ? 'active' : ''}" onclick="setShoppingDaysPreset('workdays')">
+            Lun - Vie
+          </button>
+          <button type="button" class="btn-preset-pill ${isWeekendSelected ? 'active' : ''}" onclick="setShoppingDaysPreset('weekend')">
+            Fin de Semana
+          </button>
+        </div>
+      </div>
+
+      <div class="shopping-days-chips-scroll">
+        ${DAYS_OF_WEEK.map(dayName => {
+          const isSelected = selectedDays.includes(dayName);
+          const dayIso = getDateForDayInWeek(activeWeekKey, dayName);
+          const dayDateNum = new Date(dayIso + 'T00:00:00').getDate();
+          const dayPlan = currentWeeklyPlan?.[dayName] || {};
+          const mealsInDay = MEAL_SLOTS.filter(s => !!dayPlan[s.key]).length;
+
+          return `
+            <button type="button" 
+              class="shopping-day-chip ${isSelected ? 'selected' : ''}" 
+              onclick="toggleShoppingDay('${dayName}')"
+              title="${isSelected ? 'Desmarcar ' + dayName : 'Incluir ' + dayName}">
+              <span class="chip-check"><i class="fa-solid ${isSelected ? 'fa-check' : 'fa-plus'}"></i></span>
+              <span class="chip-day-name">${dayName.substring(0, 3)} ${dayDateNum}</span>
+              <span class="chip-meal-count ${mealsInDay > 0 ? 'has-meals' : ''}">${mealsInDay} pl.</span>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    `;
+    container.appendChild(dayFilterCard);
 
     // Group by category
     const categories = {};
