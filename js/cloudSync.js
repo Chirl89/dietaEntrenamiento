@@ -658,11 +658,24 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   });
 
-  if (cloudData.weeklyMealPlan && typeof cloudData.weeklyMealPlan === 'object') {
-    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
+  if (cloudData.weeklyMealPlans && typeof cloudData.weeklyMealPlans === 'object') {
+    if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
+    Object.keys(cloudData.weeklyMealPlans).forEach(wKey => {
+      if (cloudData.weeklyMealPlans[wKey]) {
+        if (!appState.weeklyMealPlans[wKey]) appState.weeklyMealPlans[wKey] = {};
+        Object.keys(cloudData.weeklyMealPlans[wKey]).forEach(d => {
+          appState.weeklyMealPlans[wKey][d] = { ...(appState.weeklyMealPlans[wKey][d] || {}), ...cloudData.weeklyMealPlans[wKey][d] };
+        });
+        hasChanges = true;
+      }
+    });
+  } else if (cloudData.weeklyMealPlan && typeof cloudData.weeklyMealPlan === 'object') {
+    const curW = appState.activeNutritionWeekKey || 'current';
+    if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
+    if (!appState.weeklyMealPlans[curW]) appState.weeklyMealPlans[curW] = {};
     Object.keys(cloudData.weeklyMealPlan).forEach(d => {
       if (cloudData.weeklyMealPlan[d]) {
-        appState.weeklyMealPlan[d] = { ...(appState.weeklyMealPlan[d] || {}), ...cloudData.weeklyMealPlan[d] };
+        appState.weeklyMealPlans[curW][d] = { ...(appState.weeklyMealPlans[curW][d] || {}), ...cloudData.weeklyMealPlan[d] };
         hasChanges = true;
       }
     });
@@ -727,6 +740,8 @@ export async function pushToCloud(showToast = false) {
       appleWatch: { metrics: { [masterPid]: m } },
       completedWorkouts: { [masterPid]: appState.completedWorkouts?.[masterPid] || {} },
       history: { [masterPid]: appState.history?.[masterPid] || {} },
+      activeNutritionWeekKey: appState.activeNutritionWeekKey,
+      weeklyMealPlans: appState.weeklyMealPlans || {},
       weeklyMealPlan: appState.weeklyMealPlan || {},
       customRecipes: appState.customRecipes || [],
       shoppingExtras: appState.shoppingExtras || [],

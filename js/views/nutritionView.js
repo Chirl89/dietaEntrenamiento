@@ -10,7 +10,14 @@ import {
   getProfileShortName,
   triggerHapticTouch,
   showIosToast,
-  DEFAULT_WEEKLY_MEAL_PLAN
+  DEFAULT_WEEKLY_MEAL_PLAN,
+  getCurrentWeekKey,
+  getWeekKeyForDate,
+  getOffsetWeekKey,
+  getWeekDateRange,
+  getWeekDisplayLabel,
+  getDateForDayInWeek,
+  createEmptyWeeklyPlan
 } from '../state.js';
 import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js';
 
@@ -169,12 +176,94 @@ export function toggleNutritionViewMode(mode) {
 }
 
 /**
+ * Safely get or initialize the weekly meal plan for active week
+ */
+export function getActiveWeeklyPlan() {
+  const weekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+  if (!appState.weeklyMealPlans || typeof appState.weeklyMealPlans !== 'object') {
+    appState.weeklyMealPlans = {};
+  }
+  if (!appState.weeklyMealPlans[weekKey] || typeof appState.weeklyMealPlans[weekKey] !== 'object') {
+    appState.weeklyMealPlans[weekKey] = createEmptyWeeklyPlan();
+  }
+  appState.weeklyMealPlan = appState.weeklyMealPlans[weekKey];
+  return appState.weeklyMealPlans[weekKey];
+}
+
+/**
+ * Set active nutrition week
+ */
+export function setNutritionActiveWeek(weekKey) {
+  try {
+    triggerHapticTouch();
+    appState.activeNutritionWeekKey = weekKey;
+    getActiveWeeklyPlan();
+    saveState();
+    renderNutritionMenuView();
+    renderShoppingView();
+  } catch(e) {
+    console.error("Error setting nutrition active week:", e);
+  }
+}
+
+export function nextNutritionWeek() {
+  const current = appState.activeNutritionWeekKey || getCurrentWeekKey();
+  const next = getOffsetWeekKey(current, 1);
+  setNutritionActiveWeek(next);
+}
+
+export function prevNutritionWeek() {
+  const current = appState.activeNutritionWeekKey || getCurrentWeekKey();
+  const prev = getOffsetWeekKey(current, -1);
+  setNutritionActiveWeek(prev);
+}
+
+export function goToCurrentNutritionWeek() {
+  setNutritionActiveWeek(getCurrentWeekKey());
+}
+
+/**
+ * Copy meal plan from the immediately preceding week into current week
+ */
+export function copyPreviousWeekPlan() {
+  try {
+    triggerHapticTouch();
+    const curWeek = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    const prevWeek = getOffsetWeekKey(curWeek, -1);
+    const prevPlan = appState.weeklyMealPlans?.[prevWeek];
+
+    let hasAnyMeal = false;
+    if (prevPlan) {
+      DAYS_OF_WEEK.forEach(d => {
+        MEAL_SLOTS.forEach(s => {
+          if (prevPlan[d]?.[s.key]) hasAnyMeal = true;
+        });
+      });
+    }
+
+    if (!hasAnyMeal) {
+      showIosToast("⚠️ La semana anterior no contiene platos guardados", "fa-solid fa-triangle-exclamation");
+      return;
+    }
+
+    appState.weeklyMealPlans[curWeek] = JSON.parse(JSON.stringify(prevPlan));
+    getActiveWeeklyPlan();
+    saveState();
+    renderNutritionMenuView();
+    renderShoppingView();
+    showIosToast("📋 ¡Menú copiado de la semana anterior!", "fa-solid fa-circle-check");
+  } catch(e) {
+    console.error("Error copying previous week plan:", e);
+  }
+}
+
+/**
  * Auto-fill weekly plan with a balanced healthy rotation
  */
 export function autoFillWeeklyPlan() {
   try {
     triggerHapticTouch();
-    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
+    const currentWeeklyPlan = getActiveWeeklyPlan();
 
     const available = getFilteredRecipes();
     const breakfasts = available.filter(r => r.type === "desayuno");
@@ -183,7 +272,7 @@ export function autoFillWeeklyPlan() {
     const snacks = available.filter(r => r.type === "snack");
 
     DAYS_OF_WEEK.forEach((day, idx) => {
-      appState.weeklyMealPlan[day] = {
+      currentWeeklyPlan[day] = {
         desayuno: (breakfasts[idx % (breakfasts.length || 1)] || breakfasts[0])?.id || "d1",
         comida: (lunches[idx % (lunches.length || 1)] || lunches[0])?.id || "c1",
         merienda: (snacks[idx % (snacks.length || 1)] || snacks[0])?.id || "s1",
@@ -206,10 +295,10 @@ export function autoFillWeeklyPlan() {
 export function clearWeeklyPlan() {
   try {
     triggerHapticTouch();
-    if (confirm("¿Estás seguro de que quieres vaciar la planificación de toda la semana?")) {
-      if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
+    if (confirm("¿Estás seguro de que quieres vaciar la planificación de toda esta semana?")) {
+      const currentWeeklyPlan = getActiveWeeklyPlan();
       DAYS_OF_WEEK.forEach(day => {
-        appState.weeklyMealPlan[day] = {
+        currentWeeklyPlan[day] = {
           desayuno: null,
           comida: null,
           merienda: null,
@@ -232,10 +321,10 @@ export function clearWeeklyPlan() {
 export function removeMealFromSlot(dayName, slotKey) {
   try {
     triggerHapticTouch();
-    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
-    if (!appState.weeklyMealPlan[dayName]) appState.weeklyMealPlan[dayName] = {};
+    const currentWeeklyPlan = getActiveWeeklyPlan();
+    if (!currentWeeklyPlan[dayName]) currentWeeklyPlan[dayName] = {};
     
-    appState.weeklyMealPlan[dayName][slotKey] = null;
+    currentWeeklyPlan[dayName][slotKey] = null;
     saveState();
     renderNutritionMenuView();
     renderShoppingView();
@@ -267,12 +356,16 @@ export function generateShoppingListFromPlan() {
 export function copyWeeklyMenuToClipboard() {
   try {
     triggerHapticTouch();
-    let text = "🥗 PLAN SEMANAL DE NUTRICIÓN - FITDUO 🥑\n";
+    const activeWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    const currentWeeklyPlan = getActiveWeeklyPlan();
+
+    let text = `🥗 PLAN SEMANAL DE NUTRICIÓN - FITDUO (${getWeekDisplayLabel(activeWeekKey)}) 🥑\n`;
     text += `Para: ${getProfileShortName(appState.activeProfileId || 'he')}\n\n`;
 
     DAYS_OF_WEEK.forEach(day => {
-      const plan = appState.weeklyMealPlan?.[day] || {};
-      text += `📅 === ${day.toUpperCase()} ===\n`;
+      const plan = currentWeeklyPlan?.[day] || {};
+      const dayIso = getDateForDayInWeek(activeWeekKey, day);
+      text += `📅 === ${day.toUpperCase()} (${dayIso}) ===\n`;
       MEAL_SLOTS.forEach(slot => {
         const recipeId = plan[slot.key];
         const recipe = getRecipeById(recipeId);
@@ -304,9 +397,9 @@ export function copyWeeklyMenuToClipboard() {
  */
 export function getWeeklyScheduledCount() {
   let count = 0;
-  if (!appState.weeklyMealPlan) return 0;
+  const currentWeeklyPlan = getActiveWeeklyPlan();
   DAYS_OF_WEEK.forEach(d => {
-    const p = appState.weeklyMealPlan[d] || {};
+    const p = currentWeeklyPlan[d] || {};
     MEAL_SLOTS.forEach(s => {
       if (p[s.key]) count++;
     });
@@ -323,6 +416,15 @@ export function renderNutritionMenuView() {
     if (!container) return;
     container.innerHTML = "";
 
+    const activeWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    const curWeekKey = getCurrentWeekKey();
+    const nextWeekKey = getOffsetWeekKey(curWeekKey, 1);
+    const week2Key = getOffsetWeekKey(curWeekKey, 2);
+    const week3Key = getOffsetWeekKey(curWeekKey, 3);
+    const isCurrentWeek = (activeWeekKey === curWeekKey);
+    const isPastWeek = (activeWeekKey < curWeekKey);
+    const currentWeeklyPlan = getActiveWeeklyPlan();
+
     const activeDay = appState.activeDay || getTodayDayName();
     const viewMode = appState.nutritionViewMode || "day";
     const profileId = appState.activeProfileId || "he";
@@ -336,6 +438,47 @@ export function renderNutritionMenuView() {
     const toolbar = document.createElement("div");
     toolbar.className = "planner-top-toolbar";
     toolbar.innerHTML = `
+      <!-- WEEK NAVIGATION BAR -->
+      <div class="planner-week-nav-bar">
+        <div class="week-nav-controls">
+          <button type="button" class="btn-week-nav" onclick="prevNutritionWeek()" title="Semana Anterior">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="week-nav-info">
+            <div class="week-nav-title">
+              <i class="fa-solid fa-calendar-week" style="color: var(--accent-emerald);"></i>
+              <span>${getWeekDisplayLabel(activeWeekKey)}</span>
+            </div>
+            <div class="week-nav-subtitle">
+              ${isCurrentWeek ? '<span class="badge-current-week">Esta Semana</span>' : (isPastWeek ? '<span class="badge-past-week">Semana Pasada</span>' : '<span class="badge-future-week">Planificación Futura</span>')} • ${totalScheduled}/28 comidas asignadas
+            </div>
+          </div>
+
+          <button type="button" class="btn-week-nav" onclick="nextNutritionWeek()" title="Semana Siguiente">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="week-quick-jump-pills">
+          <button type="button" class="week-jump-pill ${isCurrentWeek ? 'active' : ''}" onclick="goToCurrentNutritionWeek()">
+            Esta Semana
+          </button>
+          <button type="button" class="week-jump-pill ${activeWeekKey === nextWeekKey ? 'active' : ''}" onclick="setNutritionActiveWeek('${nextWeekKey}')">
+            Próxima Semana
+          </button>
+          <button type="button" class="week-jump-pill ${activeWeekKey === week2Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week2Key}')">
+            En +2 Semanas
+          </button>
+          <button type="button" class="week-jump-pill ${activeWeekKey === week3Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week3Key}')">
+            En +3 Semanas
+          </button>
+          <button type="button" class="week-jump-pill" onclick="copyPreviousWeekPlan()" title="Copiar menú de la semana anterior">
+            <i class="fa-solid fa-clone"></i> Copiar anterior
+          </button>
+        </div>
+      </div>
+
       <div class="planner-actions-bar">
         <button type="button" class="btn-generate-shopping-glow" onclick="generateShoppingListFromPlan()">
           <i class="fa-solid fa-cart-shopping"></i> Generar Lista de la Compra
@@ -359,14 +502,16 @@ export function renderNutritionMenuView() {
       <div class="planner-days-bar-wrapper">
         <div class="planner-days-scroll">
           ${DAYS_OF_WEEK.map(dayName => {
-            const dayPlan = appState.weeklyMealPlan?.[dayName] || {};
+            const dayPlan = currentWeeklyPlan?.[dayName] || {};
             const filledCount = MEAL_SLOTS.filter(s => !!dayPlan[s.key]).length;
             const isSelected = (viewMode === 'day' && activeDay === dayName);
-            const isToday = (getTodayDayName() === dayName);
+            const dayIso = getDateForDayInWeek(activeWeekKey, dayName);
+            const dayDateNumber = new Date(dayIso + 'T00:00:00').getDate();
+            const isToday = (getTodayDayName() === dayName && isCurrentWeek);
 
             return `
               <button type="button" class="planner-day-pill ${isSelected ? 'active' : ''} ${isToday ? 'is-today' : ''}" onclick="selectDay('${dayName}')">
-                <span class="day-pill-name">${dayName.substring(0, 3)}</span>
+                <span class="day-pill-name">${dayName.substring(0, 3)} ${dayDateNumber}</span>
                 <span class="day-pill-badge ${filledCount === 4 ? 'complete' : ''}">${filledCount}/4</span>
               </button>
             `;
@@ -401,7 +546,8 @@ export function renderNutritionMenuView() {
  * Render Day-by-Day focused detail view
  */
 function renderDayDetailView(container, dayName, targetCalories, targetProtein) {
-  const dayPlan = appState.weeklyMealPlan?.[dayName] || {};
+  const currentWeeklyPlan = getActiveWeeklyPlan();
+  const dayPlan = currentWeeklyPlan?.[dayName] || {};
   let dayKcal = 0;
   let dayProtein = 0;
   let dayCarbs = 0;
@@ -547,9 +693,10 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
 function renderFullWeekGridView(container) {
   const gridWrapper = document.createElement("div");
   gridWrapper.className = "planner-week-matrix-grid";
+  const currentWeeklyPlan = getActiveWeeklyPlan();
 
   DAYS_OF_WEEK.forEach(dayName => {
-    const dayPlan = appState.weeklyMealPlan?.[dayName] || {};
+    const dayPlan = currentWeeklyPlan?.[dayName] || {};
     const col = document.createElement("div");
     col.className = `matrix-day-column ${appState.activeDay === dayName ? 'active-col' : ''}`;
 
@@ -644,10 +791,10 @@ export function selectRecipeForActiveSlot(recipeId) {
     const { day, slot } = activePickerContext;
     if (!day || !slot) return;
 
-    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
-    if (!appState.weeklyMealPlan[day]) appState.weeklyMealPlan[day] = {};
+    const currentWeeklyPlan = getActiveWeeklyPlan();
+    if (!currentWeeklyPlan[day]) currentWeeklyPlan[day] = {};
 
-    appState.weeklyMealPlan[day][slot] = recipeId;
+    currentWeeklyPlan[day][slot] = recipeId;
     saveState();
 
     closeRecipePickerModal();
@@ -955,6 +1102,12 @@ export function openAssignRecipeModal(recipeId) {
     const recipe = getRecipeById(recipeId);
     if (!recipe) return;
 
+    const curWeekKey = getCurrentWeekKey();
+    const nextWeekKey = getOffsetWeekKey(curWeekKey, 1);
+    const week2Key = getOffsetWeekKey(curWeekKey, 2);
+    const week3Key = getOffsetWeekKey(curWeekKey, 3);
+    const activeWeekKey = appState.activeNutritionWeekKey || curWeekKey;
+
     const daysHtml = DAYS_OF_WEEK.map(d => `<option value="${d}">${d}</option>`).join("");
     const defaultSlot = (recipe.type === "desayuno") ? "desayuno" : (recipe.type === "comida") ? "comida" : (recipe.type === "cena") ? "cena" : "merienda";
 
@@ -980,6 +1133,15 @@ export function openAssignRecipeModal(recipeId) {
         </div>
         <div class="modal-body" style="padding-top: 1rem;">
           <form onsubmit="saveQuickAssignRecipe(event, '${recipe.id}')">
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+              <label><i class="fa-solid fa-calendar-week"></i> Semana de Planificación:</label>
+              <select id="quick-assign-week" class="custom-select" style="width: 100%;">
+                <option value="${curWeekKey}" ${activeWeekKey === curWeekKey ? 'selected' : ''}>📅 ${getWeekDisplayLabel(curWeekKey)}</option>
+                <option value="${nextWeekKey}" ${activeWeekKey === nextWeekKey ? 'selected' : ''}>📅 ${getWeekDisplayLabel(nextWeekKey)}</option>
+                <option value="${week2Key}" ${activeWeekKey === week2Key ? 'selected' : ''}>📅 ${getWeekDisplayLabel(week2Key)}</option>
+                <option value="${week3Key}" ${activeWeekKey === week3Key ? 'selected' : ''}>📅 ${getWeekDisplayLabel(week3Key)}</option>
+              </select>
+            </div>
             <div class="form-group">
               <label><i class="fa-solid fa-calendar-day"></i> Día de la Semana:</label>
               <select id="quick-assign-day" class="custom-select" style="width: 100%;">
@@ -1013,13 +1175,17 @@ export function saveQuickAssignRecipe(event, recipeId) {
   event.preventDefault();
   try {
     triggerHapticTouch();
+    const targetWeekKey = document.getElementById("quick-assign-week")?.value || appState.activeNutritionWeekKey || getCurrentWeekKey();
     const day = document.getElementById("quick-assign-day")?.value || "Lunes";
     const slot = document.getElementById("quick-assign-slot")?.value || "comida";
 
-    if (!appState.weeklyMealPlan) appState.weeklyMealPlan = {};
-    if (!appState.weeklyMealPlan[day]) appState.weeklyMealPlan[day] = {};
+    if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
+    if (!appState.weeklyMealPlans[targetWeekKey]) appState.weeklyMealPlans[targetWeekKey] = createEmptyWeeklyPlan();
 
-    appState.weeklyMealPlan[day][slot] = recipeId;
+    appState.weeklyMealPlans[targetWeekKey][day][slot] = recipeId;
+    if (targetWeekKey === (appState.activeNutritionWeekKey || getCurrentWeekKey())) {
+      appState.weeklyMealPlan = appState.weeklyMealPlans[targetWeekKey];
+    }
     saveState();
 
     const modal = document.getElementById("assign-recipe-quick-modal");
@@ -1314,6 +1480,11 @@ export function renderShoppingView() {
     if (!container) return;
     container.innerHTML = "";
 
+    const activeWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    const curWeekKey = getCurrentWeekKey();
+    const nextWeekKey = getOffsetWeekKey(curWeekKey, 1);
+    const isCurrentWeek = (activeWeekKey === curWeekKey);
+
     const range = appState.shoppingDaysRange || '7';
     const dayNames = range === '5'
       ? ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
@@ -1324,12 +1495,13 @@ export function renderShoppingView() {
     if (btn5) btn5.classList.toggle("active", range === '5');
     if (btn7) btn7.classList.toggle("active", range === '7');
 
+    const currentWeeklyPlan = getActiveWeeklyPlan();
     const aggregated = {};
     let totalMealsCount = 0;
 
-    // Aggregate ingredients from weeklyMealPlan for selected days
+    // Aggregate ingredients from current weekly plan for selected days
     dayNames.forEach(day => {
-      const plan = appState.weeklyMealPlan?.[day] || {};
+      const plan = currentWeeklyPlan?.[day] || {};
       MEAL_SLOTS.forEach(slot => {
         const recipeId = plan[slot.key];
         const meal = getRecipeById(recipeId);
@@ -1350,6 +1522,29 @@ export function renderShoppingView() {
         });
       });
     });
+
+    // Top Week Indicator for Shopping
+    const weekHeader = document.createElement("div");
+    weekHeader.className = "shopping-week-banner glass-card";
+    weekHeader.style.cssText = "padding: 0.6rem 0.9rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;";
+    weekHeader.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-calendar-check" style="color: var(--accent-emerald); font-size: 1.1rem;"></i>
+        <div>
+          <strong style="font-size: 0.85rem;">Lista para: ${getWeekDisplayLabel(activeWeekKey)}</strong>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">${totalMealsCount} platos incluidos (${range} días)</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.35rem;">
+        <button type="button" class="week-jump-pill ${isCurrentWeek ? 'active' : ''}" onclick="goToCurrentNutritionWeek(); renderShoppingView();">
+          Esta Semana
+        </button>
+        <button type="button" class="week-jump-pill ${activeWeekKey === nextWeekKey ? 'active' : ''}" onclick="setNutritionActiveWeek('${nextWeekKey}'); renderShoppingView();">
+          Próxima Semana
+        </button>
+      </div>
+    `;
+    container.appendChild(weekHeader);
 
     // Group by category
     const categories = {};

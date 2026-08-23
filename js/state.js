@@ -112,6 +112,85 @@ export function getDateForDayNameInCurrentWeek(dayName) {
   return getLocalIsoDate(targetDate);
 }
 
+// WEEK CALCULATION & NAVIGATION HELPERS
+export function getMondayOfWeek(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 is Sunday
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+export function getCurrentWeekKey() {
+  return getLocalIsoDate(getMondayOfWeek(new Date()));
+}
+
+export function getWeekKeyForDate(date) {
+  return getLocalIsoDate(getMondayOfWeek(date));
+}
+
+export function getOffsetWeekKey(baseWeekKey, offsetWeeks = 0) {
+  const monday = new Date(baseWeekKey || getCurrentWeekKey());
+  monday.setDate(monday.getDate() + (offsetWeeks * 7));
+  return getLocalIsoDate(monday);
+}
+
+export function getWeekDateRange(weekKey) {
+  const monday = new Date(weekKey || getCurrentWeekKey());
+  const sunday = new Date(monday);
+  sunday.setDate(sunday.getDate() + 6);
+  return { monday, sunday, mondayIso: getLocalIsoDate(monday), sundayIso: getLocalIsoDate(sunday) };
+}
+
+export function getWeekDisplayLabel(weekKey) {
+  const MONTHS_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const range = getWeekDateRange(weekKey);
+  const curWeekKey = getCurrentWeekKey();
+  const nextWeekKey = getOffsetWeekKey(curWeekKey, 1);
+  const prevWeekKey = getOffsetWeekKey(curWeekKey, -1);
+
+  const mDay = range.monday.getDate();
+  const mMonth = MONTHS_SHORT[range.monday.getMonth()];
+  const sDay = range.sunday.getDate();
+  const sMonth = MONTHS_SHORT[range.sunday.getMonth()];
+
+  const dateSpan = (range.monday.getMonth() === range.sunday.getMonth())
+    ? `${mDay} - ${sDay} ${mMonth}`
+    : `${mDay} ${mMonth} - ${sDay} ${sMonth}`;
+
+  if (weekKey === curWeekKey) {
+    return `${dateSpan} (Esta Semana)`;
+  } else if (weekKey === nextWeekKey) {
+    return `${dateSpan} (Próxima Semana)`;
+  } else if (weekKey === prevWeekKey) {
+    return `${dateSpan} (Semana Pasada)`;
+  }
+  return `${dateSpan} (${range.sunday.getFullYear()})`;
+}
+
+export function getDateForDayInWeek(weekKey, dayName) {
+  const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const targetIdx = days.indexOf(dayName);
+  if (targetIdx === -1) return weekKey;
+
+  const monday = new Date(weekKey || getCurrentWeekKey());
+  monday.setDate(monday.getDate() + targetIdx);
+  return getLocalIsoDate(monday);
+}
+
+export function createEmptyWeeklyPlan() {
+  return {
+    Lunes: { desayuno: null, comida: null, merienda: null, cena: null },
+    Martes: { desayuno: null, comida: null, merienda: null, cena: null },
+    Miércoles: { desayuno: null, comida: null, merienda: null, cena: null },
+    Jueves: { desayuno: null, comida: null, merienda: null, cena: null },
+    Viernes: { desayuno: null, comida: null, merienda: null, cena: null },
+    Sábado: { desayuno: null, comida: null, merienda: null, cena: null },
+    Domingo: { desayuno: null, comida: null, merienda: null, cena: null }
+  };
+}
+
 export function getProfileShortName(pid) {
   try {
     if (!appState || !appState.profiles) {
@@ -138,16 +217,8 @@ export function getProfileShortName(pid) {
   }
 }
 
-// DEFAULT WEEKLY MEAL PLAN TEMPLATE
-export const DEFAULT_WEEKLY_MEAL_PLAN = {
-  Lunes: { desayuno: "d1", comida: "c1", merienda: "s1", cena: "cn1" },
-  Martes: { desayuno: "d2", comida: "c2", merienda: "s2", cena: "cn2" },
-  Miércoles: { desayuno: "d3", comida: "c3", merienda: "s3", cena: "cn3" },
-  Jueves: { desayuno: "d4", comida: "c4", merienda: "s4", cena: "cn4" },
-  Viernes: { desayuno: "d5", comida: "c5", merienda: "s5", cena: "cn5" },
-  Sábado: { desayuno: "d6", comida: "c6", merienda: "s6", cena: "cn6" },
-  Domingo: { desayuno: "d2", comida: "c7", merienda: "s7", cena: "cn7" }
-};
+// DEFAULT WEEKLY MEAL PLAN TEMPLATE (EMPTY BY DEFAULT)
+export const DEFAULT_WEEKLY_MEAL_PLAN = createEmptyWeeklyPlan();
 
 // INITIAL STATE STRUCTURE (STABLE OBJECT REFERENCE)
 export const appState = {
@@ -155,7 +226,9 @@ export const appState = {
   activeProfileId: "he",
   profiles: JSON.parse(JSON.stringify(INITIAL_PROFILES)),
   exclusions: [],
-  weeklyMealPlan: JSON.parse(JSON.stringify(DEFAULT_WEEKLY_MEAL_PLAN)),
+  activeNutritionWeekKey: getCurrentWeekKey(),
+  weeklyMealPlans: {},
+  weeklyMealPlan: createEmptyWeeklyPlan(),
   customRecipes: [],
   shoppingExtras: [],
   nutritionViewMode: "day",
@@ -463,37 +536,46 @@ export function loadSavedState() {
     });
   } catch(e) {}
 
-  const fallbackMealPlan = {
-    Lunes: { desayuno: "d1", comida: "c1", merienda: "s1", cena: "cn1" },
-    Martes: { desayuno: "d2", comida: "c2", merienda: "s2", cena: "cn2" },
-    Miércoles: { desayuno: "d3", comida: "c3", merienda: "s3", cena: "cn3" },
-    Jueves: { desayuno: "d4", comida: "c4", merienda: "s4", cena: "cn4" },
-    Viernes: { desayuno: "d5", comida: "c5", merienda: "s5", cena: "cn5" },
-    Sábado: { desayuno: "d6", comida: "c6", merienda: "s6", cena: "cn6" },
-    Domingo: { desayuno: "d2", comida: "c7", merienda: "s7", cena: "cn7" }
-  };
+  const curWeekKey = getCurrentWeekKey();
+  if (!appState.activeNutritionWeekKey) {
+    appState.activeNutritionWeekKey = curWeekKey;
+  }
 
-  try {
-    if (!appState.weeklyMealPlan || typeof appState.weeklyMealPlan !== 'object') {
-      appState.weeklyMealPlan = JSON.parse(JSON.stringify(fallbackMealPlan));
-    } else {
-      const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-      days.forEach(d => {
-        if (!appState.weeklyMealPlan[d] || typeof appState.weeklyMealPlan[d] !== 'object') {
-          appState.weeklyMealPlan[d] = { ...(fallbackMealPlan[d] || {}) };
+  if (!appState.weeklyMealPlans || typeof appState.weeklyMealPlans !== 'object') {
+    appState.weeklyMealPlans = {};
+  }
+
+  // Migrate legacy single weeklyMealPlan if present
+  if (appState.weeklyMealPlan && typeof appState.weeklyMealPlan === 'object' && !appState.weeklyMealPlans[curWeekKey]) {
+    appState.weeklyMealPlans[curWeekKey] = JSON.parse(JSON.stringify(appState.weeklyMealPlan));
+  }
+
+  // Ensure every existing plan in weeklyMealPlans has all 7 days with valid/empty slots
+  const daysList = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  Object.keys(appState.weeklyMealPlans).forEach(wKey => {
+    const plan = appState.weeklyMealPlans[wKey];
+    if (plan && typeof plan === 'object') {
+      daysList.forEach(d => {
+        if (!plan[d] || typeof plan[d] !== 'object') {
+          plan[d] = { desayuno: null, comida: null, merienda: null, cena: null };
         } else {
           ['desayuno', 'comida', 'merienda', 'cena'].forEach(slot => {
-            const rId = appState.weeklyMealPlan[d][slot];
+            const rId = plan[d][slot];
             if (rId && Array.isArray(RECIPES_DATABASE) && !RECIPES_DATABASE.some(r => r && (r.id === rId || String(r.id) === String(rId))) && !(appState.customRecipes || []).some(r => r && (r.id === rId || String(r.id) === String(rId)))) {
-              appState.weeklyMealPlan[d][slot] = fallbackMealPlan[d]?.[slot] || null;
+              plan[d][slot] = null;
             }
           });
         }
       });
     }
-  } catch(e) {
-    appState.weeklyMealPlan = JSON.parse(JSON.stringify(fallbackMealPlan));
+  });
+
+  // Ensure active week plan exists (empty by default if not set)
+  if (!appState.weeklyMealPlans[appState.activeNutritionWeekKey]) {
+    appState.weeklyMealPlans[appState.activeNutritionWeekKey] = createEmptyWeeklyPlan();
   }
+
+  appState.weeklyMealPlan = appState.weeklyMealPlans[appState.activeNutritionWeekKey];
 
   if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
   if (!Array.isArray(appState.shoppingExtras)) appState.shoppingExtras = [];
