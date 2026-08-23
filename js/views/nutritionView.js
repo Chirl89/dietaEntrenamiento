@@ -1476,20 +1476,7 @@ export function deleteCustomRecipe(recipeId) {
 /**
  * RENDER SUBTAB 3: SMART SHOPPING LIST VIEW
  */
-export function setShoppingRange(range) {
-  try {
-    triggerHapticTouch();
-    appState.shoppingDaysRange = range;
-    saveState();
-    const btn5 = document.getElementById("shopping-range-5");
-    const btn7 = document.getElementById("shopping-range-7");
-    if (btn5) btn5.classList.toggle("active", range === '5');
-    if (btn7) btn7.classList.toggle("active", range === '7');
-    renderShoppingView();
-  } catch(e) {
-    console.error("Error setting shopping range:", e);
-  }
-}
+export function setShoppingRange() {}
 
 export function renderShoppingView() {
   try {
@@ -1500,24 +1487,16 @@ export function renderShoppingView() {
     const activeWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
     const curWeekKey = getCurrentWeekKey();
     const nextWeekKey = getOffsetWeekKey(curWeekKey, 1);
+    const week2Key = getOffsetWeekKey(curWeekKey, 2);
+    const week3Key = getOffsetWeekKey(curWeekKey, 3);
     const isCurrentWeek = (activeWeekKey === curWeekKey);
-
-    const range = appState.shoppingDaysRange || '7';
-    const dayNames = range === '5'
-      ? ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
-      : ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-
-    const btn5 = document.getElementById("shopping-range-5");
-    const btn7 = document.getElementById("shopping-range-7");
-    if (btn5) btn5.classList.toggle("active", range === '5');
-    if (btn7) btn7.classList.toggle("active", range === '7');
 
     const currentWeeklyPlan = getActiveWeeklyPlan();
     const aggregated = {};
     let totalMealsCount = 0;
 
-    // Aggregate ingredients from current weekly plan for selected days
-    dayNames.forEach(day => {
+    // Aggregate ingredients from all days of the currently selected weekly plan
+    DAYS_OF_WEEK.forEach(day => {
       const plan = currentWeeklyPlan?.[day] || {};
       MEAL_SLOTS.forEach(slot => {
         const recipeId = plan[slot.key];
@@ -1540,24 +1519,43 @@ export function renderShoppingView() {
       });
     });
 
-    // Top Week Indicator for Shopping
+    // Top Week Indicator & Selector for Shopping List
     const weekHeader = document.createElement("div");
-    weekHeader.className = "shopping-week-banner glass-card";
-    weekHeader.style.cssText = "padding: 0.6rem 0.9rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;";
+    weekHeader.className = "planner-week-nav-bar";
+    weekHeader.style.cssText = "margin-bottom: 1.25rem;";
     weekHeader.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <i class="fa-solid fa-calendar-check" style="color: var(--accent-emerald); font-size: 1.1rem;"></i>
-        <div>
-          <strong style="font-size: 0.85rem;">Lista para: ${getWeekDisplayLabel(activeWeekKey)}</strong>
-          <div style="font-size: 0.72rem; color: var(--text-muted);">${totalMealsCount} platos incluidos (${range} días)</div>
+      <div class="week-nav-controls">
+        <button type="button" class="btn-week-nav" onclick="prevNutritionWeek(); renderShoppingView();" title="Semana Anterior">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <div class="week-nav-info">
+          <div class="week-nav-title">
+            <i class="fa-solid fa-cart-shopping" style="color: var(--accent-emerald);"></i>
+            <span>Lista para: ${getWeekDisplayLabel(activeWeekKey)}</span>
+          </div>
+          <div class="week-nav-subtitle">
+            ${isCurrentWeek ? '<span class="badge-current-week">Esta Semana</span>' : '<span class="badge-future-week">Planificación Futura</span>'} • ${totalMealsCount} comidas incluidas
+          </div>
         </div>
+
+        <button type="button" class="btn-week-nav" onclick="nextNutritionWeek(); renderShoppingView();" title="Semana Siguiente">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
       </div>
-      <div style="display: flex; gap: 0.35rem;">
+
+      <div class="week-quick-jump-pills">
         <button type="button" class="week-jump-pill ${isCurrentWeek ? 'active' : ''}" onclick="goToCurrentNutritionWeek(); renderShoppingView();">
           Esta Semana
         </button>
         <button type="button" class="week-jump-pill ${activeWeekKey === nextWeekKey ? 'active' : ''}" onclick="setNutritionActiveWeek('${nextWeekKey}'); renderShoppingView();">
           Próxima Semana
+        </button>
+        <button type="button" class="week-jump-pill ${activeWeekKey === week2Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week2Key}'); renderShoppingView();">
+          En +2 Semanas
+        </button>
+        <button type="button" class="week-jump-pill ${activeWeekKey === week3Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week3Key}'); renderShoppingView();">
+          En +3 Semanas
         </button>
       </div>
     `;
