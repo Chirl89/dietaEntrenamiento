@@ -659,35 +659,24 @@ export function mergeCloudDataIntoAppState(cloudData) {
   });
 
   if (cloudData.weeklyMealPlans && typeof cloudData.weeklyMealPlans === 'object') {
-    if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
-    Object.keys(cloudData.weeklyMealPlans).forEach(wKey => {
-      const cloudWeek = cloudData.weeklyMealPlans[wKey];
-      if (cloudWeek && typeof cloudWeek === 'object') {
-        if (!appState.weeklyMealPlans[wKey]) {
-          appState.weeklyMealPlans[wKey] = {
-            Lunes: { desayuno: null, comida: null, merienda: null, cena: null },
-            Martes: { desayuno: null, comida: null, merienda: null, cena: null },
-            Miércoles: { desayuno: null, comida: null, merienda: null, cena: null },
-            Jueves: { desayuno: null, comida: null, merienda: null, cena: null },
-            Viernes: { desayuno: null, comida: null, merienda: null, cena: null },
-            Sábado: { desayuno: null, comida: null, merienda: null, cena: null },
-            Domingo: { desayuno: null, comida: null, merienda: null, cena: null }
-          };
+    const cloudTs = Number(cloudData.mealPlansLastModified || (cloudData.timestamp ? new Date(cloudData.timestamp).getTime() : 0));
+    const localTs = Number(appState.mealPlansLastModified || 0);
+
+    if (cloudTs > localTs || (!localTs && cloudTs > 0)) {
+      if (!appState.weeklyMealPlans) appState.weeklyMealPlans = {};
+      Object.keys(cloudData.weeklyMealPlans).forEach(wKey => {
+        const cloudWeek = cloudData.weeklyMealPlans[wKey];
+        if (cloudWeek && typeof cloudWeek === 'object') {
+          appState.weeklyMealPlans[wKey] = JSON.parse(JSON.stringify(cloudWeek));
         }
-        Object.keys(cloudWeek).forEach(d => {
-          if (cloudWeek[d] && typeof cloudWeek[d] === 'object') {
-            if (!appState.weeklyMealPlans[wKey][d]) appState.weeklyMealPlans[wKey][d] = {};
-            ['desayuno', 'comida', 'merienda', 'cena'].forEach(slot => {
-              const cloudRecipeId = cloudWeek[d][slot];
-              if (cloudRecipeId && appState.weeklyMealPlans[wKey][d][slot] !== cloudRecipeId) {
-                appState.weeklyMealPlans[wKey][d][slot] = cloudRecipeId;
-                hasChanges = true;
-              }
-            });
-          }
-        });
+      });
+      appState.mealPlansLastModified = cloudTs;
+      const curActiveKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+      if (appState.weeklyMealPlans[curActiveKey]) {
+        appState.weeklyMealPlan = appState.weeklyMealPlans[curActiveKey];
       }
-    });
+      hasChanges = true;
+    }
   }
 
   if (Array.isArray(cloudData.customRecipes) && cloudData.customRecipes.length > 0) {
@@ -750,6 +739,7 @@ export async function pushToCloud(showToast = false) {
       completedWorkouts: { [masterPid]: appState.completedWorkouts?.[masterPid] || {} },
       history: { [masterPid]: appState.history?.[masterPid] || {} },
       activeNutritionWeekKey: appState.activeNutritionWeekKey,
+      mealPlansLastModified: appState.mealPlansLastModified || Date.now(),
       weeklyMealPlans: appState.weeklyMealPlans || {},
       weeklyMealPlan: appState.weeklyMealPlan || {},
       customRecipes: appState.customRecipes || [],

@@ -248,7 +248,9 @@ export function copyPreviousWeekPlan() {
 
     appState.weeklyMealPlans[curWeek] = JSON.parse(JSON.stringify(prevPlan));
     getActiveWeeklyPlan();
+    appState.mealPlansLastModified = Date.now();
     saveState();
+    if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
     renderNutritionMenuView();
     renderShoppingView();
     showIosToast("📋 ¡Menú copiado de la semana anterior!", "fa-solid fa-circle-check");
@@ -280,6 +282,7 @@ export function autoFillWeeklyPlan() {
       };
     });
 
+    appState.mealPlansLastModified = Date.now();
     saveState();
     if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
     renderNutritionMenuView();
@@ -306,6 +309,7 @@ export function clearWeeklyPlan() {
           cena: null
         };
       });
+      appState.mealPlansLastModified = Date.now();
       saveState();
       if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
       renderNutritionMenuView();
@@ -327,6 +331,7 @@ export function removeMealFromSlot(dayName, slotKey) {
     if (!currentWeeklyPlan[dayName]) currentWeeklyPlan[dayName] = {};
     
     currentWeeklyPlan[dayName][slotKey] = null;
+    appState.mealPlansLastModified = Date.now();
     saveState();
     if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
     renderNutritionMenuView();
@@ -809,6 +814,7 @@ export function selectRecipeForActiveSlot(recipeId) {
       appState.weeklyMealPlan = appState.weeklyMealPlans[targetWeekKey];
     }
 
+    appState.mealPlansLastModified = Date.now();
     saveState();
     if (window.pushToCloud) {
       window.pushToCloud(false).catch(() => {});
@@ -1203,7 +1209,11 @@ export function saveQuickAssignRecipe(event, recipeId) {
     if (targetWeekKey === (appState.activeNutritionWeekKey || getCurrentWeekKey())) {
       appState.weeklyMealPlan = appState.weeklyMealPlans[targetWeekKey];
     }
+    appState.mealPlansLastModified = Date.now();
     saveState();
+    if (window.pushToCloud) {
+      window.pushToCloud(false).catch(() => {});
+    }
 
     const modal = document.getElementById("assign-recipe-quick-modal");
     if (modal) modal.classList.remove("active");

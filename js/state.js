@@ -229,6 +229,7 @@ export const appState = {
   activeNutritionWeekKey: getCurrentWeekKey(),
   weeklyMealPlans: {},
   weeklyMealPlan: createEmptyWeeklyPlan(),
+  mealPlansLastModified: 0,
   customRecipes: [],
   shoppingExtras: [],
   nutritionViewMode: "day",
