@@ -948,6 +948,10 @@ function renderHeatmapView(pid, pName, container) {
         };
       }
 
+      const isStepsGoalMet = (entry?.steps || 0) >= 10000;
+      const hasWorkoutSessions = Array.isArray(entry?.sessions) && entry.sessions.length > 0;
+      const hasRealWorkout = !!(entry?.completedWorkouts && entry.completedWorkouts.length > 0 && ((entry?.exerciseMin || 0) >= 20 || (entry?.moveKcal || 0) >= 180 || hasWorkoutSessions));
+
       let status = 'none';
       let statusColor = 'rgba(156, 163, 175, 0.1)';
       let tooltip = `${dayNum} de ${capitalizedMonth}: Sin datos registrados`;
@@ -961,24 +965,25 @@ function renderHeatmapView(pid, pName, container) {
           status = 'rest';
           statusColor = 'rgba(56, 189, 248, 0.4)';
           restDaysCount++;
-          tooltip = `${dayNum} de ${capitalizedMonth}: Día de Descanso Programado (${(entry.steps || 0).toLocaleString()} pasos)`;
-        } else if (entry.steps >= 10000 || (entry.completedWorkouts && entry.completedWorkouts.length > 0)) {
+          tooltip = `${dayNum} de ${capitalizedMonth}: Día de Descanso (${(entry.steps || 0).toLocaleString()} pasos)`;
+        } else if (isStepsGoalMet || hasRealWorkout) {
           status = 'completed';
           statusColor = 'rgba(16, 185, 129, 0.85)';
           completedDaysCount++;
-          tooltip = `${dayNum} de ${capitalizedMonth}: ¡Meta Cumplida! (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
-        } else if (entry.steps > 0 || entry.moveKcal > 0) {
+          const reason = isStepsGoalMet && hasRealWorkout ? '¡Entreno y Pasos cumplidos!' : (isStepsGoalMet ? '¡Objetivo de 10k pasos cumplido!' : '¡Entrenamiento completado!');
+          tooltip = `${dayNum} de ${capitalizedMonth}: ${reason} (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal, ${entry.exerciseMin || 0} min)`;
+        } else if ((entry.steps || 0) > 0 || (entry.moveKcal || 0) > 0 || (entry.exerciseMin || 0) > 0) {
           status = 'partial';
           statusColor = 'rgba(245, 158, 11, 0.75)';
           partialDaysCount++;
-          tooltip = `${dayNum} de ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal)`;
+          tooltip = `${dayNum} de ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} / 10.000 pasos, ${entry.moveKcal || 0} kcal)`;
         }
       }
 
       const todayBorder = isToday ? 'border: 2px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);' : '';
 
       dayCells.push(`
-        <div class="heatmap-tile ${status} ${isToday ? 'today' : ''}" style="background: ${statusColor}; ${todayBorder}" title="${tooltip}" onclick="window.showDayDetailToast('${dateIso}', ${dayNum}, '${capitalizedMonth}', ${(entry?.steps || 0)}, ${(entry?.moveKcal || 0)}, ${(entry?.exerciseMin || 0)}, ${!!entry?.isRestDay})">
+        <div class="heatmap-tile ${status} ${isToday ? 'today' : ''}" style="background: ${statusColor}; ${todayBorder}" title="${tooltip}" onclick="window.showDayDetailToast('${dateIso}', ${dayNum}, '${capitalizedMonth}', ${(entry?.steps || 0)}, ${(entry?.moveKcal || 0)}, ${(entry?.exerciseMin || 0)}, ${!!entry?.isRestDay}, ${hasRealWorkout})">
           <span class="heatmap-day-num">${dayNum}</span>
         </div>
       `);
@@ -1165,11 +1170,16 @@ function renderBadgesView(pid, pName, container) {
 }
 
 // Global helper for day details toast
-window.showDayDetailToast = function(dateIso, dayNum, monthName, steps, kcal, exMin, isRest) {
+window.showDayDetailToast = function(dateIso, dayNum, monthName, steps, kcal, exMin, isRest, hasWorkout) {
   triggerHapticTouch();
-  const restText = isRest ? " (Día de Descanso)" : "";
+  const restText = isRest ? " • 🛌 Descanso" : "";
+  const workoutText = hasWorkout ? " • 🏋️‍♂️ Entreno" : "";
+  const goalBadge = (steps >= 10000 || hasWorkout)
+    ? `<span style="color: var(--accent-emerald); font-weight: 700;">🟢 Cumplido</span>`
+    : (steps > 0 ? `<span style="color: var(--accent-amber); font-weight: 700;">🟡 Parcial (${(steps || 0).toLocaleString()}/10k)</span>` : `<span style="color: var(--text-muted);">Sin actividad</span>`);
+  
   showIosToast(
-    `📅 <strong>${dayNum} de ${monthName}${restText}</strong><br/>👟 ${steps.toLocaleString()} pasos • 🔥 ${kcal} kcal • ⏱️ ${exMin} min`,
+    `📅 <strong>${dayNum} de ${monthName}</strong>${restText}${workoutText}<br/>👟 ${(steps || 0).toLocaleString()} pasos • 🔥 ${kcal || 0} kcal • ⏱️ ${exMin || 0} min<br/>${goalBadge}`,
     "fa-solid fa-calendar-day"
   );
 };
