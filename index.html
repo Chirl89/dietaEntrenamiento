@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Application CSS -->
-  <link rel="stylesheet" href="styles.css?v=0.21.0">
+  <link rel="stylesheet" href="styles.css?v=0.21.1">
 
   <!-- Chart.js for progress graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -50,7 +50,7 @@
   <header class="ios-top-bar">
     <div class="ios-header-brand">
       <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
-      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.21.0</span></span>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.21.1</span></span>
     </div>
 
     <div class="ios-header-actions">
@@ -78,7 +78,7 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div>
-            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.21.0</span></div>
+            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.21.1</span></div>
             <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
           </div>
         </div>
@@ -910,10 +910,10 @@
                 </div>
               </div>
               <div id="cloud-sync-status-text" style="font-size: 0.82rem; font-weight: 600; color: var(--accent-emerald); margin-bottom: 0.5rem;">
-                Estado: Conectado a la Nube (v0.21.0)
+                Estado: Conectado a la Nube (v0.21.1)
               </div>
               <div id="sync-diagnostic-console" style="font-family: monospace; font-size: 0.75rem; color: #a3e635; background: #090d16; padding: 0.6rem; border-radius: 6px; max-height: 120px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); white-space: pre-wrap;">
-⚡ fitduo_v2 sync engine v0.21.0 listo.
+⚡ fitduo_v2 sync engine v0.21.1 listo.
               </div>
             </div>
           </div>
@@ -1127,6 +1127,30 @@
             <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: flex-start; gap: 0.5rem; background: rgba(6, 182, 212, 0.08); padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(6, 182, 212, 0.2);">
               <i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan); font-size: 1rem; margin-top: 0.1rem;"></i>
               <span><strong>Separación Total de Perfiles:</strong> Lo que registre Carlos en su teléfono actualizará únicamente el perfil de Carlos en la nube, y lo que registre Andrea actualizará únicamente su perfil. Ambos veréis los avances del otro en tiempo real sin interferir.</span>
+            </div>
+          </div>
+
+          <!-- DANGER ZONE: CLEAN SLATE & FULL APP RESET -->
+          <div class="glass-card settings-custom-card" style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.04);">
+            <div class="settings-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="brand-icon-sm" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                  <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #ef4444;">Zona de Mantenimiento & Limpieza Total</h3>
+                  <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--text-muted);">Elimina todos los datos de entrenamientos, pasos, menús y purga la cola de la nube para empezar desde cero.</p>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+              <button type="button" class="btn-secondary" onclick="if(confirm('¿Seguro que deseas eliminar TODOS los datos (pasos, entrenamientos, menús, etc.) y empezar 100% de cero?')) { performCompleteAppReset(false); }" style="padding: 0.75rem 1.2rem; font-weight: 700; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-trash-can"></i> 🗑️ Eliminar Todos los Datos de la App (Reset Completo a 0)
+              </button>
+              <button type="button" class="btn-secondary" onclick="purgeCloudHistory()" style="padding: 0.75rem 1.2rem; font-weight: 600; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #f59e0b; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-broom"></i> 🧹 Purgar Histórico en Nube PubNub
+              </button>
             </div>
           </div>
         </div>
@@ -1377,6 +1401,6 @@
   <div id="ios-toast-container" class="ios-toast-container"></div>
 
   <!-- Application Logic -->
-  <script type="module" src="app.js?v=0.21.0"></script>
+  <script type="module" src="app.js?v=0.21.1"></script>
 </body>
 </html>

@@ -613,9 +613,127 @@ export function loadSavedState() {
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
 
+  // CLEAN SLATE V0.21.1 RESET
+  const FULL_RESET_V21_KEY = "FITDUO_FULL_APP_RESET_V21_1";
+  if (!localStorage.getItem(FULL_RESET_V21_KEY)) {
+    performCompleteAppReset(true);
+    localStorage.setItem(FULL_RESET_V21_KEY, "true");
+  }
+
   try {
     checkDayRollover();
   } catch(e) {}
+}
+
+export function performCompleteAppReset(isAutoMigration = false) {
+  const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const todayIso = getLocalIsoDate();
+  const curWeekKey = getCurrentWeekKey();
+
+  // 1. Reset workouts completely
+  appState.completedWorkouts = {
+    he: {},
+    she: {}
+  };
+  days.forEach(d => {
+    appState.completedWorkouts.he[d] = { done: false, watchData: null, sessions: [] };
+    appState.completedWorkouts.she[d] = { done: false, watchData: null, sessions: [] };
+  });
+  appState.deletedWorkoutSessionIds = [];
+
+  // 2. Reset history
+  appState.history = { he: {}, she: {} };
+
+  // 3. Reset Apple Watch metrics and replicas
+  ['he', 'she'].forEach(pid => {
+    if (!appState.appleWatch) appState.appleWatch = {};
+    if (!appState.appleWatch.metrics) appState.appleWatch.metrics = {};
+    if (!appState.appleWatch.cloudReplica) appState.appleWatch.cloudReplica = {};
+    if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
+
+    appState.appleWatch.metrics[pid] = {
+      deviceName: pid === 'he' ? "Apple Watch Series 9" : "Apple Watch SE",
+      moveKcal: 0,
+      moveGoal: pid === 'he' ? 600 : 500,
+      targetKcal: pid === 'he' ? 600 : 500,
+      exerciseMin: 0,
+      exerciseGoal: 30,
+      targetMin: 30,
+      steps: 0,
+      stepsGoal: 10000,
+      targetSteps: 10000,
+      hr: 0,
+      distanceKm: 0,
+      floors: 0,
+      sleep: "--",
+      date: todayIso
+    };
+
+    appState.appleWatch.cloudReplica[pid] = {
+      moveKcal: 0,
+      exerciseMin: 0,
+      steps: 0,
+      hr: 0,
+      distanceKm: 0,
+      floors: 0,
+      sleep: "--",
+      lastSync: null,
+      source: "Atajo Nube en 2º Plano"
+    };
+
+    appState.appleWatch.pendingWorkout[pid] = {
+      flag: "N/A",
+      pending: false,
+      datos_inicio_entrenamiento: null,
+      datos_fin_entrenamiento: null,
+      startedAt: null,
+      endedAt: null
+    };
+  });
+
+  appState.appleWatch.syncLogs = [];
+  appState.appleWatch.lastGlobalSync = null;
+
+  // 4. Reset meal plans & nutrition
+  appState.weeklyMealPlans = {};
+  appState.weeklyMealPlans[curWeekKey] = createEmptyWeeklyPlan();
+  appState.weeklyMealPlan = appState.weeklyMealPlans[curWeekKey];
+  appState.activeNutritionWeekKey = curWeekKey;
+  appState.mealPlansLastModified = Date.now();
+  appState.customRecipes = [];
+  appState.shoppingExtras = [];
+  appState.checkedShoppingItems = {};
+  appState.exclusions = [];
+
+  // 5. Reset weight logs
+  appState.weightLogs = { he: [], she: [] };
+
+  // 6. Reset Boo progress
+  appState.booProgress = {
+    completedTasks: {},
+    completedContinuous: {},
+    learnedTricks: ["t1_sit", "t2_paw"],
+    activeTrickId: "t3_eye_contact",
+    moodLogs: {},
+    moduleStats: {},
+    sessionNotes: {},
+    accordions: {}
+  };
+
+  // 7. Purge timetoken to ignore all past PubNub messages
+  appState.lastPurgeTimetoken = String(Date.now() * 10000);
+  appState.lastCloudSync = new Date().toISOString();
+
+  // Save clean state
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+  localStorage.removeItem(LAST_REGISTERED_METRICS_KEY);
+  localStorage.removeItem(LAST_CLOUD_REPLICA_KEY);
+
+  if (!isAutoMigration) {
+    if (window.renderAll) window.renderAll();
+    if (window.purgeCloudHistory) window.purgeCloudHistory();
+    showIosToast("✨ Todos los datos de la app han sido eliminados y reseteados a 0", "fa-solid fa-sparkles");
+  }
 }
 
 export function purgeHistoricalDataExceptToday() {

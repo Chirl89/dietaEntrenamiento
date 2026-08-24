@@ -21,6 +21,11 @@ import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js';
 export function isDayCompleted(profileId, dayName) {
   const dayData = appState.completedWorkouts?.[profileId]?.[dayName];
   if (typeof dayData === 'object' && dayData !== null) {
+    if (dayData.done === false) return false;
+    if (Array.isArray(dayData.sessions)) {
+      return dayData.sessions.length > 0 && !!dayData.done;
+    }
+    if (dayData.watchData) return !!dayData.done;
     return !!dayData.done;
   }
   return !!dayData;
