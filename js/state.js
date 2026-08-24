@@ -22,20 +22,8 @@ export const defaultCloudReplica = {
   she: { moveKcal: 0, exerciseMin: 0, steps: 0, hr: 0, distanceKm: 0, floors: 0, sleep: "--", lastSync: null, source: "Atajo Nube en 2º Plano" }
 };
 
-try {
-  const savedLastMetrics = localStorage.getItem(LAST_REGISTERED_METRICS_KEY);
-  if (savedLastMetrics) {
-    const parsedLastMetrics = JSON.parse(savedLastMetrics);
-    if (parsedLastMetrics?.he) Object.assign(defaultWatchMetrics.he, parsedLastMetrics.he);
-    if (parsedLastMetrics?.she) Object.assign(defaultWatchMetrics.she, parsedLastMetrics.she);
-  }
-  const savedReplica = localStorage.getItem(LAST_CLOUD_REPLICA_KEY);
-  if (savedReplica) {
-    const parsedReplica = JSON.parse(savedReplica);
-    if (parsedReplica?.he) Object.assign(defaultCloudReplica.he, parsedReplica.he);
-    if (parsedReplica?.she) Object.assign(defaultCloudReplica.she, parsedReplica.she);
-  }
-} catch (e) {}
+// Clean zero baseline defaults
+// (Live state is restored from LOCAL_STORAGE_KEY during loadSavedState)
 
 export function getTodayDayName() {
   const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -304,26 +292,28 @@ export function checkDayRollover() {
     const m = appState.appleWatch.metrics[pid];
     const metricDate = m.date || (m.lastSync ? getLocalIsoDate(m.lastSync) : null);
 
-    // If the metrics belong to a past day, finalize yesterday's snapshot before starting clean today
-    if (metricDate && metricDate !== todayIso) {
-      if (!appState.history) appState.history = { he: {}, she: {} };
-      if (!appState.history[pid]) appState.history[pid] = {};
+    // If the metrics belong to a past day or date is missing, reset metrics for today
+    if (!metricDate || metricDate !== todayIso) {
+      if (metricDate && metricDate !== todayIso) {
+        if (!appState.history) appState.history = { he: {}, she: {} };
+        if (!appState.history[pid]) appState.history[pid] = {};
 
-      const existingPastEntry = appState.history[pid][metricDate] || {};
-      const finalSteps = Math.max(Number(existingPastEntry.steps || 0), Number(m.steps || 0));
-      const finalKcal = Math.max(Number(existingPastEntry.moveKcal || 0), Number(m.moveKcal || 0));
-      const finalExMin = Math.max(Number(existingPastEntry.exerciseMin || 0), Number(m.exerciseMin || 0));
+        const existingPastEntry = appState.history[pid][metricDate] || {};
+        const finalSteps = Math.max(Number(existingPastEntry.steps || 0), Number(m.steps || 0));
+        const finalKcal = Math.max(Number(existingPastEntry.moveKcal || 0), Number(m.moveKcal || 0));
+        const finalExMin = Math.max(Number(existingPastEntry.exerciseMin || 0), Number(m.exerciseMin || 0));
 
-      if (finalSteps > 0 || finalKcal > 0 || finalExMin > 0) {
-        recordDailySnapshot(pid, metricDate, {
-          steps: finalSteps,
-          moveKcal: finalKcal,
-          exerciseMin: finalExMin,
-          distanceKm: m.distanceKm || existingPastEntry.distanceKm || 0,
-          floors: m.floors || existingPastEntry.floors || 0,
-          sleep: (m.sleep && m.sleep !== '--') ? m.sleep : (existingPastEntry.sleep || "--"),
-          hr: m.hr || existingPastEntry.hr || 0
-        });
+        if (finalSteps > 0 || finalKcal > 0 || finalExMin > 0) {
+          recordDailySnapshot(pid, metricDate, {
+            steps: finalSteps,
+            moveKcal: finalKcal,
+            exerciseMin: finalExMin,
+            distanceKm: m.distanceKm || existingPastEntry.distanceKm || 0,
+            floors: m.floors || existingPastEntry.floors || 0,
+            sleep: (m.sleep && m.sleep !== '--') ? m.sleep : (existingPastEntry.sleep || "--"),
+            hr: m.hr || existingPastEntry.hr || 0
+          });
+        }
       }
 
       // Reset live metrics for the new day
@@ -345,11 +335,10 @@ export function checkDayRollover() {
         rep.floors = 0;
         rep.hr = 0;
         rep.sleep = "--";
+        rep.lastSync = null;
       }
 
       changed = true;
-    } else if (!m.date) {
-      m.date = todayIso;
     }
   });
 
@@ -387,32 +376,34 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
 
   const activeSteps = Number(activeMetrics.steps || 0);
   const entrySteps = Number(currentEntry.steps || 0);
-  const stepsVal = Math.max(activeSteps, entrySteps);
+  // For today: use live active steps directly so starting the day with 0 steps stays 0.
+  // For past days: use Math.max to preserve highest verified recorded value.
+  const stepsVal = isToday ? activeSteps : Math.max(activeSteps, entrySteps);
 
   const activeKcal = Number(activeMetrics.moveKcal || 0);
   const entryKcal = Number(currentEntry.moveKcal || 0);
-  const rawMoveKcal = Math.max(activeKcal, entryKcal);
+  const rawMoveKcal = isToday ? activeKcal : Math.max(activeKcal, entryKcal);
   const moveKcalVal = Math.max(rawMoveKcal, workoutTotalKcal);
 
   const activeExMin = Number(activeMetrics.exerciseMin || 0);
   const entryExMin = Number(currentEntry.exerciseMin || 0);
-  const rawExMin = Math.max(activeExMin, entryExMin);
+  const rawExMin = isToday ? activeExMin : Math.max(activeExMin, entryExMin);
   const exMinVal = Math.max(rawExMin, workoutTotalMin);
 
   const activeDist = Number(activeMetrics.distanceKm || 0);
   const entryDist = Number(currentEntry.distanceKm || 0);
-  const rawDist = Math.max(activeDist, entryDist);
+  const rawDist = isToday ? activeDist : Math.max(activeDist, entryDist);
   const distanceKmVal = rawDist > 0 ? parseFloat(rawDist.toFixed(2)) : parseFloat((stepsVal * 0.00075).toFixed(2));
 
   const activeFloors = Number(activeMetrics.floors || 0);
   const entryFloors = Number(currentEntry.floors || 0);
-  const floorsVal = Math.max(activeFloors, entryFloors);
+  const floorsVal = isToday ? activeFloors : Math.max(activeFloors, entryFloors);
 
   const sleepVal = (activeMetrics.sleep && activeMetrics.sleep !== '--') ? activeMetrics.sleep : (currentEntry.sleep || "--");
 
   const activeHr = Number(activeMetrics.hr || 0);
   const entryHr = Number(currentEntry.hr || 0);
-  const hrVal = Math.max(activeHr, entryHr);
+  const hrVal = isToday ? activeHr : Math.max(activeHr, entryHr);
 
   const hasData = stepsVal > 0 || moveKcalVal > 0 || exMinVal > 0 || isWorkoutDone || sessions.length > 0 || isRestDay;
 

@@ -338,8 +338,9 @@ export function tryResolveCompletedWorkout(author, endKcalOverride = null, endEx
     const finalDuration = deltaMin > 0 ? deltaMin : (elapsedMin >= 1 ? elapsedMin : 1);
     const finalKcal = deltaKcal > 0 ? deltaKcal : Math.round(finalDuration * 4.5);
     const sessionId = pState.startedAtTimetoken ? `diff_${author}_${pState.startedAtTimetoken}` : `diff_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const sig = `${finalDuration}_${finalKcal}_${timeStr}_${author}_${targetDay}`;
 
-    if (appState.deletedWorkoutSessionIds && appState.deletedWorkoutSessionIds.includes(sessionId)) {
+    if (appState.deletedWorkoutSessionIds && (appState.deletedWorkoutSessionIds.includes(sessionId) || appState.deletedWorkoutSessionIds.includes(sig))) {
       pState.flag = "N/A";
       pState.pending = false;
       return false;
@@ -379,6 +380,22 @@ export function tryResolveCompletedWorkout(author, endKcalOverride = null, endEx
   return false;
 }
 
+export function getMessageIsoDate(cloudData) {
+  if (!cloudData || typeof cloudData !== 'object') return getLocalIsoDate();
+  if (cloudData.date && /^\d{4}-\d{2}-\d{2}$/.test(String(cloudData.date).trim())) {
+    return String(cloudData.date).trim();
+  }
+  if (cloudData._timetoken) {
+    const d = new Date(parseInt(cloudData._timetoken, 10) / 10000);
+    if (!isNaN(d.getTime())) return getLocalIsoDate(d);
+  }
+  if (cloudData.timestamp) {
+    const d = new Date(cloudData.timestamp);
+    if (!isNaN(d.getTime())) return getLocalIsoDate(d);
+  }
+  return getLocalIsoDate();
+}
+
 export function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
   if (cloudData.status !== undefined && cloudData.channels !== undefined) return false;
@@ -394,6 +411,31 @@ export function mergeCloudDataIntoAppState(cloudData) {
   let hasChanges = false;
   const author = cloudData.authorProfileId || cloudData.masterProfileId || cloudData.author || cloudData.pid || (cloudData._channel && cloudData._channel.endsWith('_she') ? 'she' : (cloudData._channel && cloudData._channel.endsWith('_he') ? 'he' : 'he'));
   const authorName = author === 'he' ? 'Carlos' : author === 'she' ? 'Andrea' : author;
+  const todayIso = getLocalIsoDate();
+  const msgDateIso = getMessageIsoDate(cloudData);
+  const isFromToday = msgDateIso === todayIso;
+
+  // 1. Synchronize deleted workout session IDs
+  if (Array.isArray(cloudData.deletedWorkoutSessionIds) && cloudData.deletedWorkoutSessionIds.length > 0) {
+    if (!appState.deletedWorkoutSessionIds) appState.deletedWorkoutSessionIds = [];
+    cloudData.deletedWorkoutSessionIds.forEach(id => {
+      if (id && !appState.deletedWorkoutSessionIds.includes(id)) {
+        appState.deletedWorkoutSessionIds.push(id);
+        hasChanges = true;
+      }
+    });
+  }
+
+  // Helper to check if a session has been deleted
+  const isSessionDeleted = (s, dayName) => {
+    if (!s) return true;
+    if (!appState.deletedWorkoutSessionIds || appState.deletedWorkoutSessionIds.length === 0) return false;
+    const sig = `${s.durationMin}_${s.kcal}_${s.timestamp}_${author}_${dayName}`;
+    return (
+      (s.id && appState.deletedWorkoutSessionIds.includes(s.id)) ||
+      appState.deletedWorkoutSessionIds.includes(sig)
+    );
+  };
 
   if (!appState.appleWatch) appState.appleWatch = {};
   if (!appState.appleWatch.metrics) appState.appleWatch.metrics = JSON.parse(JSON.stringify(defaultWatchMetrics));
@@ -410,64 +452,103 @@ export function mergeCloudDataIntoAppState(cloudData) {
 
   if (!isWorkoutPayload || cloudData.steps !== undefined || cloudData.floors !== undefined || cloudData.sleep !== undefined) {
     const kcalVal = parseSmartMetricValue(cloudData.kcal ?? cloudData.moveKcal ?? cloudData.activeCalories ?? cloudData.calorias);
-    if (kcalVal !== null && !isWorkoutPayload) {
-      rep.moveKcal = kcalVal;
-      m.moveKcal = kcalVal;
-      replicaUpdated = true;
-    }
     const stepsVal = parseSmartMetricValue(cloudData.steps ?? cloudData.pasos);
-    if (stepsVal !== null) {
-      rep.steps = stepsVal;
-      m.steps = stepsVal;
-      rep.distanceKm = parseFloat((stepsVal * 0.00075).toFixed(2));
-      m.distanceKm = rep.distanceKm;
-      replicaUpdated = true;
-    }
     const exMinVal = parseSmartMetricValue(cloudData.exMin ?? cloudData.exerciseMin ?? cloudData.minutosEjercicio);
-    if (exMinVal !== null && !isWorkoutPayload) {
-      rep.exerciseMin = exMinVal;
-      m.exerciseMin = exMinVal;
-      replicaUpdated = true;
-    }
     const hrVal = parseSmartMetricValue(cloudData.hr ?? cloudData.avgHr ?? cloudData.heartRate ?? cloudData.pulsaciones);
-    if (hrVal !== null && !isWorkoutPayload) {
-      rep.hr = hrVal;
-      m.hr = hrVal;
-      replicaUpdated = true;
-    }
     const floorsVal = parseSmartMetricValue(cloudData.floors ?? cloudData.pisos);
-    if (floorsVal !== null) {
-      rep.floors = floorsVal;
-      m.floors = floorsVal;
-      replicaUpdated = true;
-    }
     const sleepVal = cloudData.sleep ?? cloudData.horasSueno;
-    if (sleepVal !== undefined && sleepVal !== null) {
-      const formattedSleep = formatSmartSleepValue(sleepVal);
-      rep.sleep = formattedSleep;
-      m.sleep = formattedSleep;
-      replicaUpdated = true;
+
+    if (isFromToday) {
+      // ONLY update live metrics (today's active display) if the message was sent TODAY
+      if (kcalVal !== null && !isWorkoutPayload) {
+        rep.moveKcal = kcalVal;
+        m.moveKcal = kcalVal;
+        replicaUpdated = true;
+      }
+      if (stepsVal !== null) {
+        rep.steps = stepsVal;
+        m.steps = stepsVal;
+        rep.distanceKm = parseFloat((stepsVal * 0.00075).toFixed(2));
+        m.distanceKm = rep.distanceKm;
+        replicaUpdated = true;
+      }
+      if (exMinVal !== null && !isWorkoutPayload) {
+        rep.exerciseMin = exMinVal;
+        m.exerciseMin = exMinVal;
+        replicaUpdated = true;
+      }
+      if (hrVal !== null && !isWorkoutPayload) {
+        rep.hr = hrVal;
+        m.hr = hrVal;
+        replicaUpdated = true;
+      }
+      if (floorsVal !== null) {
+        rep.floors = floorsVal;
+        m.floors = floorsVal;
+        replicaUpdated = true;
+      }
+      if (sleepVal !== undefined && sleepVal !== null) {
+        const formattedSleep = formatSmartSleepValue(sleepVal);
+        rep.sleep = formattedSleep;
+        m.sleep = formattedSleep;
+        replicaUpdated = true;
+      }
+
+      if (replicaUpdated) {
+        rep.lastSync = new Date().toISOString();
+        appState.appleWatch.lastGlobalSync = rep.lastSync;
+        m.date = todayIso;
+        recordDailySnapshot(author, todayIso, {
+          steps: m.steps,
+          moveKcal: m.moveKcal,
+          exerciseMin: m.exerciseMin,
+          distanceKm: m.distanceKm,
+          floors: m.floors,
+          sleep: m.sleep,
+          hr: m.hr
+        });
+        hasChanges = true;
+      }
+    } else {
+      // Past day message: DO NOT overwrite today's zero baseline!
+      // Instead, record it into the historical entry of that past date.
+      if (!appState.history) appState.history = { he: {}, she: {} };
+      if (!appState.history[author]) appState.history[author] = {};
+      const pastEntry = appState.history[author][msgDateIso] || {};
+
+      const pastSteps = stepsVal !== null ? Math.max(Number(pastEntry.steps || 0), stepsVal) : Number(pastEntry.steps || 0);
+      const pastKcal = kcalVal !== null ? Math.max(Number(pastEntry.moveKcal || 0), kcalVal) : Number(pastEntry.moveKcal || 0);
+      const pastExMin = exMinVal !== null ? Math.max(Number(pastEntry.exerciseMin || 0), exMinVal) : Number(pastEntry.exerciseMin || 0);
+      const pastHr = hrVal !== null ? Math.max(Number(pastEntry.hr || 0), hrVal) : Number(pastEntry.hr || 0);
+      const pastFloors = floorsVal !== null ? Math.max(Number(pastEntry.floors || 0), floorsVal) : Number(pastEntry.floors || 0);
+      const pastSleep = sleepVal ? formatSmartSleepValue(sleepVal) : (pastEntry.sleep || "--");
+      const pastDist = parseFloat((pastSteps * 0.00075).toFixed(2));
+
+      if (pastSteps > 0 || pastKcal > 0 || pastExMin > 0) {
+        appState.history[author][msgDateIso] = {
+          ...pastEntry,
+          steps: pastSteps,
+          moveKcal: pastKcal,
+          exerciseMin: pastExMin,
+          distanceKm: pastDist,
+          floors: pastFloors,
+          sleep: pastSleep,
+          hr: pastHr,
+          hasData: true,
+          lastUpdated: new Date().toISOString()
+        };
+        hasChanges = true;
+      }
     }
   }
 
-  if (replicaUpdated) {
-    rep.lastSync = new Date().toISOString();
-    appState.appleWatch.lastGlobalSync = rep.lastSync;
-    m.date = getLocalIsoDate();
-    recordDailySnapshot(author, getLocalIsoDate(), {
-      steps: m.steps,
-      moveKcal: m.moveKcal,
-      exerciseMin: m.exerciseMin,
-      distanceKm: m.distanceKm,
-      floors: m.floors,
-      sleep: m.sleep,
-      hr: m.hr
-    });
-    hasChanges = true;
-  }
-
+  // 2. Synchronize completedWorkouts
   if (cloudData.completedWorkouts?.[author]) {
+    if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[author]) appState.completedWorkouts[author] = {};
+    
+    const isAuthoritativeAuthorPush = cloudData.authorProfileId === author;
+
     for (const [day, dayObj] of Object.entries(cloudData.completedWorkouts[author])) {
       if (!dayObj) continue;
       if (!appState.completedWorkouts[author][day] || typeof appState.completedWorkouts[author][day] !== 'object') {
@@ -477,31 +558,50 @@ export function mergeCloudDataIntoAppState(cloudData) {
       if (!Array.isArray(localDay.sessions)) {
         localDay.sessions = localDay.watchData ? [localDay.watchData] : [];
       }
-      const incomingList = Array.isArray(dayObj.sessions) ? dayObj.sessions : (dayObj.watchData ? [dayObj.watchData] : []);
-      for (const inc of incomingList) {
-        if (!inc) continue;
-        const isDeleted = appState.deletedWorkoutSessionIds && (
-          (inc.id && appState.deletedWorkoutSessionIds.includes(inc.id)) ||
-          appState.deletedWorkoutSessionIds.includes(`${inc.durationMin}_${inc.kcal}_${inc.timestamp}_${author}_${day}`)
-        );
-        if (isDeleted) continue;
 
-        const already = localDay.sessions.some(s =>
-          (s.id && inc.id && s.id === inc.id) ||
-          (s.timestamp === inc.timestamp && s.durationMin === inc.durationMin && s.kcal === inc.kcal)
-        );
-        if (!already) {
-          localDay.sessions.push(inc);
+      const incomingRawList = Array.isArray(dayObj.sessions) ? dayObj.sessions : (dayObj.watchData ? [dayObj.watchData] : []);
+      const incomingValidList = incomingRawList.filter(inc => inc && !isSessionDeleted(inc, day));
+
+      if (isAuthoritativeAuthorPush) {
+        // Authoritative replacement from the workout owner: reconcile deletions
+        if (!dayObj.done || incomingValidList.length === 0) {
+          if (localDay.done || localDay.sessions.length > 0) {
+            localDay.done = false;
+            localDay.watchData = null;
+            localDay.sessions = [];
+            hasChanges = true;
+          }
+        } else {
+          localDay.sessions = incomingValidList;
+          localDay.done = true;
+          localDay.watchData = incomingValidList[incomingValidList.length - 1];
           hasChanges = true;
         }
-      }
-      if (dayObj.done || localDay.sessions.length > 0) {
-        localDay.done = true;
-        localDay.watchData = localDay.sessions[localDay.sessions.length - 1];
+      } else {
+        // Partial push: prune deleted sessions and append new ones
+        localDay.sessions = localDay.sessions.filter(s => !isSessionDeleted(s, day));
+        for (const inc of incomingValidList) {
+          const already = localDay.sessions.some(s =>
+            (s.id && inc.id && s.id === inc.id) ||
+            (s.timestamp === inc.timestamp && s.durationMin === inc.durationMin && s.kcal === inc.kcal)
+          );
+          if (!already) {
+            localDay.sessions.push(inc);
+            hasChanges = true;
+          }
+        }
+        if (localDay.sessions.length === 0) {
+          localDay.done = false;
+          localDay.watchData = null;
+        } else {
+          localDay.done = true;
+          localDay.watchData = localDay.sessions[localDay.sessions.length - 1];
+        }
       }
     }
   }
 
+  // 3. Pending workout flags
   if (!appState.appleWatch.pendingWorkout) appState.appleWatch.pendingWorkout = {};
   if (!appState.appleWatch.pendingWorkout[author]) {
     appState.appleWatch.pendingWorkout[author] = {
@@ -555,16 +655,26 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   }
 
+  // 4. Direct workout messages
   const isDirectWorkout = cloudData.workout === true || cloudData.workout === "true" || cloudData.syncWorkout === true || cloudData.syncWorkout === "true" || (cloudData.workoutKcal !== undefined && cloudData.workoutKcal !== "0" && cloudData.workoutKcal !== 0) || (cloudData.duration !== undefined && cloudData.duration !== "0" && cloudData.duration !== 0);
   if (isDirectWorkout) {
     let targetDay = cloudData.day;
     if (!targetDay || targetDay === "Hoy" || targetDay.toLowerCase() === "today" || targetDay.toLowerCase() === "hoy") {
-      targetDay = getTodayDayName();
+      targetDay = getDayNameFromDate(msgDateIso);
     }
     const durMin = parseSmartMetricValue(cloudData.duration ?? cloudData.workoutDuration ?? cloudData.dur) ?? 0;
     const wKcal = parseSmartMetricValue(cloudData.workoutKcal ?? cloudData.wKcal) ?? 0;
 
-    if (durMin < 1 && wKcal < 5) {
+    const sessionTimestamp = cloudData.timeStr || cloudData._timeStr || (cloudData.timestamp ? (cloudData.timestamp.includes(":") ? cloudData.timestamp : new Date(cloudData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs") : "10:00 hs");
+    const sessionId = cloudData._timetoken ? `pn_${cloudData._timetoken}` : (cloudData.id || `sess_${durMin}_${wKcal}_${sessionTimestamp}`);
+    const sig = `${durMin}_${wKcal}_${sessionTimestamp}_${author}_${targetDay}`;
+
+    const isDeleted = isSessionDeleted({ id: sessionId, durationMin: durMin, kcal: wKcal, timestamp: sessionTimestamp }, targetDay) ||
+                      (cloudData.id && appState.deletedWorkoutSessionIds?.includes(cloudData.id));
+
+    if (isDeleted) {
+      addSyncConsoleLog(`🗑️ Sesión descartada por estar eliminada previamente (${author.toUpperCase()} - ${targetDay}): ${sessionId}`, "info");
+    } else if (durMin < 1 && wKcal < 5) {
       pState.flag = "N/A";
       pState.pending = false;
       hasChanges = true;
@@ -578,9 +688,6 @@ export function mergeCloudDataIntoAppState(cloudData) {
       if (!Array.isArray(appState.completedWorkouts[author][targetDay].sessions)) {
         appState.completedWorkouts[author][targetDay].sessions = appState.completedWorkouts[author][targetDay].watchData ? [appState.completedWorkouts[author][targetDay].watchData] : [];
       }
-
-      const sessionTimestamp = cloudData.timeStr || cloudData._timeStr || (cloudData.timestamp ? (cloudData.timestamp.includes(":") ? cloudData.timestamp : new Date(cloudData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs") : "10:00 hs");
-      const sessionId = cloudData._timetoken ? `pn_${cloudData._timetoken}` : (cloudData.id || `sess_${durMin}_${wKcal}_${sessionTimestamp}`);
 
       const sessionObj = {
         id: sessionId,
@@ -624,30 +731,44 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   }
 
+  // 5. History synchronization with deleted workout filtering
   ['he', 'she'].forEach(pid => {
     if (cloudData.history?.[pid] && typeof cloudData.history[pid] === 'object') {
       if (!appState.history) appState.history = { he: {}, she: {} };
       if (!appState.history[pid]) appState.history[pid] = {};
+      const isAuthoritativeHistory = cloudData.authorProfileId === pid;
+
       Object.keys(cloudData.history[pid]).forEach(dateKey => {
         const cloudDay = cloudData.history[pid][dateKey];
         if (cloudDay && typeof cloudDay === 'object') {
           const localDay = appState.history[pid][dateKey] || {};
           
-          // Merge sessions list avoiding duplicates
-          const localSessions = Array.isArray(localDay.sessions) ? localDay.sessions : [];
-          const cloudSessions = Array.isArray(cloudDay.sessions) ? cloudDay.sessions : [];
-          const mergedSessions = [...localSessions];
-          for (const cs of cloudSessions) {
-            if (!cs) continue;
-            const exists = mergedSessions.some(ls =>
-              (ls.id && cs.id && ls.id === cs.id) ||
-              (ls.durationMin === cs.durationMin && ls.kcal === cs.kcal && ls.timestamp === cs.timestamp)
-            );
-            if (!exists) mergedSessions.push(cs);
+          const localSessions = (Array.isArray(localDay.sessions) ? localDay.sessions : []).filter(s => !isSessionDeleted(s, getDayNameFromDate(dateKey)));
+          const cloudSessions = (Array.isArray(cloudDay.sessions) ? cloudDay.sessions : []).filter(s => !isSessionDeleted(s, getDayNameFromDate(dateKey)));
+          
+          let mergedSessions = [];
+          if (isAuthoritativeHistory) {
+            mergedSessions = cloudSessions;
+          } else {
+            mergedSessions = [...localSessions];
+            for (const cs of cloudSessions) {
+              if (!cs) continue;
+              const exists = mergedSessions.some(ls =>
+                (ls.id && cs.id && ls.id === cs.id) ||
+                (ls.durationMin === cs.durationMin && ls.kcal === cs.kcal && ls.timestamp === cs.timestamp)
+              );
+              if (!exists) mergedSessions.push(cs);
+            }
           }
 
-          const mergedWorkouts = Array.from(new Set([...(localDay.completedWorkouts || []), ...(cloudDay.completedWorkouts || [])]));
-          const mergedSteps = Math.max(Number(localDay.steps || 0), Number(cloudDay.steps || 0));
+          let mergedWorkouts = [];
+          if (isAuthoritativeHistory) {
+            mergedWorkouts = Array.isArray(cloudDay.completedWorkouts) && mergedSessions.length > 0 ? cloudDay.completedWorkouts : (mergedSessions.length > 0 ? [getDayNameFromDate(dateKey)] : []);
+          } else {
+            mergedWorkouts = Array.from(new Set([...(localDay.completedWorkouts || []), ...(cloudDay.completedWorkouts || [])])).filter(() => mergedSessions.length > 0);
+          }
+
+          const mergedSteps = dateKey === todayIso ? Number(m.steps || 0) : Math.max(Number(localDay.steps || 0), Number(cloudDay.steps || 0));
           const mergedMoveKcal = Math.max(Number(localDay.moveKcal || 0), Number(cloudDay.moveKcal || 0));
           const mergedExMin = Math.max(Number(localDay.exerciseMin || 0), Number(cloudDay.exerciseMin || 0));
           const rawDist = Math.max(Number(localDay.distanceKm || 0), Number(cloudDay.distanceKm || 0));
@@ -760,6 +881,7 @@ export async function pushToCloud(showToast = false) {
       timestamp: new Date().toISOString(),
       appleWatch: { metrics: { [masterPid]: m } },
       completedWorkouts: { [masterPid]: appState.completedWorkouts?.[masterPid] || {} },
+      deletedWorkoutSessionIds: appState.deletedWorkoutSessionIds || [],
       history: appState.history || { he: {}, she: {} },
       activeNutritionWeekKey: appState.activeNutritionWeekKey,
       mealPlansLastModified: appState.mealPlansLastModified || Date.now(),

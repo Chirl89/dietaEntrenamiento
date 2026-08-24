@@ -103,7 +103,22 @@ export function toggleWorkoutDay(dayName) {
     const targetDate = getDateForDayNameInCurrentWeek(dayName);
 
     if (currentDone) {
+      const existingEntry = appState.completedWorkouts[profileId][dayName];
+      const existingSessions = (existingEntry && Array.isArray(existingEntry.sessions)) ? existingEntry.sessions : (existingEntry?.watchData ? [existingEntry.watchData] : []);
+      if (!appState.deletedWorkoutSessionIds) appState.deletedWorkoutSessionIds = [];
+      existingSessions.forEach(s => {
+        if (s) {
+          if (s.id) appState.deletedWorkoutSessionIds.push(s.id);
+          const sig = `${s.durationMin}_${s.kcal}_${s.timestamp}_${profileId}_${dayName}`;
+          appState.deletedWorkoutSessionIds.push(sig);
+        }
+      });
+
       appState.completedWorkouts[profileId][dayName] = { done: false, watchData: null, sessions: [] };
+      if (appState.appleWatch?.pendingWorkout?.[profileId]) {
+        appState.appleWatch.pendingWorkout[profileId].flag = "N/A";
+        appState.appleWatch.pendingWorkout[profileId].pending = false;
+      }
       recordDailySnapshot(profileId, targetDate, null, { isWorkoutDone: false, sessions: [], completedWorkouts: [] });
     } else {
       const schedule = WEEKLY_WORKOUT_SCHEDULE?.[dayName] || {};
@@ -129,6 +144,7 @@ export function toggleWorkoutDay(dayName) {
     saveState();
     if (window.renderAll) window.renderAll();
     showIosToast(!currentDone ? `🏋️ ¡Entrenamiento (${dayName}) completado!` : `Entrenamiento (${dayName}) desmarcado`, "fa-solid fa-dumbbell");
+    if (window.pushToCloud) window.pushToCloud(false);
   } catch(e) {
     console.error("Error toggling workout day:", e);
   }
@@ -143,12 +159,32 @@ export function resetWorkoutWeek() {
     if (!appState.completedWorkouts[profileId]) {
       appState.completedWorkouts[profileId] = {};
     }
+    if (!appState.deletedWorkoutSessionIds) appState.deletedWorkoutSessionIds = [];
+
     days.forEach(d => {
+      const existingEntry = appState.completedWorkouts[profileId][d];
+      const existingSessions = (existingEntry && Array.isArray(existingEntry.sessions)) ? existingEntry.sessions : (existingEntry?.watchData ? [existingEntry.watchData] : []);
+      existingSessions.forEach(s => {
+        if (s) {
+          if (s.id) appState.deletedWorkoutSessionIds.push(s.id);
+          const sig = `${s.durationMin}_${s.kcal}_${s.timestamp}_${profileId}_${d}`;
+          appState.deletedWorkoutSessionIds.push(sig);
+        }
+      });
       appState.completedWorkouts[profileId][d] = { done: false, watchData: null, sessions: [] };
+      const targetDate = getDateForDayNameInCurrentWeek(d);
+      recordDailySnapshot(profileId, targetDate, null, { isWorkoutDone: false, sessions: [], completedWorkouts: [] });
     });
+
+    if (appState.appleWatch?.pendingWorkout?.[profileId]) {
+      appState.appleWatch.pendingWorkout[profileId].flag = "N/A";
+      appState.appleWatch.pendingWorkout[profileId].pending = false;
+    }
+
     saveState();
     if (window.renderAll) window.renderAll();
     showIosToast("🔄 Semana de entrenamientos reiniciada", "fa-solid fa-rotate-left");
+    if (window.pushToCloud) window.pushToCloud(false);
   } catch(e) {
     console.error("Error resetting workout week:", e);
   }
