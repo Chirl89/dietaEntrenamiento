@@ -392,7 +392,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
   }
 
   let hasChanges = false;
-  const author = cloudData.authorProfileId || cloudData.masterProfileId || cloudData.author || cloudData.pid || 'he';
+  const author = cloudData.authorProfileId || cloudData.masterProfileId || cloudData.author || cloudData.pid || (cloudData._channel && cloudData._channel.endsWith('_she') ? 'she' : (cloudData._channel && cloudData._channel.endsWith('_he') ? 'he' : 'he'));
   const authorName = author === 'he' ? 'Carlos' : author === 'she' ? 'Andrea' : author;
 
   if (!appState.appleWatch) appState.appleWatch = {};
@@ -454,6 +454,15 @@ export function mergeCloudDataIntoAppState(cloudData) {
     rep.lastSync = new Date().toISOString();
     appState.appleWatch.lastGlobalSync = rep.lastSync;
     m.date = getLocalIsoDate();
+    recordDailySnapshot(author, getLocalIsoDate(), {
+      steps: m.steps,
+      moveKcal: m.moveKcal,
+      exerciseMin: m.exerciseMin,
+      distanceKm: m.distanceKm,
+      floors: m.floors,
+      sleep: m.sleep,
+      hr: m.hr
+    });
     hasChanges = true;
   }
 
@@ -638,19 +647,32 @@ export function mergeCloudDataIntoAppState(cloudData) {
           }
 
           const mergedWorkouts = Array.from(new Set([...(localDay.completedWorkouts || []), ...(cloudDay.completedWorkouts || [])]));
+          const mergedSteps = Math.max(Number(localDay.steps || 0), Number(cloudDay.steps || 0));
+          const mergedMoveKcal = Math.max(Number(localDay.moveKcal || 0), Number(cloudDay.moveKcal || 0));
+          const mergedExMin = Math.max(Number(localDay.exerciseMin || 0), Number(cloudDay.exerciseMin || 0));
+          const rawDist = Math.max(Number(localDay.distanceKm || 0), Number(cloudDay.distanceKm || 0));
+          const mergedDist = rawDist > 0 ? rawDist : parseFloat((mergedSteps * 0.00075).toFixed(2));
+          const mergedFloors = Math.max(Number(localDay.floors || 0), Number(cloudDay.floors || 0));
+          const mergedSleep = (cloudDay.sleep && cloudDay.sleep !== '--') ? cloudDay.sleep : (localDay.sleep || '--');
+          const mergedHr = Math.max(Number(localDay.hr || 0), Number(cloudDay.hr || 0));
+          const isRest = !!(localDay.isRestDay || cloudDay.isRestDay);
+          const hasData = (localDay.hasData || cloudDay.hasData || mergedSteps > 0 || mergedMoveKcal > 0 || mergedExMin > 0 || mergedWorkouts.length > 0 || mergedSessions.length > 0 || isRest);
 
           appState.history[pid][dateKey] = {
             ...localDay,
             ...cloudDay,
-            steps: Math.max(localDay.steps || 0, cloudDay.steps || 0),
-            moveKcal: Math.max(localDay.moveKcal || 0, cloudDay.moveKcal || 0),
-            exerciseMin: Math.max(localDay.exerciseMin || 0, cloudDay.exerciseMin || 0),
-            distanceKm: Math.max(localDay.distanceKm || 0, cloudDay.distanceKm || 0),
-            floors: Math.max(localDay.floors || 0, cloudDay.floors || 0),
-            sleep: (cloudDay.sleep && cloudDay.sleep !== '--') ? cloudDay.sleep : (localDay.sleep || '--'),
+            steps: mergedSteps,
+            moveKcal: mergedMoveKcal,
+            exerciseMin: mergedExMin,
+            distanceKm: mergedDist,
+            floors: mergedFloors,
+            sleep: mergedSleep,
+            hr: mergedHr,
+            isRestDay: isRest,
             completedWorkouts: mergedWorkouts,
             sessions: mergedSessions,
-            hasData: (localDay.hasData || cloudDay.hasData || (localDay.steps || 0) > 0 || (cloudDay.steps || 0) > 0 || mergedWorkouts.length > 0 || mergedSessions.length > 0)
+            hasData: hasData,
+            lastUpdated: new Date().toISOString()
           };
           hasChanges = true;
         }
@@ -738,7 +760,7 @@ export async function pushToCloud(showToast = false) {
       timestamp: new Date().toISOString(),
       appleWatch: { metrics: { [masterPid]: m } },
       completedWorkouts: { [masterPid]: appState.completedWorkouts?.[masterPid] || {} },
-      history: { [masterPid]: appState.history?.[masterPid] || {} },
+      history: appState.history || { he: {}, she: {} },
       activeNutritionWeekKey: appState.activeNutritionWeekKey,
       mealPlansLastModified: appState.mealPlansLastModified || Date.now(),
       weeklyMealPlans: appState.weeklyMealPlans || {},

@@ -120,22 +120,29 @@ export function triggerManualSync() {
 }
 
 export function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], hrArr = [], stepsArr = []) {
-  if (!Array.isArray(kcalArr) || kcalArr.length === 0) return;
+  const maxLen = Math.max(
+    Array.isArray(kcalArr) ? kcalArr.length : 0,
+    Array.isArray(stepsArr) ? stepsArr.length : 0,
+    Array.isArray(exMinArr) ? exMinArr.length : 0,
+    Array.isArray(hrArr) ? hrArr.length : 0
+  );
+  if (maxLen === 0) return;
   const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
   const today = new Date();
   const todayIdx = (today.getDay() + 6) % 7;
 
-  for (let i = 0; i < kcalArr.length; i++) {
-    const pastDayOffset = kcalArr.length - 1 - i;
+  for (let i = 0; i < maxLen; i++) {
+    const pastDayOffset = maxLen - 1 - i;
     const d = new Date(today);
     d.setDate(today.getDate() - pastDayOffset);
     const targetDateIso = getLocalIsoDate(d);
     const pastDayIdx = (todayIdx - pastDayOffset + 700) % 7;
     const targetDayName = days[pastDayIdx];
-    const kcalVal = kcalArr[i] || 0;
-    const durVal = (exMinArr && exMinArr[i]) ? exMinArr[i] : 0;
-    const hrVal = (hrArr && hrArr[i]) ? hrArr[i] : 0;
-    const stepsVal = (stepsArr && stepsArr[i]) ? stepsArr[i] : 0;
+    const kcalVal = (kcalArr && kcalArr[i]) ? Number(kcalArr[i]) : 0;
+    const durVal = (exMinArr && exMinArr[i]) ? Number(exMinArr[i]) : 0;
+    const hrVal = (hrArr && hrArr[i]) ? Number(hrArr[i]) : 0;
+    const stepsVal = (stepsArr && stepsArr[i]) ? Number(stepsArr[i]) : 0;
+    const distVal = parseFloat((stepsVal * 0.00075).toFixed(2));
 
     let isWorkout = false;
     let workoutSession = null;
@@ -168,6 +175,7 @@ export function syncWeeklyWatchHistory(profileId, kcalArr = [], exMinArr = [], h
       steps: stepsVal,
       moveKcal: kcalVal,
       exerciseMin: durVal,
+      distanceKm: distVal,
       hr: hrVal
     }, {
       isWorkoutDone: isWorkout,
@@ -557,7 +565,7 @@ export async function launchIosShortcutSync(isAuto = false, mode = 'health') {
   }, 300);
 }
 
-export function getShortcutUrl(mode = 'health') {
+export function getShortcutUrl(mode = 'health', customPid = null) {
   let baseUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
   try {
     if (window.location && window.location.href) {
@@ -568,10 +576,11 @@ export function getShortcutUrl(mode = 'health') {
     }
   } catch(e) {}
 
+  const pid = customPid || getMasterProfileId();
   if (mode === 'workout') {
-    return `${baseUrl}?syncWatch=true&workout=true&day=Hoy&workoutKcal=[Calorias_Entreno]&duration=[Duracion_Entreno]&avgHr=[FC_Entreno]&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Ritmo_Cardiaco]&dist=[Distancia]&exMin=[Minutos_Ejercicio]&floors=[Pisos_Subidos]&sleep=[Horas_Sueno]`;
+    return `${baseUrl}?syncWatch=true&profile=${pid}&workout=true&day=Hoy&workoutKcal=[Calorias_Entreno]&duration=[Duracion_Entreno]&avgHr=[FC_Entreno]&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Ritmo_Cardiaco]&dist=[Distancia]&exMin=[Minutos_Ejercicio]&floors=[Pisos_Subidos]&sleep=[Horas_Sueno]`;
   } else {
-    return `${baseUrl}?syncWatch=true&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Ritmo_Cardiaco]&dist=[Distancia]&exMin=[Minutos_Ejercicio]&floors=[Pisos_Subidos]&sleep=[Horas_Sueno]`;
+    return `${baseUrl}?syncWatch=true&profile=${pid}&kcal=[Calorias_Activas]&steps=[Pasos]&hr=[Ritmo_Cardiaco]&dist=[Distancia]&exMin=[Minutos_Ejercicio]&floors=[Pisos_Subidos]&sleep=[Horas_Sueno]`;
   }
 }
 

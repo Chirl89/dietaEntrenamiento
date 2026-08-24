@@ -93,7 +93,7 @@ export function deleteWorkoutSession(dayName, sessionIndex) {
 export function toggleWorkoutDay(dayName) {
   try {
     triggerHapticTouch();
-    const profileId = getMasterProfileId();
+    const profileId = appState.activeProfileId || getMasterProfileId();
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[profileId]) {
       appState.completedWorkouts[profileId] = {};
@@ -137,7 +137,7 @@ export function toggleWorkoutDay(dayName) {
 export function resetWorkoutWeek() {
   try {
     triggerHapticTouch();
-    const profileId = getMasterProfileId();
+    const profileId = appState.activeProfileId || getMasterProfileId();
     const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
     if (!appState.completedWorkouts) appState.completedWorkouts = {};
     if (!appState.completedWorkouts[profileId]) {

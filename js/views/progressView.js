@@ -66,14 +66,36 @@ export function getHistoricalData(profileId, daysCount = 7) {
       const workoutTotalKcal = todaySessions.reduce((acc, s) => acc + (Number(s.kcal) || 0), 0);
       const isWorkoutDone = (todayWorkoutObj && (todayWorkoutObj.done || todaySessions.length > 0)) || (entry?.completedWorkouts && entry.completedWorkouts.length > 0);
 
-      const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
-      const moveKcal = Math.max(Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0)), workoutTotalKcal);
-      const exerciseMin = Math.max(Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0)), workoutTotalMin);
-      const distanceKm = parseFloat(Number(currentLive.distanceKm !== undefined ? currentLive.distanceKm : (entry?.distanceKm || 0)).toFixed(2));
-      const floors = Number(currentLive.floors !== undefined ? currentLive.floors : (entry?.floors || 0));
-      const sleep = currentLive.sleep || entry?.sleep || "--";
-      const hr = Number(currentLive.hr !== undefined ? currentLive.hr : (entry?.hr || 0));
-      const isRestDay = entry?.isRestDay || false;
+      const liveSteps = Number(currentLive.steps || 0);
+      const entrySteps = Number(entry?.steps || 0);
+      const steps = Math.max(liveSteps, entrySteps);
+
+      const liveKcal = Number(currentLive.moveKcal || 0);
+      const entryKcal = Number(entry?.moveKcal || 0);
+      const rawMoveKcal = Math.max(liveKcal, entryKcal);
+      const moveKcal = Math.max(rawMoveKcal, workoutTotalKcal);
+
+      const liveExMin = Number(currentLive.exerciseMin || 0);
+      const entryExMin = Number(entry?.exerciseMin || 0);
+      const rawExMin = Math.max(liveExMin, entryExMin);
+      const exerciseMin = Math.max(rawExMin, workoutTotalMin);
+
+      const liveDist = Number(currentLive.distanceKm || 0);
+      const entryDist = Number(entry?.distanceKm || 0);
+      const rawDist = Math.max(liveDist, entryDist);
+      const distanceKm = rawDist > 0 ? parseFloat(rawDist.toFixed(2)) : parseFloat((steps * 0.00075).toFixed(2));
+
+      const liveFloors = Number(currentLive.floors || 0);
+      const entryFloors = Number(entry?.floors || 0);
+      const floors = Math.max(liveFloors, entryFloors);
+
+      const sleep = (currentLive.sleep && currentLive.sleep !== '--') ? currentLive.sleep : (entry?.sleep || "--");
+
+      const liveHr = Number(currentLive.hr || 0);
+      const entryHr = Number(entry?.hr || 0);
+      const hr = Math.max(liveHr, entryHr);
+
+      const isRestDay = !!(entry?.isRestDay);
       const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || isWorkoutDone || isRestDay;
 
       entry = {
@@ -89,21 +111,23 @@ export function getHistoricalData(profileId, daysCount = 7) {
         isRestDay: isRestDay,
         hasData: hasData
       };
-    } else if (entry && (entry.hasData || (entry.steps || 0) > 0 || (entry.moveKcal || 0) > 0 || (entry.sessions && entry.sessions.length > 0))) {
+    } else if (entry && (entry.hasData || (entry.steps || 0) > 0 || (entry.moveKcal || 0) > 0 || (entry.sessions && entry.sessions.length > 0) || entry.isRestDay)) {
       // Past day with real recorded data
       const pastSessions = Array.isArray(entry.sessions) ? entry.sessions : [];
       const pastWorkouts = Array.isArray(entry.completedWorkouts) ? entry.completedWorkouts : [];
+      const stepsVal = Number(entry.steps || 0);
+      const distVal = Number(entry.distanceKm || 0) > 0 ? Number(entry.distanceKm) : parseFloat((stepsVal * 0.00075).toFixed(2));
       entry = {
-        steps: Number(entry.steps || 0),
+        steps: stepsVal,
         moveKcal: Number(entry.moveKcal || 0),
         exerciseMin: Number(entry.exerciseMin || 0),
-        distanceKm: Number(entry.distanceKm || 0),
+        distanceKm: distVal,
         floors: Number(entry.floors || 0),
         sleep: entry.sleep || "--",
         hr: Number(entry.hr || 0),
         completedWorkouts: pastWorkouts,
         sessions: pastSessions,
-        isRestDay: entry.isRestDay || false,
+        isRestDay: !!entry.isRestDay,
         hasData: true
       };
     } else {
@@ -510,24 +534,30 @@ export function getChartAggregatedData(pid, period) {
       let monthDaysWithData = 0;
 
       const historyMap = appState.history?.[pid] || {};
+      const todayIso = getLocalIsoDate();
 
       for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
         const dateObj = new Date(y, m, dayNum);
         if (dateObj > now) continue;
         const dateIso = getLocalIsoDate(dateObj);
-        const entry = historyMap[dateIso];
-        if (entry && (entry.hasData || entry.steps > 0 || entry.moveKcal > 0)) {
+        let entry = historyMap[dateIso];
+
+        if (dateIso === todayIso) {
+          const live = appState.appleWatch?.metrics?.[pid];
+          const liveSteps = Number(live?.steps || 0);
+          const liveExMin = Number(live?.exerciseMin || 0);
+          const entrySteps = Number(entry?.steps || 0);
+          const entryExMin = Number(entry?.exerciseMin || 0);
+          const finalSteps = Math.max(liveSteps, entrySteps);
+          const finalExMin = Math.max(liveExMin, entryExMin);
+          if (finalSteps > 0 || finalExMin > 0) {
+            monthStepsSum += finalSteps;
+            monthExMinSum += finalExMin;
+            monthDaysWithData++;
+          }
+        } else if (entry && (entry.hasData || (entry.steps || 0) > 0 || (entry.moveKcal || 0) > 0 || (entry.exerciseMin || 0) > 0)) {
           monthStepsSum += (entry.steps || 0);
           monthExMinSum += (entry.exerciseMin || 0);
-          monthDaysWithData++;
-        }
-      }
-
-      if (y === currentYear && m === currentMonth) {
-        const live = appState.appleWatch?.metrics?.[pid];
-        if (live && live.steps > 0 && monthDaysWithData === 0) {
-          monthStepsSum += live.steps;
-          monthExMinSum += (live.exerciseMin || 0);
           monthDaysWithData++;
         }
       }
@@ -592,7 +622,8 @@ function renderPeriodOverview(period, pid, pName, container) {
   try {
     const stats = calculateProfileStats(pid, period);
     const chartAgg = getChartAggregatedData(pid, period);
-    const historyData = getHistoricalData(pid, 7);
+    const historyDaysCount = period === '30d' ? 30 : (period === '1y' ? 60 : (period === 'all' ? 90 : 7));
+    const historyData = getHistoricalData(pid, historyDaysCount);
 
     const periodLabels = {
       '7d': 'Últimos 7 Días',
@@ -716,8 +747,8 @@ function renderPeriodOverview(period, pid, pName, container) {
       <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
         <i class="fa-solid fa-list-ul" style="color: var(--accent-cyan);"></i> Detalle de Jornadas Recientes (${pName})
       </h3>
-      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-        ${historyData.slice(-7).reverse().map(d => {
+      <div style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 480px; overflow-y: auto;">
+        ${historyData.slice(-historyDaysCount).reverse().map(d => {
           const isGoalMet = d.hasData && d.steps >= 10000;
           const statusBadge = !d.hasData
             ? `<span style="font-size: 0.75rem; color: var(--text-muted); background: rgba(0, 0, 0, 0.04); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border-color);"><i class="fa-solid fa-minus"></i> Sin datos</span>`
@@ -932,16 +963,25 @@ function renderHeatmapView(pid, pName, container) {
       const dayName = getDayNameFromDate(d);
       if (isToday) {
         const isTodayWorkoutDone = !!appState.completedWorkouts?.[pid]?.[dayName]?.done;
-        const steps = Number(currentLive.steps !== undefined ? currentLive.steps : (entry?.steps || 0));
-        const moveKcal = Number(currentLive.moveKcal !== undefined ? currentLive.moveKcal : (entry?.moveKcal || 0));
-        const exerciseMin = Number(currentLive.exerciseMin !== undefined ? currentLive.exerciseMin : (entry?.exerciseMin || 0));
+        const liveSteps = Number(currentLive.steps || 0);
+        const entrySteps = Number(entry?.steps || 0);
+        const steps = Math.max(liveSteps, entrySteps);
+
+        const liveKcal = Number(currentLive.moveKcal || 0);
+        const entryKcal = Number(entry?.moveKcal || 0);
+        const moveKcal = Math.max(liveKcal, entryKcal);
+
+        const liveExMin = Number(currentLive.exerciseMin || 0);
+        const entryExMin = Number(entry?.exerciseMin || 0);
+        const exerciseMin = Math.max(liveExMin, entryExMin);
+
         const hasWorkouts = (entry?.completedWorkouts && entry.completedWorkouts.length > 0) || isTodayWorkoutDone;
-        const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts;
+        const hasData = steps > 0 || moveKcal > 0 || exerciseMin > 0 || hasWorkouts || !!entry?.isRestDay;
         entry = {
           steps,
           moveKcal,
           exerciseMin,
-          completedWorkouts: hasWorkouts ? [dayName] : [],
+          completedWorkouts: hasWorkouts ? [dayName] : (entry?.completedWorkouts || []),
           sessions: entry?.sessions || [],
           isRestDay: entry?.isRestDay || false,
           hasData: hasData

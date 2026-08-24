@@ -362,9 +362,10 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
   if (!appState.history[profileId]) appState.history[profileId] = {};
 
   const targetDate = dateIso ? getLocalIsoDate(dateIso) : getLocalIsoDate();
+  const isToday = targetDate === getLocalIsoDate();
   const targetDayName = getDayNameFromDate(targetDate);
   const currentEntry = appState.history[profileId][targetDate] || {};
-  const activeMetrics = metricsData || (targetDate === getLocalIsoDate() ? appState.appleWatch?.metrics?.[profileId] : null) || defaultWatchMetrics[profileId] || {};
+  const activeMetrics = metricsData || (isToday ? appState.appleWatch?.metrics?.[profileId] : null) || defaultWatchMetrics[profileId] || {};
   
   // Look up workouts for this day
   const dayWorkoutObj = appState.completedWorkouts?.[profileId]?.[targetDayName];
@@ -384,12 +385,34 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
 
   const isRestDay = options.isRestDay !== undefined ? options.isRestDay : (currentEntry.isRestDay || false);
 
-  const stepsVal = Number(activeMetrics.steps !== undefined ? activeMetrics.steps : (currentEntry.steps || 0));
-  const rawMoveKcal = Number(activeMetrics.moveKcal !== undefined ? activeMetrics.moveKcal : (currentEntry.moveKcal || 0));
+  const activeSteps = Number(activeMetrics.steps || 0);
+  const entrySteps = Number(currentEntry.steps || 0);
+  const stepsVal = Math.max(activeSteps, entrySteps);
+
+  const activeKcal = Number(activeMetrics.moveKcal || 0);
+  const entryKcal = Number(currentEntry.moveKcal || 0);
+  const rawMoveKcal = Math.max(activeKcal, entryKcal);
   const moveKcalVal = Math.max(rawMoveKcal, workoutTotalKcal);
 
-  const rawExMin = Number(activeMetrics.exerciseMin !== undefined ? activeMetrics.exerciseMin : (currentEntry.exerciseMin || 0));
+  const activeExMin = Number(activeMetrics.exerciseMin || 0);
+  const entryExMin = Number(currentEntry.exerciseMin || 0);
+  const rawExMin = Math.max(activeExMin, entryExMin);
   const exMinVal = Math.max(rawExMin, workoutTotalMin);
+
+  const activeDist = Number(activeMetrics.distanceKm || 0);
+  const entryDist = Number(currentEntry.distanceKm || 0);
+  const rawDist = Math.max(activeDist, entryDist);
+  const distanceKmVal = rawDist > 0 ? parseFloat(rawDist.toFixed(2)) : parseFloat((stepsVal * 0.00075).toFixed(2));
+
+  const activeFloors = Number(activeMetrics.floors || 0);
+  const entryFloors = Number(currentEntry.floors || 0);
+  const floorsVal = Math.max(activeFloors, entryFloors);
+
+  const sleepVal = (activeMetrics.sleep && activeMetrics.sleep !== '--') ? activeMetrics.sleep : (currentEntry.sleep || "--");
+
+  const activeHr = Number(activeMetrics.hr || 0);
+  const entryHr = Number(currentEntry.hr || 0);
+  const hrVal = Math.max(activeHr, entryHr);
 
   const hasData = stepsVal > 0 || moveKcalVal > 0 || exMinVal > 0 || isWorkoutDone || sessions.length > 0 || isRestDay;
 
@@ -407,10 +430,10 @@ export function recordDailySnapshot(profileId, dateIso = null, metricsData = nul
     steps: stepsVal,
     moveKcal: moveKcalVal,
     exerciseMin: exMinVal,
-    distanceKm: parseFloat(Number(activeMetrics.distanceKm !== undefined ? activeMetrics.distanceKm : (currentEntry.distanceKm || 0)).toFixed(2)),
-    floors: Number(activeMetrics.floors !== undefined ? activeMetrics.floors : (currentEntry.floors || 0)),
-    sleep: activeMetrics.sleep || currentEntry.sleep || "--",
-    hr: Number(activeMetrics.hr !== undefined ? activeMetrics.hr : (currentEntry.hr || 0)),
+    distanceKm: distanceKmVal,
+    floors: floorsVal,
+    sleep: sleepVal,
+    hr: hrVal,
     completedWorkouts: completedWorkoutsList,
     sessions: sessions,
     isRestDay: isRestDay,
@@ -598,14 +621,6 @@ export function loadSavedState() {
   if (!appState.history) appState.history = { he: {}, she: {} };
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
-
-  try {
-    const PURGE_FLAG_KEY = "FITDUO_PURGE_PAST_DATA_V2";
-    if (!localStorage.getItem(PURGE_FLAG_KEY)) {
-      purgeHistoricalDataExceptToday();
-      localStorage.setItem(PURGE_FLAG_KEY, "true");
-    }
-  } catch(e) {}
 
   try {
     checkDayRollover();
