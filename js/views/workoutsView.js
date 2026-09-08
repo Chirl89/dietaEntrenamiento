@@ -990,7 +990,341 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
     </svg>`;
   }
 
-  // Generic clean fallback for other safe exercises (split squat, yt raises, w extension, chair dips, cat cow, walking)
+  if (vType === "split_squat") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes splitSquatMotion {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(32px); }
+        }
+        .anim-split-squat { animation: splitSquatMotion 3.2s ease-in-out infinite; }
+      </style>
+      <line x1="25" y1="185" x2="295" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="85" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <!-- Support Chair -->
+      <line x1="85" y1="110" x2="85" y2="185" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+      <line x1="60" y1="140" x2="60" y2="185" stroke="#475569" stroke-width="3.5" stroke-linecap="round" />
+      <line x1="60" y1="140" x2="90" y2="140" stroke="#64748b" stroke-width="5" stroke-linecap="round" />
+      <text x="75" y="132" font-size="8" fill="#94a3b8" text-anchor="middle">Apoyo</text>
+
+      <!-- Moving Figure -->
+      <g class="anim-split-squat">
+        <!-- Legs -->
+        <!-- Front leg: hip ~ (155, 125) -> knee (135, 155) -> foot (135, 185) -->
+        <line x1="155" y1="125" x2="135" y2="155" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <line x1="135" y1="155" x2="135" y2="185" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <circle cx="135" cy="185" r="4" fill="#38bdf8" />
+
+        <!-- Rear leg: hip (155, 125) -> rear knee (185, 158) -> toe (210, 185) -->
+        <line x1="155" y1="125" x2="185" y2="158" stroke="#475569" stroke-width="5.5" stroke-linecap="round" />
+        <line x1="185" y1="158" x2="210" y2="185" stroke="#475569" stroke-width="5.5" stroke-linecap="round" />
+        <circle cx="210" cy="185" r="4" fill="#cbd5e1" />
+
+        <!-- Spine: 100% vertical protected! -->
+        <line x1="155" y1="125" x2="155" y2="68" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <circle cx="155" cy="48" r="13" fill="#38bdf8" />
+
+        <!-- Support arm reaching chair -->
+        <line x1="155" y1="78" x2="115" y2="95" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
+        <line x1="115" y1="95" x2="85" y2="112" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
+        <circle cx="85" cy="112" r="4" fill="#38bdf8" />
+      </g>
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Zancada Asistida en Silla • Piernas & Glúteos</text>
+      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Columna 100% erguida • Cero carga compresiva axial</text>
+    </svg>`;
+  }
+
+  if (vType === "chair_dips") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes dipMotion {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(28px); }
+        }
+        .anim-dip-body { animation: dipMotion 3s ease-in-out infinite; }
+      </style>
+      <line x1="25" y1="185" x2="295" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="85" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <!-- Fixed Chair -->
+      <rect x="75" y="125" width="45" height="10" rx="3" fill="#64748b" />
+      <line x1="80" y1="135" x2="80" y2="185" stroke="#475569" stroke-width="5" stroke-linecap="round" />
+      <line x1="115" y1="135" x2="115" y2="185" stroke="#475569" stroke-width="5" stroke-linecap="round" />
+      <line x1="75" y1="80" x2="75" y2="135" stroke="#64748b" stroke-width="5" stroke-linecap="round" />
+
+      <!-- Dipping Body -->
+      <g class="anim-dip-body">
+        <!-- Spine: stays right by the chair edge -->
+        <line x1="135" y1="132" x2="135" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <circle cx="135" cy="58" r="13" fill="#38bdf8" />
+
+        <!-- Arms on chair seat -->
+        <line x1="135" y1="85" x2="115" y2="105" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+        <line x1="115" y1="105" x2="115" y2="125" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+        <circle cx="115" cy="125" r="4.5" fill="#f43f5e" />
+
+        <!-- Legs out front with feet planted -->
+        <line x1="135" y1="132" x2="175" y2="148" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+        <line x1="175" y1="148" x2="195" y2="185" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+        <circle cx="195" cy="185" r="4" fill="#38bdf8" />
+      </g>
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Fondos Suaves en Silla • Tríceps & Estabilidad</text>
+      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Espalda pegada al borde • Rango controlado sin forzar hombros</text>
+    </svg>`;
+  }
+
+  if (vType === "yt_raises" || vType === "w_extension") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes ytArmCycle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-22px); }
+        }
+        @keyframes scapulaPulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; filter: drop-shadow(0 0 8px #f59e0b); }
+        }
+        .anim-yt-arms { animation: ytArmCycle 2.8s ease-in-out infinite; }
+        .anim-scapula-glow { animation: scapulaPulse 2.8s ease-in-out infinite; }
+      </style>
+      <rect x="30" y="165" width="260" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+      
+      <!-- Towel under forehead -->
+      <rect x="65" y="152" width="30" height="12" rx="4" fill="#38bdf8" opacity="0.6" />
+      <text x="80" y="148" font-size="7.5" fill="#94a3b8" text-anchor="middle">Toalla</text>
+
+      <!-- Body flat on mat (zero spinal load!) -->
+      <circle cx="80" cy="142" r="12" fill="#38bdf8" />
+      <line x1="92" y1="148" x2="235" y2="162" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <line x1="235" y1="162" x2="275" y2="164" stroke="#64748b" stroke-width="5" stroke-linecap="round" />
+
+      <!-- Scapular activation indicator -->
+      <g class="anim-scapula-glow">
+        <path d="M 130 144 Q 145 136 160 144" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+        <text x="145" y="132" font-size="8" fill="#f59e0b" font-weight="bold" text-anchor="middle">RETRACCIÓN ESCAPULAR</text>
+      </g>
+
+      <!-- Arms lifting up (Y / W raise) -->
+      <g class="anim-yt-arms">
+        <line x1="120" y1="148" x2="90" y2="120" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
+        <circle cx="90" cy="120" r="4.5" fill="#f43f5e" />
+        <line x1="120" y1="148" x2="150" y2="115" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
+        <circle cx="150" cy="115" r="4.5" fill="#f43f5e" />
+        <text x="90" y="108" font-size="10" fill="#38bdf8" font-weight="bold" text-anchor="middle">Y</text>
+        <text x="150" y="103" font-size="10" fill="#38bdf8" font-weight="bold" text-anchor="middle">T</text>
+      </g>
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Elevaciones Y-T en Suelo • Romboides & Trapecio Medio</text>
+      <text x="160" y="48" font-size="9.5" fill="#94a3b8" text-anchor="middle">Frente apoyada en toalla • Cero hiperextensión lumbar o cervical</text>
+    </svg>`;
+  }
+
+  if (vType === "step_up") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes stepLift {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-28px); }
+        }
+        .anim-step-body { animation: stepLift 3s ease-in-out infinite; }
+      </style>
+      <line x1="25" y1="185" x2="295" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="85" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <!-- Step Platform -->
+      <rect x="140" y="150" width="70" height="35" rx="4" fill="#475569" stroke="#64748b" stroke-width="2" />
+      <text x="175" y="172" font-size="9" fill="#94a3b8" font-weight="bold" text-anchor="middle">PELDAÑO</text>
+
+      <!-- Step Body -->
+      <g class="anim-step-body">
+        <line x1="120" y1="130" x2="120" y2="72" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <circle cx="120" cy="52" r="13" fill="#38bdf8" />
+
+        <!-- Arms -->
+        <line x1="120" y1="80" x2="105" y2="110" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
+        <line x1="120" y1="80" x2="135" y2="110" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
+
+        <!-- Stepping Leg on Platform -->
+        <line x1="120" y1="130" x2="155" y2="135" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <line x1="155" y1="135" x2="165" y2="150" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <circle cx="165" cy="150" r="4.5" fill="#38bdf8" />
+
+        <!-- Trailing Leg -->
+        <line x1="120" y1="130" x2="115" y2="160" stroke="#475569" stroke-width="5.5" stroke-linecap="round" />
+        <line x1="115" y1="160" x2="112" y2="185" stroke="#475569" stroke-width="5.5" stroke-linecap="round" />
+        <circle cx="112" cy="185" r="4" fill="#cbd5e1" />
+      </g>
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Step-Up en Peldaño o Silla Baja • Glúteo Mayor & Estabilidad</text>
+      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Empuje exclusivo desde el talón superior • Tronco erguido</text>
+    </svg>`;
+  }
+
+  if (vType === "walking") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes walkLegCycleL {
+          0%, 100% { transform: rotate(-24deg); }
+          50% { transform: rotate(24deg); }
+        }
+        @keyframes walkLegCycleR {
+          0%, 100% { transform: rotate(24deg); }
+          50% { transform: rotate(-24deg); }
+        }
+        @keyframes walkArmCycleL {
+          0%, 100% { transform: rotate(26deg); }
+          50% { transform: rotate(-26deg); }
+        }
+        @keyframes walkArmCycleR {
+          0%, 100% { transform: rotate(-26deg); }
+          50% { transform: rotate(26deg); }
+        }
+        @keyframes walkBobbing {
+          0%, 50%, 100% { transform: translateY(0); }
+          25%, 75% { transform: translateY(-4px); }
+        }
+        .anim-walk-body { animation: walkBobbing 1.2s ease-in-out infinite; }
+        .anim-leg-l { animation: walkLegCycleL 1.2s ease-in-out infinite; transform-origin: 135px 135px; }
+        .anim-leg-r { animation: walkLegCycleR 1.2s ease-in-out infinite; transform-origin: 135px 135px; }
+        .anim-arm-l { animation: walkArmCycleL 1.2s ease-in-out infinite; transform-origin: 135px 82px; }
+        .anim-arm-r { animation: walkArmCycleR 1.2s ease-in-out infinite; transform-origin: 135px 82px; }
+      </style>
+      <line x1="20" y1="185" x2="300" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="140" cy="186" rx="95" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <g class="anim-walk-body">
+        <!-- Walking Figure Carlos -->
+        <line x1="135" y1="135" x2="135" y2="76" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <circle cx="135" cy="56" r="13" fill="#38bdf8" />
+
+        <!-- Back Leg -->
+        <g class="anim-leg-r">
+          <line x1="135" y1="135" x2="145" y2="160" stroke="#475569" stroke-width="5.5" stroke-linecap="round" />
+          <line x1="145" y1="160" x2="155" y2="185" stroke="#475569" stroke-width="5" stroke-linecap="round" />
+          <circle cx="155" cy="185" r="3.5" fill="#94a3b8" />
+        </g>
+
+        <!-- Front Leg -->
+        <g class="anim-leg-l">
+          <line x1="135" y1="135" x2="125" y2="160" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+          <line x1="125" y1="160" x2="115" y2="185" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+          <circle cx="115" cy="185" r="4" fill="#38bdf8" />
+        </g>
+
+        <!-- Back Arm -->
+        <g class="anim-arm-r">
+          <line x1="135" y1="82" x2="155" y2="112" stroke="#475569" stroke-width="4.5" stroke-linecap="round" />
+        </g>
+
+        <!-- Front Arm + Dog Leash -->
+        <g class="anim-arm-l">
+          <line x1="135" y1="82" x2="115" y2="110" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
+          <circle cx="115" cy="110" r="3.5" fill="#38bdf8" />
+          <!-- Leash to Boo -->
+          <path d="M 115 110 Q 170 135 220 155" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3 2" />
+        </g>
+      </g>
+
+      <!-- Boo the Dog Walking -->
+      <g>
+        <!-- Body -->
+        <ellipse cx="230" cy="162" rx="16" ry="10" fill="#f59e0b" />
+        <circle cx="244" cy="154" r="8" fill="#f59e0b" />
+        <polygon points="246,146 250,152 244,152" fill="#b45309" />
+        <circle cx="248" cy="154" r="1.5" fill="#0f172a" />
+        <!-- Tail -->
+        <path d="M 215 160 Q 210 150 216 145" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+        <!-- Legs -->
+        <line x1="222" y1="170" x2="220" y2="185" stroke="#b45309" stroke-width="3" stroke-linecap="round" />
+        <line x1="228" y1="170" x2="230" y2="185" stroke="#b45309" stroke-width="3" stroke-linecap="round" />
+        <line x1="238" y1="170" x2="236" y2="185" stroke="#b45309" stroke-width="3" stroke-linecap="round" />
+        <line x1="244" y1="170" x2="246" y2="185" stroke="#b45309" stroke-width="3" stroke-linecap="round" />
+        <text x="230" y="142" font-size="8" fill="#f59e0b" font-weight="bold" text-anchor="middle">Boo 🐾</text>
+      </g>
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Caminata Activa Ligera / Media con Boo</text>
+      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Movimiento natural de brazos • Descompresión del disco intervertebral</text>
+    </svg>`;
+  }
+
+  if (vType === "cat_cow") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes catCowWave {
+          0%, 100% { transform: scaleY(1); }
+          50% { transform: scaleY(-0.6); }
+        }
+        .anim-cat-cow { animation: catCowWave 4s ease-in-out infinite; transform-origin: 160px 125px; }
+      </style>
+      <rect x="40" y="168" width="240" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+
+      <!-- Limbs on floor (Quadrupedia) -->
+      <line x1="115" y1="125" x2="115" y2="168" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="205" y1="125" x2="205" y2="168" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+
+      <!-- Head -->
+      <circle cx="95" cy="120" r="12" fill="#38bdf8" />
+
+      <!-- Animated gentle thoracic spine wave (cat / cow) -->
+      <g class="anim-cat-cow">
+        <path d="M 115 125 Q 160 102 205 125" fill="none" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      </g>
+
+      <text x="160" y="30" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Gato-Camello Controlado • Movilidad Torácica (McGill)</text>
+      <text x="160" y="50" font-size="9.5" fill="#94a3b8" text-anchor="middle">Onda suave de columna sin forzar los rangos finales de flexión</text>
+      <text x="160" y="196" font-size="9" fill="#38bdf8" text-anchor="middle">Sincroniza con respiración lenta: Inhala al bajar suave, exhala al redondear</text>
+    </svg>`;
+  }
+
+  if (vType === "stretching") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes stretchBreathe {
+          0%, 100% { transform: scale(1); opacity: 0.85; }
+          50% { transform: scale(1.06); opacity: 1; filter: drop-shadow(0 0 10px #10b981); }
+        }
+        .anim-stretch { animation: stretchBreathe 3.6s ease-in-out infinite; transform-origin: 160px 110px; }
+      </style>
+      <rect x="40" y="172" width="240" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+
+      <!-- Calming circles -->
+      <circle cx="160" cy="110" r="55" fill="none" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.4" />
+      <circle cx="160" cy="110" r="75" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="6 6" opacity="0.25" />
+
+      <g class="anim-stretch">
+        <!-- Figure in Child's pose / gentle relaxation -->
+        <circle cx="110" cy="155" r="12" fill="#38bdf8" />
+        <path d="M 120 158 Q 160 140 195 160" fill="none" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <line x1="195" y1="160" x2="225" y2="172" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+
+        <!-- Arms outstretched relaxed -->
+        <line x1="120" y1="160" x2="80" y2="172" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
+        <circle cx="80" cy="172" r="4" fill="#38bdf8" />
+      </g>
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Descompresión Axial & Estiramiento Relajante</text>
+      <text x="160" y="48" font-size="9.5" fill="#38bdf8" text-anchor="middle">Respiración diafragmática profunda • 0 impacto, relajación para D7-D11</text>
+    </svg>`;
+  }
+
+  // Generic clean fallback for other safe exercises
   return `
   <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
     ${commonDefs}
@@ -1165,8 +1499,8 @@ export function openExerciseGuideModal(dayName, exerciseIdx) {
 
       ${mistakesHtml}
 
-      <button type="button" class="btn-primary" onclick="if(window.closeExerciseGuideModal) window.closeExerciseGuideModal();" style="width: 100%; margin-top: 0.5rem; background: var(--gradient-primary); padding: 0.75rem;">
-        <i class="fa-solid fa-check"></i> ¡Entendido! Listo para entrenar
+      <button type="button" class="btn-guide-modal-close" onclick="if(window.closeExerciseGuideModal) window.closeExerciseGuideModal();">
+        <i class="fa-solid fa-arrow-left"></i> Volver a la Rutina
       </button>
     `;
 
