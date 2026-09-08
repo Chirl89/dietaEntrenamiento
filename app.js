@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Orchestrator (v0.22.1)
+ * FitDuo & Collie Coach - Main Application Orchestrator (v0.22.2)
  * Clean modular entry point. Coordinates state, routing, Apple Watch telemetry, cloud sync, and views.
  */
 
@@ -213,7 +213,9 @@ import {
   simulateBluetoothPairing,
   getExerciseVisualSvg,
   openExerciseGuideModal,
-  closeExerciseGuideModal
+  closeExerciseGuideModal,
+  getEquipmentIcon,
+  renderEquipmentIcons
 } from './js/views/workoutsView.js';
 
 import {
@@ -435,6 +437,8 @@ const globalBindings = {
   getExerciseVisualSvg,
   openExerciseGuideModal,
   closeExerciseGuideModal,
+  getEquipmentIcon,
+  renderEquipmentIcons,
 
   selectBooDayFromDropdown,
   toggleBooTask,
@@ -530,7 +534,7 @@ export function initApp() {
       }
     });
 
-    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.22.1)");
+    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.22.2)");
   } catch(e) {
     console.error("Critical error during FitDuo initialization:", e);
   }

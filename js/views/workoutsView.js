@@ -1034,30 +1034,38 @@ export function normalizeEquipmentList(equipment) {
   return [];
 }
 
-export function renderEquipmentBadgePills(equipment) {
+export function getEquipmentIcon(item) {
+  const lower = (item || "").toLowerCase();
+  if (lower.includes('ring') || lower.includes('switch')) {
+    return { icon: '🎯', label: 'Ring-Con (Switch)', color: 'rgba(244, 63, 94, 0.15)', border: 'rgba(244, 63, 94, 0.35)' };
+  }
+  if (lower.includes('banda') || lower.includes('elast') || lower.includes('goma')) {
+    return { icon: '🎗️', label: 'Banda Elástica', color: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.35)' };
+  }
+  if (lower.includes('silla') || lower.includes('chair') || lower.includes('banco')) {
+    return { icon: '🪑', label: 'Silla', color: 'rgba(139, 92, 246, 0.15)', border: 'rgba(139, 92, 246, 0.35)' };
+  }
+  if (lower.includes('esterilla') || lower.includes('mat') || lower.includes('suelo')) {
+    return { icon: '🧘', label: 'Esterilla', color: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.35)' };
+  }
+  if (lower.includes('arnés') || lower.includes('arnes') || lower.includes('correa') || lower.includes('frisbee') || lower.includes('juguete')) {
+    return { icon: '🐾', label: 'Paseo con Boo', color: 'rgba(234, 179, 8, 0.15)', border: 'rgba(234, 179, 8, 0.35)' };
+  }
+  if (lower.includes('zapatilla') || lower.includes('trail') || lower.includes('calzado')) {
+    return { icon: '👟', label: 'Calzado Deportivo', color: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.35)' };
+  }
+  return { icon: '🧍', label: item || 'Corporal', color: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.35)' };
+}
+
+export function renderEquipmentIcons(equipment) {
   const list = normalizeEquipmentList(equipment);
   if (list.length === 0) {
-    return '<span class="exercise-tag-pill pill-body"><i class="fa-solid fa-child"></i> Corporal</span>';
+    return `<span class="equip-icon-badge" title="Corporal">🧍</span>`;
   }
   return list.map(item => {
-    const lower = item.toLowerCase();
-    if (lower.includes('ring') || lower.includes('switch')) {
-      return '<span class="exercise-tag-pill pill-ring"><i class="fa-solid fa-circle-notch"></i> Ring-Con</span>';
-    }
-    if (lower.includes('banda') || lower.includes('elast') || lower.includes('goma')) {
-      return '<span class="exercise-tag-pill pill-band"><i class="fa-solid fa-ribbon"></i> Banda Elástica</span>';
-    }
-    if (lower.includes('silla') || lower.includes('chair') || lower.includes('banco')) {
-      return '<span class="exercise-tag-pill pill-chair"><i class="fa-solid fa-chair"></i> Silla</span>';
-    }
-    if (lower.includes('esterilla') || lower.includes('mat') || lower.includes('suelo')) {
-      return '<span class="exercise-tag-pill pill-mat"><i class="fa-solid fa-rug"></i> Esterilla</span>';
-    }
-    if (lower.includes('arnés') || lower.includes('arnes') || lower.includes('correa') || lower.includes('frisbee') || lower.includes('juguete')) {
-      return `<span class="exercise-tag-pill pill-chair"><i class="fa-solid fa-paw"></i> ${item}</span>`;
-    }
-    return `<span class="exercise-tag-pill pill-body"><i class="fa-solid fa-toolbox"></i> ${item}</span>`;
-  }).join('');
+    const info = getEquipmentIcon(item);
+    return `<span class="equip-icon-badge" title="${info.label}" style="background:${info.color}; border:1px solid ${info.border};">${info.icon}</span>`;
+  }).join(' ');
 }
 
 export function openExerciseGuideModal(dayName, exerciseIdx) {
@@ -1081,7 +1089,6 @@ export function openExerciseGuideModal(dayName, exerciseIdx) {
     if (subEl) subEl.innerText = `${dayName} • ${targetMusclesStr}`;
 
     const visualSvg = getExerciseVisualSvg(ex.visualType, ex.name);
-    const equipmentHtml = renderEquipmentBadgePills(ex.equipment);
 
     const stepsList = Array.isArray(ex.steps) && ex.steps.length > 0
       ? ex.steps
@@ -1097,7 +1104,7 @@ export function openExerciseGuideModal(dayName, exerciseIdx) {
     const mistakesList = Array.isArray(ex.commonMistakes) ? ex.commonMistakes : [];
     const mistakesHtml = mistakesList.length > 0 ? `
       <div class="guide-section-title" style="color: #f87171; margin-top: 0.9rem;">
-        <i class="fa-solid fa-triangle-exclamation"></i> Errores a Evitar (Peligro para la Hernia):
+        <i class="fa-solid fa-triangle-exclamation"></i> Errores a Evitar:
       </div>
       <div class="guide-mistakes-list">
         ${mistakesList.map(m => `
@@ -1128,20 +1135,22 @@ export function openExerciseGuideModal(dayName, exerciseIdx) {
           <span class="guide-spec-val">${ex.rest || '60s'}</span>
         </div>
         <div class="guide-spec-box">
-          <span class="guide-spec-lbl">Seguridad</span>
-          <span class="guide-spec-val" style="color: #34d399;"><i class="fa-solid fa-shield-halved"></i> D7-D11</span>
+          <span class="guide-spec-lbl">Material</span>
+          <span class="guide-spec-val" style="font-size: 1.05rem;">${renderEquipmentIcons(ex.equipment)}</span>
         </div>
       </div>
 
-      <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.9rem;">
-        ${equipmentHtml}
-        <span class="exercise-tag-pill pill-spine"><i class="fa-solid fa-shield-heart"></i> Columna Segura</span>
+      <div class="guide-technique-card">
+        <div class="guide-technique-title">
+          <i class="fa-solid fa-lightbulb" style="color:var(--accent-amber);"></i> Técnica & Ejecución:
+        </div>
+        <p class="guide-technique-text">${ex.technique || 'Mantén la postura erguida y ejecuta el movimiento con control.'}</p>
       </div>
 
       ${ex.spinalSafetyNote ? `
         <div class="guide-spine-safety">
           <div class="guide-spine-safety-header">
-            <i class="fa-solid fa-shield-heart"></i> Biomecánica Segura para Hernias D7-D8 & D10-D11:
+            <i class="fa-solid fa-shield-heart"></i> Biomecánica Segura para Columna:
           </div>
           <p>${ex.spinalSafetyNote}</p>
         </div>
@@ -1196,86 +1205,62 @@ export function renderExerciseTableView() {
     const card = document.createElement("div");
     card.className = "glass-card";
 
-    const rows = (routine.exercises || []).map((ex, exIdx) => `
-      <tr>
-        <td>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;">
-            <div>
-              <div class="exercise-name" style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">${ex.name}</div>
-              <div class="exercise-tech" style="margin-top: 3px;"><i class="fa-solid fa-lightbulb" style="color:var(--accent-amber);"></i> ${ex.technique || ''}</div>
-            </div>
-            <button type="button" class="btn-exercise-guide" onclick="if(window.openExerciseGuideModal) window.openExerciseGuideModal('${activeDay}', ${exIdx});" title="Ver técnica y animación visual">
-              <i class="fa-solid fa-play"></i> Guía & Animación
-            </button>
+    const exerciseCardsHtml = (routine.exercises || []).map((ex, exIdx) => `
+      <div class="exercise-clean-card">
+        <div class="exercise-clean-header-row">
+          <div class="exercise-clean-title-group">
+            <span class="exercise-clean-name">${ex.name}</span>
+            <span class="exercise-clean-icons">${renderEquipmentIcons(ex.equipment)}</span>
           </div>
-
-          <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.45rem;">
-            ${renderEquipmentBadgePills(ex.equipment)}
-            <span class="exercise-tag-pill pill-spine"><i class="fa-solid fa-shield-halved"></i> Seguro D7-D11</span>
-          </div>
-
-          ${ex.spinalSafetyNote ? `
-            <div style="margin-top: 0.45rem; font-size: 0.78rem; color: #34d399; background: rgba(16, 185, 129, 0.08); padding: 0.35rem 0.6rem; border-radius: 6px; border-left: 3px solid #10b981;">
-              <i class="fa-solid fa-shield-heart"></i> <strong>Rehabilitación:</strong> ${ex.spinalSafetyNote}
-            </div>
-          ` : ''}
-        </td>
-        <td><strong style="color:var(--accent-emerald);">${ex.sets}</strong> ${ex.sets === 1 ? 'serie' : 'series'}</td>
-        <td><strong>${formatExerciseReps(ex.reps)}</strong></td>
-        <td><span style="color:var(--text-muted);">${ex.rest}</span></td>
-      </tr>
-    `).join("");
-
-    const equipText = Array.isArray(routine.equipment)
-      ? routine.equipment.join(", ")
-      : (typeof routine.equipment === 'string' ? routine.equipment : 'Material doméstico');
-
-    card.innerHTML = `
-      <div class="rehab-banner-carlos" style="background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.08)); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 0.85rem 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div style="font-size: 1.6rem; color: #34d399;"><i class="fa-solid fa-file-medical"></i></div>
-          <div>
-            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-main);">Rutina Adaptada para Carlos (Hernias D7-D8 y D10-D11)</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted);">Hipertrofia de espalda & core sin compresión discal • Material: <strong>Banda Elástica + Ring-Con Switch</strong></div>
-          </div>
+          <button type="button" class="btn-exercise-guide-compact" onclick="if(window.openExerciseGuideModal) window.openExerciseGuideModal('${activeDay}', ${exIdx});" title="Ver técnica y animación visual">
+            <i class="fa-solid fa-play"></i> Guía
+          </button>
         </div>
-        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-          <span class="exercise-tag-pill pill-ring"><i class="fa-solid fa-circle-notch"></i> Ring-Con</span>
-          <span class="exercise-tag-pill pill-band"><i class="fa-solid fa-ribbon"></i> Banda Elástica</span>
-          <span class="exercise-tag-pill pill-spine"><i class="fa-solid fa-shield-halved"></i> 100% Anti-Compresión</span>
+
+        <div class="exercise-clean-specs-row">
+          <div class="exercise-spec-item">
+            <span class="spec-lbl">SERIES</span>
+            <span class="spec-val" style="color: var(--accent-emerald);">${ex.sets}</span>
+          </div>
+          <div class="exercise-spec-item">
+            <span class="spec-lbl">REPETICIONES</span>
+            <span class="spec-val">${formatExerciseReps(ex.reps)}</span>
+          </div>
+          <div class="exercise-spec-item">
+            <span class="spec-lbl">DESCANSO</span>
+            <span class="spec-val" style="color: var(--text-muted);">${ex.rest || '60s'}</span>
+          </div>
         </div>
       </div>
+    `).join("");
 
-      <div class="routine-header-box" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+    card.innerHTML = `
+      <div class="routine-header-box" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.85rem;">
         <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">${routine.title} (${activeDay})</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Enfoque: ${routine.focus || ''}</p>
+          <h2 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-main); margin-bottom: 2px;">
+            ${routine.title}
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">
+            ${routine.focus || ''}
+          </p>
         </div>
         <div>
           <span class="routine-badge"><i class="fa-solid fa-clock"></i> ${routine.duration} min</span>
         </div>
       </div>
 
-      <div style="display:flex; flex-wrap: wrap; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+      <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-color);">
         <span><i class="fa-solid fa-location-dot" style="color:var(--accent-cyan);"></i> ${routine.location || 'En casa'}</span>
-        <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i> ${routine.type || 'Fuerza & Rehabilitación'}</span>
-        <span><i class="fa-solid fa-toolbox" style="color:var(--accent-violet);"></i> Equipamiento: ${equipText}</span>
+        <span>•</span>
+        <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i> ${routine.type || 'Fuerza'}</span>
+        <span>•</span>
+        <span style="display:inline-flex; align-items:center; gap:0.35rem;">
+          <i class="fa-solid fa-toolbox" style="color:var(--accent-amber);"></i> ${renderEquipmentIcons(routine.equipment)}
+        </span>
       </div>
 
-      <div class="table-responsive">
-        <table class="exercise-table">
-          <thead>
-            <tr>
-              <th>Ejercicio & Técnica</th>
-              <th>Series</th>
-              <th>Repeticiones / Tiempo</th>
-              <th>Descanso</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
+      <div class="exercise-clean-list">
+        ${exerciseCardsHtml}
       </div>
     `;
 

@@ -4572,3 +4572,154 @@ body[data-profile="she"] .btn-save-calibration {
   font-weight: 700;
   color: var(--text-main);
 }
+
+/* ===================================================
+   CLEAN COMPACT EXERCISE CARDS (MOBILE-OPTIMIZED)
+   =================================================== */
+.exercise-clean-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.exercise-clean-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.exercise-clean-card:hover {
+  border-color: rgba(6, 182, 212, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.exercise-clean-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.exercise-clean-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-clean-name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.94rem;
+  color: var(--text-main);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.equip-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  flex-shrink: 0;
+  cursor: help;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.equip-icon-badge:hover {
+  transform: scale(1.15);
+}
+
+.btn-exercise-guide-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.18), rgba(16, 185, 129, 0.22));
+  border: 1px solid rgba(6, 182, 212, 0.45);
+  color: var(--accent-cyan);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.38rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.btn-exercise-guide-compact:hover {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.35), rgba(16, 185, 129, 0.4));
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.exercise-clean-specs-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-sizing: border-box;
+}
+
+.exercise-spec-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.exercise-spec-item .spec-lbl {
+  font-size: 0.64rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.exercise-spec-item .spec-val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 1px;
+}
+
+.guide-technique-card {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.guide-technique-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #fbbf24;
+  margin-bottom: 0.35rem;
+}
+
+.guide-technique-text {
+  font-size: 0.84rem;
+  color: var(--text-main);
+  line-height: 1.45;
+  margin: 0;
+}
