@@ -1690,9 +1690,50 @@ export function openExerciseGuideModal(dayName, exerciseIdx, customProfileId) {
       </div>
     ` : "";
 
+    const mediaHtml = ex.gifUrl ? `
+      <div class="exercise-media-wrapper">
+        <div class="exercise-media-player">
+          <div class="exercise-media-badge">
+            <i class="fa-solid fa-person-running"></i> Demostración Anatómica 3D
+          </div>
+          <img src="${ex.gifUrl}" alt="${ex.name}" class="exercise-real-gif" loading="eager" onerror="this.style.display='none'; const fb = document.getElementById('exercise-fallback-svg'); if (fb) fb.style.display='flex';" />
+          <div id="exercise-fallback-svg" class="exercise-fallback-stage" style="display:none;">
+            ${visualSvg}
+          </div>
+        </div>
+        <div class="exercise-phases-timeline">
+          <div class="exercise-phase-chip">
+            <span class="phase-badge">1</span>
+            <div class="phase-info">
+              <strong>Inicio & Postura</strong>
+              <p>Alineación articular y respiración</p>
+            </div>
+          </div>
+          <div class="exercise-phase-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          <div class="exercise-phase-chip">
+            <span class="phase-badge">2</span>
+            <div class="phase-info">
+              <strong>Fase Concéntrica</strong>
+              <p>Fuerza controlada sin inercia</p>
+            </div>
+          </div>
+          <div class="exercise-phase-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          <div class="exercise-phase-chip">
+            <span class="phase-badge">3</span>
+            <div class="phase-info">
+              <strong>Pico & Retorno</strong>
+              <p>1s contracción y descenso lento</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ` : `
+      ${visualSvg}
+    `;
+
     bodyEl.innerHTML = `
       <div class="exercise-visual-stage">
-        ${visualSvg}
+        ${mediaHtml}
       </div>
 
       <div class="guide-specs-bar">

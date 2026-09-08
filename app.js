@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Orchestrator (v0.22.4)
+ * FitDuo & Collie Coach - Main Application Orchestrator (v0.22.5)
  * Clean modular entry point. Coordinates state, routing, Apple Watch telemetry, cloud sync, and views.
  */
 
@@ -534,7 +534,7 @@ export function initApp() {
       }
     });
 
-    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.22.4)");
+    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.22.5)");
   } catch(e) {
     console.error("Critical error during FitDuo initialization:", e);
   }
