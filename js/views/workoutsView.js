@@ -1022,6 +1022,44 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
   </svg>`;
 }
 
+export function normalizeEquipmentList(equipment) {
+  if (!equipment) return [];
+  if (Array.isArray(equipment)) return equipment;
+  if (typeof equipment === 'string') {
+    return equipment
+      .split(/[+,/]/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+export function renderEquipmentBadgePills(equipment) {
+  const list = normalizeEquipmentList(equipment);
+  if (list.length === 0) {
+    return '<span class="exercise-tag-pill pill-body"><i class="fa-solid fa-child"></i> Corporal</span>';
+  }
+  return list.map(item => {
+    const lower = item.toLowerCase();
+    if (lower.includes('ring') || lower.includes('switch')) {
+      return '<span class="exercise-tag-pill pill-ring"><i class="fa-solid fa-circle-notch"></i> Ring-Con</span>';
+    }
+    if (lower.includes('banda') || lower.includes('elast') || lower.includes('goma')) {
+      return '<span class="exercise-tag-pill pill-band"><i class="fa-solid fa-ribbon"></i> Banda Elástica</span>';
+    }
+    if (lower.includes('silla') || lower.includes('chair') || lower.includes('banco')) {
+      return '<span class="exercise-tag-pill pill-chair"><i class="fa-solid fa-chair"></i> Silla</span>';
+    }
+    if (lower.includes('esterilla') || lower.includes('mat') || lower.includes('suelo')) {
+      return '<span class="exercise-tag-pill pill-mat"><i class="fa-solid fa-rug"></i> Esterilla</span>';
+    }
+    if (lower.includes('arnés') || lower.includes('arnes') || lower.includes('correa') || lower.includes('frisbee') || lower.includes('juguete')) {
+      return `<span class="exercise-tag-pill pill-chair"><i class="fa-solid fa-paw"></i> ${item}</span>`;
+    }
+    return `<span class="exercise-tag-pill pill-body"><i class="fa-solid fa-toolbox"></i> ${item}</span>`;
+  }).join('');
+}
+
 export function openExerciseGuideModal(dayName, exerciseIdx) {
   try {
     triggerHapticTouch();
@@ -1036,33 +1074,33 @@ export function openExerciseGuideModal(dayName, exerciseIdx) {
     const subEl = document.getElementById("exercise-guide-modal-subtitle");
     const bodyEl = document.getElementById("exercise-guide-modal-body");
 
-    if (titleEl) titleEl.innerText = ex.name;
-    if (subEl) subEl.innerText = `${dayName} • ${ex.targetMuscles || 'Fortalecimiento de Espalda & Core'}`;
+    if (titleEl) titleEl.innerText = ex.name || "Ejercicio";
+    const targetMusclesStr = Array.isArray(ex.targetMuscles)
+      ? ex.targetMuscles.join(", ")
+      : (ex.targetMuscles || 'Fortalecimiento de Espalda & Core');
+    if (subEl) subEl.innerText = `${dayName} • ${targetMusclesStr}`;
 
     const visualSvg = getExerciseVisualSvg(ex.visualType, ex.name);
+    const equipmentHtml = renderEquipmentBadgePills(ex.equipment);
 
-    let equipmentHtml = "";
-    (ex.equipment || []).forEach(eq => {
-      if (eq === 'ring_con_switch') equipmentHtml += '<span class="exercise-tag-pill pill-ring"><i class="fa-solid fa-circle-notch"></i> Ring-Con Switch</span>';
-      else if (eq === 'elastic_bands') equipmentHtml += '<span class="exercise-tag-pill pill-band"><i class="fa-solid fa-ribbon"></i> Banda Elástica</span>';
-      else if (eq === 'chair') equipmentHtml += '<span class="exercise-tag-pill pill-chair"><i class="fa-solid fa-chair"></i> Silla</span>';
-      else if (eq === 'mat') equipmentHtml += '<span class="exercise-tag-pill pill-mat"><i class="fa-solid fa-rug"></i> Esterilla</span>';
-      else equipmentHtml += '<span class="exercise-tag-pill pill-body"><i class="fa-solid fa-child"></i> Corporal</span>';
-    });
+    const stepsList = Array.isArray(ex.steps) && ex.steps.length > 0
+      ? ex.steps
+      : [ex.technique || 'Ejecuta el movimiento con control y columna neutra.'];
 
-    const stepsHtml = (ex.steps || [ex.technique]).map((step, idx) => `
+    const stepsHtml = stepsList.map((step, idx) => `
       <div class="guide-step-card">
         <div class="guide-step-num">${idx + 1}</div>
         <div class="guide-step-text">${step}</div>
       </div>
     `).join("");
 
-    const mistakesHtml = (ex.commonMistakes || []).length > 0 ? `
+    const mistakesList = Array.isArray(ex.commonMistakes) ? ex.commonMistakes : [];
+    const mistakesHtml = mistakesList.length > 0 ? `
       <div class="guide-section-title" style="color: #f87171; margin-top: 0.9rem;">
         <i class="fa-solid fa-triangle-exclamation"></i> Errores a Evitar (Peligro para la Hernia):
       </div>
       <div class="guide-mistakes-list">
-        ${ex.commonMistakes.map(m => `
+        ${mistakesList.map(m => `
           <div class="guide-mistake-card">
             <i class="fa-solid fa-circle-xmark" style="color: #ef4444; margin-top: 2px;"></i>
             <span>${m}</span>
@@ -1172,13 +1210,7 @@ export function renderExerciseTableView() {
           </div>
 
           <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.45rem;">
-            ${(ex.equipment || []).map(eq => {
-              if (eq === 'ring_con_switch') return '<span class="exercise-tag-pill pill-ring"><i class="fa-solid fa-circle-notch"></i> Ring-Con</span>';
-              if (eq === 'elastic_bands') return '<span class="exercise-tag-pill pill-band"><i class="fa-solid fa-ribbon"></i> Banda Elástica</span>';
-              if (eq === 'chair') return '<span class="exercise-tag-pill pill-chair"><i class="fa-solid fa-chair"></i> Silla</span>';
-              if (eq === 'mat') return '<span class="exercise-tag-pill pill-mat"><i class="fa-solid fa-rug"></i> Esterilla</span>';
-              return '<span class="exercise-tag-pill pill-body"><i class="fa-solid fa-child"></i> Corporal</span>';
-            }).join('')}
+            ${renderEquipmentBadgePills(ex.equipment)}
             <span class="exercise-tag-pill pill-spine"><i class="fa-solid fa-shield-halved"></i> Seguro D7-D11</span>
           </div>
 
@@ -1193,6 +1225,10 @@ export function renderExerciseTableView() {
         <td><span style="color:var(--text-muted);">${ex.rest}</span></td>
       </tr>
     `).join("");
+
+    const equipText = Array.isArray(routine.equipment)
+      ? routine.equipment.join(", ")
+      : (typeof routine.equipment === 'string' ? routine.equipment : 'Material doméstico');
 
     card.innerHTML = `
       <div class="rehab-banner-carlos" style="background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.08)); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 0.85rem 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
@@ -1223,7 +1259,7 @@ export function renderExerciseTableView() {
       <div style="display:flex; flex-wrap: wrap; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.85rem;">
         <span><i class="fa-solid fa-location-dot" style="color:var(--accent-cyan);"></i> ${routine.location || 'En casa'}</span>
         <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i> ${routine.type || 'Fuerza & Rehabilitación'}</span>
-        <span><i class="fa-solid fa-toolbox" style="color:var(--accent-violet);"></i> Equipamiento: ${(routine.equipment || []).join(", ")}</span>
+        <span><i class="fa-solid fa-toolbox" style="color:var(--accent-violet);"></i> Equipamiento: ${equipText}</span>
       </div>
 
       <div class="table-responsive">
