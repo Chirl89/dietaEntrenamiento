@@ -9,7 +9,7 @@ export const INITIAL_PROFILES = {
     activityLevel: 1.2, // Sedentario / 10 años sin hacer ejercicio
     goal: "recomp", // Recomposición corporal: Perder grasa y ganar músculo progresivamente
     experience: "beginner",
-    equipment: ["bodyweight", "chair", "mat", "light_bands"],
+    equipment: ["bodyweight", "chair", "mat", "elastic_bands", "ring_con_switch"],
     targetCalories: 2150,
     protein: 155, // g
     carbs: 210, // g
@@ -17,7 +17,7 @@ export const INITIAL_PROFILES = {
     moveGoal: 600, // kcal objetivo anillo movimiento
     exerciseGoal: 30, // min objetivo anillo ejercicio
     stepsGoal: 10000, // pasos objetivo anillo de pasos/de pie
-    notes: "Adaptación progresiva después de 10 años. Enfoque en postura, movilidad y fuerza básica sin sobrecargar articulaciones."
+    notes: "Rehabilitación e hipertrofia segura (RM: hernias dorsales D7-D8 y D10-D11 con deshidratación discal). Equipamiento: Banda elástica + Ring-Con Switch + esterilla y silla. Cero carga axial en columna, columna neutra, faja core 360° y retracción escapular sin impacto."
   },
   she: {
     id: "she",
@@ -716,18 +716,108 @@ export const RECIPES_DATABASE = [
 export const WEEKLY_WORKOUT_SCHEDULE = {
   Lunes: {
     day: "Lunes",
-    title: "Lunes: Fuerza Cuerpo Completo (Carlos & Andrea Juntos)",
+    title: "Lunes: Fuerza Base & Cadena Posterior Segura (Carlos & Andrea)",
     duration: 35,
     location: "En casa",
-    equipment: ["Silla", "Esterilla", "Banda elástica (opcional)"],
-    type: "Acondicionamiento Total",
-    focus: "Postura, movilidad articular y fuerza base",
+    equipment: ["Ring-Con (Switch)", "Banda Elástica", "Silla", "Esterilla"],
+    type: "Rehabilitación & Hipertrofia Segura",
+    focus: "Postura erguida, retracción escapular y core profundo sin carga axial",
     exercises: [
-      { name: "Sentadilla Asistida con Silla", sets: 3, reps: "10 - 12", rest: "60 seg", technique: "Mantén el pecho erguido. Toca el asiento con el glúteo sin dejarte caer y sube apretando talones." },
-      { name: "Flexiones Inclinadas en Pared o Sofá", sets: 3, reps: "8 - 12", rest: "60 seg", technique: "Cuerpo alineado como una tabla. Codos a 45 grados respecto al torso." },
-      { name: "Remo con Banda o Toalla en Puerta", sets: 3, reps: "12 - 15", rest: "45 seg", technique: "Tira llevando codos hacia atrás y junta escápulas. Clave para postura de escritorio." },
-      { name: "Puente de Glúteo en Suelo", sets: 3, reps: "12 - 15", rest: "45 seg", technique: "Eleva la cadera activando glúteos 2 segundos arriba antes de bajar." },
-      { name: "Plancha Abdominal Modificada", sets: 3, reps: "25 - 30 seg", rest: "45 seg", technique: "Activa el abdomen como si fueras a recibir un empujón." }
+      {
+        id: "sentadilla_ring_con",
+        name: "Sentadilla a Silla con Contrapeso de Ring-Con",
+        sets: 3,
+        reps: "10 - 12",
+        rest: "60 seg",
+        equipment: "Ring-Con + Silla",
+        technique: "Sujeta el Ring-Con extendido al frente mientras bajas a rozar la silla. Activa cuádriceps y glúteos manteniendo el torso recto.",
+        spinalSafetyNote: "Sujetar el Ring-Con extendido al frente crea un contrapeso reflejo que erige la caja torácica e impide flexionar la espalda dorsal, reduciendo a cero la presión sobre los discos D7-D8 y D10-D11.",
+        targetMuscles: ["Cuádriceps", "Glúteos", "Erectores Espinales", "Core"],
+        steps: [
+          "Colócate de pie delante de una silla estable, con los pies a la anchura de hombros y puntas ligeramente hacia afuera.",
+          "Sujeta el Ring-Con con ambas manos y extiéndelo horizontalmente al frente a la altura del esternón.",
+          "Inhala, empuja la cadera hacia atrás y flexiona las rodillas hasta rozar ligeramente el asiento de la silla sin dejarte caer.",
+          "Exhala y empuja fuerte contra el suelo a través de los talones para volver arriba, manteniendo el Ring-Con firme al frente."
+        ],
+        commonMistakes: ["Dejarse caer bruscamente en el asiento", "Bajar los brazos perdiendo la línea del Ring-Con", "Meter las rodillas hacia adentro"],
+        visualType: "ring_squat"
+      },
+      {
+        id: "remo_banda_puerta",
+        name: "Remo Horizontal con Banda Elástica (Retracción Escapular)",
+        sets: 3,
+        reps: "12 - 15",
+        rest: "45 seg",
+        equipment: "Banda Elástica",
+        technique: "Ancla la banda en una puerta o pásala por los pies. Tira de los codos pegados al cuerpo y junta fuerte las escápulas 1 segundo.",
+        spinalSafetyNote: "Al tirar de forma horizontal sin peso muerto, fortaleces el dorsal ancho y los romboides sin compresión axial vertical. Quita tensión de la hipercifosis dorsal.",
+        targetMuscles: ["Dorsal Ancho", "Romboides", "Trapecio Medio", "Bíceps"],
+        steps: [
+          "Ancla la banda a media altura (en el pomo de una puerta cerrada) o siéntate en el suelo con las piernas estiradas pasando la banda por las plantas de los pies.",
+          "Agarra los extremos con ambas manos, mantén la espalda totalmente erguida y los hombros relajados abajo.",
+          "Exhala y tira de los codos hacia atrás pegados a las costillas, juntando escápulas como si atraparas una moneda entre los omóplatos.",
+          "Mantén la contracción máxima 1 segundo y regresa despacio inhalando."
+        ],
+        commonMistakes: ["Encoger los hombros hacia las orejas", "Balancear el torso hacia atrás para hacer fuerza de inercia", "Separar los codos excesivamente"],
+        visualType: "band_row"
+      },
+      {
+        id: "traccion_escapular_ring",
+        name: "Tracción Escapular Isométrica con Ring-Con",
+        sets: 3,
+        reps: "8 - 10 (3s aguante)",
+        rest: "45 seg",
+        equipment: "Ring-Con (Switch)",
+        technique: "Sujeta el aro frente al pecho e intenta tirar hacia afuera separándolo. Aguanta 3 segundos de tensión máxima apretando omóplatos.",
+        spinalSafetyNote: "La contracción isométrica pura activa los romboides y trapecio inferior sin mover la articulación vertebral. Es el ejercicio más seguro para despertar la espalda dorsal debilitada.",
+        targetMuscles: ["Romboides", "Trapecio Medio/Inferior", "Deltoides Posterior"],
+        steps: [
+          "Colócate de pie o sentado erguido en una silla con los pies bien apoyados.",
+          "Agarra los agarres acolchados del Ring-Con por dentro o firme por los laterales frente a tu pecho, codos a 90°.",
+          "Tira hacia afuera con ambas manos como si quisieras ensanchar el aro, apretando las escápulas hacia abajo y atrás.",
+          "Mantén la tensión continua durante 3 segundos respirando con normalidad, luego relaja 2 segundos antes de la siguiente repetición."
+        ],
+        commonMistakes: ["Aguantar la respiración en apnea", "Elevar los hombros", "Curvar la zona dorsal"],
+        visualType: "ring_pull"
+      },
+      {
+        id: "puente_gluteo_ring",
+        name: "Puente de Glúteo con Compresión de Ring-Con",
+        sets: 3,
+        reps: "12 - 15 (2s arriba)",
+        rest: "45 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Tumbado boca arriba, coloca el Ring-Con entre las rodillas. Aprieta suavemente hacia adentro mientras elevas la cadera activando glúteos.",
+        spinalSafetyNote: "Al estar tumbado, la carga axial en la columna es CERO. Activa la musculatura lumbo-pélvica y glúteos, descargando por completo los discos dorsales.",
+        targetMuscles: ["Glúteo Mayor", "Aductores", "Isquiotibiales", "Suelo Pélvico"],
+        steps: [
+          "Túmbate boca arriba en la esterilla, flexiona las rodillas y apoya los pies firmes en el suelo a la anchura de caderas.",
+          "Coloca el Ring-Con entre tus rodillas y aplica una suave presión continua hacia adentro.",
+          "Exhala, aprieta los glúteos y eleva la cadera hacia el techo hasta formar una línea recta perfecta desde las rodillas hasta los hombros.",
+          "Mantén la posición 2 segundos apretando glúteos y el aro, y desciende vértebra a vértebra de forma controlada."
+        ],
+        commonMistakes: ["Arquear en exceso la espalda lumbar en la parte alta", "Empujar con el cuello en vez de con los talones", "Dejar de presionar el Ring-Con"],
+        visualType: "ring_glute_bridge"
+      },
+      {
+        id: "deadbug_neutro",
+        name: "Deadbug (Bicho Muerto con Columna Neutra)",
+        sets: 3,
+        reps: "8 - 10 alternadas",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "Espalda baja y dorsal pegada a la esterilla. Extiende brazo derecho y pierna izquierda despacio sin despegar la columna del suelo.",
+        spinalSafetyNote: "Entrena la faja abdominal profunda (transverso) en posición de reposo absoluto para los discos D7-D8 y D10-D11. Cero flexión del cuello ni del torso.",
+        targetMuscles: ["Transverso Abdominal", "Oblicuos", "Coordinación Core"],
+        steps: [
+          "Túmbate boca arriba con brazos apuntando al techo y rodillas flexionadas a 90 grados sobre las caderas.",
+          "Pega toda la espalda al suelo, activando el abdomen como si cerraras una cremallera.",
+          "Inhala y baja lentamente el brazo derecho hacia atrás y la pierna izquierda hacia adelante rozando el suelo.",
+          "Exhala activando el ombligo hacia dentro para regresar al centro. Alterna con el brazo y pierna opuestos."
+        ],
+        commonMistakes: ["Arquear la espalda y separarla del suelo", "Moverse rápido por inercia", "Tensar el cuello o la mandíbula"],
+        visualType: "deadbug"
+      }
     ]
   },
   Martes: {
@@ -739,10 +829,62 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     type: "Cardio Intervalar + Agilidad",
     focus: "Resistencia aeróbica y quema de calorías compartida",
     exercises: [
-      { name: "Paseo Activo de Calentamiento", sets: 1, reps: "10 min", rest: "-", technique: "Caminata ligera a ritmo vivo mientras Boo olfatea." },
-      { name: "Fartlek: 1 min trote + 2 min caminata (5 Bloques)", sets: 5, reps: "3 min c/u", rest: "En caminata", technique: "Intercala trote suave a ritmo conversacional con caminata rápida." },
-      { name: "Circuito en Banco: Step-ups + Flexiones en banco", sets: 3, reps: "10 / pierna + 10 flex", rest: "45 seg", technique: "Carlos y Andrea se turnan mientras Boo realiza 'Sentado/Quieto'." },
-      { name: "Estiramientos de Enfriamiento", sets: 1, reps: "5 min", rest: "-", technique: "Estiramiento de cuádriceps, gemelos e isquios." }
+      {
+        id: "martes_calentamiento",
+        name: "Paseo Activo de Calentamiento",
+        sets: 1,
+        reps: "10 min",
+        rest: "-",
+        equipment: "Zapatillas",
+        technique: "Caminata ligera a ritmo vivo mientras Boo olfatea.",
+        spinalSafetyNote: "Caminar a ritmo vivo estimula el bombeo de líquido sinovial y nutre los discos intervertebrales por difusión.",
+        targetMuscles: ["Sistema Cardiovascular", "Gemelos", "Glúteos"],
+        steps: ["Inicia el paseo a ritmo moderado manteniendo la mirada al frente y los hombros relajados."],
+        commonMistakes: ["Llevar la cabeza agachada mirando el móvil"],
+        visualType: "walking"
+      },
+      {
+        id: "martes_fartlek",
+        name: "Fartlek: 1 min trote suave + 2 min caminata (5 Bloques)",
+        sets: 5,
+        reps: "3 min c/u",
+        rest: "En caminata",
+        equipment: "Zapatillas + Arnés",
+        technique: "Intercala trote suave a ritmo conversacional con caminata rápida.",
+        spinalSafetyNote: "El trote debe ser con paso corto y pisada de mediopié para amortiguar el impacto sobre la columna.",
+        targetMuscles: ["Capacidad Cardiopulmonar", "Piernas"],
+        steps: ["Trote suave y relajado durante 60 segundos.", "Continúa con 120 segundos de caminata rápida recuperadora."],
+        commonMistakes: ["Correr dando zancadas demasiado largas talonando fuerte"],
+        visualType: "walking"
+      },
+      {
+        id: "martes_stepups",
+        name: "Circuito en Banco: Step-ups + Flexiones en banco",
+        sets: 3,
+        reps: "10 / pierna + 10 flex",
+        rest: "45 seg",
+        equipment: "Banco de Parque",
+        technique: "Carlos y Andrea se turnan mientras Boo realiza 'Sentado/Quieto'.",
+        spinalSafetyNote: "El banco elevado permite hacer flexiones con menor palanca, manteniendo la columna 100% recta y sin arqueos.",
+        targetMuscles: ["Cuádriceps", "Pectoral", "Core"],
+        steps: ["Sube con el talón apoyado en el banco.", "Haz flexiones apoyando las manos en el respaldo o asiento."],
+        commonMistakes: ["Dejar caer la cadera en las flexiones"],
+        visualType: "step_up"
+      },
+      {
+        id: "martes_estiramientos",
+        name: "Estiramientos de Enfriamiento",
+        sets: 1,
+        reps: "5 min",
+        rest: "-",
+        equipment: "Esterilla / Banco",
+        technique: "Estiramiento de cuádriceps, gemelos e isquios.",
+        spinalSafetyNote: "Estira manteniendo la columna erguida, flexionando desde la cadera sin redondear la espalda.",
+        targetMuscles: ["Isquiotibiales", "Cuádriceps", "Gemelos"],
+        steps: ["Mantén cada estiramiento 25-30 segundos sin rebotes."],
+        commonMistakes: ["Rebotar durante el estiramiento"],
+        visualType: "stretching"
+      }
     ],
     routeDetails: {
       title: "Ruta Fartlek Urbano & Parque con Boo",
@@ -758,18 +900,109 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
   },
   Miércoles: {
     day: "Miércoles",
-    title: "Miércoles: Tren Inferior, Glúteos y Core Profundo",
+    title: "Miércoles: Tren Inferior & Core Antilesión 360°",
     duration: 35,
     location: "En casa",
-    equipment: ["Esterilla", "Botellas de agua / Mancuernas ligeras"],
-    type: "Tonificación Piernas y Glúteos",
-    focus: "Glúteos, cuádriceps, isquios y abdomen profundo",
+    equipment: ["Ring-Con (Switch)", "Banda Elástica", "Silla", "Esterilla"],
+    type: "Estabilidad & Tren Inferior",
+    focus: "Glúteos, cuádriceps, anti-rotación y faja abdominal McGill",
     exercises: [
-      { name: "Zancadas Estáticas Alternadas", sets: 3, reps: "8 - 10 / pierna", rest: "60 seg", technique: "Paso largo hacia atrás. La rodilla trasera baja formando 90º." },
-      { name: "Peso Muerto Rumano con Pesos/Banda", sets: 3, reps: "12", rest: "60 seg", technique: "Lleva cadera atrás, espalda recta. Siente el estiramiento en isquios." },
-      { name: "Monster Walk con Banda en Tobillos", sets: 3, reps: "12 pasos / lado", rest: "45 seg", technique: "En media sentadilla, camina lateralmente manteniendo tensión." },
-      { name: "Bird-Dog (Perro de Caza)", sets: 3, reps: "10 / lado", rest: "45 seg", technique: "En cuadrupedia, extiende brazo derecho y pierna izquierda alinear con el tronco." },
-      { name: "Bicicleta Abdominal Controlada", sets: 3, reps: "12 alternadas", rest: "45 seg", technique: "Movimiento lento. Lleva codo hacia rodilla contraria sin tirar del cuello." }
+      {
+        id: "split_squat_asistido",
+        name: "Zancadas Estáticas Asistidas (Split Squat)",
+        sets: 3,
+        reps: "8 - 10 / pierna",
+        rest: "60 seg",
+        equipment: "Silla / Pared (Apoyo)",
+        technique: "Paso largo hacia atrás. Baja la rodilla trasera hacia el suelo manteniendo el torso 100% vertical, apoyando una mano si necesitas equilibrio.",
+        spinalSafetyNote: "Aísla el tren inferior de forma unilateral sin ninguna barra sobre los hombros ni impacto. Cero estrés en las hernias dorsales.",
+        targetMuscles: ["Cuádriceps", "Glúteos", "Estabilizadores de Cadera"],
+        steps: [
+          "Colócate de pie junto a una silla o pared para apoyar ligeramente una mano si necesitas equilibrio.",
+          "Da un paso amplio hacia atrás con una pierna, apoyando el metatarso con el talón elevado.",
+          "Baja verticalmente flexionando ambas rodillas hasta que la rodilla trasera quede a unos centímetros del suelo formando ángulos de 90°.",
+          "Empuja con el talón delantero para volver arriba manteniendo el pecho alto y la columna neutra."
+        ],
+        commonMistakes: ["Inclinarse excesivamente hacia adelante", "Golpear la rodilla trasera contra el suelo", "Dejar que la rodilla delantera sobrepase la punta del pie descontroladamente"],
+        visualType: "split_squat"
+      },
+      {
+        id: "press_pallof_banda",
+        name: "Press Pallof con Banda Elástica (Anti-Rotación)",
+        sets: 3,
+        reps: "10 - 12 / lado",
+        rest: "45 seg",
+        equipment: "Banda Elástica + Puerta",
+        technique: "De pie, de perfil a la puerta. Sujeta la banda con ambas manos pegada al esternón y estira los brazos al frente resistiendo que la goma te gire.",
+        spinalSafetyNote: "Imprescindible para tu hernia lateral izquierda D10-D11: enseña a los oblicuos y al transverso a frenar las torsiones, eliminando los peligrosos cizallamientos rotacionales.",
+        targetMuscles: ["Oblicuos", "Transverso Abdominal", "Cuadrado Lumbar"],
+        steps: [
+          "Ancla la banda elástica en una puerta a la altura del pecho. Colócate de pie de lado al punto de anclaje.",
+          "Agarra la banda con ambas manos entrecruzadas, pégala a tu esternón y da un paso lateral para generar tensión media.",
+          "Pies a la anchura de hombros, rodillas semiflexionadas y glúteos activos.",
+          "Exhala y empuja los brazos en línea recta hacia adelante, aguantando 2 segundos la fuerza de la goma que intenta girarte.",
+          "Inhala y regresa los puños al pecho de forma lenta y controlada."
+        ],
+        commonMistakes: ["Girar el torso o las caderas hacia el anclaje", "Bloquear la respiración", "Subir los hombros hacia las orejas"],
+        visualType: "pallof_press"
+      },
+      {
+        id: "prensa_pectoral_core_ring",
+        name: "Prensa Pectoral & Core Isométrica con Ring-Con",
+        sets: 3,
+        reps: "10 reps (3s compresión)",
+        rest: "45 seg",
+        equipment: "Ring-Con (Switch)",
+        technique: "Sujeta el Ring-Con con ambas manos frente al pecho. Comprime el aro hacia adentro mientras exhalas vaciando el abdomen y activando el transverso.",
+        spinalSafetyNote: "La compresión frontal del aro genera una co-activación refleja del abdomen profundo y pectoral sin mover las vértebras dorsales ni comprimir los discos.",
+        targetMuscles: ["Pectoral", "Transverso Abdominal", "Deltoides Anterior", "Serrato"],
+        steps: [
+          "Colócate de pie o sentado erguido, con los hombros relajados hacia atrás y abajo.",
+          "Sujeta el Ring-Con horizontal frente a tu pecho apoyando las palmas en las almohadillas laterales.",
+          "Exhala lentamente por la boca y aprieta el aro hacia adentro con fuerza, sintiendo cómo se endurece toda la faja abdominal.",
+          "Mantén la compresión durante 3 segundos, inhala relajando la presión y repite."
+        ],
+        commonMistakes: ["Encorvar la espalda al apretar", "Apretar solo con las muñecas en lugar de con el pecho y los brazos", "Perder la postura recta"],
+        visualType: "ring_chest_core"
+      },
+      {
+        id: "bird_dog_mcgill",
+        name: "Bird-Dog (Perro de Caza con Pausa Isométrica)",
+        sets: 3,
+        reps: "8 - 10 / lado (3s pausa)",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "En cuadrupedia, extiende a la vez brazo derecho y pierna izquierda hasta formar una línea recta con el cuerpo. Aguanta 3 segundos arriba.",
+        spinalSafetyNote: "Considerado por la biomecánica deportiva mundial (Prof. Stuart McGill) el mejor ejercicio para rehabilitación discal dorsal y lumbar. Compresión discal mínima con máxima activación de multífidos.",
+        targetMuscles: ["Multífidos", "Erectores Espinales Dorsales", "Glúteo Mayor", "Deltoides"],
+        steps: [
+          "Colócate en cuatro apoyos (cuadrupedia) sobre la esterilla: manos debajo de los hombros y rodillas debajo de las caderas.",
+          "Mantén la cabeza alineada mirando hacia el suelo (no mires al frente para no forzar cervicales).",
+          "Inhala y extiende simultáneamente el brazo derecho hacia adelante y la pierna izquierda hacia atrás, paralelos al suelo.",
+          "Aguanta 3 segundos apretando glúteo y core sin arquear la espalda baja, vuelve despacio y repite con el otro lado."
+        ],
+        commonMistakes: ["Elevar la pierna demasiado alto arqueando las lumbares", "Rotar la cadera hacia un lado", "Mover el cuello hacia arriba"],
+        visualType: "bird_dog"
+      },
+      {
+        id: "plancha_lateral_antebrazo",
+        name: "Plancha Lateral sobre Antebrazo (Estabilidad Lateral)",
+        sets: 3,
+        reps: "20 - 30 seg / lado",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "Apoya el antebrazo en el suelo y eleva la cadera alineando tobillos, rodillas, cadera y hombro. Si cuesta, apoya las rodillas flexionadas.",
+        spinalSafetyNote: "Fortalece el cuadrado lumbar y los oblicuos laterales, vital para sostener la vértebra D10 y proteger la hernia posterolateral izquierda.",
+        targetMuscles: ["Cuadrado Lumbar", "Oblicuos", "Glúteo Medio", "Dorsal Ancho"],
+        steps: [
+          "Túmbate de lado en la esterilla con el codo apoyado directamente debajo del hombro.",
+          "Piernas estiradas (o con rodillas dobladas a 90° para variante inicial más suave).",
+          "Exhala y eleva la cadera del suelo hasta que tu cuerpo forme una línea recta desde la cabeza hasta los pies.",
+          "Mantén la posición respirando tranquilamente sin dejar que la cadera se hunda hacia la esterilla."
+        ],
+        commonMistakes: ["Dejar caer la cadera hacia el suelo", "Girar los hombros hacia adelante", "Colocar el codo demasiado lejos del hombro"],
+        visualType: "side_plank"
+      }
     ]
   },
   Jueves: {
@@ -777,13 +1010,52 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     title: "Jueves: Descanso Activo & Paseo de Olfateo con Boo",
     duration: 30,
     location: "Al aire libre / En casa",
-    equipment: ["Esterilla (para estiramientos)"],
+    equipment: ["Esterilla (para movilidad)"],
     type: "Recuperación Activa & Movilidad",
     focus: "Recuperación muscular y movilidad de cadera/espalda",
     exercises: [
-      { name: "Paseo Tranquilo de Olfateo con Boo", sets: 1, reps: "25 min", rest: "-", technique: "Paseo a ritmo suave permitiendo que Boo explore a su aire." },
-      { name: "Movilidad Columna 'Gato-Vaca'", sets: 2, reps: "10", rest: "30 seg", technique: "Moviliza la espalda suavemente para liberar tensión." },
-      { name: "Estiramiento de Psoas e Isquios", sets: 2, reps: "30 seg / lado", rest: "30 seg", technique: "Relaja flexores de cadera tras horas de postura sentado." }
+      {
+        id: "jueves_paseo",
+        name: "Paseo Tranquilo de Olfateo con Boo",
+        sets: 1,
+        reps: "25 min",
+        rest: "-",
+        equipment: "Zapatillas",
+        technique: "Paseo a ritmo suave permitiendo que Boo explore a su aire.",
+        spinalSafetyNote: "Disminuye la tensión miofascial y reduce los niveles de cortisol, acelerando la recuperación de los tejidos discales.",
+        targetMuscles: ["Sistema Parasimpático", "Articulaciones"],
+        steps: ["Camina a ritmo tranquilo sin prisas dejando que el perro olfatee."],
+        commonMistakes: ["Dar tirones bruscos de la correa"],
+        visualType: "walking"
+      },
+      {
+        id: "jueves_gatovaca",
+        name: "Movilidad Columna 'Gato-Vaca' Suave",
+        sets: 2,
+        reps: "10",
+        rest: "30 seg",
+        equipment: "Esterilla",
+        technique: "Moviliza la espalda suavemente para liberar tensión sin forzar los rangos finales.",
+        spinalSafetyNote: "Movilización articular sin carga que mejora la hidratación de los discos dorsales y alivia rigideces matutinas.",
+        targetMuscles: ["Columna Dorsal y Lumbar", "Fascia Toracolumbar"],
+        steps: ["En cuadrupedia, redondea suavemente la columna hacia el techo exhalando.", "Inhala volviendo a posición neutra sin arquear en exceso."],
+        commonMistakes: ["Forzar la hiperextensión lumbar o dorsal"],
+        visualType: "cat_cow"
+      },
+      {
+        id: "jueves_psoas",
+        name: "Estiramiento de Psoas e Isquios",
+        sets: 2,
+        reps: "30 seg / lado",
+        rest: "30 seg",
+        equipment: "Esterilla",
+        technique: "Relaja flexores de cadera tras horas de postura sentado.",
+        spinalSafetyNote: "Liberar el psoas ilíaco desactiva la tracción anterior sobre la columna, protegiendo la transición dorso-lumbar.",
+        targetMuscles: ["Psoas Ilíaco", "Isquiotibiales"],
+        steps: ["En posición de caballero (una rodilla en suelo), adelanta la pelvis manteniendo el tronco erguido."],
+        commonMistakes: ["Arquear la espalda hacia atrás en vez de vascular la pelvis"],
+        visualType: "stretching"
+      }
     ],
     routeDetails: {
       title: "Paseo de Olfateo & Recuperación Activa con Boo",
@@ -797,18 +1069,107 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
   },
   Viernes: {
     day: "Viernes",
-    title: "Viernes: Tren Superior & Tonificación Postural",
+    title: "Viernes: Espalda Alta, Postura & Escápulas (Alivio D7-D11)",
     duration: 35,
     location: "En casa",
-    equipment: ["Bandas elásticas", "Silla"],
-    type: "Espalda, Hombros y Tríceps",
-    focus: "Hombros, espalda erguida, tríceps y postura",
+    equipment: ["Ring-Con (Switch)", "Banda Elástica", "Silla", "Esterilla"],
+    type: "Tonificación Postural & Escápulas",
+    focus: "Trapecio inferior, romboides, rotadores externos y tríceps",
     exercises: [
-      { name: "Press de Hombros con Banda / Pesos", sets: 3, reps: "12", rest: "45 seg", technique: "Empuja el peso desde la altura de las orejas hacia el techo." },
-      { name: "Face Pulls con Banda Elástica", sets: 3, reps: "15", rest: "45 seg", technique: "Tira de la banda hacia la cara abriendo codos hacia afuera." },
-      { name: "Fondos de Tríceps en Silla", sets: 3, reps: "8 - 10", rest: "60 seg", technique: "Flexiona codos a 90º hacia atrás y empuja para subir." },
-      { name: "Superman para Cadena Posterior", sets: 3, reps: "10 (2s arriba)", rest: "45 seg", technique: "Despega ligeramente pecho y muslos del suelo sintiendo activación." },
-      { name: "Plancha Lateral Modificada", sets: 3, reps: "15 - 20 seg / lado", rest: "45 seg", technique: "Apoya antebrazo y rodilla inferior alineando el tronco." }
+      {
+        id: "face_pull_banda",
+        name: "Face Pull con Banda Elástica (Alineación Postural)",
+        sets: 3,
+        reps: "12 - 15",
+        rest: "45 seg",
+        equipment: "Banda Elástica + Puerta",
+        technique: "Ancla la banda a la altura de los ojos. Tira hacia la frente separando las manos y abriendo codos hacia afuera.",
+        spinalSafetyNote: "El mejor ejercicio para contrarrestar la postura cifótica de oficina. Fortalece el trapecio inferior y rotadores externos, abriendo espacio en D7-D8.",
+        targetMuscles: ["Deltoides Posterior", "Trapecio Inferior/Medio", "Manguito Rotador", "Romboides"],
+        steps: [
+          "Ancla la banda elástica a la altura de los ojos o frente en una puerta.",
+          "Agarra los extremos con las palmas mirándose o hacia abajo y da un paso atrás para crear tensión.",
+          "Tira de la banda directamente hacia tu frente o nariz, separando las manos y llevando los codos altos y hacia atrás.",
+          "Al final del movimiento realiza una suave rotación externa (puños hacia arriba), aguanta 1 segundo y regresa despacio."
+        ],
+        commonMistakes: ["Tirar hacia el pecho en vez de hacia la frente", "Bajar los codos", "Tirar con impulso de la espalda baja"],
+        visualType: "face_pull"
+      },
+      {
+        id: "traccion_w_banda",
+        name: "Tracción en 'W' con Banda Elástica (Retracción Escapular Baja)",
+        sets: 3,
+        reps: "12",
+        rest: "45 seg",
+        equipment: "Banda Elástica",
+        technique: "Sujeta la banda con ambas manos delante del pecho. Tira hacia afuera bajando codos hacia las costillas formando una letra 'W' con los brazos.",
+        spinalSafetyNote: "Activa con gran precisión el trapecio inferior y los serratos, estabilizando la escápula sobre la caja torácica sin sobrecarga vertebral.",
+        targetMuscles: ["Trapecio Inferior", "Romboides", "Dorsal Ancho"],
+        steps: [
+          "De pie, con las rodillas suaves y el abdomen activo, sujeta la banda elástica con ambas manos a unos 25 cm de distancia.",
+          "Comienza con los brazos semiflexionados frente a ti.",
+          "Tira de la banda hacia afuera mientras flexionas los codos y los pegas a los costados, formando una clara letra 'W' con tus brazos.",
+          "Junta las escápulas atrás y abajo durante 2 segundos, y regresa inhalando."
+        ],
+        commonMistakes: ["Subir los hombros hacia el cuello", "Arquear la zona lumbar", "Perder la tensión en la banda"],
+        visualType: "w_extension"
+      },
+      {
+        id: "elevaciones_yt_prono",
+        name: "Elevaciones en 'Y' y 'T' en Esterilla (Descompresión Dorsal)",
+        sets: 3,
+        reps: "10 reps en 'Y' + 10 en 'T'",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "Tumbado boca abajo en la esterilla, frente apoyada en una toalla. Eleva los brazos en forma de 'Y' y luego en 'T' despegando solo unos centímetros.",
+        spinalSafetyNote: "A diferencia del ejercicio 'Superman' (que hiperextiende bruscamente la espalda), las elevaciones 'Y' y 'T' aíslan los músculos escapulares con la columna neutra y la frente apoyada, sin pinzar los discos dorsales.",
+        targetMuscles: ["Trapecio Medio e Inferior", "Romboides", "Erectores Dorsales Altos"],
+        steps: [
+          "Túmbate boca abajo con una pequeña toalla doblada bajo la frente para mantener el cuello neutral.",
+          "Coloca los brazos estirados en diagonal formando una 'Y' con los pulgares apuntando al techo.",
+          "Sin despegar la frente ni el pecho del suelo, eleva los brazos unos centímetros apretando las escápulas durante 2 segundos.",
+          "Baja suavemente. Tras 10 repeticiones, abre los brazos en cruz formando una 'T' y repite otras 10 elevaciones."
+        ],
+        commonMistakes: ["Levantar la cabeza o el pecho del suelo (forzar lumbares)", "Moverse a tirones", "No orientar los pulgares hacia arriba"],
+        visualType: "yt_raises"
+      },
+      {
+        id: "traccion_escapular_ring_v",
+        name: "Tracción Escapular Isométrica con Ring-Con",
+        sets: 3,
+        reps: "10 reps (3s aguante)",
+        rest: "45 seg",
+        equipment: "Ring-Con (Switch)",
+        technique: "Sujeta el aro con ambas manos frente al pecho y tira hacia afuera intentando ensancharlo durante 3 segundos.",
+        spinalSafetyNote: "Fortalecimiento isométrico puro de la musculatura periescapular sin ningún impacto ni compresión discal.",
+        targetMuscles: ["Romboides", "Deltoides Posterior", "Trapecio Medio"],
+        steps: [
+          "De pie erguido, sujeta el Ring-Con frente al pecho con codos a 90 grados.",
+          "Tira hacia afuera con ambas manos como si intentaras ensanchar el aro.",
+          "Mantén 3 segundos la tensión escapular respirando fluido y relaja."
+        ],
+        commonMistakes: ["Contener la respiración", "Subir los hombros"],
+        visualType: "ring_pull"
+      },
+      {
+        id: "fondos_triceps_silla",
+        name: "Fondos de Tríceps en Silla Asistidos",
+        sets: 3,
+        reps: "8 - 10",
+        rest: "60 seg",
+        equipment: "Silla",
+        technique: "Manos apoyadas en el borde de la silla, pies planos en el suelo con rodillas a 90°. Flexiona los codos hacia atrás y empuja con los tríceps.",
+        spinalSafetyNote: "Mantén la espalda rozando el borde de la silla para que no se separe el torso. Al tener los pies firmes en el suelo, regulas exactamente cuánto peso levantas.",
+        targetMuscles: ["Tríceps", "Deltoides Anterior", "Pectoral Menor"],
+        steps: [
+          "Siéntate en el borde de una silla sólida y apoya las palmas junto a tus caderas con los dedos hacia adelante.",
+          "Adelanta los pies manteniendo las rodillas a 90 grados y los pies totalmente apoyados en el suelo.",
+          "Desplaza los glúteos fuera del asiento y flexiona los codos hacia atrás (no hacia afuera) hasta unos 90 grados, manteniendo la espalda muy cerca de la silla.",
+          "Exhala y empuja fuerte con las palmas para extender los brazos hasta la posición inicial."
+        ],
+        commonMistakes: ["Alejar la espalda de la silla hacia adelante", "Abrir los codos en exceso", "Hundir la cabeza entre los hombros"],
+        visualType: "chair_dips"
+      }
     ]
   },
   Sábado: {
@@ -820,9 +1181,48 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     type: "Resistencia Aeróbica en Naturaleza",
     focus: "Gasto calórico elevado, resistencia y diversión con Boo",
     exercises: [
-      { name: "Marcha Activa a Ritmo Vivo (5.5 km/h)", sets: 1, reps: "25 min", rest: "-", technique: "Paso firme apretando glúteos en subidas." },
-      { name: "Parada de Agilidad con Boo + Sentadillas", sets: 3, reps: "15", rest: "60 seg", technique: "Mientras Boo hace juegos de buscar el juguete, realizáis sentadillas y flexiones." },
-      { name: "Caminata de Regreso y Enfriamiento", sets: 1, reps: "20 min", rest: "-", technique: "Ritmo progresivamente más suave." }
+      {
+        id: "sabado_marcha",
+        name: "Marcha Activa a Ritmo Vivo (5.5 km/h)",
+        sets: 1,
+        reps: "25 min",
+        rest: "-",
+        equipment: "Zapatillas Trail",
+        technique: "Paso firme apretando glúteos en subidas.",
+        spinalSafetyNote: "Caminar por senderos naturales con calzado amortiguado activa la propiocepción pélvica.",
+        targetMuscles: ["Glúteos", "Piernas", "Cardiovascular"],
+        steps: ["Marcha continua a ritmo enérgico sincronizando el braceo."],
+        commonMistakes: ["Cargar mochilas pesadas asimétricas"],
+        visualType: "walking"
+      },
+      {
+        id: "sabado_agilidad",
+        name: "Parada de Agilidad con Boo + Sentadillas Asistidas",
+        sets: 3,
+        reps: "12 - 15",
+        rest: "60 seg",
+        equipment: "Arnés Boo",
+        technique: "Mientras Boo hace juegos de buscar el juguete, realizáis sentadillas manteniendo la espalda recta.",
+        spinalSafetyNote: "Mantén el pecho erguido y peso en talones.",
+        targetMuscles: ["Cuádriceps", "Glúteos"],
+        steps: ["Flexiona caderas y rodillas manteniendo el tronco alto."],
+        commonMistakes: ["Curvar la espalda al agacharse"],
+        visualType: "ring_squat"
+      },
+      {
+        id: "sabado_enfriamiento",
+        name: "Caminata de Regreso y Enfriamiento",
+        sets: 1,
+        reps: "20 min",
+        rest: "-",
+        equipment: "Zapatillas",
+        technique: "Ritmo progresivamente más suave.",
+        spinalSafetyNote: "Permite una bajada progresiva de pulsaciones y relajación lumbar.",
+        targetMuscles: ["Recuperación Activa"],
+        steps: ["Paso tranquilo de vuelta al coche o casa."],
+        commonMistakes: ["Parar de golpe en frío"],
+        visualType: "walking"
+      }
     ],
     routeDetails: {
       title: "Ruta Senderismo Trail Active & Agilidad en Naturaleza",
@@ -845,8 +1245,34 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
     type: "Descanso y Recuperación",
     focus: "Recarga de energía para la nueva semana",
     exercises: [
-      { name: "Paseo Libre en Familia con Boo", sets: 1, reps: "Libre", rest: "-", technique: "Disfrutad del día sin exigencia física." },
-      { name: "Masaje de Soltado / Estiramientos suaves", sets: 1, reps: "10 min", rest: "-", technique: "Masajea suavemente muslos y espalda para soltar rigidez." }
+      {
+        id: "domingo_paseo",
+        name: "Paseo Libre en Familia con Boo",
+        sets: 1,
+        reps: "Libre",
+        rest: "-",
+        equipment: "Correa",
+        technique: "Disfrutad del día sin exigencia física.",
+        spinalSafetyNote: "Paseo regenerativo sin tensión que promueve la oxigenación de tejidos musculares.",
+        targetMuscles: ["Bienestar General"],
+        steps: ["Paseo relajado sin métricas ni exigencias."],
+        commonMistakes: ["Comenzar actividades explosivas sin calentamiento"],
+        visualType: "walking"
+      },
+      {
+        id: "domingo_masaje",
+        name: "Masaje de Soltado / Estiramientos Suaves",
+        sets: 1,
+        reps: "10 min",
+        rest: "-",
+        equipment: "Esterilla",
+        technique: "Masajea suavemente muslos y espalda para soltar rigidez.",
+        spinalSafetyNote: "Evita presiones directas y fuertes sobre las vértebras dorsales D7-D11; masajea los costados musculares.",
+        targetMuscles: ["Músculos Paravertebrales", "Fascias"],
+        steps: ["Aplica respiración diafragmática profunda mientras liberas tensiones."],
+        commonMistakes: ["Apretar con fuerza sobre la columna vertebral"],
+        visualType: "stretching"
+      }
     ],
     routeDetails: {
       title: "Paseo Libre en Familia con Boo",

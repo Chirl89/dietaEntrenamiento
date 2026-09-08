@@ -545,6 +545,600 @@ export function formatExerciseReps(reps) {
   return `${str} reps`;
 }
 
+/**
+ * Generates an interactive, responsive looping SVG animation for exercises.
+ * Highlights neutral spine safety (emerald green) and equipment (Ring-Con/Band).
+ */
+export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
+  const vType = (visualType || "").toLowerCase();
+
+  const commonDefs = `
+    <defs>
+      <linearGradient id="gradFloor_${vType}" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#0f172a" stop-opacity="0.1"/>
+        <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#0f172a" stop-opacity="0.1"/>
+      </linearGradient>
+      <filter id="glowGreen_${vType}" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <filter id="glowCyan_${vType}" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="2.5" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <filter id="glowAmber_${vType}" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="2.5" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <filter id="glowRose_${vType}" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  `;
+
+  if (vType === "ring_squat") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes squatCycle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(40px); }
+        }
+        .anim-squat-torso { animation: squatCycle 3.4s ease-in-out infinite; transform-origin: 160px 175px; }
+      </style>
+      <line x1="30" y1="185" x2="290" y2="185" stroke="#334155" stroke-width="2.5" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="90" ry="7" fill="url(#gradFloor_${vType})" />
+      
+      <ellipse cx="140" cy="185" rx="8" ry="4" fill="#64748b" />
+      <ellipse cx="180" cy="185" rx="8" ry="4" fill="#64748b" />
+
+      <g class="anim-squat-torso">
+        <circle cx="160" cy="138" r="8" fill="#475569" />
+        
+        <line x1="140" y1="185" x2="148" y2="155" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <line x1="180" y1="185" x2="172" y2="155" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <line x1="148" y1="155" x2="160" y2="138" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <line x1="172" y1="155" x2="160" y2="138" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+
+        <!-- Protected Spine (EMERALD GLOW) -->
+        <line x1="160" y1="138" x2="160" y2="82" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        
+        <!-- Head -->
+        <circle cx="160" cy="65" r="14" fill="#38bdf8" />
+        <circle cx="166" cy="63" r="2.5" fill="#0f172a" />
+
+        <!-- Arms holding Ring-Con Extended Forward -->
+        <line x1="160" y1="88" x2="205" y2="92" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+        <line x1="160" y1="94" x2="202" y2="98" stroke="#64748b" stroke-width="4.5" stroke-linecap="round" />
+        
+        <!-- Nintendo Switch Ring-Con -->
+        <g transform="translate(222, 95)">
+          <circle cx="0" cy="0" r="18" fill="none" stroke="#f43f5e" stroke-width="5" filter="url(#glowRose_${vType})" />
+          <rect x="-3" y="-19" width="6" height="5" rx="2" fill="#38bdf8" />
+          <rect x="-3" y="14" width="6" height="5" rx="2" fill="#38bdf8" />
+          <text x="0" y="3" font-size="8" fill="#fff" font-weight="bold" text-anchor="middle">RING</text>
+        </g>
+      </g>
+
+      <g transform="translate(10, 26)">
+        <rect x="0" y="0" width="160" height="22" rx="6" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1" />
+        <text x="8" y="15" font-size="10" fill="#34d399" font-weight="700">🛡️ Columna Neutra (Sin Carga)</text>
+      </g>
+      <g transform="translate(180, 26)">
+        <rect x="0" y="0" width="130" height="22" rx="6" fill="rgba(244, 63, 94, 0.15)" stroke="#f43f5e" stroke-width="1" />
+        <text x="8" y="15" font-size="10" fill="#fb7185" font-weight="700">🎯 Ring-Con Contrapeso</text>
+      </g>
+    </svg>`;
+  }
+
+  if (vType === "band_row") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes rowPull {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(32px); }
+        }
+        .anim-row-arms { animation: rowPull 2.8s ease-in-out infinite; }
+        @keyframes scapulaPulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; filter: drop-shadow(0 0 8px #10b981); }
+        }
+        .anim-scapula-glow { animation: scapulaPulse 2.8s ease-in-out infinite; }
+      </style>
+      <rect x="18" y="20" width="12" height="170" rx="3" fill="#334155" />
+      <circle cx="30" cy="100" r="5" fill="#f59e0b" filter="url(#glowAmber_${vType})" />
+      <text x="12" y="15" font-size="9" fill="#94a3b8" font-weight="bold">PUERTA</text>
+
+      <line x1="20" y1="185" x2="295" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="215" cy="186" rx="65" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <line x1="195" y1="185" x2="200" y2="150" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="230" y1="185" x2="225" y2="150" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="200" y1="150" x2="212" y2="135" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="225" y1="150" x2="212" y2="135" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+
+      <line x1="212" y1="135" x2="218" y2="78" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <circle cx="220" cy="92" r="10" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="3 3" class="anim-scapula-glow" />
+      
+      <circle cx="220" cy="60" r="13" fill="#38bdf8" />
+      <circle cx="215" cy="59" r="2.5" fill="#0f172a" />
+
+      <g class="anim-row-arms">
+        <line x1="30" y1="100" x2="168" y2="100" stroke="#f59e0b" stroke-width="4.5" stroke-linecap="round" filter="url(#glowAmber_${vType})" />
+        <line x1="218" y1="85" x2="195" y2="102" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+        <line x1="195" y1="102" x2="168" y2="100" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+        <circle cx="168" cy="100" r="5" fill="#38bdf8" />
+      </g>
+
+      <g transform="translate(10, 195)">
+        <text x="0" y="0" font-size="10" fill="#34d399" font-weight="700">🛡️ Codo al costado • Retracción Escapular • Dorsal Ancho</text>
+      </g>
+    </svg>`;
+  }
+
+  if (vType === "ring_pull") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes ringOutwardPull {
+          0%, 100% { transform: scaleX(1); }
+          50% { transform: scaleX(1.15); filter: drop-shadow(0 0 10px #f43f5e); }
+        }
+        .anim-ring-tension { animation: ringOutwardPull 2.4s ease-in-out infinite; transform-origin: 160px 105px; }
+      </style>
+      <line x1="30" y1="185" x2="290" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="80" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <line x1="145" y1="185" x2="152" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="175" y1="185" x2="168" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      
+      <line x1="160" y1="140" x2="160" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <circle cx="160" cy="60" r="14" fill="#38bdf8" />
+      
+      <path d="M 135 85 Q 160 95 185 85" fill="none" stroke="#34d399" stroke-width="3" stroke-dasharray="4 2" />
+
+      <line x1="145" y1="84" x2="120" y2="105" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+      <line x1="175" y1="84" x2="200" y2="105" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+
+      <g class="anim-ring-tension">
+        <circle cx="160" cy="105" r="26" fill="none" stroke="#f43f5e" stroke-width="5" filter="url(#glowRose_${vType})" />
+        <circle cx="134" cy="105" r="4.5" fill="#38bdf8" />
+        <circle cx="186" cy="105" r="4.5" fill="#38bdf8" />
+        <text x="160" y="108" font-size="8" fill="#fff" font-weight="bold" text-anchor="middle">RING-CON</text>
+      </g>
+
+      <text x="96" y="110" font-size="16" fill="#f59e0b" font-weight="bold">⮜⮜</text>
+      <text x="206" y="110" font-size="16" fill="#f59e0b" font-weight="bold">⮞⮞</text>
+
+      <text x="160" y="30" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Tracción Isométrica Externa: Romboides & Espalda Media</text>
+      <text x="160" y="172" font-size="9.5" fill="#94a3b8" text-anchor="middle">Tira de los extremos hacia afuera 4s sin mover la columna dorsal</text>
+    </svg>`;
+  }
+
+  if (vType === "ring_glute_bridge") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes bridgeLift {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-38px); }
+        }
+        .anim-bridge-pelvis { animation: bridgeLift 3.4s ease-in-out infinite; transform-origin: 85px 165px; }
+      </style>
+      <rect x="35" y="168" width="250" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+      <ellipse cx="240" cy="168" rx="10" ry="4" fill="#64748b" />
+      <circle cx="75" cy="155" r="13" fill="#38bdf8" />
+      <circle cx="95" cy="162" r="7" fill="#475569" />
+
+      <g class="anim-bridge-pelvis">
+        <line x1="95" y1="162" x2="175" y2="162" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <circle cx="175" cy="162" r="9" fill="#10b981" />
+        <line x1="175" y1="162" x2="225" y2="135" stroke="#94a3b8" stroke-width="6" stroke-linecap="round" />
+        <line x1="225" y1="135" x2="240" y2="168" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+
+        <line x1="95" y1="162" x2="165" y2="152" stroke="#cbd5e1" stroke-width="4.5" stroke-linecap="round" />
+        <ellipse cx="175" cy="148" rx="18" ry="8" fill="none" stroke="#f43f5e" stroke-width="4" filter="url(#glowRose_${vType})" />
+      </g>
+
+      <text x="160" y="32" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Puente de Glúteo • Cadena Posterior Segura</text>
+      <text x="160" y="52" font-size="9.5" fill="#94a3b8" text-anchor="middle">Línea recta hombro-cadera-rodilla • Sin arquear la zona lumbar</text>
+    </svg>`;
+  }
+
+  if (vType === "deadbug") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes deadbugArmLeg {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(-35deg); }
+        }
+        @keyframes deadbugLegOpp {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(35deg); }
+        }
+        .anim-deadbug-arm { animation: deadbugArmLeg 3.8s ease-in-out infinite; transform-origin: 130px 148px; }
+        .anim-deadbug-leg { animation: deadbugLegOpp 3.8s ease-in-out infinite; transform-origin: 195px 150px; }
+      </style>
+      <rect x="40" y="165" width="240" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+      <circle cx="85" cy="154" r="13" fill="#38bdf8" />
+      
+      <line x1="100" y1="160" x2="195" y2="160" stroke="#10b981" stroke-width="8" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      
+      <line x1="130" y1="150" x2="130" y2="85" stroke="#64748b" stroke-width="5" stroke-linecap="round" />
+      <line x1="195" y1="150" x2="195" y2="105" stroke="#64748b" stroke-width="5" stroke-linecap="round" />
+      <line x1="195" y1="105" x2="235" y2="105" stroke="#64748b" stroke-width="5" stroke-linecap="round" />
+
+      <g class="anim-deadbug-arm">
+        <line x1="130" y1="148" x2="110" y2="82" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
+        <circle cx="110" cy="82" r="4.5" fill="#38bdf8" />
+      </g>
+
+      <g class="anim-deadbug-leg">
+        <line x1="195" y1="150" x2="225" y2="115" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round" />
+        <line x1="225" y1="115" x2="265" y2="125" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round" />
+      </g>
+
+      <g transform="translate(145, 80)">
+        <circle cx="0" cy="0" r="14" fill="none" stroke="#f43f5e" stroke-width="3.5" filter="url(#glowRose_${vType})" />
+      </g>
+
+      <text x="160" y="30" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Deadbug • Máxima Estabilidad Lumbo-Pélvica</text>
+      <text x="160" y="48" font-size="9.5" fill="#94a3b8" text-anchor="middle">Espalda baja 100% pegada al suelo • Cero cizallamiento vertebral</text>
+    </svg>`;
+  }
+
+  if (vType === "pallof_press") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes pallofPressCycle {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(38px); }
+        }
+        .anim-pallof-hands { animation: pallofPressCycle 3s ease-in-out infinite; }
+        @keyframes coreGlow {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; }
+        }
+        .anim-core-pulse { animation: coreGlow 3s ease-in-out infinite; }
+      </style>
+      <rect x="20" y="30" width="10" height="155" rx="3" fill="#334155" />
+      <circle cx="30" cy="100" r="5" fill="#f59e0b" filter="url(#glowAmber_${vType})" />
+      <text x="15" y="24" font-size="8.5" fill="#94a3b8" font-weight="bold">ANCLAJE</text>
+
+      <line x1="30" y1="185" x2="290" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="205" cy="186" rx="60" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <line x1="185" y1="185" x2="195" y2="142" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="225" y1="185" x2="215" y2="142" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+
+      <line x1="205" y1="142" x2="205" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      
+      <circle cx="205" cy="108" r="14" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="2.5" class="anim-core-pulse" />
+      <text x="205" y="112" font-size="8" fill="#34d399" font-weight="bold" text-anchor="middle">CORE</text>
+      <circle cx="205" cy="58" r="13" fill="#38bdf8" />
+
+      <g class="anim-pallof-hands">
+        <line x1="30" y1="100" x2="160" y2="100" stroke="#f59e0b" stroke-width="4.5" filter="url(#glowAmber_${vType})" />
+        <line x1="205" y1="88" x2="160" y2="100" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+        <circle cx="160" cy="100" r="6" fill="#38bdf8" />
+      </g>
+
+      <text x="240" y="105" font-size="14" fill="#38bdf8">⮌ Anti-Rotación</text>
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Press Pallof con Banda • Cero Torsión Vertebral</text>
+      <text x="160" y="172" font-size="9" fill="#94a3b8" text-anchor="middle">Extiende brazos al frente y resiste el tirón lateral con el abdomen activo</text>
+    </svg>`;
+  }
+
+  if (vType === "ring_chest_core") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes ringCompressCycle {
+          0%, 100% { transform: scaleX(1) scaleY(1); }
+          50% { transform: scaleX(0.78) scaleY(1.08); filter: drop-shadow(0 0 10px #f43f5e); }
+        }
+        .anim-ring-compress { animation: ringCompressCycle 2.4s ease-in-out infinite; transform-origin: 160px 105px; }
+      </style>
+      <line x1="30" y1="185" x2="290" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="80" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <line x1="148" y1="185" x2="154" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="172" y1="185" x2="166" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      
+      <line x1="160" y1="140" x2="160" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <circle cx="160" cy="58" r="14" fill="#38bdf8" />
+
+      <line x1="145" y1="86" x2="136" y2="105" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+      <line x1="175" y1="86" x2="184" y2="105" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+
+      <g class="anim-ring-compress">
+        <circle cx="160" cy="105" r="24" fill="none" stroke="#f43f5e" stroke-width="5" filter="url(#glowRose_${vType})" />
+        <rect x="133" y="100" width="6" height="10" rx="2" fill="#38bdf8" />
+        <rect x="181" y="100" width="6" height="10" rx="2" fill="#38bdf8" />
+      </g>
+
+      <text x="110" y="110" font-size="16" fill="#f43f5e" font-weight="bold">⮞</text>
+      <text x="195" y="110" font-size="16" fill="#f43f5e" font-weight="bold">⮜</text>
+
+      <text x="160" y="30" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Prensa Pectoral Isométrica + Core Activo</text>
+      <text x="160" y="172" font-size="9.5" fill="#94a3b8" text-anchor="middle">Aprieta el Ring-Con hacia el centro 3s exhalando y metiendo ombligo</text>
+    </svg>`;
+  }
+
+  if (vType === "bird_dog") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes birdDogLimbCycle {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(-28deg); }
+        }
+        @keyframes birdDogLegCycle {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(26deg); }
+        }
+        .anim-birddog-arm { animation: birdDogLimbCycle 3.6s ease-in-out infinite; transform-origin: 125px 125px; }
+        .anim-birddog-leg { animation: birdDogLegCycle 3.6s ease-in-out infinite; transform-origin: 195px 125px; }
+      </style>
+      <rect x="40" y="170" width="240" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+      
+      <line x1="125" y1="125" x2="125" y2="170" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+      <line x1="195" y1="125" x2="195" y2="170" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+
+      <line x1="120" y1="122" x2="200" y2="122" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <circle cx="102" cy="118" r="12" fill="#38bdf8" />
+      <circle cx="98" cy="122" r="2.5" fill="#0f172a" />
+
+      <g class="anim-birddog-arm">
+        <line x1="125" y1="125" x2="65" y2="122" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
+        <circle cx="65" cy="122" r="4.5" fill="#38bdf8" />
+      </g>
+
+      <g class="anim-birddog-leg">
+        <line x1="195" y1="125" x2="260" y2="122" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round" />
+        <circle cx="260" cy="122" r="4.5" fill="#cbd5e1" />
+      </g>
+
+      <text x="160" y="32" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Bird-Dog (Patrón McGill) • Músculos Multifidos y Erectores</text>
+      <text x="160" y="52" font-size="9.5" fill="#94a3b8" text-anchor="middle">Línea horizontal perfecta • Cero basculación de pelvis</text>
+    </svg>`;
+  }
+
+  if (vType === "face_pull") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes facePullArms {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(28px); }
+        }
+        .anim-facepull-arms { animation: facePullArms 2.8s ease-in-out infinite; }
+      </style>
+      <rect x="25" y="25" width="10" height="160" rx="3" fill="#334155" />
+      <circle cx="35" cy="45" r="5" fill="#f59e0b" filter="url(#glowAmber_${vType})" />
+      <text x="18" y="20" font-size="8.5" fill="#94a3b8" font-weight="bold">ALTO</text>
+
+      <line x1="25" y1="185" x2="295" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="215" cy="186" rx="65" ry="6" fill="url(#gradFloor_${vType})" />
+      <line x1="195" y1="185" x2="205" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="230" y1="185" x2="220" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+
+      <line x1="212" y1="140" x2="212" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <circle cx="212" cy="58" r="13" fill="#38bdf8" />
+
+      <g class="anim-facepull-arms">
+        <line x1="35" y1="45" x2="180" y2="65" stroke="#f59e0b" stroke-width="4" filter="url(#glowAmber_${vType})" />
+        <line x1="212" y1="80" x2="235" y2="62" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+        <line x1="235" y1="62" x2="180" y2="65" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+        <circle cx="180" cy="65" r="5" fill="#38bdf8" />
+      </g>
+
+      <text x="160" y="195" font-size="10" fill="#34d399" font-weight="700" text-anchor="middle">Face Pull con Banda • Deltoides Posterior y Manguito Rotador</text>
+    </svg>`;
+  }
+
+  if (vType === "side_plank") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes plankHoldPulse {
+          0%, 100% { opacity: 0.85; }
+          50% { opacity: 1; filter: drop-shadow(0 0 8px #10b981); }
+        }
+        .anim-plank-spine { animation: plankHoldPulse 2.5s ease-in-out infinite; }
+      </style>
+      <rect x="40" y="168" width="240" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+      
+      <line x1="90" y1="168" x2="120" y2="168" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="120" y1="168" x2="120" y2="125" stroke="#94a3b8" stroke-width="5.5" stroke-linecap="round" />
+
+      <g class="anim-plank-spine">
+        <line x1="120" y1="125" x2="245" y2="162" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <circle cx="95" cy="115" r="12" fill="#38bdf8" />
+        <circle cx="170" cy="140" r="10" fill="rgba(16, 185, 129, 0.25)" stroke="#34d399" stroke-width="2" />
+      </g>
+
+      <text x="160" y="32" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Plancha Lateral Modificada • Cuadrado Lumbar & Oblicuos</text>
+      <text x="160" y="52" font-size="9.5" fill="#94a3b8" text-anchor="middle">Línea lateral recta de oreja a tobillo • Apoyo en rodillas si hay molestia</text>
+    </svg>`;
+  }
+
+  // Generic clean fallback for other safe exercises (split squat, yt raises, w extension, chair dips, cat cow, walking)
+  return `
+  <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+    ${commonDefs}
+    <style>
+      @keyframes genericBreath {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.03); }
+      }
+      .anim-generic { animation: genericBreath 3s ease-in-out infinite; transform-origin: 160px 105px; }
+    </style>
+    <line x1="30" y1="180" x2="290" y2="180" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+    <ellipse cx="160" cy="181" rx="85" ry="6" fill="url(#gradFloor_${vType})" />
+
+    <g class="anim-generic">
+      <line x1="160" y1="140" x2="160" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <circle cx="160" cy="58" r="14" fill="#38bdf8" />
+      
+      <line x1="145" y1="180" x2="152" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="175" y1="180" x2="168" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+
+      <line x1="145" y1="88" x2="120" y2="115" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+      <line x1="175" y1="88" x2="200" y2="115" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+
+      <circle cx="160" cy="115" r="16" fill="none" stroke="#f43f5e" stroke-width="3.5" filter="url(#glowRose_${vType})" />
+    </g>
+
+    <text x="160" y="32" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">${exerciseName}</text>
+    <text x="160" y="52" font-size="9.5" fill="#94a3b8" text-anchor="middle">Ejecución con columna neutra protegida (D7-D11)</text>
+  </svg>`;
+}
+
+export function openExerciseGuideModal(dayName, exerciseIdx) {
+  try {
+    triggerHapticTouch();
+    const dayRoutine = WEEKLY_WORKOUT_SCHEDULE?.[dayName] || WEEKLY_WORKOUT_SCHEDULE?.["Lunes"];
+    const ex = dayRoutine?.exercises?.[exerciseIdx];
+    if (!ex) return;
+
+    const modal = document.getElementById("exercise-guide-modal");
+    if (!modal) return;
+
+    const titleEl = document.getElementById("exercise-guide-modal-title");
+    const subEl = document.getElementById("exercise-guide-modal-subtitle");
+    const bodyEl = document.getElementById("exercise-guide-modal-body");
+
+    if (titleEl) titleEl.innerText = ex.name;
+    if (subEl) subEl.innerText = `${dayName} • ${ex.targetMuscles || 'Fortalecimiento de Espalda & Core'}`;
+
+    const visualSvg = getExerciseVisualSvg(ex.visualType, ex.name);
+
+    let equipmentHtml = "";
+    (ex.equipment || []).forEach(eq => {
+      if (eq === 'ring_con_switch') equipmentHtml += '<span class="exercise-tag-pill pill-ring"><i class="fa-solid fa-circle-notch"></i> Ring-Con Switch</span>';
+      else if (eq === 'elastic_bands') equipmentHtml += '<span class="exercise-tag-pill pill-band"><i class="fa-solid fa-ribbon"></i> Banda Elástica</span>';
+      else if (eq === 'chair') equipmentHtml += '<span class="exercise-tag-pill pill-chair"><i class="fa-solid fa-chair"></i> Silla</span>';
+      else if (eq === 'mat') equipmentHtml += '<span class="exercise-tag-pill pill-mat"><i class="fa-solid fa-rug"></i> Esterilla</span>';
+      else equipmentHtml += '<span class="exercise-tag-pill pill-body"><i class="fa-solid fa-child"></i> Corporal</span>';
+    });
+
+    const stepsHtml = (ex.steps || [ex.technique]).map((step, idx) => `
+      <div class="guide-step-card">
+        <div class="guide-step-num">${idx + 1}</div>
+        <div class="guide-step-text">${step}</div>
+      </div>
+    `).join("");
+
+    const mistakesHtml = (ex.commonMistakes || []).length > 0 ? `
+      <div class="guide-section-title" style="color: #f87171; margin-top: 0.9rem;">
+        <i class="fa-solid fa-triangle-exclamation"></i> Errores a Evitar (Peligro para la Hernia):
+      </div>
+      <div class="guide-mistakes-list">
+        ${ex.commonMistakes.map(m => `
+          <div class="guide-mistake-card">
+            <i class="fa-solid fa-circle-xmark" style="color: #ef4444; margin-top: 2px;"></i>
+            <span>${m}</span>
+          </div>
+        `).join("")}
+      </div>
+    ` : "";
+
+    bodyEl.innerHTML = `
+      <div class="exercise-visual-stage">
+        ${visualSvg}
+      </div>
+
+      <div class="guide-specs-bar">
+        <div class="guide-spec-box">
+          <span class="guide-spec-lbl">Series</span>
+          <span class="guide-spec-val" style="color: var(--accent-emerald);">${ex.sets}</span>
+        </div>
+        <div class="guide-spec-box">
+          <span class="guide-spec-lbl">Reps / Tiempo</span>
+          <span class="guide-spec-val">${formatExerciseReps(ex.reps)}</span>
+        </div>
+        <div class="guide-spec-box">
+          <span class="guide-spec-lbl">Descanso</span>
+          <span class="guide-spec-val">${ex.rest || '60s'}</span>
+        </div>
+        <div class="guide-spec-box">
+          <span class="guide-spec-lbl">Seguridad</span>
+          <span class="guide-spec-val" style="color: #34d399;"><i class="fa-solid fa-shield-halved"></i> D7-D11</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.9rem;">
+        ${equipmentHtml}
+        <span class="exercise-tag-pill pill-spine"><i class="fa-solid fa-shield-heart"></i> Columna Segura</span>
+      </div>
+
+      ${ex.spinalSafetyNote ? `
+        <div class="guide-spine-safety">
+          <div class="guide-spine-safety-header">
+            <i class="fa-solid fa-shield-heart"></i> Biomecánica Segura para Hernias D7-D8 & D10-D11:
+          </div>
+          <p>${ex.spinalSafetyNote}</p>
+        </div>
+      ` : ''}
+
+      <div class="guide-section-title">
+        <i class="fa-solid fa-clipboard-list" style="color: var(--accent-cyan);"></i> Instrucciones Paso a Paso:
+      </div>
+      <div class="guide-steps-list">
+        ${stepsHtml}
+      </div>
+
+      ${mistakesHtml}
+
+      <button type="button" class="btn-primary" onclick="if(window.closeExerciseGuideModal) window.closeExerciseGuideModal();" style="width: 100%; margin-top: 0.5rem; background: var(--gradient-primary); padding: 0.75rem;">
+        <i class="fa-solid fa-check"></i> ¡Entendido! Listo para entrenar
+      </button>
+    `;
+
+    modal.classList.add("active");
+  } catch(e) {
+    console.error("Error opening exercise guide modal:", e);
+  }
+}
+
+export function closeExerciseGuideModal() {
+  try {
+    triggerHapticTouch();
+    const modal = document.getElementById("exercise-guide-modal");
+    if (modal) modal.classList.remove("active");
+  } catch(e) {
+    console.error("Error closing exercise guide modal:", e);
+  }
+}
+
 export function renderExerciseTableView() {
   try {
     const container = document.getElementById("exercise-routines-container");
@@ -564,11 +1158,35 @@ export function renderExerciseTableView() {
     const card = document.createElement("div");
     card.className = "glass-card";
 
-    const rows = (routine.exercises || []).map(ex => `
+    const rows = (routine.exercises || []).map((ex, exIdx) => `
       <tr>
         <td>
-          <div class="exercise-name">${ex.name}</div>
-          <div class="exercise-tech"><i class="fa-solid fa-lightbulb" style="color:var(--accent-amber);"></i> ${ex.technique || ''}</div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;">
+            <div>
+              <div class="exercise-name" style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">${ex.name}</div>
+              <div class="exercise-tech" style="margin-top: 3px;"><i class="fa-solid fa-lightbulb" style="color:var(--accent-amber);"></i> ${ex.technique || ''}</div>
+            </div>
+            <button type="button" class="btn-exercise-guide" onclick="if(window.openExerciseGuideModal) window.openExerciseGuideModal('${activeDay}', ${exIdx});" title="Ver técnica y animación visual">
+              <i class="fa-solid fa-play"></i> Guía & Animación
+            </button>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.45rem;">
+            ${(ex.equipment || []).map(eq => {
+              if (eq === 'ring_con_switch') return '<span class="exercise-tag-pill pill-ring"><i class="fa-solid fa-circle-notch"></i> Ring-Con</span>';
+              if (eq === 'elastic_bands') return '<span class="exercise-tag-pill pill-band"><i class="fa-solid fa-ribbon"></i> Banda Elástica</span>';
+              if (eq === 'chair') return '<span class="exercise-tag-pill pill-chair"><i class="fa-solid fa-chair"></i> Silla</span>';
+              if (eq === 'mat') return '<span class="exercise-tag-pill pill-mat"><i class="fa-solid fa-rug"></i> Esterilla</span>';
+              return '<span class="exercise-tag-pill pill-body"><i class="fa-solid fa-child"></i> Corporal</span>';
+            }).join('')}
+            <span class="exercise-tag-pill pill-spine"><i class="fa-solid fa-shield-halved"></i> Seguro D7-D11</span>
+          </div>
+
+          ${ex.spinalSafetyNote ? `
+            <div style="margin-top: 0.45rem; font-size: 0.78rem; color: #34d399; background: rgba(16, 185, 129, 0.08); padding: 0.35rem 0.6rem; border-radius: 6px; border-left: 3px solid #10b981;">
+              <i class="fa-solid fa-shield-heart"></i> <strong>Rehabilitación:</strong> ${ex.spinalSafetyNote}
+            </div>
+          ` : ''}
         </td>
         <td><strong style="color:var(--accent-emerald);">${ex.sets}</strong> ${ex.sets === 1 ? 'serie' : 'series'}</td>
         <td><strong>${formatExerciseReps(ex.reps)}</strong></td>
@@ -577,19 +1195,34 @@ export function renderExerciseTableView() {
     `).join("");
 
     card.innerHTML = `
+      <div class="rehab-banner-carlos" style="background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.08)); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 0.85rem 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="font-size: 1.6rem; color: #34d399;"><i class="fa-solid fa-file-medical"></i></div>
+          <div>
+            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-main);">Rutina Adaptada para Carlos (Hernias D7-D8 y D10-D11)</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">Hipertrofia de espalda & core sin compresión discal • Material: <strong>Banda Elástica + Ring-Con Switch</strong></div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          <span class="exercise-tag-pill pill-ring"><i class="fa-solid fa-circle-notch"></i> Ring-Con</span>
+          <span class="exercise-tag-pill pill-band"><i class="fa-solid fa-ribbon"></i> Banda Elástica</span>
+          <span class="exercise-tag-pill pill-spine"><i class="fa-solid fa-shield-halved"></i> 100% Anti-Compresión</span>
+        </div>
+      </div>
+
       <div class="routine-header-box" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
         <div>
           <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">${routine.title} (${activeDay})</h2>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Enfoque: ${routine.focus || ''}</p>
         </div>
         <div>
-          <span class="routine-badge"><i class="fa-solid fa-clock"></i> ${routine.duration} min (Juntos)</span>
+          <span class="routine-badge"><i class="fa-solid fa-clock"></i> ${routine.duration} min</span>
         </div>
       </div>
 
       <div style="display:flex; flex-wrap: wrap; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.85rem;">
         <span><i class="fa-solid fa-location-dot" style="color:var(--accent-cyan);"></i> ${routine.location || 'En casa'}</span>
-        <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i> ${routine.type || 'Fuerza'}</span>
+        <span><i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i> ${routine.type || 'Fuerza & Rehabilitación'}</span>
         <span><i class="fa-solid fa-toolbox" style="color:var(--accent-violet);"></i> Equipamiento: ${(routine.equipment || []).join(", ")}</span>
       </div>
 
