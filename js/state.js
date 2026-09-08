@@ -271,8 +271,13 @@ export const appState = {
     syncLogs: []
   },
   booProgress: {
+    activeSubTab: "impulse",
     completedTasks: {},
     completedContinuous: {},
+    completedProgramSteps: {},
+    distractionLogs: [],
+    sosExpanded: false,
+    whyExpanded: false,
     learnedTricks: ["t1_sit", "t2_paw"],
     activeTrickId: "t3_eye_contact",
     moodLogs: {},
