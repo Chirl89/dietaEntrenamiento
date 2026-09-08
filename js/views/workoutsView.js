@@ -16,7 +16,13 @@ import {
   recordDailySnapshot,
   defaultWatchMetrics
 } from '../state.js';
-import { WEEKLY_WORKOUT_SCHEDULE } from '../../data.js';
+import {
+  WEEKLY_WORKOUT_SCHEDULE,
+  CARLOS_WORKOUT_SCHEDULE,
+  ANDREA_WORKOUT_SCHEDULE,
+  WEEKLY_WORKOUT_SCHEDULE_BY_PROFILE,
+  getWeeklyWorkoutSchedule
+} from '../../data.js';
 
 export function isDayCompleted(profileId, dayName) {
   const dayData = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -126,7 +132,7 @@ export function toggleWorkoutDay(dayName) {
       }
       recordDailySnapshot(profileId, targetDate, null, { isWorkoutDone: false, sessions: [], completedWorkouts: [] });
     } else {
-      const schedule = WEEKLY_WORKOUT_SCHEDULE?.[dayName] || {};
+      const schedule = getWeeklyWorkoutSchedule(profileId)?.[dayName] || {};
       const defMin = schedule.duration || 35;
       const defKcal = Math.round(defMin * 7.5);
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
@@ -1324,6 +1330,237 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
     </svg>`;
   }
 
+  if (vType === "pushup") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes pushupDip {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(26px); }
+        }
+        @keyframes chestGlow {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; filter: drop-shadow(0 0 10px #f43f5e); }
+        }
+        .anim-pushup-body { animation: pushupDip 2.8s ease-in-out infinite; transform-origin: 240px 175px; }
+        .anim-chest-pulse { animation: chestGlow 2.8s ease-in-out infinite; }
+      </style>
+      <rect x="30" y="176" width="260" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+      
+      <!-- Push-up Body -->
+      <g class="anim-pushup-body">
+        <!-- Head -->
+        <circle cx="85" cy="118" r="13" fill="#38bdf8" />
+        <!-- Torso / Spine in plank line -->
+        <line x1="95" y1="125" x2="235" y2="162" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        
+        <!-- Arms pushing floor -->
+        <line x1="115" y1="130" x2="115" y2="176" stroke="#94a3b8" stroke-width="5.5" stroke-linecap="round" />
+        <circle cx="115" cy="176" r="4.5" fill="#f43f5e" />
+
+        <!-- Chest Activation Spark -->
+        <circle cx="120" cy="132" r="9" fill="rgba(244, 63, 94, 0.25)" class="anim-chest-pulse" />
+      </g>
+
+      <!-- Feet planted -->
+      <circle cx="235" cy="168" r="5" fill="#64748b" />
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Flexiones de Pecho en Suelo • Pectoral & Tríceps</text>
+      <text x="160" y="48" font-size="9.5" fill="#94a3b8" text-anchor="middle">Cuerpo alineado como una tabla • Codos a 45° del torso</text>
+    </svg>`;
+  }
+
+  if (vType === "shoulder_press") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes pressArmsUp {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-30px); }
+        }
+        @keyframes deltoidPulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; filter: drop-shadow(0 0 8px #38bdf8); }
+        }
+        .anim-press-arms { animation: pressArmsUp 2.8s ease-in-out infinite; }
+        .anim-deltoid-glow { animation: deltoidPulse 2.8s ease-in-out infinite; }
+      </style>
+      <line x1="30" y1="185" x2="290" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="80" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <!-- Standing Legs & Torso -->
+      <line x1="148" y1="185" x2="154" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="172" y1="185" x2="166" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <line x1="160" y1="140" x2="160" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <circle cx="160" cy="58" r="13" fill="#38bdf8" />
+
+      <!-- Band under feet -->
+      <line x1="140" y1="186" x2="180" y2="186" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+
+      <!-- Moving Arms Pressing Overhead -->
+      <g class="anim-press-arms">
+        <!-- Left arm -->
+        <line x1="150" y1="80" x2="125" y2="78" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+        <circle cx="125" cy="78" r="5" fill="#f43f5e" />
+        <!-- Right arm -->
+        <line x1="170" y1="80" x2="195" y2="78" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+        <circle cx="195" cy="78" r="5" fill="#f43f5e" />
+
+        <!-- Band stretched from feet to hands -->
+        <line x1="145" y1="185" x2="125" y2="78" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="3 2" />
+        <line x1="175" y1="185" x2="195" y2="78" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="3 2" />
+      </g>
+
+      <!-- Deltoid Glow -->
+      <circle cx="145" cy="80" r="7" fill="rgba(56, 189, 248, 0.4)" class="anim-deltoid-glow" />
+      <circle cx="175" cy="80" r="7" fill="rgba(56, 189, 248, 0.4)" class="anim-deltoid-glow" />
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Press Militar de Hombros con Banda • Deltoides</text>
+      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Empuje vertical directo • Abdomen y glúteos compactos</text>
+    </svg>`;
+  }
+
+  if (vType === "monster_walk") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes monsterStepCycle {
+          0%, 100% { transform: translateX(-18px); }
+          50% { transform: translateX(18px); }
+        }
+        @keyframes bandStretchGlow {
+          0%, 100% { stroke: #f59e0b; }
+          50% { stroke: #f43f5e; filter: drop-shadow(0 0 8px #f43f5e); }
+        }
+        .anim-monster-walker { animation: monsterStepCycle 2.4s ease-in-out infinite; }
+        .anim-monster-band { animation: bandStretchGlow 2.4s ease-in-out infinite; }
+      </style>
+      <line x1="20" y1="185" x2="300" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="90" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <g class="anim-monster-walker">
+        <!-- Quarter squat body -->
+        <line x1="160" y1="135" x2="160" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <circle cx="160" cy="58" r="13" fill="#38bdf8" />
+        
+        <!-- Guard arms -->
+        <line x1="160" y1="88" x2="140" y2="105" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
+        <line x1="160" y1="88" x2="180" y2="105" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
+
+        <!-- Left Leg in athletic stance -->
+        <line x1="160" y1="135" x2="135" y2="158" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <line x1="135" y1="158" x2="125" y2="185" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+        <circle cx="125" cy="185" r="4" fill="#38bdf8" />
+
+        <!-- Right Leg in athletic stance -->
+        <line x1="160" y1="135" x2="185" y2="158" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+        <line x1="185" y1="158" x2="195" y2="185" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+        <circle cx="195" cy="185" r="4" fill="#38bdf8" />
+
+        <!-- Resistance Band around thighs/knees -->
+        <line x1="135" y1="158" x2="185" y2="158" stroke="#f59e0b" stroke-width="6" stroke-linecap="round" class="anim-monster-band" />
+        <circle cx="135" cy="158" r="4.5" fill="#f43f5e" />
+        <circle cx="185" cy="158" r="4.5" fill="#f43f5e" />
+      </g>
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Monster Walk Lateral con Banda • Glúteo Medio</text>
+      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Media sentadilla activa • Tensión continua sin juntar los pies</text>
+    </svg>`;
+  }
+
+  if (vType === "donkey_kick") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes kickUpCycle {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(-28deg); }
+        }
+        @keyframes gluteHighlight {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; filter: drop-shadow(0 0 10px #f43f5e); }
+        }
+        .anim-donkey-leg { animation: kickUpCycle 2.4s ease-in-out infinite; transform-origin: 195px 125px; }
+        .anim-glute-glow { animation: gluteHighlight 2.4s ease-in-out infinite; }
+      </style>
+      <rect x="40" y="168" width="240" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+
+      <!-- Fixed support limbs in quadruped -->
+      <line x1="125" y1="125" x2="125" y2="168" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
+      <line x1="185" y1="125" x2="185" y2="168" stroke="#475569" stroke-width="5.5" stroke-linecap="round" />
+
+      <!-- Spine & Head flat -->
+      <line x1="120" y1="122" x2="195" y2="122" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+      <circle cx="102" cy="118" r="12" fill="#38bdf8" />
+
+      <!-- Glute activation indicator -->
+      <circle cx="195" cy="120" r="10" fill="rgba(244, 63, 94, 0.4)" class="anim-glute-glow" />
+
+      <!-- Kicking Leg (flexed 90° pushing up) -->
+      <g class="anim-donkey-leg">
+        <line x1="195" y1="125" x2="230" y2="105" stroke="#f43f5e" stroke-width="6" stroke-linecap="round" />
+        <line x1="230" y1="105" x2="240" y2="78" stroke="#f43f5e" stroke-width="6" stroke-linecap="round" />
+        <!-- Foot sole flat to ceiling -->
+        <line x1="234" y1="78" x2="248" y2="78" stroke="#cbd5e1" stroke-width="4.5" stroke-linecap="round" />
+      </g>
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Patada de Glúteo en Cuadrupedia (Donkey Kicks)</text>
+      <text x="160" y="48" font-size="9.5" fill="#94a3b8" text-anchor="middle">Suela empujando hacia el techo • Cero balanceo lumbar</text>
+    </svg>`;
+  }
+
+  if (vType === "deadlift_band") {
+    return `
+    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+      ${commonDefs}
+      <style>
+        @keyframes hingeCycle {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(34deg); }
+        }
+        @keyframes gluteHamPulse {
+          0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px #10b981); }
+          50% { opacity: 0.3; }
+        }
+        .anim-hinge-torso { animation: hingeCycle 3s ease-in-out infinite; transform-origin: 165px 135px; }
+        .anim-hamstring-pulse { animation: gluteHamPulse 3s ease-in-out infinite; }
+      </style>
+      <line x1="25" y1="185" x2="295" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="160" cy="186" rx="80" ry="6" fill="url(#gradFloor_${vType})" />
+
+      <!-- Legs slightly bent -->
+      <line x1="165" y1="135" x2="162" y2="185" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <circle cx="162" cy="185" r="4.5" fill="#38bdf8" />
+
+      <!-- Band under feet -->
+      <ellipse cx="162" cy="186" rx="14" ry="4" fill="none" stroke="#f59e0b" stroke-width="4" />
+
+      <!-- Hinging Torso & Arms -->
+      <g class="anim-hinge-torso">
+        <!-- Spine (stays completely straight!) -->
+        <line x1="165" y1="135" x2="165" y2="72" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <circle cx="165" cy="52" r="13" fill="#38bdf8" />
+
+        <!-- Arms holding band hanging down -->
+        <line x1="165" y1="80" x2="150" y2="125" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+        <circle cx="150" cy="125" r="4.5" fill="#f43f5e" />
+
+        <!-- Band stretched up to hands -->
+        <line x1="162" y1="185" x2="150" y2="125" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="3 2" />
+      </g>
+
+      <!-- Glute & Hamstring squeeze glow -->
+      <circle cx="172" cy="140" r="10" fill="rgba(16, 185, 129, 0.4)" class="anim-hamstring-pulse" />
+
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Peso Muerto Rumano con Banda • Glúteos & Isquios</text>
+      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Bisagra pura de cadera hacia atrás • Espalda neutra y bloqueo de glúteos arriba</text>
+    </svg>`;
+  }
+
   // Generic clean fallback for other safe exercises
   return `
   <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
@@ -1402,10 +1639,12 @@ export function renderEquipmentIcons(equipment) {
   }).join(' ');
 }
 
-export function openExerciseGuideModal(dayName, exerciseIdx) {
+export function openExerciseGuideModal(dayName, exerciseIdx, customProfileId) {
   try {
     triggerHapticTouch();
-    const dayRoutine = WEEKLY_WORKOUT_SCHEDULE?.[dayName] || WEEKLY_WORKOUT_SCHEDULE?.["Lunes"];
+    const pid = customProfileId || appState.activeProfileId || 'he';
+    const schedule = getWeeklyWorkoutSchedule(pid);
+    const dayRoutine = schedule?.[dayName] || schedule?.["Lunes"];
     const ex = dayRoutine?.exercises?.[exerciseIdx];
     if (!ex) return;
 
@@ -1420,7 +1659,8 @@ export function openExerciseGuideModal(dayName, exerciseIdx) {
     const targetMusclesStr = Array.isArray(ex.targetMuscles)
       ? ex.targetMuscles.join(", ")
       : (ex.targetMuscles || 'Fortalecimiento de Espalda & Core');
-    if (subEl) subEl.innerText = `${dayName} • ${targetMusclesStr}`;
+    const pName = appState.profiles?.[pid]?.name || (pid === 'he' ? 'Carlos' : 'Andrea');
+    if (subEl) subEl.innerText = `${pName} • ${dayName} • ${targetMusclesStr}`;
 
     const visualSvg = getExerciseVisualSvg(ex.visualType, ex.name);
 
@@ -1488,7 +1728,14 @@ export function openExerciseGuideModal(dayName, exerciseIdx) {
           </div>
           <p>${ex.spinalSafetyNote}</p>
         </div>
-      ` : ''}
+      ` : (ex.focusTip ? `
+        <div class="guide-spine-safety" style="background: rgba(2, 132, 199, 0.08); border-color: rgba(2, 132, 199, 0.25);">
+          <div class="guide-spine-safety-header" style="color: var(--accent-cyan);">
+            <i class="fa-solid fa-fire"></i> Clave de Activación & Rendimiento:
+          </div>
+          <p>${ex.focusTip}</p>
+        </div>
+      ` : '')}
 
       <div class="guide-section-title">
         <i class="fa-solid fa-clipboard-list" style="color: var(--accent-cyan);"></i> Instrucciones Paso a Paso:
@@ -1527,13 +1774,16 @@ export function renderExerciseTableView() {
     container.innerHTML = "";
 
     const activeDay = appState.activeExerciseDay || getTodayDayName();
+    const profileId = appState.activeProfileId || 'he';
+    const p = appState.profiles?.[profileId] || { name: profileId === 'he' ? 'Carlos' : 'Andrea' };
 
     const selectElem = document.getElementById("exercise-day-select");
     if (selectElem && selectElem.value !== activeDay) {
       selectElem.value = activeDay;
     }
 
-    const routine = WEEKLY_WORKOUT_SCHEDULE?.[activeDay] || WEEKLY_WORKOUT_SCHEDULE?.["Lunes"];
+    const currentSchedule = getWeeklyWorkoutSchedule(profileId);
+    const routine = currentSchedule?.[activeDay] || currentSchedule?.["Lunes"];
     if (!routine) return;
 
     const card = document.createElement("div");
@@ -1546,7 +1796,7 @@ export function renderExerciseTableView() {
             <span class="exercise-clean-name">${ex.name}</span>
             <span class="exercise-clean-icons">${renderEquipmentIcons(ex.equipment)}</span>
           </div>
-          <button type="button" class="btn-exercise-guide-compact" onclick="if(window.openExerciseGuideModal) window.openExerciseGuideModal('${activeDay}', ${exIdx});" title="Ver técnica y animación visual">
+          <button type="button" class="btn-exercise-guide-compact" onclick="if(window.openExerciseGuideModal) window.openExerciseGuideModal('${activeDay}', ${exIdx}, '${profileId}');" title="Ver técnica y animación visual">
             <i class="fa-solid fa-play"></i> Guía
           </button>
         </div>
@@ -1571,15 +1821,18 @@ export function renderExerciseTableView() {
     card.innerHTML = `
       <div class="routine-header-box" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.85rem;">
         <div>
+          <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 5px;">
+            <span class="routine-badge" style="background: ${profileId === 'he' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(244, 63, 94, 0.15)'}; color: ${profileId === 'he' ? '#0284c7' : '#e11d48'}; font-weight: 700;">
+              <i class="fa-solid ${profileId === 'he' ? 'fa-mars' : 'fa-venus'}"></i> ${p.name || (profileId === 'he' ? 'Carlos' : 'Andrea')}
+            </span>
+            <span class="routine-badge"><i class="fa-solid fa-clock"></i> ${routine.duration} min</span>
+          </div>
           <h2 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--text-main); margin-bottom: 2px;">
             ${routine.title}
           </h2>
           <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">
             ${routine.focus || ''}
           </p>
-        </div>
-        <div>
-          <span class="routine-badge"><i class="fa-solid fa-clock"></i> ${routine.duration} min</span>
         </div>
       </div>
 
@@ -1614,6 +1867,7 @@ export function renderWorkoutTracker() {
     if (!p) return;
     const watchMetrics = appState.appleWatch?.metrics?.[profileId] || { moveKcal: 0, hr: 0, steps: 0, distanceKm: 0 };
     const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const currentSchedule = getWeeklyWorkoutSchedule(profileId);
 
     let completedCount = 0;
     let totalMinutes = 0;
@@ -1625,7 +1879,7 @@ export function renderWorkoutTracker() {
         if (watchData && watchData.durationMin) {
           totalMinutes += watchData.durationMin;
         } else {
-          const schedule = WEEKLY_WORKOUT_SCHEDULE?.[d];
+          const schedule = currentSchedule?.[d];
           if (schedule && schedule.duration) {
             totalMinutes += schedule.duration;
           }
@@ -1701,7 +1955,7 @@ export function renderWorkoutTracker() {
     days.forEach(day => {
       const isDone = isDayCompleted(profileId, day);
       const watchData = getDayWatchData(profileId, day);
-      const routine = WEEKLY_WORKOUT_SCHEDULE?.[day] || {};
+      const routine = currentSchedule?.[day] || {};
 
       let watchBadgeHtml = "";
       if (isDone && watchData) {

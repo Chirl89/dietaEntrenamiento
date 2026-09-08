@@ -713,10 +713,10 @@ export const RECIPES_DATABASE = [
   }
 ];
 
-export const WEEKLY_WORKOUT_SCHEDULE = {
+export const CARLOS_WORKOUT_SCHEDULE = {
   Lunes: {
     day: "Lunes",
-    title: "Lunes: Fuerza Base & Cadena Posterior Segura (Carlos & Andrea)",
+    title: "Lunes: Fuerza Base & Cadena Posterior Segura (Carlos)",
     duration: 35,
     location: "En casa",
     equipment: ["Ring-Con (Switch)", "Banda Elástica", "Silla", "Esterilla"],
@@ -1285,6 +1285,691 @@ export const WEEKLY_WORKOUT_SCHEDULE = {
   }
 };
 
+export const ANDREA_WORKOUT_SCHEDULE = {
+  Lunes: {
+    day: "Lunes",
+    title: "Lunes: Tren Inferior & Glúteos Esculpidos (Andrea)",
+    duration: 35,
+    location: "En casa",
+    equipment: ["Banda Elástica", "Silla", "Esterilla"],
+    type: "Tonificación Piernas & Glúteos",
+    focus: "Activación de glúteo medio, cuádriceps, isquios y abdomen firme",
+    exercises: [
+      {
+        id: "andrea_sentadilla_banda",
+        name: "Sentadilla Profunda con Banda Elástica",
+        sets: 3,
+        reps: "12 - 15",
+        rest: "45 seg",
+        equipment: "Banda Elástica",
+        technique: "Coloca la banda circular por encima de las rodillas. Abre las rodillas empujando hacia afuera mientras bajas y aprieta glúteos arriba.",
+        focusTip: "Mantén tensión continua en la banda elástica empujando las rodillas hacia afuera en todo el rango de recorrido.",
+        targetMuscles: ["Glúteo Mayor", "Glúteo Medio", "Cuádriceps", "Core"],
+        steps: [
+          "Coloca la banda de resistencia elástica 5 cm por encima de tus rodillas.",
+          "Separa los pies a la anchura de hombros con puntas orientadas 30° hacia afuera.",
+          "Inhala, empuja la cadera hacia atrás y flexiona rodillas hasta que los muslos queden paralelos al suelo.",
+          "Exhala empujando contra el suelo a través de los talones y aprieta fuertemente los glúteos al llegar arriba."
+        ],
+        commonMistakes: ["Dejar que las rodillas colapsen hacia adentro (valgo)", "Despegar los talones del suelo", "Arquear excesivamente la espalda"],
+        visualType: "ring_squat"
+      },
+      {
+        id: "andrea_hip_thrust_banda",
+        name: "Puente de Glúteos / Hip Thrust con Banda",
+        sets: 3,
+        reps: "15 reps (2s pausa arriba)",
+        rest: "45 seg",
+        equipment: "Banda Elástica + Esterilla",
+        technique: "Tumbada en la esterilla con la banda en las rodillas, eleva la pelvis contrayendo glúteos al máximo durante 2 segundos arriba.",
+        focusTip: "La clave está en la pausa isométrica de 2 segundos arriba: aprieta los glúteos como si sostuvieras una moneda entre ellos.",
+        targetMuscles: ["Glúteo Mayor", "Isquiosurales", "Core Inferior"],
+        steps: [
+          "Túmbate boca arriba sobre la esterilla con rodillas flexionadas y pies apoyados a la anchura de caderas.",
+          "Coloca la banda sobre las rodillas manteniendo una ligera apertura hacia afuera.",
+          "Apoya los talones con firmeza y eleva las caderas hasta formar una línea recta de rodillas a hombros.",
+          "Sostén la contracción en el punto más alto durante 2 segundos y desciende de forma controlada sin tocar del todo el suelo."
+        ],
+        commonMistakes: ["Hiperextender la zona lumbar en lugar de apretar el glúteo", "Juntar las rodillas al subir", "Hacer repeticiones rápidas con rebote"],
+        visualType: "ring_glute_bridge"
+      },
+      {
+        id: "andrea_zancada_bulgara",
+        name: "Zancada Búlgara / Split Squat en Silla",
+        sets: 3,
+        reps: "10 - 12 / pierna",
+        rest: "60 seg",
+        equipment: "Silla + Esterilla",
+        technique: "Apoya el empeine trasero en el asiento de la silla. Desciende flexionando la pierna delantera con el torso ligeramente inclinado al frente para enfatizar glúteo.",
+        focusTip: "Inclinar el torso unos 15° hacia adelante transfiere la mayor parte de la carga directamente al glúteo de la pierna adelantada.",
+        targetMuscles: ["Glúteo Mayor", "Cuádriceps", "Isquios", "Equilibrio & Estabilidad"],
+        steps: [
+          "Colócate a un metro de espaldas a la silla y apoya el empeine de un pie sobre el asiento.",
+          "Mantén el pie delantero completamente plantado en el suelo con el peso en el talón.",
+          "Desciende flexionando la rodilla delantera hasta que el muslo quede casi paralelo al suelo.",
+          "Empuja con el talón delantero para volver a la posición inicial manteniendo la estabilidad."
+        ],
+        commonMistakes: ["Colocar el pie delantero demasiado cerca de la silla", "Empujar con el pie trasero en lugar de con el delantero", "Perder el equilibrio por mirar a los lados"],
+        visualType: "split_squat"
+      },
+      {
+        id: "andrea_monster_walk",
+        name: "Monster Walk Lateral con Banda",
+        sets: 3,
+        reps: "15 pasos / lado",
+        rest: "45 seg",
+        equipment: "Banda Elástica",
+        technique: "En posición de media sentadilla (cuarto de sentadilla), da pasos laterales manteniendo la banda en tensión continua para activar glúteo medio.",
+        focusTip: "No juntes los pies al cerrar el paso; mantén siempre al menos 20 cm de separación para que la banda nunca pierda tensión.",
+        targetMuscles: ["Glúteo Medio", "Glúteo Menor", "Tensor de la Fascia Lata", "Estabilidad de Cadera"],
+        steps: [
+          "Coloca la banda circular alrededor de los muslos (o en tobillos para mayor intensidad).",
+          "Adopta una posición atlética: rodillas semiflexionadas, cadera atrás y pecho erguido.",
+          "Da un paso lateral amplio hacia la derecha empujando con la rodilla y el talón.",
+          "Sigue con el pie izquierdo sin permitir que la banda pierda resistencia, repite 15 pasos y vuelve hacia el otro lado."
+        ],
+        commonMistakes: ["Ponerse de pie entre pasos perdiendo la media sentadilla", "Girar los pies hacia afuera en exceso", "Dejar que la banda se destense"],
+        visualType: "monster_walk"
+      },
+      {
+        id: "andrea_donkey_kicks",
+        name: "Patada de Glúteo en Cuadrupedia con Banda",
+        sets: 3,
+        reps: "12 - 15 / pierna",
+        rest: "45 seg",
+        equipment: "Banda Elástica + Esterilla",
+        technique: "En 4 puntos de apoyo en esterilla, empuja la planta del pie hacia el techo flexionando a 90°, concentrando la contracción en la parte alta del glúteo.",
+        focusTip: "Imagina que quieres estampar la suela de tu zapatilla en el techo, sin balancear la pelvis ni arquear la espalda.",
+        targetMuscles: ["Glúteo Mayor (fibras superiores)", "Isquiotibiales", "Core Estabilizador"],
+        steps: [
+          "Colócate en cuadrupedia sobre la esterilla con manos bajo hombros y rodillas bajo caderas.",
+          "Fija la banda elástica entre ambas piernas o en el hueco poplíteo de la pierna activa.",
+          "Con la rodilla flexionada a 90°, eleva el talón hacia el techo apretando el glúteo en la cima 1 segundo.",
+          "Baja de forma controlada sin apoyar la rodilla en el suelo y repite todas las repeticiones antes de cambiar de pierna."
+        ],
+        commonMistakes: ["Arquear la espalda lumbar al subir la pierna", "Abrir la cadera hacia el lado", "Usar impulso rápido en lugar de control"],
+        visualType: "donkey_kick"
+      }
+    ]
+  },
+  Martes: {
+    day: "Martes",
+    title: "Martes: Cardio Fartlek & Agilidad en Parque con Boo (Andrea)",
+    duration: 40,
+    location: "Al aire libre (Parque / Vía Verde)",
+    equipment: ["Zapatillas Deportivas", "Arnés Boo", "Frisbee o Juguete"],
+    type: "Cardio Intervalar & Agilidad",
+    focus: "Resistencia aeróbica, intervalos de trote y estimulación física con Boo",
+    exercises: [
+      {
+        id: "andrea_calentamiento_boo",
+        name: "Paseo Activo de Calentamiento con Boo",
+        sets: 1,
+        reps: "10 min",
+        rest: "-",
+        equipment: "Zapatillas + Arnés Boo",
+        technique: "Caminata a ritmo ligero/medio permitiendo los primeros olfateos de Boo y activando la circulación general.",
+        focusTip: "Aumenta progresivamente la zancada y el braceo para elevar la temperatura corporal antes de los intervalos de trote.",
+        targetMuscles: ["Gemelos", "Cuádriceps", "Sistema Cardiovascular"],
+        steps: [
+          "Inicia con paso normal durante 3-4 minutos mientras Boo hace sus necesidades.",
+          "Aumenta el ritmo a caminata viva (5 - 5.5 km/h) balanceando los brazos.",
+          "Realiza círculos con los hombros y ligeras zancadas dinámicas en paradas breves."
+        ],
+        commonMistakes: ["Empezar a trotar en frío sin los 10 minutos de calentamiento"],
+        visualType: "walking"
+      },
+      {
+        id: "andrea_fartlek_parque",
+        name: "Fartlek Intervalar con Boo (1' trote + 2' caminata)",
+        sets: 5,
+        reps: "3 min c/u (15 min total)",
+        rest: "En caminata",
+        equipment: "Zapatillas + Arnés Boo",
+        technique: "Alterna 1 minuto de trote continuo a ritmo cómodo con 2 minutos de caminata rápida de recuperación. Boo te acompañará feliz al trote.",
+        focusTip: "El minuto de trote debe ser a ritmo conversacional: si no puedes decir una frase corta sin ahogarte, baja un poco la velocidad.",
+        targetMuscles: ["Capacidad Aeróbica", "Quema de Grasa", "Gemelos y Sóleos"],
+        steps: [
+          "Comienza el bloque 1 trotando a ritmo constante durante 60 segundos.",
+          "Transiciona suavemente a caminata rápida durante 120 segundos para recuperar el pulso.",
+          "Repite la secuencia un total de 5 veces manteniendo la constancia de ritmo."
+        ],
+        commonMistakes: ["Esprintar en el minuto de trote y agotarse en el primer bloque", "Detenerse por completo en la fase de caminata"],
+        visualType: "walking"
+      },
+      {
+        id: "andrea_step_ups_banco",
+        name: "Step-Ups Explosivos en Banco de Parque",
+        sets: 3,
+        reps: "12 / pierna",
+        rest: "45 seg",
+        equipment: "Banco de parque + Zapatillas",
+        technique: "Sube a un banco de parque firme impulsando con el talón de la pierna apoyada, elevando la rodilla contraria al pecho.",
+        focusTip: "Empuja exclusivamente con la pierna de arriba; no des impulso con la punta del pie que está en el suelo.",
+        targetMuscles: ["Cuádriceps", "Glúteo Mayor", "Gemelos", "Equilibrio Dinámico"],
+        steps: [
+          "Colócate frente a un banco de parque firme y estable.",
+          "Coloca un pie completamente sobre el asiento.",
+          "Empuja fuerte con ese talón para elevar todo tu cuerpo, llevando la rodilla contraria hacia el pecho en la cima.",
+          "Baja con control apoyando la misma pierna y completa 12 repeticiones antes de cambiar."
+        ],
+        commonMistakes: ["Usar un banco inestable o mojado", "Rebotar con el pie de abajo"],
+        visualType: "step_up"
+      },
+      {
+        id: "andrea_estiramiento_parque",
+        name: "Estiramientos de Enfriamiento en Parque",
+        sets: 1,
+        reps: "5 min",
+        rest: "-",
+        equipment: "Zapatillas",
+        technique: "Estiramientos estáticos suaves para cuádriceps, gemelos, glúteos e isquiotibiales mientras Boo descansa hidratándose.",
+        focusTip: "Mantén cada posición 25-30 segundos respirando hondo y sin dar rebotes.",
+        targetMuscles: ["Cadena Posterior", "Cuádriceps", "Flexores de Cadera"],
+        steps: [
+          "Estiramiento de gemelos apoyando manos en un árbol o valla.",
+          "Estiramiento de cuádriceps llevando el talón al glúteo sujetando el tobillo.",
+          "Flexión suave de tronco al frente para estirar isquiosurales."
+        ],
+        commonMistakes: ["Dar rebotes bruscos al estirar", "Contener la respiración"],
+        visualType: "stretching"
+      }
+    ],
+    routeDetails: {
+      title: "Ruta Fartlek Urbano & Parque con Boo",
+      description: "Combina paseo activo con intervalos de trote y paradas de ejercicio funcional mientras Boo canaliza su energía.",
+      breakdown: [
+        { step: "0 - 10 min", activity: "Paseo de Calentamiento y olfateo libre para Boo." },
+        { step: "10 - 25 min", activity: "Fartlek Intervalar: 1 min trote suave + 2 min caminata rápida (5 bloques)." },
+        { step: "25 - 35 min", activity: "Circuito en Banco de Parque: Step-ups alternados mientras Boo realiza 'Sentado/Quieto'." },
+        { step: "35 - 40 min", activity: "Paseo de vuelta a casa y estiramientos suaves." }
+      ],
+      collieTips: "Lleva agua para Boo, su juguete favorito y premios magros para recompensar su obediencia en las pausas."
+    }
+  },
+  Miércoles: {
+    day: "Miércoles",
+    title: "Miércoles: Tren Superior & Brazos Definidos (Andrea)",
+    duration: 35,
+    location: "En casa",
+    equipment: ["Banda Elástica", "Silla", "Esterilla"],
+    type: "Definición Tren Superior & Postura",
+    focus: "Espalda esbelta, hombros redondeados, brazos tonificados y pecho firme",
+    exercises: [
+      {
+        id: "andrea_flexiones_suelo",
+        name: "Flexiones de Brazos (en Suelo o sobre Rodillas)",
+        sets: 3,
+        reps: "10 - 12",
+        rest: "60 seg",
+        equipment: "Esterilla",
+        technique: "Cuerpo alineado como una tabla. Desciende el pecho rozando el suelo con codos formando 45° respecto al torso.",
+        focusTip: "Activa el abdomen y los glúteos para que tu cadera no se hunda; el pecho y la pelvis bajan y suben al mismo tiempo.",
+        targetMuscles: ["Pectoral", "Tríceps", "Deltoides Anterior", "Core"],
+        steps: [
+          "Colócate en posición de plancha en el suelo con manos separadas algo más del ancho de hombros (apoya rodillas si lo necesitas).",
+          "Inhala y desciende el pecho controladamente flexionando los codos hacia atrás a 45°.",
+          "Baja hasta que el pecho quede a un puño del suelo sin arquear la zona lumbar.",
+          "Exhala y empuja fuerte contra el suelo para volver a la posición inicial."
+        ],
+        commonMistakes: ["Abrir los codos a 90° en T (estresa los hombros)", "Dejar caer la cadera hacia el suelo", "Doblar el cuello hacia abajo"],
+        visualType: "pushup"
+      },
+      {
+        id: "andrea_remo_banda",
+        name: "Remo Sentada / de Pie con Banda Elástica",
+        sets: 3,
+        reps: "12 - 15",
+        rest: "45 seg",
+        equipment: "Banda Elástica + Silla",
+        technique: "Ancla la banda en los pies o en un punto fijo. Tira llevando los codos pegados al cuerpo y junta las escápulas al final.",
+        focusTip: "Inicia el movimiento juntando las escápulas atrás antes de flexionar los brazos. Sentirás la espalda media activarse.",
+        targetMuscles: ["Dorsal Ancho", "Romboides", "Bíceps", "Deltoides Posterior"],
+        steps: [
+          "Siéntate en la esterilla con piernas estiradas o de pie con rodillas semiflexionadas pasando la banda bajo los pies.",
+          "Sujeta los extremos de la banda manteniendo el pecho erguido y hombros abajo.",
+          "Tira de la banda hacia tu ombligo llevando los codos hacia atrás y apretando la espalda media 1 segundo.",
+          "Regresa lentamente resistiendo la tensión elástica sin redondear los hombros."
+        ],
+        commonMistakes: ["Elevar los hombros hacia las orejas", "Dar tirones con la espalda baja en lugar de tirar con brazos y dorsales"],
+        visualType: "band_row"
+      },
+      {
+        id: "andrea_press_militar_banda",
+        name: "Press Militar de Hombros con Banda",
+        sets: 3,
+        reps: "12 - 15",
+        rest: "45 seg",
+        equipment: "Banda Elástica",
+        technique: "Pisa la banda con ambos pies y empuja las manos desde los hombros directamente hacia el techo sin arquear la espalda.",
+        focusTip: "Aprieta glúteos y abdomen mientras empujas hacia arriba para mantener una postura impecable y estilizada.",
+        targetMuscles: ["Deltoides", "Trapecio Superior", "Tríceps", "Estabilidad Escapular"],
+        steps: [
+          "Pisa el centro de la banda elástica con los pies a la anchura de hombros.",
+          "Lleva las manos a la altura de las clavículas con palmas hacia el frente.",
+          "Exhala y empuja las manos hacia el techo en línea vertical hasta extender casi por completo los codos.",
+          "Inhala y baja controladamente hasta la altura de los hombros."
+        ],
+        commonMistakes: ["Arquear la espalda lumbar al empujar hacia arriba", "Bajar los codos demasiado por debajo de los hombros"],
+        visualType: "shoulder_press"
+      },
+      {
+        id: "andrea_face_pull",
+        name: "Face Pull con Banda para Postura & Hombros",
+        sets: 3,
+        reps: "15",
+        rest: "45 seg",
+        equipment: "Banda Elástica",
+        technique: "Ancla la banda a la altura de la cabeza. Tira llevando las manos hacia las sienes con codos altos y abiertos hacia afuera.",
+        focusTip: "Excelente para abrir el pecho, corregir la postura del trabajo de oficina y redondear la parte posterior del hombro.",
+        targetMuscles: ["Deltoides Posterior", "Manguito Rotador", "Trapecio Medio"],
+        steps: [
+          "Sujeta la banda con agarre neutro o prono a la altura de los ojos.",
+          "Da un paso atrás para generar tensión constante en la goma.",
+          "Tira hacia tu cara separando las manos y llevando los codos bien altos hacia los lados.",
+          "Mantén 1 segundo la contracción rotando externamente los hombros y regresa con suavidad."
+        ],
+        commonMistakes: ["Bajar los codos pegados al cuerpo (se convierte en remo)", "Echar la cabeza hacia adelante para buscar la banda"],
+        visualType: "face_pull"
+      },
+      {
+        id: "andrea_fondos_silla",
+        name: "Fondos de Tríceps en Silla",
+        sets: 3,
+        reps: "10 - 12",
+        rest: "45 seg",
+        equipment: "Silla",
+        technique: "Apoya las manos en el borde de la silla y flexiona codos a 90° manteniendo la espalda cerca del asiento antes de extender.",
+        focusTip: "Mantén los codos apuntando hacia atrás, no permitas que se abran hacia los lados.",
+        targetMuscles: ["Tríceps Braquial", "Deltoides Anterior", "Pectoral Menor"],
+        steps: [
+          "Siéntate en el borde de una silla firme y coloca las palmas junto a tus caderas.",
+          "Desplaza la cadera hacia adelante justo fuera del asiento manteniendo los pies plantados en el suelo.",
+          "Inhala y flexiona los codos hasta unos 90° manteniendo la espalda rozando el borde de la silla.",
+          "Exhala y empuja con fuerza las palmas para extender los brazos y volver arriba."
+        ],
+        commonMistakes: ["Alejar la cadera de la silla (sobrecarga el hombro)", "Bajar demasiado profundo provocando pellizco articular"],
+        visualType: "chair_dips"
+      }
+    ]
+  },
+  Jueves: {
+    day: "Jueves",
+    title: "Jueves: Descanso Activo, Core Profundo & Paseo con Boo (Andrea)",
+    duration: 35,
+    location: "Al aire libre / En casa",
+    equipment: ["Esterilla", "Zapatillas", "Arnés Boo"],
+    type: "Recuperación Activa & Abdomen Plano",
+    focus: "Activación de transverso abdominal, movilidad de caderas y relajación mental con Boo",
+    exercises: [
+      {
+        id: "andrea_paseo_relajado",
+        name: "Paseo de Olfateo & Desconexión con Boo",
+        sets: 1,
+        reps: "25 - 30 min",
+        rest: "-",
+        equipment: "Zapatillas + Arnés Boo",
+        technique: "Paseo a paso libre y tranquilo permitiendo que Boo huela rastros en parques o zonas verdes sin prisas.",
+        focusTip: "Caminar relajadamente sin prisas estimula el sistema parasimpático, bajando el cortisol y acelerando la recuperación muscular.",
+        targetMuscles: ["Recuperación Activa", "Bienestar General"],
+        steps: [
+          "Sal a una zona ajardinada o sendero arbolado.",
+          "Deja que Boo olfatee libremente a su aire.",
+          "Mantén una respiración profunda y relajada durante todo el trayecto."
+        ],
+        commonMistakes: ["Mirar el móvil constantemente en lugar de conectar con el paseo y Boo"],
+        visualType: "walking"
+      },
+      {
+        id: "andrea_plancha_toques",
+        name: "Plancha Abdominal con Toques de Hombro",
+        sets: 3,
+        reps: "30 - 40 seg (o 16 toques)",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "En plancha sobre manos, despega una mano para tocar el hombro opuesto intentando que la cadera no oscile nada de lado a lado.",
+        focusTip: "Abre ligeramente los pies para tener mejor base y aprieta el ombligo como si quisieras pegarlo a la columna.",
+        targetMuscles: ["Transverso del Abdomen", "Oblicuos", "Serratos", "Estabilidad Core"],
+        steps: [
+          "Colócate en posición de plancha alta con manos bajo los hombros y pies un poco más abiertos que la cadera.",
+          "Activa glúteos y abdomen formando una línea recta de pies a cabeza.",
+          "Lenta y controladamente, despega la mano derecha y toca tu hombro izquierdo sin rotar la pelvis.",
+          "Apoya la mano y repite con la mano izquierda al hombro derecho."
+        ],
+        commonMistakes: ["Balancear la cadera de un lado a otro como un barco", "Dejar caer la cabeza o arquear la zona lumbar"],
+        visualType: "side_plank"
+      },
+      {
+        id: "andrea_bicicleta_abs",
+        name: "Bicicleta Abdominal Controlada (Criss-Cross)",
+        sets: 3,
+        reps: "15 alternadas / lado",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "Tumbada boca arriba, lleva el codo hacia la rodilla opuesta con movimiento pausado sintiendo la torsión desde el abdomen, no desde el cuello.",
+        focusTip: "Hazlo lento: 2 segundos por repetición. La lentitud activa el doble de fibras musculares en los oblicuos.",
+        targetMuscles: ["Oblicuos Internos y Externos", "Recto Abdominal", "Flexores de Cadera"],
+        steps: [
+          "Túmbate sobre la esterilla con manos tras la nuca (sin tirar de ella) y piernas en 90° en el aire.",
+          "Extiende una pierna a 45° mientras giras el torso para acercar el codo opuesto a la rodilla que queda flexionada.",
+          "Cambia de lado con fluidez manteniendo las escápulas despegadas del suelo.",
+          "Respira acompasadamente sin tirar de la cabeza con las manos."
+        ],
+        commonMistakes: ["Tirar de las cervicales con las manos", "Hacer el ejercicio a toda velocidad sin control"],
+        visualType: "deadbug"
+      },
+      {
+        id: "andrea_gato_camello",
+        name: "Gato-Camello de Movilidad y Liberación Espinal",
+        sets: 2,
+        reps: "10 repeticiones",
+        rest: "30 seg",
+        equipment: "Esterilla",
+        technique: "En cuadrupedia, arquea suavemente la columna hacia el techo exhalando y extiende hacia abajo inhalando.",
+        focusTip: "Sincroniza el movimiento con la respiración; siente cómo se oxigena toda la musculatura paravertebral.",
+        targetMuscles: ["Movilidad de Columna", "Erectores Espinales", "Respiración"],
+        steps: [
+          "Apóyate sobre manos y rodillas en la esterilla.",
+          "Inhala llevando el pecho suavemente hacia el suelo y mirando ligeramente al frente.",
+          "Exhala empujando la esterilla con las manos, redondeando la espalda hacia el techo y metiendo el ombligo."
+        ],
+        commonMistakes: ["Forzar el rango final bruscamente"],
+        visualType: "cat_cow"
+      },
+      {
+        id: "andrea_estiramiento_cadera",
+        name: "Estiramiento Profundo de Psoas y Caderas",
+        sets: 2,
+        reps: "30 seg / lado",
+        rest: "30 seg",
+        equipment: "Esterilla",
+        technique: "En posición de zancada en el suelo con una rodilla apoyada, empuja la cadera suavemente hacia adelante sintiendo la apertura en el flexor.",
+        focusTip: "Excelente para relajar las caderas y estilizar la zona pélvica tras estar sentada.",
+        targetMuscles: ["Psoas Ilíaco", "Cuádriceps", "Glúteo"],
+        steps: [
+          "Da un paso largo al frente y apoya la rodilla trasera en la esterilla.",
+          "Mantén el tronco erguido y empuja la pelvis suavemente hacia adelante y hacia abajo.",
+          "Respira hondo sintiendo cómo se libera la tensión en la parte frontal de la cadera trasera."
+        ],
+        commonMistakes: ["Arquear excesivamente la espalda lumbar en vez de bascular la pelvis"],
+        visualType: "stretching"
+      }
+    ]
+  },
+  Viernes: {
+    day: "Viernes",
+    title: "Viernes: Full Body Tone & Glúteo Sculpt (Andrea)",
+    duration: 35,
+    location: "En casa",
+    equipment: ["Banda Elástica", "Silla", "Esterilla"],
+    type: "Full Body Dinámico & Glúteos",
+    focus: "Combinación de fuerza y tonificación metabólica de todo el cuerpo",
+    exercises: [
+      {
+        id: "andrea_peso_muerto_banda",
+        name: "Peso Muerto Rumano con Banda Elástica",
+        sets: 3,
+        reps: "12 - 15",
+        rest: "60 seg",
+        equipment: "Banda Elástica",
+        technique: "Pisa la banda con ambos pies, agarra los extremos y realiza una bisagra de cadera llevando los glúteos atrás con espalda recta antes de subir apretando glúteos.",
+        focusTip: "El movimiento nace de empujar la cadera hacia atrás como si quisieras tocar una pared con los glúteos.",
+        targetMuscles: ["Isquiotibiales", "Glúteo Mayor", "Erectores Espinales", "Fuerza de Agarre"],
+        steps: [
+          "Pisa el centro de la banda elástica con los pies a la anchura de hombros.",
+          "Flexiona ligeramente las rodillas (sin agacharte) y agarra los extremos de la goma con firmeza.",
+          "Empuja la cadera hacia atrás inclinando el torso al frente hasta sentir tensión en los isquiosurales.",
+          "Exhala y empuja la pelvis hacia adelante apretando los glúteos firmemente en la cima."
+        ],
+        commonMistakes: ["Doblar las rodillas como en una sentadilla", "Redondear la espalda dorsal o lumbar", "Tirar de la banda con los brazos"],
+        visualType: "deadlift_band"
+      },
+      {
+        id: "andrea_remo_unilateral",
+        name: "Remo Unilateral con Banda & Apoyo en Silla",
+        sets: 3,
+        reps: "12 / lado",
+        rest: "45 seg",
+        equipment: "Banda Elástica + Silla",
+        technique: "Apoya una mano en el asiento de la silla, pisa la banda con el pie contrario y rema con el codo pegado al torso sintiendo el dorsal.",
+        focusTip: "El apoyo en la silla te permite aislar completamente el dorsal y los romboides con máxima estabilidad.",
+        targetMuscles: ["Dorsal Ancho", "Bíceps", "Romboides", "Core"],
+        steps: [
+          "Coloca una mano y la rodilla opuesta sobre la silla o en zancada apoyando la mano libre en el respaldo.",
+          "Pisa la banda con el pie delantero y toma el extremo con la mano activa.",
+          "Tracciona hacia la cadera llevando el codo hacia atrás y arriba.",
+          "Extiende el brazo con control resistiendo la banda."
+        ],
+        commonMistakes: ["Rotar el tronco para subir la banda con impulso", "Tirar con el cuello tenso"],
+        visualType: "band_row"
+      },
+      {
+        id: "andrea_elevaciones_laterales",
+        name: "Elevaciones Laterales de Hombro con Banda",
+        sets: 3,
+        reps: "12 - 15",
+        rest: "45 seg",
+        equipment: "Banda Elástica",
+        technique: "Pisa la banda y eleva los brazos hacia los lados hasta la altura de los hombros con una ligera flexión en los codos.",
+        focusTip: "Imagina que viertes agua de una jarra en el punto más alto para enfatizar el deltoides lateral y estilizar los brazos.",
+        targetMuscles: ["Deltoides Lateral", "Trapecio Superior"],
+        steps: [
+          "Pisa la banda con uno o ambos pies (según la resistencia deseada).",
+          "Con palmas orientadas hacia adentro y codos ligeramente flexionados, eleva los brazos hacia los costados.",
+          "Detente a la altura de los hombros (no subas más arriba de la horizontal).",
+          "Desciende de manera lenta y controlada."
+        ],
+        commonMistakes: ["Dar impulso con el tronco balanceándose", "Elevar las manos por encima de las orejas"],
+        visualType: "yt_raises"
+      },
+      {
+        id: "andrea_plancha_lateral",
+        name: "Plancha Lateral con Elevación de Pierna",
+        sets: 3,
+        reps: "20 seg / lado (o 8 elevaciones)",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "En plancha lateral sobre el antebrazo, eleva la pierna superior abriendo en tijera para un trabajo demoledor de glúteo medio y oblicuos.",
+        focusTip: "Mantén la pelvis alta y alineada con los hombros durante todo el ejercicio.",
+        targetMuscles: ["Glúteo Medio", "Oblicuos", "Cuadrado Lumbar", "Estabilidad de Cadera"],
+        steps: [
+          "Túmbate de lado apoyando el antebrazo bajo el hombro y piernas alineadas (puedes apoyar la rodilla inferior si es necesario).",
+          "Eleva la cadera del suelo formando una línea recta.",
+          "Eleva la pierna superior unos 20-30 cm contrayendo el glúteo lateral y sostén o realiza repeticiones controladas.",
+          "Cambia de lado y repite."
+        ],
+        commonMistakes: ["Dejar caer la cadera hacia la esterilla", "Rotar el torso hacia el suelo"],
+        visualType: "side_plank"
+      },
+      {
+        id: "andrea_bird_dog",
+        name: "Bird-Dog Dinámico con Pausa Isométrica",
+        sets: 3,
+        reps: "10 / lado (2s pausa)",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "En cuadrupedia, extiende brazo y pierna opuestos hasta formar una línea horizontal perfecta con la columna, manteniendo 2 segundos.",
+        focusTip: "Estira hacia adelante y hacia atrás como si quisieras tocar dos paredes opuestas, no hacia arriba.",
+        targetMuscles: ["Glúteos", "Erectores Espinales", "Deltoides", "Core Cruzado"],
+        steps: [
+          "Comienza en cuadrupedia con espalda neutra.",
+          "Extiende simultáneamente el brazo derecho al frente y la pierna izquierda atrás.",
+          "Mantén la posición 2 segundos sintiendo la activación de glúteo y espalda.",
+          "Regresa sin tocar el suelo y alterna de lado."
+        ],
+        commonMistakes: ["Arquear la espalda lumbar", "Rotar la cadera perdiendo la horizontalidad"],
+        visualType: "bird_dog"
+      }
+    ]
+  },
+  Sábado: {
+    day: "Sábado",
+    title: "Sábado: Trail Running / Senderismo Active con Boo (Andrea)",
+    duration: 60,
+    location: "Monte / Sendero natural",
+    equipment: ["Zapatillas de trail", "Arnés Canicross Boo", "Botella de agua"],
+    type: "Resistencia Cardiovascular & Agilidad",
+    focus: "Alto gasto calórico, resistencia en naturaleza y diversión al aire libre con Boo",
+    exercises: [
+      {
+        id: "andrea_trail_marcha",
+        name: "Marcha Activa en Desnivel con Boo (5.5 km/h)",
+        sets: 1,
+        reps: "25 min",
+        rest: "-",
+        equipment: "Zapatillas trail + Arnés Boo",
+        technique: "Caminata vigorosa en sendero con subidas y bajadas apretando glúteos en cada paso ascendente.",
+        focusTip: "En las subidas, acorta el paso pero mantén la cadencia viva apoyando bien el talón para trabajar glúteos e isquios.",
+        targetMuscles: ["Glúteos", "Cuádriceps", "Gemelos", "Sistema Cardiovascular"],
+        steps: [
+          "Inicia la ruta a ritmo vivo por el sendero con Boo guiando en arnés.",
+          "Mantén una zancada firme impulsando con los gemelos y glúteos en desniveles.",
+          "Acompaña con el braceo natural activo."
+        ],
+        commonMistakes: ["Empezar demasiado rápido en las primeras cuestas"],
+        visualType: "walking"
+      },
+      {
+        id: "andrea_trail_trote",
+        name: "Intervalos de Trote Trail con Boo (4 bloques x 3')",
+        sets: 4,
+        reps: "3 min c/u",
+        rest: "2 min caminata",
+        equipment: "Zapatillas trail + Arnés Boo",
+        technique: "Aprovecha tramos llanos o de falso llano para trotar alegremente con Boo, adaptándote a las irregularidades del terreno.",
+        focusTip: "Mantén la mirada 3-4 metros por delante para anticipar raíces o piedras en el camino.",
+        targetMuscles: ["Capacidad Aeróbica", "Estabilidad de Tobillos", "Quema Calórica"],
+        steps: [
+          "Transiciona al trote continuo a ritmo cómodo en terreno seguro.",
+          "Deja que Boo marque un ritmo ágil y coordinado.",
+          "Recupera 2 minutos en caminata activa tras cada bloque de 3 minutos."
+        ],
+        commonMistakes: ["Mirar exclusivamente a los pies perdiendo la anticipación del camino"],
+        visualType: "walking"
+      },
+      {
+        id: "andrea_parada_sentadillas",
+        name: "Parada Activa en Naturaleza: Sentadillas & Juego con Boo",
+        sets: 3,
+        reps: "15 sentadillas + lanzamiento",
+        rest: "45 seg",
+        equipment: "Zapatillas + Juguete Boo",
+        technique: "En una parada con vistas, realiza series de sentadillas profundas alternadas con juegos de 'Sentado / Busca el juguete' con Boo.",
+        focusTip: "Estimula la mente de Boo con obediencia mientras mantienes tus piernas activas en la pausa.",
+        targetMuscles: ["Cuádriceps", "Glúteos", "Vínculo con Boo"],
+        steps: [
+          "Pide orden de 'Quieto' a Boo.",
+          "Ejecuta 15 sentadillas profundas con buena técnica.",
+          "Premia y lanza el juguete a Boo como descanso activo."
+        ],
+        commonMistakes: ["Descuidar la técnica de sentadilla por la distracción del juego"],
+        visualType: "ring_squat"
+      },
+      {
+        id: "andrea_trail_enfriamiento",
+        name: "Caminata de Descenso & Enfriamiento Suave",
+        sets: 1,
+        reps: "15 min",
+        rest: "-",
+        equipment: "Zapatillas trail",
+        technique: "Regreso tranquilo bajando el pulso gradualmente mientras Boo bebe agua y suelta energía.",
+        focusTip: "Aprovecha para soltar piernas y respirar el aire puro del entorno natural.",
+        targetMuscles: ["Recuperación Activa"],
+        steps: [
+          "Camina a paso relajado de regreso al punto de partida.",
+          "Ofrece agua a Boo y bebe sorbos pequeños.",
+          "Realiza estiramientos suaves de piernas al llegar al coche o a casa."
+        ],
+        commonMistakes: ["Parar en seco sin los minutos de caminata de enfriamiento"],
+        visualType: "stretching"
+      }
+    ],
+    routeDetails: {
+      title: "Ruta Senderismo Trail Active & Agilidad en Naturaleza",
+      description: "Marcha activa con desnivel moderado que quema calorías a ritmo sostenido y ejercita a Boo en su entorno ideal.",
+      breakdown: [
+        { step: "Fase 1 (25 min)", activity: "Caminata a ritmo vivo (5.5 km/h) en terreno con desnivel moderado." },
+        { step: "Fase 2 (15 min)", activity: "Trote suave intermitente en tramos favorables con Boo." },
+        { step: "Fase 3 (10 min)", activity: "Parada de descanso activo: Juego con juguete/Frisbee + Sentadillas." },
+        { step: "Fase 4 (10 min)", activity: "Descenso y caminata de vuelta relajada." }
+      ],
+      collieTips: "Usa un arnés ergonómico tipo correa de cintura (canicross) para poder caminar o trotar con las manos libres de forma cómoda."
+    }
+  },
+  Domingo: {
+    day: "Domingo",
+    title: "Domingo: Recuperación Total, Movilidad & Paseo Libre con Boo (Andrea)",
+    duration: 35,
+    location: "Al aire libre / En casa",
+    equipment: ["Esterilla", "Zapatillas", "Arnés Boo"],
+    type: "Descanso Total & Bienestar",
+    focus: "Descanso muscular completo, regeneración celular y tiempo familiar de calidad",
+    exercises: [
+      {
+        id: "andrea_domingo_paseo",
+        name: "Paseo Libre en Familia con Boo",
+        sets: 1,
+        reps: "30 - 40 min",
+        rest: "-",
+        equipment: "Zapatillas + Correa",
+        technique: "Paseo de domingo relajado, sin cronómetros ni metas de ritmo, disfrutando del aire libre.",
+        focusTip: "El descanso también es parte del entrenamiento: permite a los músculos reparar fibras y tonificarse.",
+        targetMuscles: ["Salud Cardiovascular", "Bienestar General"],
+        steps: [
+          "Paseo tranquilo por vuestro parque favorito o paseo marítimo/urbano.",
+          "Disfrutar de la compañía de Boo sin exigencias físicas."
+        ],
+        commonMistakes: ["Convertir el día de descanso en una sesión extenuante"],
+        visualType: "walking"
+      },
+      {
+        id: "andrea_domingo_movilidad",
+        name: "Sesión de Movilidad Suave & Estiramientos Plancenteros",
+        sets: 1,
+        reps: "10 min",
+        rest: "-",
+        equipment: "Esterilla",
+        technique: "Movilidad articular lenta para cadera, hombros y columna en la esterilla.",
+        focusTip: "Conecta con tu respiración y libera cualquier rigidez acumulada de la semana.",
+        targetMuscles: ["Flexibilidad", "Fascias Musculares"],
+        steps: [
+          "Círculos suaves de cadera y hombros.",
+          "Postura del niño (Child's pose) para relajar la espalda.",
+          "Respiraciones diafragmáticas profundas."
+        ],
+        commonMistakes: ["Forzar estiramientos hasta el dolor"],
+        visualType: "stretching"
+      }
+    ],
+    routeDetails: {
+      title: "Paseo Libre de Domingo con Boo",
+      description: "Paseo recreativo en parque o zona verde sin exigencia física intensa.",
+      breakdown: [
+        { step: "Libre", activity: "Paseo relajado en familia con Boo, dejando espacio para juegos sencillos o descanso al sol." }
+      ],
+      collieTips: "Aprovecha para reforzar comandos de obediencia básica de forma lúdica y positiva."
+    }
+  }
+};
+
+export const WEEKLY_WORKOUT_SCHEDULE_BY_PROFILE = {
+  he: CARLOS_WORKOUT_SCHEDULE,
+  she: ANDREA_WORKOUT_SCHEDULE
+};
+
+export function getWeeklyWorkoutSchedule(profileId) {
+  const pid = profileId || (typeof window !== 'undefined' && window.appState?.activeProfileId) || 'he';
+  return WEEKLY_WORKOUT_SCHEDULE_BY_PROFILE[pid] || CARLOS_WORKOUT_SCHEDULE;
+}
+
+export const WEEKLY_WORKOUT_SCHEDULE = new Proxy(CARLOS_WORKOUT_SCHEDULE, {
+  get(target, prop) {
+    const pid = (typeof window !== 'undefined' && window.appState?.activeProfileId) || 'he';
+    const schedule = WEEKLY_WORKOUT_SCHEDULE_BY_PROFILE[pid] || target;
+    return schedule[prop];
+  }
+});
+
 export const BOO_TRAINING_MODULES = [
   {
     id: "ansiedad_pelota",
@@ -1603,6 +2288,10 @@ if (typeof window !== 'undefined') {
   window.INITIAL_PROFILES = INITIAL_PROFILES;
   window.RECIPES_DATABASE = RECIPES_DATABASE;
   window.WEEKLY_WORKOUT_SCHEDULE = WEEKLY_WORKOUT_SCHEDULE;
+  window.CARLOS_WORKOUT_SCHEDULE = CARLOS_WORKOUT_SCHEDULE;
+  window.ANDREA_WORKOUT_SCHEDULE = ANDREA_WORKOUT_SCHEDULE;
+  window.WEEKLY_WORKOUT_SCHEDULE_BY_PROFILE = WEEKLY_WORKOUT_SCHEDULE_BY_PROFILE;
+  window.getWeeklyWorkoutSchedule = getWeeklyWorkoutSchedule;
   window.INGREDIENT_CATEGORIES = INGREDIENT_CATEGORIES;
   window.BOO_TRAINING_MODULES = BOO_TRAINING_MODULES;
   window.BOO_WEEKLY_SCHEDULE = BOO_WEEKLY_SCHEDULE;
