@@ -2030,74 +2030,71 @@ export const WEEKLY_WORKOUT_SCHEDULE = new Proxy(CARLOS_WORKOUT_SCHEDULE, {
 export const BOO_TRAINING_MODULES = [
   {
     id: "control_estimulos_ninos",
-    title: "Autocontrol ante Niños Corriendo & Estímulos Rápidos (Protocolo LAT)",
-    category: "Control de Impulsos",
-    icon: "fa-solid fa-child-reaching",
-    badgeColor: "var(--accent-rose)",
-    difficulty: "Vital / Prioritario",
-    duration: "10-15 min/día",
-    summary: "Evitar que Boo salga disparada detrás de niños que corren o gritan. Recondicionar el impulso de persecución mediante el Protocolo LAT ('Look At That'): el niño se convierte en la señal para mirar a Carlos/Andrea y cobrar un premio extraordinario.",
+    title: "Concentración en Distracción & Gestión de Pelotas Ajenas",
+    category: "Enfoque & Concentración",
+    icon: "fa-solid fa-crosshairs",
+    badgeColor: "var(--accent-cyan)",
+    difficulty: "Intermedio",
+    duration: "10-15 min/paseo",
+    summary: "Trabajar la concentración de Boo cuando hay pelotas botando, niños corriendo o perros activos en el parque. Enseñar a desconectar la mirada del estímulo y mantener el contacto visual con Carlos y Andrea mientras pasea suelta.",
     steps: [
-      "Regla de Oro de Seguridad: Trabajar SIEMPRE con línea larga de 5 a 10 metros para impedir cualquier escape o persecución real durante el aprendizaje.",
-      "Fase 1 (Zona Verde - 25-30 metros): Situarse a distancia suficiente donde Boo vea niños jugar sin entrar en tensión corporal ni fijar la mirada rígidamente.",
-      "Marcar el estímulo: En cuanto Boo mire al niño, decir '¡Bien!' o clicker y entregar de inmediato un premio de altísimo valor (salchicha, pollo asado, queso) pegado a la pierna del guía.",
-      "Fase 2 (Desenganche Voluntario): Tras varias repeticiones, esperar a que Boo mire al niño y SOLA se gire a mirar al guía para reclamar su premio sin que nadie la llame.",
-      "Fase 3 (Reducción de distancia progresiva): Acercarse a 20m, luego 15m, únicamente si Boo mantiene el desenganche voluntario y la respiración tranquila.",
-      "Si Boo se tensa, fija la mirada o ladra: hemos superado su umbral de reactividad; dar media vuelta y aumentar distancia de inmediato."
+      "Trabajo en Libertad: Aprovechar los momentos en los que va suelta en el parque para premiar los chequeos visuales espontáneos hacia vosotros.",
+      "Marcar el desenganche: En cuanto Boo mire a un niño o una pelota lejana y vuelva la cabeza hacia vosotros por iniciativa propia, decir '¡Bien!' y entregar un premio rico pegado a la pierna.",
+      "La Pelota es Vuestra Herramienta: Vosotros administráis cuándo empieza y acaba el juego de cobro. No se persiguen pelotas rodando hasta oír la orden de liberación ('¡Ya!').",
+      "Cambio de dirección con alegría: Si veis que se queda clavada mirando una pelota ajena, llamadla con tono festivo mientras dais media vuelta caminando en sentido contrario.",
+      "Orden '¡Deja!': Practicar el comando '¡Deja!' ante pelotas en el suelo, enseñándole que ignorar la pelota da acceso a una recompensa mucho más sabrosa de vuestra mano."
     ],
-    proTip: "El Border Collie tiene fijación visual innata. Si castigas o das un tirón de correa cuando mira a un niño, aumentas su frustración y reactividad. Premia siempre el acto de 'mirar y desconectar'."
+    proTip: "Boo es muy obediente por naturaleza. El objetivo no es limitarla, sino hacer que Carlos y Andrea sean siempre el centro de referencia más estimulante del parque."
   },
   {
     id: "llamada_emergencia",
-    title: "Llamada de Emergencia Absoluta & Silbato (Jackpot Innegociable)",
-    category: "Seguridad y Control",
-    icon: "fa-solid fa-triangle-exclamation",
-    badgeColor: "var(--accent-amber)",
-    difficulty: "Crítico",
-    duration: "2-3 repeticiones/día",
-    summary: "Una señal de retorno infalible distinta a la llamada cotidiana ('¡Boo, ven!'). Utiliza una palabra exclusiva (o silbato de doble tono) asociada siempre a un 'Jackpot' de comida irresistible (atún, salchichas, queso curado).",
+    title: "Comando Único de Retorno Innegociable",
+    category: "Obediencia y Foco",
+    icon: "fa-solid fa-bullhorn",
+    badgeColor: "var(--accent-emerald)",
+    difficulty: "Crucial",
+    duration: "2-3 repeticiones/paseo",
+    summary: "Un comando exclusivo y potente (palabra clave como '¡AQUÍ YA!' o silbato de doble pitido) reservado para situaciones de mucha distracción donde se necesita una vuelta inmediata e indiscutible.",
     steps: [
-      "Elegir una señal única que NUNCA se use en vano (ej: silbato ultrasónico/doble pitido o comando vocal sagrado '¡AQUÍ AHORA!').",
-      "Condicionamiento en casa: Tocar el silbato a 1 metro de distancia y entregar inmediatamente una fiesta de premios durante 20-30 segundos continuos.",
-      "Repetir 3 veces al día durante una semana sin distracciones, hasta que al oír la señal corra desesperada hacia ti con alegría.",
-      "Prueba en exterior con línea larga: Lanzar una pelota o esperar a que esté distraída oliendo, pitar la señal de emergencia y premiar con fiesta y comida máxima.",
-      "NUNCA usar la llamada de emergencia si no tienes un premio extraordinario a mano, y NUNCA usarla para meterla al coche, regañarla o terminar bruscamente el juego."
+      "Elegir un comando vocal exclusivo o silbato de doble tono que NO se use para cosas rutinarias (diferente al 'Boo, ven' cotidiano).",
+      "Condicionamiento de alto valor: Practicar 2-3 veces al día en momentos tranquilos, premiando SIEMPRE con comida extraordinaria (dados de pavo, queso, salchicha) y fiesta de caricias durante 20 segundos.",
+      "No quemar la orden: NUNCA usar este comando para regañarla, meterla al coche o terminar el paseo. Acudir al comando único debe ser la mayor fiesta.",
+      "Práctica suelta en parque: Cuando esté distraída oliendo o viendo a otros perros a media distancia, soltar el comando único; al llegar, celebrar a lo grande y dejarla seguir jugando."
     ],
-    proTip: "Esta orden es un 'seguro de vida'. Solo debe usarse en situaciones reales de riesgo o en entrenamientos controlados 100% exitosos."
+    proTip: "Al mantener este comando reservado exclusivamente para momentos de alta distracción con súper premio, su fiabilidad de respuesta se mantiene al 100%."
   },
   {
     id: "tumbado_emergencia_stop",
-    title: "Detención en Seco & Tumbado de Emergencia ('¡Stop!' / '¡Tierra!')",
-    category: "Seguridad y Control",
+    title: "Detención Rápida & Parada en Seco ('¡Stop!' / '¡Tierra!')",
+    category: "Control a Distancia",
     icon: "fa-solid fa-hand",
-    badgeColor: "var(--accent-cyan)",
+    badgeColor: "var(--accent-purple)",
     difficulty: "Intermedio - Avanzado",
     duration: "10 min/día",
-    summary: "Enseñar a Boo a frenar en seco y tumbarse de golpe a distancia. Para un Border Collie en plena carrera de persecución, tumbarse en el sitio es anatómicamente mucho más fácil que frenar y dar la vuelta.",
+    summary: "Enseñar a Boo a detenerse o dejarse caer al suelo en el sitio a distancia. Es la herramienta perfecta para frenarla en seco si arranca hacia una pelota ajena o un juego ajeno.",
     steps: [
-      "Enseñar el '¡Tierra!' explosivo de cerca: Con Boo de pie, bajar la mano enérgica con la palma abierta al suelo diciendo '¡Tierra!'. En cuanto el pecho toque el suelo, premiar.",
-      "Práctica a media distancia (3-5 metros): Pedirle que camine hacia vosotros y soltar la orden de '¡Tierra!' a mitad de camino.",
-      "Práctica en carrera suave: Lanzar un juguete suave hacia adelante y antes de que llegue, dar la orden '¡Tierra!'. Al tumbarse, correr hacia ella para darle un súper premio.",
-      "Añadir señal visual clara: Brazo levantado en alto con la palma hacia ella (se percibe mucho mejor a 30 metros que la voz)."
+      "Enseñar el '¡Tierra!' o '¡Stop!' rápido de cerca: Con Boo de pie, bajar la mano con energía hacia el suelo diciendo '¡Tierra!'. Premiar la rapidez de caída.",
+      "Práctica a distancia en el parque: Mientras camina suelta a 5-10 metros, dar la orden con el brazo en alto. Al frenar y tumbarse, acercaros vosotros a premiarla.",
+      "Práctica con pelota rodando: Rodar una pelota y pedir '¡Stop!' a mitad de camino. Al frenar, premiar con fiesta y permitirle cobrar su juguete favorito."
     ],
-    proTip: "El tumbado corta la línea visual del perro con el estímulo que perseguía. Al estar tumbada en el suelo, sus niveles de excitación caen en picado."
+    proTip: "Tumbarse en el suelo corta la línea de visión de Boo con la pelota o el perro distractor, bajando sus pulsaciones de inmediato."
   },
   {
     id: "parque_perros_desconexion",
-    title: "Desconexión & Calma ante Perros Jugando y Pelotas",
+    title: "Concentración en Parque con Otros Perros & Estímulos",
     category: "Gestión Emocional",
     icon: "fa-solid fa-shield-dog",
-    badgeColor: "var(--accent-purple)",
+    badgeColor: "var(--accent-amber)",
     difficulty: "Intermedio",
     duration: "15-20 min",
-    summary: "Eliminar el bloqueo mental de Boo cuando hay jaurías de perros corriendo o pelotas botando en el parque, enseñándole a mantener el foco en Carlos y Andrea.",
+    summary: "Eliminar la sobreexcitación de Boo cuando hay jaurías de perros corriendo o pelotas botando en el parque, enseñándole a mantener la calma y el foco en Carlos y Andrea mientras disfruta suelta.",
     steps: [
-      "Entrenamiento perimetral: Trabajar por fuera de la valla del pipicán o parque de perros, a una distancia donde Boo observe sin lloriquear ni tensar la correa.",
-      "Juego de olfateo de descompresión: Esparcir pequeños trozos de comida en el césped a 15 metros del parque de perros ('Busca'). El olfateo baja el ritmo cardíaco y desconecta la mente del perro de los estímulos visuales.",
-      "Paseo con cambios de dirección cada vez que Boo fije la mirada en un perro que corre: girar 180° con alegría ('¡Por aquí!') y premiar cuando os siga.",
-      "Premio de liberación controlada: Si va a interactuar con otro perro, solo soltarla cuando esté en posición de sentado y contacto visual tranquilo."
+      "Contacto visual entre perros: Cuando haya perros jugando a 15 metros, pedirle un 'Sentado' y premiar cada contacto visual espontáneo hacia vosotros.",
+      "Juegos de olfateo ('Busca'): Esparcir premios en el césped para inducir olfateo. La bajada de cabeza al suelo reduce el ritmo cardíaco y desconecta la mente del estímulo visual.",
+      "Cambios de sentido en juego: Mientras va suelta, cambiar de dirección con alegría ('¡Por aquí!') para que Boo esté siempre pendiente de vuestra posición.",
+      "Engancha y suelta positivo: Llamarla en medio del parque, acariciarla, darle un premio rico y soltarla inmediatamente a seguir corriendo."
     ],
-    proTip: "El Border Collie se 'hipnotiza' con el movimiento ajeno. Romper esa hipnosis con ejercicios de olfato en el suelo es la herramienta más potente que existe."
+    proTip: "El Border Collie aprende por patrones. Si acudir a vosotros significa seguir jugando suelta, vendrá siempre con la máxima velocidad."
   },
   {
     id: "ansiedad_pelota",
@@ -2170,246 +2167,242 @@ export const BOO_TRAINING_MODULES = [
   }
 ];
 
-export const BOO_IMPULSE_CONTROL_PROGRAM = {
-  id: "programa_control_impulsos",
-  title: "Programa de Control de Impulsos, Estímulos Fuertes & Llamada de Emergencia",
-  subtitle: "Protocolo etológico avanzado para Border Collie: Niños corriendo, Perros en parque, Pelotas y Desconexión (LAT)",
-  version: "1.0",
-  whyItHappens: "El Border Collie posee un instinto innato de pastoreo y presa extremadamente sensible al movimiento veloz (niños asustados que corren o gritan, pelotas rebotando o perros jugando). Cuando el estímulo supera su umbral, su cerebro entra en sobreactivación simpática ('sordera atencional'). Gritar su nombre repetidamente en carrera es inútil y contraproducente (lo percibe como excitación compartida). Para solucionarlo, debemos condicionar una Llamada de Emergencia infalible, el frenado en seco ('¡Tierra!') y el Protocolo LAT ('Look At That'): conseguir que el estímulo disparador sea la señal automática para mirar a Carlos y Andrea a cambio de un premio jackpot.",
+export const BOO_FOCUS_AND_BALLS_PROGRAM = {
+  id: "programa_foco_pelotas",
+  title: "Programa de Enfoque, Pelotas & Comandos Innegociables",
+  subtitle: "Autocontrol con pelotas en movimiento, concentración en el parque y comando único infalible (paseo suelta)",
+  version: "2.0",
+  whyItHappens: "El Border Collie tiene una fijación innata con el movimiento rápido y las pelotas. Boo siempre va suelta y es sumamente obediente, pero ante picos de estímulos (muchos perros jugando, pelotas botando o niños corriendo) sube de revoluciones y se descentra. La solución no es atarla ni complicarse: el objetivo es enseñarle a gestionar el impulso con la pelota (esperar permiso, soltar a la orden), mantener la concentración cuando hay perros alrededor y fijar un comando único innegociable reservado para cuando necesitéis que vuelva al segundo.",
   goldenRules: [
     {
-      title: "Línea Larga de Seguridad Obligatoria (5-10m)",
-      desc: "Mientras Boo esté en fase de aprendizaje, NUNCA debe estar 100% suelta en zonas donde puedan aparecer niños o perros. Cada vez que persigue con éxito a un niño, su cerebro recibe una descarga masiva de dopamina que fija la conducta negativa."
+      title: "Comando Único Innegociable",
+      desc: "Tened una palabra exclusiva (o silbato de doble tono) que solo se use cuando haya mucha distracción. Siempre se premia con fiesta y súper comida (dados de pavo o queso) para que nunca falle."
     },
     {
-      title: "Cero Llamadas en Vano (No quemar la orden)",
-      desc: "Si Boo ya ha fijado la mirada o ha iniciado la carrera y no estás al 95% seguro de que vendrá, NO repitas '¡Boo ven!'. Usarás el silbato de emergencia o la línea larga. Repetir la llamada sin éxito enseña al perro que ignorarte no tiene consecuencias."
+      title: "Vosotros Administráis la Pelota",
+      desc: "La pelota no es de acceso continuo; es el premio final tras mantener la calma o acudir a la llamada. La calma es la llave que abre el juego."
     },
     {
-      title: "El Jackpot Sagrado de Emergencia",
-      desc: "La llamada de emergencia o el silbato se premian SIEMPRE con comida extraordinaria que no come nunca jamás en casa (dados de pavo, atún, queso curado o salchicha frankfurt) y con fiesta vocal de 20-30 segundos ininterrumpidos."
+      title: "Chequeo Voluntario Suelta (Check-in)",
+      desc: "Mientras Boo corre y explora libre en el parque, premiar cada vez que se gire a mirar a Carlos o Andrea. Así mantendrá siempre un ojo puesto en vosotros."
     }
   ],
   sosProtocol: {
-    title: "🚨 SOS: ¿Qué hacer si Boo sale corriendo detrás de un niño o estímulo?",
+    title: "🎾 Pautas Clave para el Paseo Suelta",
     steps: [
       {
         step: 1,
-        title: "Avisar al niño/padres con voz clara y firme:",
-        action: "¡PÁRATE COMO UN ÁRBOL Y CRUZA LOS BRAZOS! ¡NO CORRAS! (Al detenerse el niño, el instinto de presa del Border Collie se apaga instantáneamente y frena)."
+        title: "Comando Único Innegociable:",
+        action: "Usad la palabra clave o silbato con tono enérgico y alegre. Si está mirando una pelota ajena, soltad el comando y dad medio paso atrás."
       },
       {
         step: 2,
-        title: "NUNCA corras detrás de Boo gritando su nombre:",
-        action: "Gritar mientras corres detrás la convence de que sois una jauría cazando juntos y correrá más rápido. Detente de golpe."
+        title: "Movimiento Opuesto (Llamada en Carrera Inversa):",
+        action: "Si Boo duda o se fija en algo veloz, llamadla mientras echáis a correr vosotros en dirección contraria con palmas. Su instinto la empujará a perseguiros a vosotros inmediatamente."
       },
       {
         step: 3,
-        title: "Llamada Inversa en Dirección Contraria:",
-        action: "Grita su señal de emergencia / silbato y ECHA A CORRER TÚ EN SENTIDO CONTRARIO al niño, agachándote y batiendo palmas con entusiasmo. El instinto gregario de Boo la obligará a perseguirte a ti."
+        title: "Orden de Parada ('¡Stop!' o '¡Tierra!'):",
+        action: "Si va a arrancar hacia una pelota o juego de otros perros, el comando '¡Tierra!' o '¡Stop!' con brazo en alto corta la carrera en seco mucho más fácil que hacerla volver."
       },
       {
         step: 4,
-        title: "Comando de Detención '¡Tierra!' o '¡Stop!':",
-        action: "Si lo tiene condicionado, grita '¡TIERRA!' con el brazo en alto. Para un perro en carrera es biomecánicamente mucho más fácil dejarse caer al suelo que frenar y dar la vuelta."
-      },
-      {
-        step: 5,
-        title: "Al recuperarla: Cero castigos físicos o gritos:",
-        action: "Si la castigas cuando la coges, Boo asociará que volver a ti significa peligro y la próxima vez huirá más lejos. Sujeta con calma la línea y reanuda el control con caricias suaves."
+        title: "Engancha y Suelta en el Parque:",
+        action: "Llamarla varias veces durante el paseo solo para darle un premio rico y soltarla a seguir corriendo de inmediato. Así no asociará volver con el fin de la diversión."
       }
     ]
   },
   phases: [
     {
       id: 1,
-      name: "Fase 1: Condicionamiento en Calma (Casa y Entorno Controlado)",
-      icon: "fa-solid fa-home",
-      color: "var(--accent-cyan)",
-      objective: "Crear reflejos automáticos e incondicionales de parada y llamada sin distracciones externas.",
+      name: "Fase 1: Comando Único Innegociable & Foco Rápido",
+      icon: "fa-solid fa-bullhorn",
+      color: "var(--accent-emerald)",
+      objective: "Fijar un comando infalible de retorno para situaciones con estímulos altos.",
       steps: [
         {
           id: "prog_1_1",
-          title: "1.1 Condicionar el Silbato o Código de Emergencia ('¡AQUÍ AHORA!')",
-          detail: "Tocar silbato de doble tono o palabra sagrada a 1 metro. Entregar inmediatamente fiesta de 30 segundos con comida top (pavo/queso). 3 repeticiones/día durante 5 días sin fallar. No pedir nada más.",
-          criteria: "Boo gira la cabeza como un resorte hacia ti al escuchar el sonido.",
-          tag: "Emergencia"
+          title: "1.1 Condicionar el Comando Único / Silbato ('¡AQUÍ YA!')",
+          detail: "Elegir la señal única (palabra o silbato). Practicar 2-3 veces al día en momentos tranquilos, entregando 20 segundos de fiesta y comida muy rica (pavo/queso).",
+          criteria: "Boo gira la cabeza como un resorte hacia ti al escuchar la señal.",
+          tag: "Comando Único"
         },
         {
           id: "prog_1_2",
-          title: "1.2 Detención de Emergencia / '¡Tierra!' Explosivo de Cerca",
-          detail: "Con Boo de pie o en movimiento lento, orden '¡Tierra!' bajando enérgicamente la mano al suelo. Premiar en el instante en que el pecho toque el suelo. Practicar 10 veces al día.",
-          criteria: "Se deja caer en menos de 1 segundo al oír la orden o ver la mano bajar.",
-          tag: "Frenado"
+          title: "1.2 Contacto Visual Espontáneo en el Paseo Suelta",
+          detail: "Paseando suelta en el parque, premiar cada vez que Boo se gire a miraros sin haberla llamado ('Check-in').",
+          criteria: "Mantiene chequeos visuales voluntarios cada 20-30 segundos mientras explora.",
+          tag: "Check-in"
         },
         {
           id: "prog_1_3",
-          title: "1.3 Contacto Visual Involuntario (Check-in espontáneo)",
-          detail: "Juguete o pelota en tu mano quieta. Esperar en silencio a que Boo desvíe la mirada del objeto y haga contacto visual con tus ojos. Marcar '¡Eso!' y entregar el premio desde la OTRA mano.",
-          criteria: "Desvía la mirada de la pelota hacia tus ojos en menos de 2 segundos.",
-          tag: "Foco"
+          title: "1.3 Parada Rápida ('¡Stop!' / '¡Tierra!') de Cerca",
+          detail: "Practicar frenada en seco a la orden vocal o bajando la mano, premiando la rapidez de caída.",
+          criteria: "Se detiene o tumba en menos de 1 segundo a la orden.",
+          tag: "Frenada"
         }
       ]
     },
     {
       id: 2,
-      name: "Fase 2: Protocolo LAT (Mirar y Desconectar) a Distancia (Zona Verde)",
-      icon: "fa-solid fa-eye",
+      name: "Fase 2: Reactividad y Autocontrol con Pelotas",
+      icon: "fa-solid fa-baseball",
       color: "var(--accent-amber)",
-      objective: "Transformar el detonante (niño, perro, pelota) en la señal que le dice a Boo que mire al guía.",
+      objective: "Canalizar la obsesión por la pelota para que la calma sea el único modo de activarla.",
       steps: [
         {
           id: "prog_2_1",
-          title: "2.1 Autocontrol con Pelota Rodada a Distancia con Orden '¡Deja!'",
-          detail: "Boo en sentado atada a la línea de 5m. Rodar suavemente la pelota a 4 metros de ella diciendo '¡Deja!'. Boo debe permanecer inmóvil. El premio sale de tu mano (nunca ir a por la pelota).",
-          criteria: "Permanece quieta sin abalanzarse cuando la pelota pasa rodando.",
-          tag: "Autocontrol"
+          title: "2.1 Semáforo de Pelota (Sentado antes del Lanzamiento)",
+          detail: "Pelota en la mano. Boo debe sentarse y mantener contacto visual relajado. Lanzar ÚNICAMENTE al dar la palabra de liberación ('¡Ya!').",
+          criteria: "Espera quieta mirándote a los ojos sin saltar hasta que dices '¡Ya!'.",
+          tag: "Pelota"
         },
         {
           id: "prog_2_2",
-          title: "2.2 Observación a Distancia de Niños en Movimiento (25-30 metros)",
-          detail: "Sentarse en un banco a 30m de un parque infantil. En cuanto Boo mire a un niño correr: marcar con clicker o '¡Bien!' ANTES de que se tense y premiar con salchicha en tu muslo.",
-          criteria: "Boo oye o ve al niño y no ladra ni estira la correa, aceptando el premio.",
-          tag: "LAT Básico"
+          title: "2.2 Comando '¡Deja!' con Pelota Rodando",
+          detail: "Hacer rodar la pelota suavemente frente a ella a 3 metros diciendo '¡Deja!'. El premio viene de vuestra mano (salchicha/pavo), no de la pelota.",
+          criteria: "Ignora la pelota rodando y se gira a cobrar de vuestra mano.",
+          tag: "Autocontrol"
         },
         {
           id: "prog_2_3",
-          title: "2.3 Desenganche Automático Voluntario (LAT Avanzado a 15-20m)",
-          detail: "A 20 metros de los niños o parque de perros: NO des ninguna orden vocal. Espera a que Boo vea al niño correr y observa: ella sola debe girarse a mirarte para reclamar su premio.",
-          criteria: "Ve al niño correr y espontáneamente se gira hacia ti sonriendo.",
-          tag: "Desenganche"
+          title: "2.3 Ignorar Pelota en el Suelo durante el Paseo",
+          detail: "Dejar una pelota en el césped a 4 metros. Pasar caminando suelta con Boo; premiar que pase de largo a vuestro lado sin abalanzarse.",
+          criteria: "Pasa al lado de la pelota quieta mirando al guía.",
+          tag: "Foco"
         }
       ]
     },
     {
       id: 3,
-      name: "Fase 3: Transferencia con Línea Larga (5-10m) en Entornos Reales",
-      icon: "fa-solid fa-shield-halved",
-      color: "var(--accent-purple)",
-      objective: "Practicar en entornos reales con distracciones de alta intensidad pero con línea de seguridad física.",
+      name: "Fase 3: Concentración en Parque con Perros & Distracciones",
+      icon: "fa-solid fa-shield-dog",
+      color: "var(--accent-cyan)",
+      objective: "Evitar que se descentre cuando otros perros corren o hay ambiente agitado en el parque.",
       steps: [
         {
           id: "prog_3_1",
-          title: "3.1 Perímetro Exterior del Parque Canino (Valla)",
-          detail: "Caminar por fuera de la valla mientras otros perros corren dentro. Practicar cambios de sentido y esparcido de premios en la hierba ('Busca') para inducir olfateo calmante.",
-          criteria: "Logra olfatear el suelo y caminar a vuestro lado a 10m de la valla.",
-          tag: "Entorno Perros"
+          title: "3.1 Foco en Carlos y Andrea con Perros Cerca",
+          detail: "En el parque con otros perros jugando a 15 metros, pedir un par de ejercicios divertidos (dar pata, giro, sentado) premiando con fiesta.",
+          criteria: "Mantiene la concentración en vosotros a pesar de los perros jugando cerca.",
+          tag: "Parque"
         },
         {
           id: "prog_3_2",
-          title: "3.2 Simulacro de Corredor / Persona Huyendo con Cómplice",
-          detail: "Carlos o Andrea echan a correr de golpe alejándose 15m. El otro guía sujeta la línea larga y aplica el silbato de emergencia o el comando '¡Tierra!'. Premiar con súper Jackpot.",
-          criteria: "Boo frena o vuelve a la llamada sin perseguir a la persona que corre.",
-          tag: "Simulación"
+          title: "3.2 Desconexión de Pelotas Ajenas",
+          detail: "Cuando otro perro o dueño tire una pelota a 20 metros, llamar a Boo con entusiasmo o dar media vuelta; premiar que os siga a vosotros.",
+          criteria: "No sale disparada a por la pelota ajena y acude a vuestro lado.",
+          tag: "Desconexión"
         },
         {
           id: "prog_3_3",
-          title: "3.3 Abortar la Carrera de Pelota en Vuelo (Corte en Seco)",
-          detail: "Lanzar pelota con Boo en línea de 10m. Cuando Boo va a medio camino en carrera, gritar la señal de emergencia o '¡Tierra!'. Si frena y vuelve, jackpot salvaje y entrega de un juguete aún mejor.",
-          criteria: "Es capaz de abortar la carrera a toda velocidad para volver hacia vosotros.",
-          tag: "Corte Impulso"
+          title: "3.3 Rutina 'Engancha, Premia y Suelta'",
+          detail: "Hacer 5-6 llamadas durante el tiempo de parque suelta solo para dar premio, caricia de 5s y volver a soltarla inmediatamente.",
+          criteria: "Acude a la llamada rápida y feliz porque sabe que volverá a jugar.",
+          tag: "Llamada"
         }
       ]
     },
     {
       id: 4,
-      name: "Fase 4: Prueba de Fuego & Libertad Supervisada",
+      name: "Fase 4: Detención en Carrera & Foco Total",
       icon: "fa-solid fa-trophy",
-      color: "var(--accent-emerald)",
-      objective: "Garantizar seguridad y obediencia fiable en situaciones cotidianas de alta distracción.",
+      color: "var(--accent-purple)",
+      objective: "Control a distancia fluido para frenar impulsos en cualquier situación.",
       steps: [
         {
           id: "prog_4_1",
-          title: "4.1 Línea Larga Arrastrando en Espacios Abiertos",
-          detail: "Pasear en zona abierta con la línea de 5-10m arrastrando por el suelo. Boo siente que está suelta, pero tenéis el seguro físico de pisar la línea si un niño pasa corriendo de imprevisto.",
-          criteria: "Mantiene el contacto visual espontáneo cada 20-30 segundos sin alejarse.",
-          tag: "Seguridad"
+          title: "4.1 Cortar la Carrera de Pelota a Mitad de Camino",
+          detail: "Lanzar su pelota favorita y, cuando Boo va a mitad de carrera, soltar '¡Tierra!' o el comando único innegociable. Si frena y vuelve: jackpot supremo.",
+          criteria: "Es capaz de abortar la carrera hacia la pelota a la orden.",
+          tag: "Corte Impulso"
         },
         {
           id: "prog_4_2",
-          title: "4.2 Llamada de Ruptura en Pleno Saludo con Otro Perro",
-          detail: "Cuando Boo esté saludando a otro perro conocido, usar la señal de emergencia: enganchar 5 segundos, premiar con alegría extrema y volver a soltarla de inmediato ('Engancha y suelta').",
-          criteria: "Abandona al perro de inmediato para acudir a por su premio.",
-          tag: "Prueba Social"
+          title: "4.2 Llamada Única Innegociable en Plena Distracción",
+          detail: "Probar el comando único cuando esté en un juego activo con otros perros; debe acudir de inmediato para su premio top.",
+          criteria: "Abandona el juego al primer aviso y corre directa hacia vosotros.",
+          tag: "Innegociable"
         },
         {
           id: "prog_4_3",
-          title: "4.3 Cruce Fluido con Niños en Patinete / Corredores en Parque",
-          detail: "Pasear por sendero transitado. Ante la presencia de niños o patinetes, posicionar a Boo en el lado contrario al estímulo con un premio continuo en la mano ('Junto en foco') hasta rebasar.",
-          criteria: "Rebasa a los niños sin saltos ni tirones, centrada en vuestra pierna.",
-          tag: "Control Total"
+          title: "4.3 Paseo Suelta Fluido y Equilibrado",
+          detail: "Paseo habitual suelta por parque o monte, con atención espontánea, respuesta a la primera y autocontrol total con pelotas.",
+          criteria: "Disfrute pleno suelta con desconexión natural y atención constante.",
+          tag: "Maestría"
         }
       ]
     }
   ]
 };
 
+export const BOO_IMPULSE_CONTROL_PROGRAM = BOO_FOCUS_AND_BALLS_PROGRAM;
+
 export const BOO_WEEKLY_SCHEDULE = {
   Lunes: {
     day: "Lunes",
-    theme: "Autocontrol Emocional, Pelota & Protocolo LAT",
-    focusTitle: "Lunes: Autocontrol Emocional, Pelota & Protocolo LAT",
-    focusText: "Gestión de impulsos con pelota rodando y desensibilización ante estímulos rápidos",
+    theme: "Autocontrol con Pelota & Foco en Parque",
+    focusTitle: "Lunes: Autocontrol con Pelota & Foco en Parque",
+    focusText: "Gestión de impulsos con pelota rodando y atención espontánea paseando suelta",
     tasks: [
-      { id: "b_lun_1", module: "control_estimulos_ninos", title: "Protocolo LAT ante Estímulos Rápidos", text: "10 min de práctica de 'Mirar y Desconectar' con pelotas o personas en movimiento", detail: "10 min de Protocolo LAT: marcar cuando mire un estímulo veloz y premiar en el muslo antes de que se excite", duration: "10 min" },
-      { id: "b_lun_2", module: "ansiedad_pelota", title: "Autocontrol con Pelota Rodada", text: "Pelota rodando suavemente a 4m con orden de '¡Deja!' y quieto", detail: "Hacer rodar la pelota a 4m; Boo debe mantenerse en sentado/quieto y recibir el premio de vuestra mano", duration: "10 min" },
-      { id: "b_lun_3", module: "paseo_relajado", title: "Paseo Sin Tirones (Técnica Estatua)", text: "Paseo con técnica de estatua (parar al sentir tensión en correa)", detail: "20 min de paseo deteniéndose al sentir tensión y avanzando con correa floja en 'U'", duration: "20 min" },
-      { id: "b_lun_4", module: "llamada_positiva", title: "Refuerzo Positivo de Llamada", text: "5 llamadas intermedias con premio y soltado inmediato", detail: "5 llamadas intermedias durante el paseo con premio de alto valor y soltado inmediato", duration: "Paseo" }
+      { id: "b_lun_1", module: "ansiedad_pelota", title: "Semáforo con Pelota (Sentado y Espera)", text: "10 min de espera en sentado con pelota antes de lanzar", detail: "Boo sentada y en calma; lanzar la pelota ÚNICAMENTE tras la orden de liberación '¡Ya!'", duration: "10 min" },
+      { id: "b_lun_2", module: "control_estimulos_ninos", title: "Comando '¡Deja!' ante Pelota Rodando", text: "Hacer rodar pelota a 3m y premiar que no se lance", detail: "Hacer rodar pelota suavemente diciendo '¡Deja!'; recompensar con súper premio desde la mano", duration: "10 min" },
+      { id: "b_lun_3", module: "llamada_positiva", title: "Chequeos Voluntarios Suelta", text: "Premiar 10 contactos visuales espontáneos mientras pasea suelta", detail: "Premiar cada vez que Boo se gire a mirar a Carlos o Andrea durante el paseo suelta", duration: "Paseo" }
     ]
   },
   Martes: {
     day: "Martes",
-    theme: "Desconexión en Parque de Perros & Silbato de Emergencia",
-    focusTitle: "Martes: Desconexión en Parque de Perros & Silbato de Emergencia",
-    focusText: "Entrenamiento perimetral en parque de perros combinando silbato de emergencia y calma",
+    theme: "Comando Único Innegociable & Parque con Perros",
+    focusTitle: "Martes: Comando Único Innegociable & Parque con Perros",
+    focusText: "Práctica del comando exclusivo de retorno y desconexión de otros perros",
     tasks: [
-      { id: "b_mar_1", module: "llamada_emergencia", title: "Condicionamiento Silbato / Código Emergencia", text: "3 toques de silbato/código en calma con Jackpot sagrado de pavo/queso", detail: "Tocar silbato de emergencia a 2m y entregar 30 segundos de fiesta y comida extraordinaria", duration: "10 min" },
-      { id: "b_mar_2", module: "parque_perros_desconexion", title: "Paseo Perimetral Exterior en Parque Canino", text: "Paseo a 15m de la valla exterior con perros jugando dentro", detail: "Caminar por fuera de la valla del pipicán practicando giros de 180° y olfateo de descompresión", duration: "20 min" },
-      { id: "b_mar_3", module: "llamada_positiva", title: "Engancha, Premia y Suelta", text: "8 llamadas de control con 'Engancha, premia y suelta' en el parque", detail: "8 llamadas de control con 'Engancha, premia y suelta' durante el tiempo de parque", duration: "15 min" }
+      { id: "b_mar_1", module: "llamada_emergencia", title: "Práctica del Comando Único ('¡AQUÍ YA!')", text: "3 toques de señal única con premio extraordinario de pavo/queso", detail: "Llamar con el comando único innegociable a 15m; premiar con 20 segundos de fiesta y comida top", duration: "10 min" },
+      { id: "b_mar_2", module: "parque_perros_desconexion", title: "Concentración con Otros Perros en Parque", text: "Ejercicios de foco (dar pata, quieto) con perros jugando cerca", detail: "Mantener la atención de Boo en vosotros mientras otros perros juegan a 15-20 metros", duration: "15 min" },
+      { id: "b_mar_3", module: "llamada_positiva", title: "Engancha, Premia y Suelta", text: "6 llamadas intermedias en el parque para premiar y soltar al segundo", detail: "Llamar a Boo en pleno parque, darle un premio rico y soltarla a seguir corriendo de inmediato", duration: "15 min" }
     ]
   },
   Miércoles: {
     day: "Miércoles",
-    theme: "Contacto Visual Voluntario ante Niños & '¡Tierra!' en Seco",
-    focusTitle: "Miércoles: Contacto Visual Voluntario ante Niños & '¡Tierra!' en Seco",
-    focusText: "Desenganche espontáneo ante niños y detención de emergencia a la carrera",
+    theme: "Detención Rápida ('¡Stop!' / '¡Tierra!') & Foco",
+    focusTitle: "Miércoles: Detención Rápida ('¡Stop!' / '¡Tierra!') & Foco",
+    focusText: "Frenado en seco a distancia para cortar carreras hacia estímulos ajenos",
     tasks: [
-      { id: "b_mie_1", module: "control_estimulos_ninos", title: "Observación de Niños a Distancia (Zona Verde)", text: "15 minutos sentado a 25-30m de un parque infantil premiando el desenganche", detail: "Sentarse en un banco a 30m de niños jugando; premiar cada desenganche voluntario sin que se tense", duration: "15 min" },
-      { id: "b_mie_2", module: "tumbado_emergencia_stop", title: "Detención en Seco: '¡Tierra!' Explosivo", text: "10 repeticiones de '¡Tierra!' rápido bajando la mano al suelo", detail: "Práctica de caída instantánea al suelo a la orden o señal de mano extendida", duration: "10 min" },
-      { id: "b_mie_3", module: "paseo_junto", title: "Contacto Visual Espontáneo en Calle", text: "Premiar 15 contactos visuales voluntarios de Boo durante el paseo", detail: "Premiar 15 contactos visuales voluntarios de Boo durante el recorrido urbano junto a la pierna", duration: "20 min" }
+      { id: "b_mie_1", module: "tumbado_emergencia_stop", title: "Práctica de '¡Stop!' / '¡Tierra!' a Distancia", text: "8 repeticiones de parada en seco con mano alzada mientras camina", detail: "Con Boo a 5 metros suelta, dar orden '¡Tierra!' con brazo alzado; premiar la frenada instantánea", duration: "10 min" },
+      { id: "b_mie_2", module: "control_estimulos_ninos", title: "Ignorar Pelota en el Suelo", text: "Caminar suelta al lado de una pelota en el césped sin tocarla", detail: "Pasar caminando junto a una pelota en reposo; premiar que mantenga el foco en vosotros", duration: "15 min" },
+      { id: "b_mie_3", module: "paseo_junto", title: "Paseo Junto con Cambios de Ritmo", text: "Caminar pegada a la pierna con aceleraciones y paradas", detail: "Coordinar el paso acelerando y frenando mientras mantiene contacto visual alegre", duration: "15 min" }
     ]
   },
   Jueves: {
     day: "Jueves",
-    theme: "Paseo de Olfateo Calmo (Descompresión) & Llamadas de Juego",
-    focusTitle: "Jueves: Paseo de Olfateo Calmo (Descompresión) & Llamadas de Juego",
-    focusText: "Reducción de cortisol mediante olfateo libre y asociación positiva de fin de paseo",
+    theme: "Paseo de Olfateo Calmo & Llamadas de Juego",
+    focusTitle: "Jueves: Paseo de Olfateo Calmo & Llamadas de Juego",
+    focusText: "Reducción de excitación mediante olfateo libre y llamadas positivas",
     tasks: [
-      { id: "b_jue_1", module: "paseo_relajado", title: "Paseo de Olfateo de Descompresión", text: "Paseo largo de olfateo libre con correa larga a ritmo pausado", detail: "Paseo largo de olfateo libre a ritmo pausado con línea de 5m (reduce el cortisol y la reactividad)", duration: "25 min" },
-      { id: "b_jue_2", module: "llamada_positiva", title: "Llamada Jackpot al Cierre", text: "Llamada con premio 'Jackpot' de pavo al finalizar el paseo", detail: "Llamada final con premio especial 'Jackpot' de pavo al concluir el paseo", duration: "5 min" },
-      { id: "b_jue_3", module: "paseo_junto", title: "Posición 'Junto' al Muslo con Distracción", text: "Refuerzo de posición 'Junto' al cruzarse con paseantes", detail: "Refuerzo positivo de la posición pegada a la pierna con entrega de premio en el muslo", duration: "10 min" }
+      { id: "b_jue_1", module: "paseo_relajado", title: "Paseo de Olfateo Libre de Descompresión", text: "Paseo suelta tranquilo permitiendo olfatear sin prisas", detail: "Paseo relajado dejando que Boo olfatee libremente (baja las pulsaciones y el cortisol)", duration: "25 min" },
+      { id: "b_jue_2", module: "llamada_positiva", title: "Llamada Jackpot al Cierre", text: "Llamada final con premio especial 'Jackpot' de pavo", detail: "Llamada final con premio extraordinario de pavo al concluir el tiempo de parque", duration: "5 min" },
+      { id: "b_jue_3", module: "ansiedad_pelota", title: "Autocontrol y Búsqueda de Pelota", text: "Esconder la pelota en la hierba para que la busque olfateando", detail: "Hacer 'Busca' de la pelota en hierba alta en lugar de lanzarla, canalizando el olfato", duration: "10 min" }
     ]
   },
   Viernes: {
     day: "Viernes",
-    theme: "Circuito de Calma & Abortar Pelota en Carrera",
-    focusTitle: "Viernes: Circuito de Calma & Abortar Pelota en Carrera",
-    focusText: "Ejercicios de corte de impulsos en plena carrera y paseo con correa destensada",
+    theme: "Corte de Carrera con Pelota & Comando Único",
+    focusTitle: "Viernes: Corte de Carrera con Pelota & Comando Único",
+    focusText: "Interrumpir la persecución de pelota con orden de parada en seco",
     tasks: [
-      { id: "b_vie_1", module: "control_estimulos_ninos", title: "Corte de Carrera con Línea Larga", text: "Lanzar pelota con línea de 10m y cortar a mitad con '¡Tierra!' o señal de emergencia", detail: "Lanzar pelota y pedir '¡Tierra!' a mitad de camino; si frena y se tumba, premiar con súper Jackpot", duration: "15 min" },
-      { id: "b_vie_2", module: "tumbado_emergencia_stop", title: "Tumbado a Distancia con Mano en Alto", text: "Pedir '¡Tierra!' a 5 metros con señal visual de mano alzada", detail: "Detener a Boo a distancia con señal gestual de mano alzada y confirmar caída inmediata", duration: "10 min" },
-      { id: "b_vie_3", module: "paseo_relajado", title: "Correa Floja en U en Zona concurrida", text: "Paseo atada manteniendo la curva en U en la correa", detail: "Paseo atada manteniendo la curva en U en la correa en todo momento", duration: "20 min" }
+      { id: "b_vie_1", module: "control_estimulos_ninos", title: "Abortar Pelota en Mitad de Carrera", text: "Lanzar pelota y pedir '¡Stop!' o '¡Tierra!' a mitad de camino", detail: "Lanzar pelota y cortar la carrera a la mitad con comando de parada; premiar con súper jackpot", duration: "15 min" },
+      { id: "b_vie_2", module: "llamada_emergencia", title: "Prueba de Comando Único con Distracción", text: "Soltar comando único cuando esté jugando o mirando a otros perros", detail: "Comprobar la respuesta al comando único en pleno parque con perros activos", duration: "10 min" },
+      { id: "b_vie_3", module: "paseo_relajado", title: "Paseo Fluido Suelta en Zona Concurrida", text: "Paseo suelta manteniendo la calma con paseantes y perros", detail: "Paseo fluido en parque transitado premiando los chequeos visuales espontáneos", duration: "20 min" }
     ]
   },
   Sábado: {
     day: "Sábado",
-    theme: "Trail / Monte & Práctica con Línea Larga en Distracción Real",
-    focusTitle: "Sábado: Trail/Monte & Práctica con Línea Larga en Distracción Real",
+    theme: "Paseo Libre de Monte & Llamada Innegociable",
+    focusTitle: "Sábado: Paseo Libre de Monte & Llamada Innegociable",
     focusText: "Respuesta a la llamada en entorno natural con olores intensos y sendero compartido",
     tasks: [
-      { id: "b_sab_1", module: "llamada_emergencia", title: "Llamada con Línea Larga Arrastrando (Seguridad)", text: "Paseo de monte con línea larga arrastrando y 3 llamadas sorpresa", detail: "Paseo con línea de 10m arrastrando; practicar llamada de retorno con olores y ciclistas cruzando", duration: "25 min" },
-      { id: "b_sab_2", module: "paseo_junto", title: "Caminata Junto en Tramos Estrechos", text: "Caminata al lado en tramos estrechos del sendero", detail: "Caminar al lado en senderos estrechos coordinando el paso con arnés de canicross", duration: "20 min" },
-      { id: "b_sab_3", module: "ansiedad_pelota", title: "Búsqueda de Pelota en Hierba Alta", text: "Juego de buscar la pelota en hierba alta (olfateo + autocontrol)", detail: "Juegos de olfato y cobro en vegetación estimulando la mente de Border Collie", duration: "15 min" }
+      { id: "b_sab_1", module: "llamada_emergencia", title: "Llamada Única en Sendero de Monte", text: "3 llamadas sorpresa de retorno mientras corre libre por el monte", detail: "Practicar llamada única con ciclistas o caminantes cruzando a lo lejos; fiesta extrema al volver", duration: "25 min" },
+      { id: "b_sab_2", module: "paseo_junto", title: "Caminata Junto en Tramos Estrechos", text: "Caminar al lado en senderos estrechos coordinando el paso", detail: "Caminar pegada a la pierna en zonas de sendero estrecho o cruces con otros paseantes", duration: "20 min" },
+      { id: "b_sab_3", module: "ansiedad_pelota", title: "Juego de Frisbee/Pelota con Liberación Calmada", text: "Cobro dinámico de frisbee o pelota solo tras la orden '¡Ya!'", detail: "Sesión de cobro deportivo exigiendo entrega en la mano y espera en sentado", duration: "15 min" }
     ]
   },
   Domingo: {
@@ -2418,67 +2411,49 @@ export const BOO_WEEKLY_SCHEDULE = {
     focusTitle: "Domingo: Paseo en Familia & Vínculo Positivo",
     focusText: "Sesión lúdica y relajante en familia fortaleciendo el vínculo emocional",
     tasks: [
-      { id: "b_dom_1", module: "llamada_positiva", title: "Llamadas Cruzadas en Familia con Señal de Emergencia", text: "Llamadas lúdicas compartidas entre Carlos y Andrea con súper premio", detail: "Llamadas lúdicas alternadas entre Carlos y Andrea premiando la llegada con entusiasmo", duration: "15 min" },
-      { id: "b_dom_2", module: "paseo_relajado", title: "Paseo Libre y Regenerativo con Olfateo", text: "Paseo relajado sin prisas disfrutando de la naturaleza", detail: "Paseo relajado sin exigencias disfrutando del entorno y permitiendo libre exploración", duration: "25 min" },
-      { id: "b_dom_3", module: "ansiedad_pelota", title: "Masaje de Relajación Canina", text: "Masaje de relajación y soltado de tensión tras los paseos", detail: "Masaje de soltado muscular y caricias suaves en el lomo y pecho tras la caminata", duration: "10 min" }
+      { id: "b_dom_1", module: "llamada_positiva", title: "Llamadas Cruzadas entre Carlos y Andrea", text: "Llamadas lúdicas alternadas entre Carlos y Andrea premiando la llegada", detail: "Llamadas divertidas de un extremo al otro premiando la velocidad de retorno con alegría", duration: "15 min" },
+      { id: "b_dom_2", module: "paseo_relajado", title: "Paseo Libre y Regenerativo", text: "Paseo relajado sin prisas disfrutando de la naturaleza suelta", detail: "Paseo totalmente libre disfrutando del entorno y explorando a su ritmo", duration: "25 min" },
+      { id: "b_dom_3", module: "ansiedad_pelota", title: "Masaje de Relajación Canina", text: "Masaje de soltado muscular y caricias suaves tras los paseos", detail: "Masaje de soltado muscular en el lomo y pecho tras la caminata", duration: "10 min" }
     ]
   }
 };
 
 export const BOO_CONTINUOUS_REINFORCEMENT = [
   {
-    id: "cont_lat_ninos",
-    title: "Mirar y Desconectar (LAT ante Niños y Perros)",
-    icon: "fa-solid fa-child-reaching",
-    color: "var(--accent-rose)",
-    desc: "En cuanto Boo mire a un niño corriendo o a un perro jugando, premiar inmediatamente en el muslo antes de que se excite.",
-    detail: "El estímulo en movimiento debe ser la señal para girarse hacia vosotros. Nunca tirar de la correa si mira; premiar el giro de cabeza.",
-    tip: "Si Boo se tensa o no acepta la comida, está demasiado cerca (ha sobrepasado su umbral). Retroceded 10 metros."
+    id: "cont_comando_unico",
+    title: "Comando Único Innegociable ('¡AQUÍ YA!')",
+    icon: "fa-solid fa-bullhorn",
+    color: "var(--accent-emerald)",
+    desc: "Reservar una llamada exclusiva para momentos de mucha distracción. Siempre se celebra a lo grande con pavo o queso.",
+    detail: "No gastarlo para cosas rutinarias ni para regañar. Si acude a este comando, siempre recibe la mayor fiesta del paseo.",
+    tip: "Acompañadlo dando medio paso atrás para incentivar su aceleración hacia vosotros."
   },
   {
-    id: "cont_linea_larga",
-    title: "Uso de Línea Larga de Seguridad (5-10m)",
-    icon: "fa-solid fa-shield-halved",
+    id: "cont_autocontrol_pelotas",
+    title: "Autocontrol con Pelotas (Esperar la orden '¡Ya!')",
+    icon: "fa-solid fa-baseball",
     color: "var(--accent-amber)",
-    desc: "En zonas con niños o tráfico, llevar siempre línea larga. Evita que ensaye la persecución y da seguridad total.",
-    detail: "Cada persecución exitosa descarga dopamina y fija el mal hábito. La línea larga corta la posibilidad de error.",
-    tip: "Usar línea de biothane (no quema las manos y no se enreda en la hierba)."
-  },
-  {
-    id: "cont_no_llamar_vano",
-    title: "Regla de Oro: Nunca llamar en vano si ya corre",
-    icon: "fa-solid fa-triangle-exclamation",
-    color: "var(--accent-red)",
-    desc: "Si Boo ya está persiguiendo y excitada, no grites su nombre. Usa silbato de emergencia o corre en sentido contrario.",
-    detail: "Correr en sentido opuesto despierta su instinto de seguimiento hacia ti en vez de empujarla a seguir al niño.",
-    tip: "Grita al niño/padres: '¡Quédate quieto como una estatua y cruza los brazos!' para cortar el estímulo de presa."
+    desc: "No permitir que salga disparada a por una pelota rodando hasta que deis la palabra de liberación ('¡Ya!').",
+    detail: "La pelota la administráis vosotros. Si arranca sin permiso, pisad la pelota y reiniciad en calma.",
+    tip: "Enseñar que la calma es la única llave que abre el juego."
   },
   {
     id: "cont_mirame",
-    title: "Contacto Visual Voluntario ('Mírame')",
+    title: "Contacto Visual Espontáneo en Libertad ('Check-in')",
     icon: "fa-solid fa-eye",
     color: "var(--accent-cyan)",
-    desc: "Premiar cada vez que Boo se gire a mirar a Carlos o Andrea espontáneamente durante el paseo.",
-    detail: "Premiar cada vez que Boo se gire a mirar a Carlos o Andrea espontáneamente durante el paseo.",
-    tip: "Entregar siempre el premio junto al muslo para reforzar la zona de paseo pegada al guía."
-  },
-  {
-    id: "cont_correa",
-    title: "Caminar Relajada con Correa Floja (Sin Tirones)",
-    icon: "fa-solid fa-dog",
-    color: "var(--accent-purple)",
-    desc: "Técnica de la estatua: Parar en seco al sentir tensión en la correa. Avanzar solo cuando la correa cuelga en curva ('U').",
-    detail: "Técnica de la estatua: Parar en seco al sentir tensión en la correa. Avanzar solo cuando la correa cuelga en curva ('U').",
-    tip: "No dar tirones hacia atrás. Mantenerse firme como un árbol enseña a Boo a buscar la flojedad por sí misma."
+    desc: "Premiar cada vez que Boo pasea suelta y se gira a mirar a Carlos o Andrea espontáneamente.",
+    detail: "Recompensar junto a la pierna. Esto refuerza que Boo mantenga siempre la conexión visual con vosotros mientras corre libre.",
+    tip: "Un simple '¡Eso, muy bien!' con caricia rápida mantiene su foco activo sin interrumpir su exploración."
   },
   {
     id: "cont_llamada",
-    title: "Refuerzo Positivo de la Llamada (Engancha, Premia y Suelta)",
-    icon: "fa-solid fa-bullhorn",
-    color: "var(--accent-emerald)",
-    desc: "Realizar 8 de cada 10 llamadas durante el paseo para dar una súper chuche, enganchar 5s y SOLTARLA A JUGAR de nuevo.",
-    detail: "Realizar 8 de cada 10 llamadas durante el paseo para dar una súper chuche, enganchar 5s y SOLTARLA A JUGAR de nuevo.",
-    tip: "Nunca llamar solo para regañar o únicamente al terminar el paseo. Asociar la llamada a fiesta y libertad."
+    title: "Engancha, Premia y Suelta (Retorno Feliz)",
+    icon: "fa-solid fa-repeat",
+    color: "var(--accent-purple)",
+    desc: "Hacer 5-6 llamadas durante el paseo suelta solo para dar una chuche, acariciarla 5 segundos y volver a soltarla a jugar.",
+    detail: "Evita que Boo asocie que acudir a la llamada significa el fin del juego o de su libertad.",
+    tip: "Nunca llamar solo para marcharse a casa. Acudir debe ser parte del juego."
   }
 ];
 

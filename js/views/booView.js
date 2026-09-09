@@ -1,12 +1,13 @@
 /**
- * FitDuo & Collie Coach - Boo Dog Training View Module (v0.23.0)
- * Specialized Tabs: Control de Impulsos & Estímulos Fuertes (Niños, Perros, Pelotas),
- * Plan Diario de Paseo, Biblioteca de Módulos de Adiestramiento, y Mapa de Habilidades.
+ * FitDuo & Collie Coach - Boo Dog Training View Module
+ * Specialized Tabs: Foco & Autocontrol con Pelotas (Comandos Innegociables & Parque),
+ * Plan Diario de Paseo, Biblioteca de Módulos de Adiestramiento, y Catálogo de Habilidades.
  */
 
 import { appState, saveState, getTodayDayName, triggerHapticTouch, showIosToast } from '../state.js';
 import {
   BOO_TRAINING_MODULES,
+  BOO_FOCUS_AND_BALLS_PROGRAM,
   BOO_IMPULSE_CONTROL_PROGRAM,
   BOO_WEEKLY_SCHEDULE,
   BOO_CONTINUOUS_REINFORCEMENT,
@@ -416,9 +417,9 @@ export function renderBooWorkoutView() {
     // Top Subtab Navigation Bar
     let html = `
       <div style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.75rem; margin-bottom: 1.25rem; -webkit-overflow-scrolling: touch;">
-        <button type="button" class="btn-secondary-sm" onclick="setBooSubTab('impulse')" style="padding: 0.6rem 1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 0.45rem; white-space: nowrap; ${activeSubTab === 'impulse' ? 'background: linear-gradient(135deg, #f43f5e, #e11d48); color: #fff; border-color: #f43f5e; box-shadow: 0 2px 10px rgba(244, 63, 94, 0.35);' : 'background: rgba(255,255,255,0.04); color: var(--text-muted);'}">
-          <i class="fa-solid fa-shield-halved"></i> Control de Impulsos
-          <span style="font-size: 0.68rem; padding: 1px 6px; border-radius: 10px; background: rgba(0,0,0,0.3); font-weight: 700;">Niños/Perros</span>
+        <button type="button" class="btn-secondary-sm" onclick="setBooSubTab('impulse')" style="padding: 0.6rem 1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 0.45rem; white-space: nowrap; ${activeSubTab === 'impulse' ? 'background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-color: #10b981; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);' : 'background: rgba(255,255,255,0.04); color: var(--text-muted);'}">
+          <i class="fa-solid fa-baseball"></i> Foco & Pelotas
+          <span style="font-size: 0.68rem; padding: 1px 6px; border-radius: 10px; background: rgba(0,0,0,0.3); font-weight: 700;">Autocontrol</span>
         </button>
         <button type="button" class="btn-secondary-sm" onclick="setBooSubTab('daily')" style="padding: 0.6rem 1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 0.45rem; white-space: nowrap; ${activeSubTab === 'daily' ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border-color: #f59e0b; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);' : 'background: rgba(255,255,255,0.04); color: var(--text-muted);'}">
           <i class="fa-solid fa-calendar-day"></i> Plan Diario (${activeDay})
@@ -426,17 +427,17 @@ export function renderBooWorkoutView() {
         <button type="button" class="btn-secondary-sm" onclick="setBooSubTab('modules')" style="padding: 0.6rem 1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 0.45rem; white-space: nowrap; ${activeSubTab === 'modules' ? 'background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff; border-color: #06b6d4; box-shadow: 0 2px 10px rgba(6, 182, 212, 0.35);' : 'background: rgba(255,255,255,0.04); color: var(--text-muted);'}">
           <i class="fa-solid fa-book-open"></i> Biblioteca Módulos (${BOO_TRAINING_MODULES.length})
         </button>
-        <button type="button" class="btn-secondary-sm" onclick="setBooSubTab('tricks')" style="padding: 0.6rem 1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 0.45rem; white-space: nowrap; ${activeSubTab === 'tricks' ? 'background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-color: #10b981; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);' : 'background: rgba(255,255,255,0.04); color: var(--text-muted);'}">
+        <button type="button" class="btn-secondary-sm" onclick="setBooSubTab('tricks')" style="padding: 0.6rem 1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 0.45rem; white-space: nowrap; ${activeSubTab === 'tricks' ? 'background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; border-color: #8b5cf6; box-shadow: 0 2px 10px rgba(139, 92, 246, 0.35);' : 'background: rgba(255,255,255,0.04); color: var(--text-muted);'}">
           <i class="fa-solid fa-trophy"></i> Habilidades & Trucos
         </button>
       </div>
     `;
 
     // -------------------------------------------------------------
-    // SUBTAB 1: CONTROL DE IMPULSOS & LLAMADA DE EMERGENCIA (STAR FEATURE)
+    // SUBTAB 1: ENFOQUE, AUTOCONTROL CON PELOTAS & COMANDOS INNEGOCIABLES
     // -------------------------------------------------------------
     if (activeSubTab === "impulse") {
-      const prog = BOO_IMPULSE_CONTROL_PROGRAM;
+      const prog = BOO_FOCUS_AND_BALLS_PROGRAM || BOO_IMPULSE_CONTROL_PROGRAM;
       const completedSteps = appState.booProgress?.completedProgramSteps || {};
       const allSteps = prog.phases.flatMap(p => p.steps);
       const totalSteps = allSteps.length;
@@ -447,36 +448,36 @@ export function renderBooWorkoutView() {
       const distractionLogs = appState.booProgress?.distractionLogs || [];
 
       html += `
-        <!-- SOS EMERGENCY QUICK ACTION -->
-        <div class="glass-card" style="margin-bottom: 1.25rem; border-left: 5px solid #f43f5e; background: linear-gradient(135deg, rgba(244, 63, 94, 0.12), rgba(0,0,0,0.25));">
+        <!-- OFF-LEASH WALK GUIDELINES QUICK ACTION -->
+        <div class="glass-card" style="margin-bottom: 1.25rem; border-left: 4px solid var(--accent-emerald); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(0,0,0,0.25));">
           <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleBooSosCard()">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
-              <div style="width: 38px; height: 38px; border-radius: 50%; background: #f43f5e; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 0 12px rgba(244, 63, 94, 0.5);">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+              <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);">
+                <i class="fa-solid fa-baseball"></i>
               </div>
               <div>
-                <h3 style="font-family: var(--font-heading); font-size: 1rem; color: #fca5a5; margin: 0;">
-                  🚨 ${prog.sosProtocol.title}
+                <h3 style="font-family: var(--font-heading); font-size: 1rem; color: var(--accent-emerald); margin: 0;">
+                  ${prog.sosProtocol.title}
                 </h3>
                 <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">
-                  Toca aquí para ver la guía de 5 segundos si Boo sale disparada hoy
+                  Comando único innegociable, carrera inversa, parada en seco y gestión de la pelota
                 </p>
               </div>
             </div>
             <button type="button" class="btn-secondary-sm" style="font-size: 0.8rem; padding: 4px 10px;">
-              ${isSosExpanded ? '<i class="fa-solid fa-chevron-up"></i> Plegar' : '<i class="fa-solid fa-chevron-down"></i> Ver SOS'}
+              ${isSosExpanded ? '<i class="fa-solid fa-chevron-up"></i> Plegar' : '<i class="fa-solid fa-chevron-down"></i> Ver Pautas'}
             </button>
           </div>
 
           ${isSosExpanded ? `
-            <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid rgba(244, 63, 94, 0.25); display: flex; flex-direction: column; gap: 0.65rem;">
+            <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid rgba(16, 185, 129, 0.25); display: flex; flex-direction: column; gap: 0.65rem;">
               ${prog.sosProtocol.steps.map(s => `
-                <div style="display: flex; gap: 0.6rem; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 0.65rem 0.85rem; border-radius: 8px; border-left: 3px solid #f43f5e;">
-                  <span style="background: #f43f5e; color: #fff; font-weight: 700; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                <div style="display: flex; gap: 0.6rem; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 0.65rem 0.85rem; border-radius: 8px; border-left: 3px solid var(--accent-emerald);">
+                  <span style="background: #10b981; color: #fff; font-weight: 700; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
                     ${s.step}
                   </span>
                   <div>
-                    <div style="font-size: 0.82rem; font-weight: 700; color: #fecdd3;">${s.title}</div>
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #a7f3d0;">${s.title}</div>
                     <div style="font-size: 0.78rem; color: var(--text-main); margin-top: 2px;">${s.action}</div>
                   </div>
                 </div>
@@ -490,10 +491,10 @@ export function renderBooWorkoutView() {
           <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleBooWhyCard()">
             <div>
               <span style="font-size: 0.76rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                Psicología & Etología Canina • Border Collie
+                Psicología & Foco • Border Collie
               </span>
               <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-top: 2px;">
-                🧠 ¿Por qué ocurrió con el niño y por qué se 'descentra'?
+                🧠 Concentración en el Parque & Autocontrol con Pelotas
               </h3>
             </div>
             <button type="button" class="btn-secondary-sm" style="font-size: 0.78rem;">
@@ -517,7 +518,7 @@ export function renderBooWorkoutView() {
             </div>
           ` : `
             <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.4rem;">
-              El movimiento veloz activa el instinto de pastoreo/caza y causa 'sordera atencional'. Toca para leer cómo desactivarlo con desenganche LAT.
+              Boo va siempre suelta y es muy obediente. Toca para ver las 3 claves para canalizar su instinto con pelotas y mantener el foco en vosotros.
             </p>
           `}
         </div>
@@ -526,7 +527,7 @@ export function renderBooWorkoutView() {
         <div class="glass-card" style="margin-bottom: 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
             <div>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">Progreso del Programa de Impulsos</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Progreso: Foco, Pelotas & Comandos Innegociables</span>
               <div style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700; color: var(--accent-emerald);">
                 ${doneCount} de ${totalSteps} Pasos Superados (${progressPercent}%)
               </div>
@@ -536,7 +537,7 @@ export function renderBooWorkoutView() {
             </div>
           </div>
           <div style="background: rgba(255,255,255,0.08); height: 10px; border-radius: 5px; overflow: hidden; position: relative;">
-            <div style="background: linear-gradient(90deg, #f43f5e, #f59e0b, #10b981); width: ${progressPercent}%; height: 100%; border-radius: 5px; transition: width 0.4s ease;"></div>
+            <div style="background: linear-gradient(90deg, #06b6d4, #f59e0b, #10b981); width: ${progressPercent}%; height: 100%; border-radius: 5px; transition: width 0.4s ease;"></div>
           </div>
         </div>
 
@@ -600,7 +601,7 @@ export function renderBooWorkoutView() {
             <i class="fa-solid fa-clipboard-list"></i> Registro de Sesiones con Distracción Real
           </h3>
           <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem;">
-            Anotad cada paseo donde hayáis practicado con niños, perros o pelotas para medir la evolución del autocontrol de Boo.
+            Anotad cada paseo donde hayáis practicado el autocontrol con pelotas, el comando único o el foco entre perros para medir la evolución de Boo.
           </p>
 
           <div style="background: rgba(0,0,0,0.2); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1rem;">
@@ -608,10 +609,12 @@ export function renderBooWorkoutView() {
               <div>
                 <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Tipo de Estímulo:</label>
                 <select id="boo-log-stimulus" class="custom-select" style="font-size: 0.78rem; padding: 6px;">
-                  <option value="Niño corriendo / asustado">Niño corriendo / asustado</option>
+                  <option value="Pelota rodando (Autocontrol)">Pelota rodando (Autocontrol)</option>
+                  <option value="Pelota ajena botando en parque">Pelota ajena botando en parque</option>
+                  <option value="Parque con perros jugando">Parque con perros jugando</option>
+                  <option value="Comando único innegociable">Comando único innegociable</option>
+                  <option value="Detención rápida ('¡Stop!' / '¡Tierra!')">Detención rápida ('¡Stop!' / '¡Tierra!')</option>
                   <option value="Niños en parque / patinete">Niños en parque / patinete</option>
-                  <option value="Perros jugando en parque">Perros jugando en parque</option>
-                  <option value="Pelotas / Frisbee botando">Pelotas / Frisbee botando</option>
                   <option value="Corredores / Ciclistas monte">Corredores / Ciclistas monte</option>
                 </select>
               </div>
@@ -637,7 +640,7 @@ export function renderBooWorkoutView() {
 
             <div>
               <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Notas del Paseo (Premios usados, lugar, reacción de Carlos/Andrea):</label>
-              <input type="text" id="boo-log-notes" placeholder="Ej: Usamos salchichas en el parque; desenganchó a la primera al ver al niño correr..." style="width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 10px; color: var(--text-main); font-size: 0.78rem;">
+              <input type="text" id="boo-log-notes" placeholder="Ej: Usamos dados de pavo; desenganchó a la primera al ver la pelota ajena botar..." style="width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 10px; color: var(--text-main); font-size: 0.78rem;">
             </div>
 
             <div style="display: flex; justify-content: flex-end;">
@@ -672,7 +675,7 @@ export function renderBooWorkoutView() {
             </div>
           ` : `
             <div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic; text-align: center; padding: 0.75rem;">
-              Aún no hay sesiones registradas. Probad la primera hoy con pavo o queso en una zona con niños a distancia.
+              Aún no hay sesiones registradas. Probad la primera hoy con una pelota en calma o el comando único en el parque.
             </div>
           `}
         </div>
