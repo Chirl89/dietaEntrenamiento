@@ -1249,14 +1249,15 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
 }`;
 
       const modelsToTry = [
-        "gemini-3.6-flash",
-        "gemini-flash-latest",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
+        "gemini-flash-latest",
+        "gemini-3.6-flash",
         "gemini-2.5-pro"
       ];
 
       let rawJson = null;
+      let lastErrorMessage = null;
       for (const modelName of modelsToTry) {
         try {
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -1282,8 +1283,12 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
               rawJson = text.trim();
               break;
             }
+          } else {
+            lastErrorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            console.warn(`Model ${modelName} returned error ${response.status}`);
           }
         } catch(eModel) {
+          lastErrorMessage = eModel.message || "Timeout de conexión";
           console.warn(`Attempt with ${modelName} failed:`, eModel);
         }
       }
@@ -1368,12 +1373,22 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
         }
       }
     } catch(e) {
-      console.warn("Gemini API call failed, falling back to local semantic engine:", e);
+      console.warn("Gemini API call failed:", e);
     }
+  } else {
+    return {
+      error: true,
+      code: "NO_API_KEY",
+      message: "No se ha configurado la clave API de Google Gemini en Ajustes."
+    };
   }
 
-  // Fallback to local semantic culinary engine
-  return generateRecipeFromDescription(description, preferredType, servings, isBatch);
+  // NO LOCAL ENGINE FALLBACK: As requested by the user, warn explicitly about spikes instead of serving default recipes
+  return {
+    error: true,
+    code: "AI_DEMAND_SPIKE",
+    message: "Google Gemini está experimentando picos de demanda o no ha respondido a tiempo. Siguiendo tus preferencias, no se han generado recetas por defecto para garantizar propuestas 100% creadas por IA. Pulsa en Reintentar en unos instantes."
+  };
 }
 
 /**
@@ -1437,14 +1452,15 @@ REGLAS ESTRICTAS:
 }`;
 
       const modelsToTry = [
-        "gemini-3.6-flash",
-        "gemini-flash-latest",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
+        "gemini-flash-latest",
+        "gemini-3.6-flash",
         "gemini-2.5-pro"
       ];
 
       let rawJson = null;
+      let lastErrorMessage = null;
       for (const modelName of modelsToTry) {
         try {
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -1470,8 +1486,11 @@ REGLAS ESTRICTAS:
               rawJson = text.trim();
               break;
             }
+          } else {
+            lastErrorMessage = `HTTP ${response.status}`;
           }
         } catch(eModel) {
+          lastErrorMessage = eModel.message || "Timeout";
           console.warn(`Alternative attempt with ${modelName} failed:`, eModel);
         }
       }
@@ -1513,163 +1532,21 @@ REGLAS ESTRICTAS:
         }
       }
     } catch(e) {
-      console.warn("Gemini regenerate alternative failed, using local semantic engine:", e);
-    }
-  }
-
-  // Fallback offline generator for the alternative
-  const baseIngredient = getRecipeBaseIngredient(currentRecipe);
-  const baseName = baseIngredient ? baseIngredient.name : extractCleanCulinarySubject(batchTitle);
-  const foodCategory = detectBatchFoodCategory(baseName, batchTitle);
-  const userText = (userInstruction || "").toLowerCase();
-
-  // Extract requested base quantity if user typed e.g. "200g" or "250g"
-  const amountMatch = userText.match(/(\d+)\s*(g|gr|gramos)/i);
-  const baseGramsPerPerson = amountMatch ? Math.max(80, Math.min(350, parseInt(amountMatch[1], 10))) : 160;
-  const totalBaseGrams = baseGramsPerPerson * servings;
-
-  let altName = "";
-  let altType = currentRecipe.type || "comida";
-  let altIngredients = [];
-  let altSteps = [];
-
-  if (foodCategory === "veggie_stew") {
-    if (userText.includes("pasta") || userText.includes("macarrones") || userText.includes("espaguetis")) {
-      altName = `Pasta integral con ${baseName} y atún al natural`;
-      altIngredients = [
-        { name: baseName, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Pasta integral cocida", amount: 90 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-        { name: "Atún fresco / al natural", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-        { name: "Aceite de oliva virgen extra", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      altSteps = [
-        "Cocer la pasta integral al dente.",
-        `Calentar en sartén la ración de ${baseName.toLowerCase()} junto con el atún escurrido.`,
-        "Mezclar la pasta con la salsa y servir bien caliente con hierbas aromáticas."
-      ];
-    } else if (userText.includes("arroz") || userText.includes("wok")) {
-      altName = `Arroz basmati con ${baseName} y pechuga de pollo a la plancha`;
-      altIngredients = [
-        { name: baseName, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Arroz jazmín o basmati cocido", amount: 90 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-        { name: "Pechuga de pollo", amount: 80 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-        { name: "Aceite de oliva virgen extra", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      altSteps = [
-        "Dorar los dados de pechuga de pollo en sartén caliente.",
-        `Añadir la porción de ${baseName.toLowerCase()} reservada para que tome temperatura.`,
-        "Servir sobre la base de arroz basmati caliente."
-      ];
-    } else if (userText.includes("ensalada") || userText.includes("ligera") || altType === "cena") {
-      altName = `Tostas crujientes con ${baseName} y queso feta gratinado`;
-      altType = "cena";
-      altIngredients = [
-        { name: baseName, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Pan de masa madre o integral", amount: 50 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-        { name: "Queso Feta o rulo de cabra", amount: 35 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-        { name: "Orégano y aceite de oliva", amount: 4 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      altSteps = [
-        "Tostar las rebanadas de pan de masa madre.",
-        `Cubrir con una generosa base de ${baseName.toLowerCase()} templado y desmenuzar el queso por encima.`,
-        "Dar 2 minutos de calor en airfryer o grill y servir caliente."
-      ];
-    } else {
-      altName = `${baseName} tradicional con huevos a la plancha y patatas`;
-      altIngredients = [
-        { name: baseName, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Huevos frescos", amount: 2 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
-        { name: "Patata fresca", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      altSteps = [
-        `Calentar la ración de ${baseName.toLowerCase()} en sartén 3 minutos.`,
-        "Cocinar los huevos a la plancha dejando la yema líquida.",
-        "Acompañar con patatas en cubos asadas o al microondas."
-      ];
+      console.warn("Gemini regenerate alternative failed:", e);
     }
   } else {
-    // Meat or fish category
-    if (userText.includes("pasta") || userText.includes("macarrones") || userText.includes("espaguetis")) {
-      altName = `Pasta salteada con tiras de ${baseName.toLowerCase()} y tomate`;
-      altIngredients = [
-        { name: `${baseName} en tiras`, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Pasta integral", amount: 75 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Salsa de tomate casera", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Queso parmesano rallado", amount: 15 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-        { name: "Aceite de oliva virgen extra", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      altSteps = [
-        "Cocer la pasta en abundante agua con sal durante 8-10 minutos hasta que esté al dente.",
-        `Calentar en sartén la salsa de tomate e incorporar la carne de ${baseName.toLowerCase()} en tiras durante 2 minutos.`,
-        "Mezclar la pasta escurrida con la salsa y la carne, espolvorear parmesano y servir caliente."
-      ];
-    } else if (userText.includes("arroz") || userText.includes("wok")) {
-      altName = `Arroz salteado estilo wok con ${baseName.toLowerCase()} y verduras`;
-      altIngredients = [
-        { name: `${baseName} en dados`, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Arroz basmati", amount: 70 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Zanahoria y calabacín en bastones", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
-        { name: "Salsa de soja baja en sal", amount: 10 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Aceite de sésamo o de oliva", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      altSteps = [
-        "Cocer el arroz basmati o usar arroz ya cocido.",
-        "Saltear a fuego fuerte en sartén o wok las verduras con un hilo de aceite durante 4 minutos.",
-        `Agregar los dados de ${baseName.toLowerCase()} y el arroz cocido, regar con la salsa de soja y saltear 2 minutos todo junto.`
-      ];
-    } else if (userText.includes("ensalada") || userText.includes("ligera") || altType === "cena") {
-      altName = `Bowl templado de ensalada con dados de ${baseName.toLowerCase()}, rúcula y nueces`;
-      altType = "cena";
-      altIngredients = [
-        { name: `${baseName} en dados templados`, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Rúcula y canónigos", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
-        { name: "Tomates cherry partidos", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
-        { name: "Queso feta o rulo de cabra", amount: 25 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-        { name: "Nueces picadas", amount: 15 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      altSteps = [
-        `Dar un golpe de sartén rápido a los dados de ${baseName.toLowerCase()} para templarlos ligeramente.`,
-        "Colocar en cada plato o bowl la base de rúcula, cherrys partidos y queso.",
-        "Añadir la carne templada por encima, las nueces picadas y aliñar con AOVE y una pizca de sal y vinagre."
-      ];
-    } else {
-      altName = `Salteado rápido de ${baseName.toLowerCase()} con champiñones al ajillo`;
-      altIngredients = [
-        { name: `${baseName} en tiras`, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Champiñones laminados", amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
-        { name: "Dientes de ajo y perejil picado", amount: 2 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.VEGETABLES },
-        { name: "Aceite de oliva virgen extra", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      altSteps = [
-        "Dorar en sartén los ajos laminados con el AOVE a fuego medio.",
-        "Añadir los champiñones y saltear 5 minutos hasta que estén tiernos.",
-        `Incorporar las tiras de ${baseName.toLowerCase()} y el perejil, saltear 2 minutos para amalgamar sabores y servir.`
-      ];
-    }
+    return {
+      error: true,
+      code: "NO_API_KEY",
+      message: "No se ha configurado la clave API de Google Gemini en Ajustes."
+    };
   }
 
-  const verifiedMacros = calculateMacrosFromIngredients(altIngredients);
-  const perPersonKcal = verifiedMacros.calories > 0 ? Math.round(verifiedMacros.calories / servings) : 460;
-  const perPersonProt = verifiedMacros.protein > 0 ? Math.round(verifiedMacros.protein / servings) : 38;
-  const perPersonCarbs = verifiedMacros.carbs >= 0 ? Math.round(verifiedMacros.carbs / servings) : 25;
-  const perPersonFats = verifiedMacros.fats >= 0 ? Math.round(verifiedMacros.fats / servings) : 15;
-
+  // NO LOCAL ENGINE FALLBACK: Return error object so user is notified and can retry
   return {
-    id: "custom_" + Date.now() + "_" + indexToReplace + "_" + Math.random().toString(36).substr(2, 4),
-    name: altName,
-    type: altType,
-    servings: servings,
-    prepTime: 15,
-    calories: perPersonKcal,
-    protein: perPersonProt,
-    carbs: perPersonCarbs,
-    fats: perPersonFats,
-    tags: ["Batch Cooking", "alternativa", "aprovechamiento"],
-    ingredients: altIngredients,
-    instructions: altSteps,
-    aiPowered: false
+    error: true,
+    code: "AI_DEMAND_SPIKE",
+    message: "Google Gemini está experimentando picos de demanda en este momento. Por favor, pulsa de nuevo en 'Generar Alternativa con IA' en unos instantes."
   };
 }
 
@@ -1729,14 +1606,15 @@ REGLAS ESTRICTAS:
 }`;
 
       const modelsToTry = [
-        "gemini-3.6-flash",
-        "gemini-flash-latest",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
+        "gemini-flash-latest",
+        "gemini-3.6-flash",
         "gemini-2.5-pro"
       ];
 
       let rawJson = null;
+      let lastErrorMessage = null;
       for (const modelName of modelsToTry) {
         try {
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -1762,8 +1640,11 @@ REGLAS ESTRICTAS:
               rawJson = text.trim();
               break;
             }
+          } else {
+            lastErrorMessage = `HTTP ${response.status}`;
           }
         } catch(eModel) {
+          lastErrorMessage = eModel.message || "Timeout";
           console.warn(`Add batch recipe attempt with ${modelName} failed:`, eModel);
         }
       }
@@ -1803,160 +1684,20 @@ REGLAS ESTRICTAS:
         }
       }
     } catch(e) {
-      console.warn("Gemini add batch recipe failed, using local semantic engine:", e);
-    }
-  }
-
-  // Fallback offline generator for additional recipe
-  const firstRecipe = batchCandidate.recipes?.[0];
-  const baseIngredient = firstRecipe ? getRecipeBaseIngredient(firstRecipe) : null;
-  const rawBaseName = batchTitle.replace(/^Batch Cooking:\s*/i, "").split("(")[0].trim();
-  const baseName = baseIngredient ? baseIngredient.name : extractCleanCulinarySubject(rawBaseName);
-  const foodCategory = detectBatchFoodCategory(baseName, batchTitle);
-  const extraIndex = (batchCandidate.recipes?.length || 0) + 1;
-  const isPasta = /pasta|macarron|espagueti/i.test(userInstruction);
-  const isArroz = /arroz|wok/i.test(userInstruction);
-  const isCena = /cena|ensalada|ligera/i.test(userInstruction);
-
-  let newName = "";
-  let newType = isCena ? "cena" : "comida";
-  let carbsVal = 45;
-  let caloriesVal = 500;
-  let proteinVal = 35;
-  let fatsVal = 16;
-  let ingredientsList = [];
-  let instructionsList = [];
-
-  if (foodCategory === "veggie_stew") {
-    if (isPasta) {
-      newName = `Pasta integral con ${baseName} y atún al natural`;
-      caloriesVal = 580;
-      proteinVal = 38;
-      carbsVal = 65;
-      fatsVal = 14;
-      ingredientsList = [
-        { name: baseName, amount: 180 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Pasta integral cocida", amount: 140 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-        { name: "Atún fresco / al natural", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      instructionsList = [
-        "Cocer la pasta al dente.",
-        `Templar en sartén la ración de ${baseName.toLowerCase()} junto con el atún.`,
-        "Mezclar y servir con orégano."
-      ];
-    } else if (isArroz) {
-      newName = `Arroz basmati con ${baseName} y pechuga a la plancha`;
-      caloriesVal = 620;
-      proteinVal = 42;
-      carbsVal = 68;
-      fatsVal = 14;
-      ingredientsList = [
-        { name: baseName, amount: 180 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Arroz jazmín o basmati cocido", amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-        { name: "Pechuga de pollo", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      instructionsList = [
-        "Marcar los dados de pollo a la plancha.",
-        `Incorporar la porción de ${baseName.toLowerCase()} del batch cooking.`,
-        "Servir sobre el arroz caliente."
-      ];
-    } else if (isCena) {
-      newName = `Tostas crujientes con ${baseName} y queso feta gratinado`;
-      caloriesVal = 420;
-      proteinVal = 22;
-      carbsVal = 36;
-      fatsVal = 18;
-      ingredientsList = [
-        { name: baseName, amount: 180 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Pan de masa madre o integral", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-        { name: "Queso Feta o rulo de cabra", amount: 40 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-        { name: "Orégano o albahaca", amount: 2 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      instructionsList = [
-        "Tostar las rebanadas de pan.",
-        `Colocar la base de ${baseName.toLowerCase()} templado y desmenuzar el queso.`,
-        "Gratinar 2 minutos y servir caliente."
-      ];
-    } else {
-      newName = `${baseName} tradicional con huevos a la plancha y patatas`;
-      caloriesVal = 590;
-      proteinVal = 26;
-      carbsVal = 55;
-      fatsVal = 24;
-      ingredientsList = [
-        { name: baseName, amount: 200 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Huevos frescos", amount: 2 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
-        { name: "Patata fresca", amount: 160 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Aceite de oliva virgen extra", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      instructionsList = [
-        `Calentar el ${baseName.toLowerCase()} en sartén 3 minutos.`,
-        "Cocinar los huevos a la plancha.",
-        "Acompañar con patatas en cubos asadas o al microondas."
-      ];
+      console.warn("Gemini add batch recipe failed:", e);
     }
   } else {
-    // Meat or fish
-    if (isPasta) {
-      newName = `Pasta integral con ${baseName} desmenuzado y tomate natural`;
-      ingredientsList = [
-        { name: `${baseName} desmenuzado`, amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Pasta integral", amount: 70 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Tomate triturado natural", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Orégano y aceite de oliva", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      instructionsList = [
-        "Cocer la pasta al dente.",
-        `Saltear en sartén con el tomate y la carne de ${baseName.toLowerCase()}.`,
-        "Servir caliente con orégano."
-      ];
-    } else if (isCena) {
-      newName = `Wrap ligero de ${baseName} con aguacate y rúcula`;
-      caloriesVal = 410;
-      carbsVal = 26;
-      ingredientsList = [
-        { name: `${baseName} en tiras`, amount: 140 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Tortilla integral", amount: 1 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Aguacate", amount: 40 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Rúcula o brotes tiernos", amount: 50 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
-      ];
-      instructionsList = [
-        `Templar las tiras de ${baseName.toLowerCase()} en sartén.`,
-        "Rellenar la tortilla con la verdura, el aguacate y la carne templada.",
-        "Enrollar y servir de inmediato."
-      ];
-    } else {
-      newName = `Salteado de ${baseName} al wok con arroz y verduras`;
-      ingredientsList = [
-        { name: `${baseName} en dados`, amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Arroz jazmín o basmati cocido", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Calabacín y zanahoria", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Salsa de soja baja en sal", amount: 10 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ];
-      instructionsList = [
-        "Saltear las verduras 3 minutos en sartén o wok.",
-        `Incorporar los dados de ${baseName.toLowerCase()} y el arroz cocido.`,
-        "Aderezar con soja y servir caliente."
-      ];
-    }
+    return {
+      error: true,
+      code: "NO_API_KEY",
+      message: "No se ha configurado la clave API de Google Gemini en Ajustes."
+    };
   }
 
+  // NO LOCAL ENGINE FALLBACK: Return error object so user is notified and can retry
   return {
-    id: "custom_" + Date.now() + "_extra_" + extraIndex,
-    name: newName,
-    type: newType,
-    servings: servings,
-    prepTime: 15,
-    calories: caloriesVal,
-    protein: proteinVal,
-    carbs: carbsVal,
-    fats: fatsVal,
-    tags: ["Batch Cooking", "aprovechamiento", "nueva alternativa"],
-    ingredients: ingredientsList,
-    instructions: instructionsList,
-    aiPowered: false
+    error: true,
+    code: "AI_DEMAND_SPIKE",
+    message: "Google Gemini está experimentando picos de demanda en este momento. Por favor, pulsa de nuevo en 'Añadir Otra Receta con IA' en unos instantes."
   };
 }
