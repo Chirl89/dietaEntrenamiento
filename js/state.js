@@ -219,6 +219,7 @@ export const appState = {
   weeklyMealPlan: createEmptyWeeklyPlan(),
   mealPlansLastModified: 0,
   customRecipes: [],
+  deletedRecipeIds: [],
   shoppingExtras: [],
   nutritionViewMode: "day",
   completedWorkouts: {
@@ -605,6 +606,7 @@ export function loadSavedState() {
   appState.weeklyMealPlan = appState.weeklyMealPlans[appState.activeNutritionWeekKey];
 
   if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+  if (!Array.isArray(appState.deletedRecipeIds)) appState.deletedRecipeIds = [];
   if (!Array.isArray(appState.shoppingExtras)) appState.shoppingExtras = [];
   if (!appState.checkedShoppingItems || typeof appState.checkedShoppingItems !== 'object') {
     appState.checkedShoppingItems = {};

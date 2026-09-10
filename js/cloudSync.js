@@ -833,6 +833,16 @@ export function mergeCloudDataIntoAppState(cloudData) {
     });
   }
 
+  if (Array.isArray(cloudData.deletedRecipeIds) && cloudData.deletedRecipeIds.length > 0) {
+    if (!Array.isArray(appState.deletedRecipeIds)) appState.deletedRecipeIds = [];
+    cloudData.deletedRecipeIds.forEach(id => {
+      if (id && !appState.deletedRecipeIds.includes(id)) {
+        appState.deletedRecipeIds.push(id);
+        hasChanges = true;
+      }
+    });
+  }
+
   if (Array.isArray(cloudData.shoppingExtras) && cloudData.shoppingExtras.length > 0) {
     if (!Array.isArray(appState.shoppingExtras)) appState.shoppingExtras = [];
     cloudData.shoppingExtras.forEach(se => {
@@ -888,6 +898,7 @@ export async function pushToCloud(showToast = false) {
       weeklyMealPlans: appState.weeklyMealPlans || {},
       weeklyMealPlan: appState.weeklyMealPlan || {},
       customRecipes: appState.customRecipes || [],
+      deletedRecipeIds: appState.deletedRecipeIds || [],
       shoppingExtras: appState.shoppingExtras || [],
       checkedShoppingItems: appState.checkedShoppingItems || {}
     };

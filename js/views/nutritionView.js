@@ -41,7 +41,9 @@ let activeBacklogSearchQuery = "";
  */
 export function getAllRecipes() {
   const custom = Array.isArray(appState.customRecipes) ? appState.customRecipes : [];
-  return [...RECIPES_DATABASE, ...custom];
+  const base = Array.isArray(RECIPES_DATABASE) ? RECIPES_DATABASE : [];
+  const deleted = Array.isArray(appState.deletedRecipeIds) ? appState.deletedRecipeIds : [];
+  return [...base, ...custom].filter(r => r && r.id && !deleted.includes(r.id));
 }
 
 /**
@@ -755,6 +757,143 @@ function renderFullWeekGridView(container) {
 }
 
 /**
+ * Computes intelligent compensation suggestions for a slot in a day.
+ * Analyzes meals already selected for the day (e.g. if lunch is high in carbs or calories,
+ * suggests light, high-protein options for dinner/snack to maintain balance).
+ */
+export function getCompensationInsight(dayName, slotKey) {
+  try {
+    const currentPlan = getActiveWeeklyPlan();
+    const dayPlan = currentPlan?.[dayName] || {};
+
+    const comidaId = dayPlan.comida;
+    const comidaRecipe = comidaId ? getRecipeById(comidaId) : null;
+
+    const desayunoId = dayPlan.desayuno;
+    const desayunoRecipe = desayunoId ? getRecipeById(desayunoId) : null;
+
+    const meriendaId = dayPlan.merienda;
+    const meriendaRecipe = meriendaId ? getRecipeById(meriendaId) : null;
+
+    const cenaId = dayPlan.cena;
+    const cenaRecipe = cenaId ? getRecipeById(cenaId) : null;
+
+    const activeProfile = appState.profiles?.[appState.activeProfileId] || {};
+    const targetKcal = Number(activeProfile.targetCalories || (appState.activeProfileId === 'he' ? 2150 : 1850));
+    const targetProt = Number(activeProfile.protein || (appState.activeProfileId === 'he' ? 155 : 130));
+
+    // Calculate macros planned so far excluding current slot
+    let totalKcalPlanned = 0;
+    let totalProtPlanned = 0;
+    let totalCarbsPlanned = 0;
+
+    [
+      { key: "desayuno", r: desayunoRecipe },
+      { key: "comida", r: comidaRecipe },
+      { key: "merienda", r: meriendaRecipe },
+      { key: "cena", r: cenaRecipe }
+    ].forEach(item => {
+      if (item.r && item.key !== slotKey) {
+        totalKcalPlanned += Number(item.r.calories || 0);
+        totalProtPlanned += Number(item.r.protein || 0);
+        totalCarbsPlanned += Number(item.r.carbs || 0);
+      }
+    });
+
+    // 1. Picking CENA when COMIDA was high in carbs or heavy in kcal
+    if (slotKey === "cena" && comidaRecipe) {
+      const cCarbs = Number(comidaRecipe.carbs || 0);
+      const cKcal = Number(comidaRecipe.calories || 0);
+      const isHighCarb = cCarbs >= 45;
+      const isHeavy = cKcal >= 600;
+
+      if (isHighCarb || isHeavy) {
+        const reason = isHighCarb && isHeavy
+          ? `Ya que la comida de hoy (${comidaRecipe.name}) es alta en carbohidratos (${cCarbs}g) y calórica (${cKcal} kcal)`
+          : isHighCarb
+            ? `Ya que la comida de hoy (${comidaRecipe.name}) es alta en carbohidratos (${cCarbs}g)`
+            : `Ya que la comida de hoy (${comidaRecipe.name}) es más contundente (${cKcal} kcal)`;
+
+        return {
+          hasSuggestion: true,
+          type: "compensate_carbs_heavy",
+          title: "Sugerencia de Compensación y Equilibrio",
+          message: `${reason}, te recomendamos para la cena una opción ligera, con verduras y rica en proteína para equilibrar el día:`,
+          filterHint: "Opciones ligeras / bajas en carbohidratos sugeridas primero",
+          matcher: (r) => (Number(r.carbs || 0) <= 25) && (Number(r.protein || 0) >= 20)
+        };
+      }
+
+      // If comida was very light (< 380 kcal)
+      if (cKcal > 0 && cKcal <= 380) {
+        return {
+          hasSuggestion: true,
+          type: "boost_dinner",
+          title: "Sugerencia para Completar el Día",
+          message: `La comida (${comidaRecipe.name}) ha sido muy ligera (${cKcal} kcal). Puedes optar por una cena más completa para asegurar tus requerimientos diarios:`,
+          filterHint: "Platos completos sugeridos primero",
+          matcher: (r) => Number(r.calories || 0) >= 420
+        };
+      }
+    }
+
+    // 2. Picking MERIENDA / SNACK when COMIDA was high carb / heavy
+    if (slotKey === "merienda" && comidaRecipe) {
+      const cCarbs = Number(comidaRecipe.carbs || 0);
+      const cKcal = Number(comidaRecipe.calories || 0);
+      if (cCarbs >= 45 || cKcal >= 600) {
+        return {
+          hasSuggestion: true,
+          type: "compensate_snack",
+          title: "Snack Ligero Recomendado",
+          message: `Con una comida contundente (${comidaRecipe.name} • ${cCarbs}g carbs), un snack bajo en calorías o rico en proteína mantendrá tu saciedad sin sumar exceso de calorías:`,
+          filterHint: "Snacks ligeros / proteicos recomendados",
+          matcher: (r) => (Number(r.calories || 0) <= 200) || (Number(r.carbs || 0) <= 15)
+        };
+      }
+    }
+
+    // 3. Picking COMIDA when DESAYUNO was high carb / heavy
+    if (slotKey === "comida" && desayunoRecipe) {
+      const dCarbs = Number(desayunoRecipe.carbs || 0);
+      if (dCarbs >= 45 || Number(desayunoRecipe.calories || 0) >= 500) {
+        return {
+          hasSuggestion: true,
+          type: "compensate_lunch",
+          title: "Equilibrio para el Almuerzo",
+          message: `El desayuno de hoy aportó bastante energía (${dCarbs}g carbs). Una comida rica en verduras y proteína magra mantendrá tu energía estable:`,
+          filterHint: "Opciones balanceadas sugeridas primero",
+          matcher: (r) => Number(r.carbs || 0) <= 40
+        };
+      }
+    }
+
+    // 4. Daily Protein Deficit check (for dinner or lunch if lots of protein still needed)
+    const remainingProt = targetProt - totalProtPlanned;
+    if (remainingProt >= 45 && (slotKey === "cena" || slotKey === "comida")) {
+      return {
+        hasSuggestion: true,
+        type: "protein_focus",
+        title: "Objetivo de Proteína del Día",
+        message: `Te faltan ${Math.round(remainingProt)}g de proteína para tu meta diaria (${targetProt}g). Te sugerimos platos con alto contenido proteico (≥30g):`,
+        filterHint: "Platos ricos en proteína sugeridos primero",
+        matcher: (r) => Number(r.protein || 0) >= 30
+      };
+    }
+  } catch(e) {
+    console.error("Error computing compensation insight:", e);
+  }
+
+  return {
+    hasSuggestion: false,
+    title: "",
+    message: "",
+    filterHint: "",
+    matcher: null
+  };
+}
+
+/**
  * OPEN RECIPE PICKER MODAL (From Weekly Planner Slot)
  */
 export function openRecipePickerModal(dayName, slotKey) {
@@ -925,11 +1064,44 @@ function renderRecipePickerModalContent() {
     return true;
   });
 
+  // Calculate Compensation Insight for the current slot and day
+  const insight = getCompensationInsight(activePickerContext.day, activePickerContext.slot);
+
+  let bannerHtml = "";
+  if (insight && insight.hasSuggestion) {
+    bannerHtml = `
+      <div class="compensation-banner">
+        <div class="compensation-banner-header">
+          <i class="fa-solid fa-scale-balanced" style="color: var(--accent-cyan); font-size: 1.15rem;"></i>
+          <span>${insight.title}</span>
+        </div>
+        <p class="compensation-banner-text">${insight.message}</p>
+        <div class="compensation-banner-note">
+          <i class="fa-solid fa-star" style="color: var(--accent-amber);"></i>
+          <span>${insight.filterHint} (puedes elegir cualquier plato libremente).</span>
+        </div>
+      </div>
+    `;
+
+    // Sort matching so recommended items appear first
+    if (typeof insight.matcher === 'function') {
+      matching.sort((a, b) => {
+        const isA = insight.matcher(a) ? 1 : 0;
+        const isB = insight.matcher(b) ? 1 : 0;
+        return isB - isA;
+      });
+    }
+  }
+
   if (matching.length === 0) {
     container.innerHTML = `
+      ${bannerHtml}
       <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
         <i class="fa-solid fa-utensils" style="font-size: 2rem; opacity: 0.3; margin-bottom: 0.5rem; display:block;"></i>
-        <p>No se han encontrado recetas que coincidan con la búsqueda.</p>
+        <p>No se han encontrado recetas con los filtros actuales.</p>
+        <button type="button" class="btn-primary" onclick="closeRecipePickerModal(); openCreateRecipeModal();" style="margin-top: 0.75rem;">
+          <i class="fa-solid fa-plus"></i> + Añadir Nueva Receta
+        </button>
       </div>
     `;
     return;
@@ -937,16 +1109,18 @@ function renderRecipePickerModalContent() {
 
   const currentSelectedRecipeId = appState.weeklyMealPlan?.[activePickerContext.day]?.[activePickerContext.slot];
 
-  container.innerHTML = matching.map(recipe => {
+  const listHtml = matching.map(recipe => {
     const isCurrentlySelected = (currentSelectedRecipeId === recipe.id);
+    const isRecommended = Boolean(insight && insight.hasSuggestion && typeof insight.matcher === 'function' && insight.matcher(recipe));
     const tagsHtml = (recipe.tags || []).slice(0, 3).map(t => `<span class="macro-pill">${t}</span>`).join(" ");
 
     return `
-      <div class="picker-recipe-item ${isCurrentlySelected ? 'currently-active' : ''}">
+      <div class="picker-recipe-item ${isCurrentlySelected ? 'currently-active' : ''} ${isRecommended ? 'is-recommended-item' : ''}">
         <div class="picker-item-main">
           <div class="picker-item-type">
             <span class="type-pill ${recipe.type}">${recipe.type.toUpperCase()}</span>
             <span class="prep-time"><i class="fa-regular fa-clock"></i> ${recipe.prepTime || 15} min</span>
+            ${isRecommended ? '<span class="badge-recommended"><i class="fa-solid fa-star"></i> Sugerencia para equilibrar</span>' : ''}
             ${isCurrentlySelected ? '<span class="active-badge">✓ Asignada actualmente</span>' : ''}
           </div>
           <h4 class="picker-item-title">${recipe.name}</h4>
@@ -967,6 +1141,8 @@ function renderRecipePickerModalContent() {
       </div>
     `;
   }).join("");
+
+  container.innerHTML = bannerHtml + listHtml;
 }
 
 /**
@@ -1035,14 +1211,27 @@ export function renderNutritionRecipesView() {
     if (filtered.length === 0) {
       const emptyDiv = document.createElement("div");
       emptyDiv.className = "glass-card";
-      emptyDiv.style.cssText = "text-align:center; padding: 2.5rem; color: var(--text-muted); grid-column: 1 / -1;";
-      emptyDiv.innerHTML = `
-        <i class="fa-solid fa-kitchen-set" style="font-size: 2.5rem; opacity: 0.3; margin-bottom: 0.8rem; display:block;"></i>
-        <p>No se encontraron recetas con los filtros actuales.</p>
-        <button type="button" class="btn-primary" onclick="setBacklogCatalogCategory('all'); onBacklogCatalogSearch('');" style="margin-top: 1rem;">
-          Limpiar Filtros
-        </button>
-      `;
+      emptyDiv.style.cssText = "text-align:center; padding: 3rem 1.5rem; color: var(--text-muted); grid-column: 1 / -1; max-width: 520px; margin: 2rem auto;";
+      if (all.length === 0) {
+        emptyDiv.innerHTML = `
+          <div style="font-size: 2.8rem; color: var(--accent-emerald); opacity: 0.8; margin-bottom: 0.8rem;">
+            <i class="fa-solid fa-kitchen-set"></i>
+          </div>
+          <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">Catálogo Listo (0 Recetas)</h3>
+          <p style="font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.25rem;">Has iniciado con tu catálogo en blanco. Añade tus recetas favoritas con sus ingredientes y macros para empezar a planificar la semana.</p>
+          <button type="button" class="btn-primary" onclick="openCreateRecipeModal()" style="margin: 0 auto;">
+            <i class="fa-solid fa-plus"></i> + Añadir Primera Receta
+          </button>
+        `;
+      } else {
+        emptyDiv.innerHTML = `
+          <i class="fa-solid fa-kitchen-set" style="font-size: 2.5rem; opacity: 0.3; margin-bottom: 0.8rem; display:block;"></i>
+          <p>No se encontraron recetas con los filtros actuales.</p>
+          <button type="button" class="btn-primary" onclick="setBacklogCatalogCategory('all'); onBacklogCatalogSearch('');" style="margin-top: 1rem;">
+            Limpiar Filtros
+          </button>
+        `;
+      }
       container.appendChild(emptyDiv);
       return;
     }
@@ -1092,13 +1281,14 @@ export function renderNutritionRecipesView() {
 
         <div class="recipe-card-footer" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
           <button type="button" class="btn-primary" onclick="openAssignRecipeModal('${meal.id}')" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; flex: 1;">
-            <i class="fa-solid fa-calendar-plus"></i> Asignar a un Día
+            <i class="fa-solid fa-calendar-plus"></i> Asignar
           </button>
-          ${isCustom ? `
-            <button type="button" class="btn-slot-action remove" onclick="deleteCustomRecipe('${meal.id}')" title="Eliminar receta personal">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          ` : ''}
+          <button type="button" class="btn-slot-action edit" onclick="openEditRecipeModal('${meal.id}')" title="Editar receta">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button type="button" class="btn-slot-action remove" onclick="deleteRecipe('${meal.id}')" title="Eliminar receta">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
         </div>
       `;
 
@@ -1459,13 +1649,223 @@ export function saveCustomRecipeFromModal(event) {
   }
 }
 
-export function deleteCustomRecipe(recipeId) {
+/**
+ * EDIT RECIPE MODAL (Supports any recipe in catalog)
+ */
+export function openEditRecipeModal(recipeId) {
   try {
     triggerHapticTouch();
-    if (confirm("¿Deseas eliminar esta receta personalizada de tu catálogo?")) {
-      appState.customRecipes = (appState.customRecipes || []).filter(r => r.id !== recipeId);
-      
-      // Clean from weekly plan
+    const recipe = getRecipeById(recipeId);
+    if (!recipe) {
+      showIosToast("⚠️ Receta no encontrada", "fa-solid fa-triangle-exclamation");
+      return;
+    }
+
+    let modal = document.getElementById("edit-recipe-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "edit-recipe-modal";
+      modal.className = "modal-overlay";
+      document.body.appendChild(modal);
+    }
+
+    const ingText = (recipe.ingredients || []).map(i => `${i.name || ''}, ${i.amount || 1}, ${i.unit || 'g'}`).join("\n");
+    const stepsText = (recipe.instructions || []).join("\n");
+
+    modal.innerHTML = `
+      <div class="glass-modal" style="max-width: 540px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-header-title">
+            <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan); font-size: 1.3rem;"></i>
+            <div>
+              <h3>Editar Receta</h3>
+              <p>Modifica los datos, macros e ingredientes</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close-btn" onclick="document.getElementById('edit-recipe-modal').classList.remove('active')">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="modal-body" style="padding-top: 1rem;">
+          <form onsubmit="saveEditedRecipeFromModal(event, '${recipe.id}')">
+            <div class="form-group">
+              <label>Nombre de la Receta *</label>
+              <input type="text" id="edit-recipe-name" class="ios-input" value="${recipe.name || ''}" required>
+            </div>
+
+            <div class="form-grid-2" style="margin-top: 0.75rem;">
+              <div class="form-group">
+                <label>Tipo de Plato</label>
+                <select id="edit-recipe-type" class="custom-select" style="width: 100%;">
+                  <option value="comida" ${recipe.type === 'comida' ? 'selected' : ''}>🥗 Comida / Almuerzo</option>
+                  <option value="cena" ${recipe.type === 'cena' ? 'selected' : ''}>🌙 Cena</option>
+                  <option value="desayuno" ${recipe.type === 'desayuno' ? 'selected' : ''}>☀️ Desayuno</option>
+                  <option value="snack" ${recipe.type === 'snack' ? 'selected' : ''}>🍎 Snack / Merienda</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tiempo de Preparación (min)</label>
+                <input type="number" id="edit-recipe-prep" class="ios-input" value="${recipe.prepTime || 15}" required min="1" max="180">
+              </div>
+            </div>
+
+            <div class="form-grid-2" style="margin-top: 0.75rem;">
+              <div class="form-group">
+                <label>Calorías (kcal)</label>
+                <input type="number" id="edit-recipe-kcal" class="ios-input" value="${recipe.calories || 0}" required min="0" max="2500">
+              </div>
+              <div class="form-group">
+                <label>Proteína (g)</label>
+                <input type="number" id="edit-recipe-prot" class="ios-input" value="${recipe.protein || 0}" required min="0" max="200">
+              </div>
+            </div>
+
+            <div class="form-grid-2" style="margin-top: 0.75rem;">
+              <div class="form-group">
+                <label>Carbohidratos (g)</label>
+                <input type="number" id="edit-recipe-carbs" class="ios-input" value="${recipe.carbs || 0}" min="0" max="300">
+              </div>
+              <div class="form-group">
+                <label>Grasas (g)</label>
+                <input type="number" id="edit-recipe-fats" class="ios-input" value="${recipe.fats || 0}" min="0" max="200">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <label>Ingredientes (Un ingrediente por línea: Nombre, Cantidad, Unidad)</label>
+              <textarea id="edit-recipe-ingredients" class="ios-input" rows="4" style="font-family: monospace; font-size: 0.82rem;">${ingText}</textarea>
+            </div>
+
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <label>Pasos de preparación (Un paso por línea)</label>
+              <textarea id="edit-recipe-steps" class="ios-input" rows="3">${stepsText}</textarea>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; margin-top: 1.25rem;">
+              <button type="button" class="btn-slot-action remove" onclick="deleteRecipe('${recipe.id}'); document.getElementById('edit-recipe-modal').classList.remove('active');" style="padding: 0.75rem 1rem;" title="Eliminar receta">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+              <button type="submit" class="btn-primary" style="flex: 1; justify-content: center; padding: 0.75rem;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("active");
+  } catch(e) {
+    console.error("Error opening edit recipe modal:", e);
+  }
+}
+
+export function saveEditedRecipeFromModal(event, recipeId) {
+  if (event) event.preventDefault();
+  try {
+    triggerHapticTouch();
+    const name = document.getElementById("edit-recipe-name")?.value.trim();
+    if (!name) return;
+
+    const type = document.getElementById("edit-recipe-type")?.value || "comida";
+    const prepTime = Number(document.getElementById("edit-recipe-prep")?.value || 15);
+    const calories = Number(document.getElementById("edit-recipe-kcal")?.value || 0);
+    const protein = Number(document.getElementById("edit-recipe-prot")?.value || 0);
+    const carbs = Number(document.getElementById("edit-recipe-carbs")?.value || 0);
+    const fats = Number(document.getElementById("edit-recipe-fats")?.value || 0);
+
+    const rawIng = document.getElementById("edit-recipe-ingredients")?.value || "";
+    const rawSteps = document.getElementById("edit-recipe-steps")?.value || "";
+
+    const parsedIng = rawIng.split("\n").filter(l => l.trim()).map(line => {
+      const parts = line.split(",").map(p => p.trim());
+      return {
+        name: parts[0] || "Ingrediente",
+        amount: Number(parts[1]) || 1,
+        unit: parts[2] || "g",
+        category: INGREDIENT_CATEGORIES.PRODUCE
+      };
+    });
+
+    const parsedSteps = rawSteps.split("\n").filter(l => l.trim()).map(s => s.replace(/^\d+\.\s*/, ''));
+
+    if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+
+    const existingIdx = appState.customRecipes.findIndex(r => r && r.id === recipeId);
+    const updatedRecipe = {
+      id: recipeId,
+      name: name,
+      type: type,
+      prepTime: prepTime,
+      calories: calories,
+      protein: protein,
+      carbs: carbs,
+      fats: fats,
+      tags: ["personalizada", "editada"],
+      ingredients: parsedIng.length > 0 ? parsedIng : [{ name: name, amount: 1, unit: "ración", category: INGREDIENT_CATEGORIES.PANTRY }],
+      instructions: parsedSteps.length > 0 ? parsedSteps : ["Preparar y servir."]
+    };
+
+    if (existingIdx >= 0) {
+      appState.customRecipes[existingIdx] = updatedRecipe;
+    } else {
+      appState.customRecipes.push(updatedRecipe);
+    }
+
+    if (Array.isArray(appState.deletedRecipeIds)) {
+      appState.deletedRecipeIds = appState.deletedRecipeIds.filter(id => id !== recipeId);
+    }
+
+    appState.mealPlansLastModified = Date.now();
+    saveState();
+    if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
+
+    const modal = document.getElementById("edit-recipe-modal");
+    if (modal) modal.classList.remove("active");
+
+    renderNutritionRecipesView();
+    renderNutritionMenuView();
+    renderShoppingView();
+    showIosToast(`✏️ Receta "${name}" actualizada`, "fa-solid fa-circle-check");
+  } catch(e) {
+    console.error("Error saving edited recipe:", e);
+  }
+}
+
+export function deleteRecipe(recipeId) {
+  try {
+    triggerHapticTouch();
+    const recipe = getRecipeById(recipeId);
+    const rName = recipe ? `"${recipe.name}"` : "esta receta";
+    if (confirm(`¿Deseas eliminar definitivamente ${rName} de tu catálogo?`)) {
+      if (!Array.isArray(appState.deletedRecipeIds)) appState.deletedRecipeIds = [];
+      if (!appState.deletedRecipeIds.includes(recipeId)) {
+        appState.deletedRecipeIds.push(recipeId);
+      }
+
+      if (Array.isArray(appState.customRecipes)) {
+        appState.customRecipes = appState.customRecipes.filter(r => r && r.id !== recipeId);
+      }
+
+      // Clean from all weeklyMealPlans
+      if (appState.weeklyMealPlans && typeof appState.weeklyMealPlans === 'object') {
+        Object.keys(appState.weeklyMealPlans).forEach(wKey => {
+          const plan = appState.weeklyMealPlans[wKey];
+          if (plan) {
+            DAYS_OF_WEEK.forEach(d => {
+              if (plan[d]) {
+                MEAL_SLOTS.forEach(s => {
+                  if (plan[d][s.key] === recipeId) {
+                    plan[d][s.key] = null;
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+
       if (appState.weeklyMealPlan) {
         DAYS_OF_WEEK.forEach(d => {
           if (appState.weeklyMealPlan[d]) {
@@ -1478,16 +1878,22 @@ export function deleteCustomRecipe(recipeId) {
         });
       }
 
+      appState.mealPlansLastModified = Date.now();
       saveState();
+      if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
+
       renderNutritionRecipesView();
       renderNutritionMenuView();
       renderShoppingView();
-      showIosToast("🗑️ Receta eliminada", "fa-solid fa-trash-can");
+      showIosToast("🗑️ Receta eliminada del catálogo", "fa-solid fa-trash-can");
     }
   } catch(e) {
-    console.error("Error deleting custom recipe:", e);
+    console.error("Error deleting recipe:", e);
   }
 }
+
+// Backwards-compatibility alias
+export const deleteCustomRecipe = deleteRecipe;
 
 export function setShoppingRange() {}
 
