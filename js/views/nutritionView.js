@@ -20,6 +20,7 @@ import {
   createEmptyWeeklyPlan
 } from '../state.js';
 import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js';
+import { calculateMacrosFromIngredients, generateRecipeFromDescription } from '../nutritionCalculator.js';
 
 // MEAL SLOTS DEFINITION
 export const MEAL_SLOTS = [
@@ -1179,9 +1180,14 @@ export function renderNutritionRecipesView() {
           <input type="text" value="${activeBacklogSearchQuery}" placeholder="Buscar en el catálogo de recetas o ingredientes..." oninput="onBacklogCatalogSearch(this.value)">
         </div>
 
-        <button type="button" class="btn-primary" onclick="openCreateRecipeModal()">
-          <i class="fa-solid fa-plus"></i> Nueva Receta
-        </button>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn-primary" onclick="openAiRecipeGeneratorModal()" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); border: none; font-weight: 700; gap: 0.4rem;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Modo Inteligente
+          </button>
+          <button type="button" class="btn-primary" onclick="openCreateRecipeModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-main);">
+            <i class="fa-solid fa-plus"></i> Manual
+          </button>
+        </div>
       </div>
 
       <div class="backlog-filters-row">
@@ -1218,10 +1224,15 @@ export function renderNutritionRecipesView() {
             <i class="fa-solid fa-kitchen-set"></i>
           </div>
           <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">Catálogo Listo (0 Recetas)</h3>
-          <p style="font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.25rem;">Has iniciado con tu catálogo en blanco. Añade tus recetas favoritas con sus ingredientes y macros para empezar a planificar la semana.</p>
-          <button type="button" class="btn-primary" onclick="openCreateRecipeModal()" style="margin: 0 auto;">
-            <i class="fa-solid fa-plus"></i> + Añadir Primera Receta
-          </button>
+          <p style="font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;">Describe lo que te apetece con el Modo Inteligente para calcular ingredientes y macros al instante, o añade tus platos manualmente.</p>
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn-primary" onclick="openAiRecipeGeneratorModal()" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); border: none; font-weight: 700;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Describir con Modo Inteligente
+            </button>
+            <button type="button" class="btn-primary" onclick="openCreateRecipeModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-main);">
+              <i class="fa-solid fa-plus"></i> Añadir Manualmente
+            </button>
+          </div>
         `;
       } else {
         emptyDiv.innerHTML = `
@@ -1496,6 +1507,274 @@ export function openRecipeDetailModal(recipeId) {
   }
 }
 
+let generatedRecipeCandidate = null;
+
+/**
+ * Automatically calculates macros for the modal form inputs based on the ingredients entered.
+ */
+export function autoCalculateRecipeModalMacros(prefix = 'new') {
+  try {
+    const textarea = document.getElementById(`${prefix}-recipe-ingredients`);
+    if (!textarea) return;
+    const raw = textarea.value.trim();
+    if (!raw) return;
+
+    const result = calculateMacrosFromIngredients(raw);
+    const kcalInput = document.getElementById(`${prefix}-recipe-kcal`);
+    const protInput = document.getElementById(`${prefix}-recipe-prot`);
+    const carbsInput = document.getElementById(`${prefix}-recipe-carbs`);
+    const fatsInput = document.getElementById(`${prefix}-recipe-fats`);
+    const hintElem = document.getElementById(`${prefix}-recipe-macro-hint`);
+
+    if (kcalInput && result.calories > 0) kcalInput.value = result.calories;
+    if (protInput && result.protein >= 0) protInput.value = result.protein;
+    if (carbsInput && result.carbs >= 0) carbsInput.value = result.carbs;
+    if (fatsInput && result.fats >= 0) fatsInput.value = result.fats;
+
+    if (hintElem) {
+      hintElem.innerHTML = `
+        <div style="background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.25); border-radius: 6px; padding: 5px 10px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px; font-size: 0.78rem;">
+          <span style="color: var(--text-main);"><i class="fa-solid fa-calculator" style="color:var(--accent-cyan); margin-right: 4px;"></i> Macros calculados: <strong style="color:var(--accent-amber);">${result.calories} kcal</strong> (${result.protein}g Prot • ${result.carbs}g Carbs • ${result.fats}g Grasas)</span>
+          <span style="color: var(--accent-emerald); font-weight: 600;">✓ Auto-rellenado</span>
+        </div>
+      `;
+    }
+  } catch(e) {
+    console.error("Error auto-calculating macros:", e);
+  }
+}
+
+/**
+ * AI / SMART RECIPE GENERATOR MODAL
+ */
+export function openAiRecipeGeneratorModal() {
+  try {
+    triggerHapticTouch();
+    let modal = document.getElementById("ai-recipe-generator-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "ai-recipe-generator-modal";
+      modal.className = "modal-overlay";
+      document.body.appendChild(modal);
+    }
+
+    generatedRecipeCandidate = null;
+
+    modal.innerHTML = `
+      <div class="glass-modal ai-generator-modal-card" style="max-width: 580px; max-height: 92vh; overflow-y: auto;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-header-title">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(6,182,212,0.3);">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+            <div>
+              <h3>Modo Inteligente: Generador de Recetas</h3>
+              <p>Describe tu plato o ingredientes y calcularemos pasos y macros</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close-btn" onclick="document.getElementById('ai-recipe-generator-modal').classList.remove('active')">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="modal-body" style="padding-top: 1rem;">
+          <div class="form-group">
+            <label style="font-weight: 600; display:flex; justify-content:space-between; margin-bottom: 0.4rem;">
+              <span>Describe la receta que quieres</span>
+              <span style="font-size:0.75rem; color:var(--accent-cyan);">Lenguaje natural</span>
+            </label>
+            <textarea id="ai-prompt-input" class="ios-input" rows="3" placeholder="ej. Quiero un plato de pasta con carne picada de ternera magra, tomate frito y un poco de queso rallado"></textarea>
+          </div>
+
+          <div style="margin: 0.85rem 0;">
+            <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom: 0.4rem;">💡 Pulsa una sugerencia rápida para probar:</span>
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+              <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Pasta integral con carne picada de ternera magra, salsa de tomate y queso parmesano')">🍝 Pasta con Ternera</button>
+              <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Arroz basmati con pechuga de pollo y pimientos salteados')">🍚 Arroz con Pollo</button>
+              <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Lomo de salmón a la plancha con patatas al horno y espárragos trigueros')">🐟 Salmón con Patatas</button>
+              <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Tortilla francesa de 2 huevos con espinacas baby y queso feta')">🍳 Tortilla con Espinacas</button>
+              <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Bowl de yogur griego con copos de avena, plátano y nueces')">🥣 Bowl de Avena y Yogur</button>
+            </div>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 0.85rem;">
+            <div class="form-group">
+              <label>Tipo de Comida</label>
+              <select id="ai-meal-type" class="custom-select" style="width: 100%;">
+                <option value="auto">✨ Auto-detectar</option>
+                <option value="comida">🥗 Comida / Almuerzo</option>
+                <option value="cena">🌙 Cena</option>
+                <option value="desayuno">☀️ Desayuno</option>
+                <option value="snack">🍎 Snack / Merienda</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Raciones</label>
+              <select id="ai-servings" class="custom-select" style="width: 100%;">
+                <option value="1">1 Ración (Individual)</option>
+                <option value="2">2 Raciones (Carlos y Andrea)</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="button" class="btn-primary" onclick="generateAiRecipeFromForm()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 1.25rem; font-size: 0.95rem; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); border: none; font-weight: 700; box-shadow: 0 4px 16px rgba(6,182,212,0.3);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generar Receta con Macros y Pasos
+          </button>
+
+          <!-- RESULT CONTAINER -->
+          <div id="ai-recipe-result-container" style="margin-top: 1.25rem; display: none;"></div>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("active");
+  } catch(e) {
+    console.error("Error opening AI Recipe Generator Modal:", e);
+  }
+}
+
+export function setAiPrompt(text) {
+  const input = document.getElementById("ai-prompt-input");
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+}
+
+export function generateAiRecipeFromForm() {
+  try {
+    triggerHapticTouch();
+    const promptInput = document.getElementById("ai-prompt-input");
+    const typeSelect = document.getElementById("ai-meal-type");
+    const servingsSelect = document.getElementById("ai-servings");
+    const container = document.getElementById("ai-recipe-result-container");
+
+    if (!promptInput || !container) return;
+    const prompt = promptInput.value.trim();
+    if (!prompt) {
+      showIosToast("⚠️ Escribe una descripción o pulsa una idea rápida", "fa-solid fa-triangle-exclamation");
+      return;
+    }
+
+    const type = typeSelect ? typeSelect.value : "auto";
+    const servings = servingsSelect ? parseInt(servingsSelect.value, 10) : 1;
+
+    const recipe = generateRecipeFromDescription(prompt, type, servings);
+    if (!recipe) {
+      showIosToast("⚠️ No pudimos procesar la receta", "fa-solid fa-triangle-exclamation");
+      return;
+    }
+
+    generatedRecipeCandidate = recipe;
+
+    const ingHtml = (recipe.ingredients || []).map(i => `
+      <li style="display:flex; justify-content:space-between; padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 0.84rem;">
+        <span>${i.name}</span>
+        <strong style="color:var(--text-main);">${i.amount} ${i.unit}</strong>
+      </li>
+    `).join("");
+
+    const stepsHtml = (recipe.instructions || []).map((s, idx) => `
+      <li style="margin-bottom: 0.5rem; font-size: 0.84rem; line-height: 1.45;">
+        <strong style="color:var(--accent-cyan);">${idx + 1}.</strong> ${s}
+      </li>
+    `).join("");
+
+    container.style.display = "block";
+    container.innerHTML = `
+      <div class="glass-card generated-recipe-card" style="border: 1px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.06); padding: 1.25rem; border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <div>
+            <span class="type-pill ${recipe.type}" style="font-size: 0.72rem;">${recipe.type.toUpperCase()} • ${recipe.prepTime} min</span>
+            <h3 style="font-size: 1.15rem; margin: 0.4rem 0 0.2rem 0; color: var(--text-main); font-weight: 700;">${recipe.name}</h3>
+          </div>
+          <span style="font-size: 0.72rem; background: rgba(16,185,129,0.15); color: var(--accent-emerald); padding: 2px 8px; border-radius: 9999px; font-weight: 700;">✨ Calculado</span>
+        </div>
+
+        <div class="meal-macros-pills" style="margin: 0.85rem 0;">
+          <span class="macro-pill" style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${recipe.calories} kcal</span>
+          <span class="macro-pill" style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${recipe.protein}g Prot</span>
+          <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${recipe.carbs}g Carbs</span>
+          <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${recipe.fats}g Grasas</span>
+        </div>
+
+        <div style="margin-top: 0.85rem;">
+          <h4 style="font-size: 0.88rem; color: var(--accent-emerald); margin-bottom: 0.4rem;"><i class="fa-solid fa-basket-shopping"></i> Ingredientes con Cantidades:</h4>
+          <ul style="list-style: none; padding: 0;">${ingHtml}</ul>
+        </div>
+
+        <div style="margin-top: 0.85rem;">
+          <h4 style="font-size: 0.88rem; color: var(--accent-cyan); margin-bottom: 0.4rem;"><i class="fa-solid fa-list-ol"></i> Pasos de Preparación:</h4>
+          <ol style="padding-left: 1.1rem; color: var(--text-muted);">${stepsHtml}</ol>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+          <button type="button" class="btn-primary" onclick="saveGeneratedRecipeCandidate()" style="flex: 1; justify-content: center; padding: 0.75rem;">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar en mi Catálogo
+          </button>
+          <button type="button" class="btn-secondary" onclick="editGeneratedRecipeCandidate()" style="padding: 0.75rem 1rem; border: 1px solid var(--border-color); background: rgba(255,255,255,0.06);">
+            <i class="fa-solid fa-pen-to-square"></i> Retocar en Editor
+          </button>
+        </div>
+      </div>
+    `;
+
+    container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    showIosToast("✨ Receta calculada con éxito", "fa-solid fa-circle-check");
+  } catch(e) {
+    console.error("Error generating recipe from form:", e);
+  }
+}
+
+export function saveGeneratedRecipeCandidate() {
+  if (!generatedRecipeCandidate) return;
+  if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+  appState.customRecipes.push(generatedRecipeCandidate);
+  saveState();
+  if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
+
+  const modal = document.getElementById("ai-recipe-generator-modal");
+  if (modal) modal.classList.remove("active");
+
+  renderNutritionRecipesView();
+  renderNutritionMenuView();
+  renderShoppingView();
+  showIosToast(`🎉 ¡"${generatedRecipeCandidate.name}" guardada en el catálogo!`, "fa-solid fa-circle-check");
+}
+
+export function editGeneratedRecipeCandidate() {
+  if (!generatedRecipeCandidate) return;
+  const candidate = generatedRecipeCandidate;
+  const modal = document.getElementById("ai-recipe-generator-modal");
+  if (modal) modal.classList.remove("active");
+
+  openCreateRecipeModal();
+  setTimeout(() => {
+    const nameEl = document.getElementById("new-recipe-name");
+    const typeEl = document.getElementById("new-recipe-type");
+    const prepEl = document.getElementById("new-recipe-prep");
+    const kcalEl = document.getElementById("new-recipe-kcal");
+    const protEl = document.getElementById("new-recipe-prot");
+    const carbsEl = document.getElementById("new-recipe-carbs");
+    const fatsEl = document.getElementById("new-recipe-fats");
+    const ingEl = document.getElementById("new-recipe-ingredients");
+    const stepsEl = document.getElementById("new-recipe-steps");
+
+    if (nameEl) nameEl.value = candidate.name;
+    if (typeEl) typeEl.value = candidate.type;
+    if (prepEl) prepEl.value = candidate.prepTime;
+    if (kcalEl) kcalEl.value = candidate.calories;
+    if (protEl) protEl.value = candidate.protein;
+    if (carbsEl) carbsEl.value = candidate.carbs;
+    if (fatsEl) fatsEl.value = candidate.fats;
+    if (ingEl) {
+      ingEl.value = (candidate.ingredients || []).map(i => `${i.name}, ${i.amount}, ${i.unit}`).join("\n");
+      autoCalculateRecipeModalMacros('new');
+    }
+    if (stepsEl) stepsEl.value = (candidate.instructions || []).join("\n");
+  }, 100);
+}
+
 /**
  * CREATE CUSTOM RECIPE MODAL
  */
@@ -1511,13 +1790,13 @@ export function openCreateRecipeModal() {
     }
 
     modal.innerHTML = `
-      <div class="glass-modal" style="max-width: 520px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+      <div class="glass-modal" style="max-width: 540px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
         <div class="modal-header">
           <div class="modal-header-title">
             <i class="fa-solid fa-plus" style="color: var(--accent-emerald); font-size: 1.3rem;"></i>
             <div>
               <h3>Añadir Nueva Receta</h3>
-              <p>Crea tu plato personalizado con ingredientes y macros</p>
+              <p>Indica los ingredientes y calcularemos automáticamente los macros</p>
             </div>
           </div>
           <button type="button" class="modal-close-btn" onclick="document.getElementById('create-recipe-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
@@ -1527,7 +1806,7 @@ export function openCreateRecipeModal() {
           <form onsubmit="saveCustomRecipeFromModal(event)">
             <div class="form-group">
               <label>Nombre de la Receta *</label>
-              <input type="text" id="new-recipe-name" class="ios-input" placeholder="ej. Wrap de Pollo con Salsa Tzatziki" required>
+              <input type="text" id="new-recipe-name" class="ios-input" placeholder="ej. Pasta con Ternera y Salsa de Tomate" required>
             </div>
 
             <div class="form-grid-2" style="margin-top: 0.75rem;">
@@ -1546,40 +1825,46 @@ export function openCreateRecipeModal() {
               </div>
             </div>
 
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.35rem;">
+                <label style="margin-bottom:0;">Ingredientes (Nombre, Cantidad, Unidad) *</label>
+                <button type="button" class="btn-calc-macros" onclick="autoCalculateRecipeModalMacros('new')" style="font-size:0.75rem; padding: 3px 8px; background: rgba(6,182,212,0.15); color: var(--accent-cyan); border: 1px solid rgba(6,182,212,0.3); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <i class="fa-solid fa-calculator"></i> Calcular Macros
+                </button>
+              </div>
+              <textarea id="new-recipe-ingredients" class="ios-input" rows="4" placeholder="Pasta integral, 85, g&#10;Carne picada de ternera, 150, g&#10;Tomate frito, 80, g&#10;Aceite de oliva, 5, ml" oninput="autoCalculateRecipeModalMacros('new')" style="font-family: monospace; font-size: 0.82rem;"></textarea>
+              <div id="new-recipe-macro-hint"></div>
+            </div>
+
             <div class="form-grid-2" style="margin-top: 0.75rem;">
               <div class="form-group">
-                <label>Calorías (kcal)</label>
-                <input type="number" id="new-recipe-kcal" class="ios-input" placeholder="ej. 480" required min="10" max="2500">
+                <label>Calorías (kcal) <small style="color:var(--accent-cyan);">(Auto-calculadas)</small></label>
+                <input type="number" id="new-recipe-kcal" class="ios-input" placeholder="ej. 520" required min="0" max="2500">
               </div>
               <div class="form-group">
-                <label>Proteína (g)</label>
+                <label>Proteína (g) <small style="color:var(--accent-cyan);">(Auto-calculada)</small></label>
                 <input type="number" id="new-recipe-prot" class="ios-input" placeholder="ej. 42" required min="0" max="200">
               </div>
             </div>
 
             <div class="form-grid-2" style="margin-top: 0.75rem;">
               <div class="form-group">
-                <label>Carbohidratos (g)</label>
-                <input type="number" id="new-recipe-carbs" class="ios-input" placeholder="ej. 45" value="30" min="0" max="300">
+                <label>Carbohidratos (g) <small style="color:var(--accent-cyan);">(Auto-calculados)</small></label>
+                <input type="number" id="new-recipe-carbs" class="ios-input" placeholder="ej. 55" value="0" min="0" max="300">
               </div>
               <div class="form-group">
-                <label>Grasas (g)</label>
-                <input type="number" id="new-recipe-fats" class="ios-input" placeholder="ej. 14" value="12" min="0" max="200">
+                <label>Grasas (g) <small style="color:var(--accent-cyan);">(Auto-calculadas)</small></label>
+                <input type="number" id="new-recipe-fats" class="ios-input" placeholder="ej. 14" value="0" min="0" max="200">
               </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 0.75rem;">
-              <label>Ingredientes (Un ingrediente por línea: Nombre, Cantidad, Unidad)</label>
-              <textarea id="new-recipe-ingredients" class="ios-input" rows="4" placeholder="Pechuga de pollo, 180, g&#10;Aguacate, 50, g&#10;Tortillas integrales, 2, ud" style="font-family: monospace; font-size: 0.82rem;"></textarea>
             </div>
 
             <div class="form-group" style="margin-top: 0.75rem;">
               <label>Pasos de preparación (Un paso por línea)</label>
-              <textarea id="new-recipe-steps" class="ios-input" rows="3" placeholder="1. Cocinar el pollo a la plancha.&#10;2. Montar en la tortilla con los vegetales."></textarea>
+              <textarea id="new-recipe-steps" class="ios-input" rows="3" placeholder="1. Cocer la pasta en agua hirviendo con sal hasta que esté al dente.&#10;2. Dorar la carne picada con el AOVE y añadir el tomate.&#10;3. Mezclar y servir caliente."></textarea>
             </div>
 
             <button type="submit" class="btn-primary" style="margin-top: 1.25rem; width: 100%; justify-content: center; padding: 0.75rem;">
-              <i class="fa-solid fa-floppy-disk"></i> Guardar Receta en el Backlog
+              <i class="fa-solid fa-floppy-disk"></i> Guardar Receta en el Catálogo
             </button>
           </form>
         </div>
@@ -1710,31 +1995,37 @@ export function openEditRecipeModal(recipeId) {
               </div>
             </div>
 
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.35rem;">
+                <label style="margin-bottom:0;">Ingredientes (Nombre, Cantidad, Unidad)</label>
+                <button type="button" class="btn-calc-macros" onclick="autoCalculateRecipeModalMacros('edit')" style="font-size:0.75rem; padding: 3px 8px; background: rgba(6,182,212,0.15); color: var(--accent-cyan); border: 1px solid rgba(6,182,212,0.3); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <i class="fa-solid fa-calculator"></i> Calcular Macros
+                </button>
+              </div>
+              <textarea id="edit-recipe-ingredients" class="ios-input" rows="4" oninput="autoCalculateRecipeModalMacros('edit')" style="font-family: monospace; font-size: 0.82rem;">${ingText}</textarea>
+              <div id="edit-recipe-macro-hint"></div>
+            </div>
+
             <div class="form-grid-2" style="margin-top: 0.75rem;">
               <div class="form-group">
-                <label>Calorías (kcal)</label>
+                <label>Calorías (kcal) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="edit-recipe-kcal" class="ios-input" value="${recipe.calories || 0}" required min="0" max="2500">
               </div>
               <div class="form-group">
-                <label>Proteína (g)</label>
+                <label>Proteína (g) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="edit-recipe-prot" class="ios-input" value="${recipe.protein || 0}" required min="0" max="200">
               </div>
             </div>
 
             <div class="form-grid-2" style="margin-top: 0.75rem;">
               <div class="form-group">
-                <label>Carbohidratos (g)</label>
+                <label>Carbohidratos (g) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="edit-recipe-carbs" class="ios-input" value="${recipe.carbs || 0}" min="0" max="300">
               </div>
               <div class="form-group">
-                <label>Grasas (g)</label>
+                <label>Grasas (g) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="edit-recipe-fats" class="ios-input" value="${recipe.fats || 0}" min="0" max="200">
               </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 0.75rem;">
-              <label>Ingredientes (Un ingrediente por línea: Nombre, Cantidad, Unidad)</label>
-              <textarea id="edit-recipe-ingredients" class="ios-input" rows="4" style="font-family: monospace; font-size: 0.82rem;">${ingText}</textarea>
             </div>
 
             <div class="form-group" style="margin-top: 0.75rem;">
