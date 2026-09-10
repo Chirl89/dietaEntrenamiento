@@ -81,6 +81,10 @@ export function populateSettingsInputs() {
     // Cloud Key Input
     const inputCloudKey = document.getElementById("setting-cloud-key-input");
     if (inputCloudKey) inputCloudKey.value = getCloudSyncKey();
+
+    // Gemini API Key Input
+    const inputGeminiKey = document.getElementById("setting-gemini-key-input");
+    if (inputGeminiKey) inputGeminiKey.value = localStorage.getItem("FITDUO_GEMINI_API_KEY") || "";
   } catch(e) {
     console.error("Error populating settings inputs:", e);
   }
@@ -182,3 +186,18 @@ export function renderSettingsView() {
     console.error("Error rendering Settings View:", e);
   }
 }
+
+export function saveGeminiApiKeyFromInput() {
+  triggerHapticTouch();
+  const input = document.getElementById("setting-gemini-key-input");
+  if (!input) return;
+  const val = input.value.trim();
+  if (val) {
+    localStorage.setItem("FITDUO_GEMINI_API_KEY", val);
+    showIosToast("🔑 Clave Gemini guardada con éxito", "fa-solid fa-key");
+  } else {
+    localStorage.removeItem("FITDUO_GEMINI_API_KEY");
+    showIosToast("ℹ️ Clave eliminada (usando motor integrado)", "fa-solid fa-circle-info");
+  }
+}
+

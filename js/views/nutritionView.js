@@ -20,7 +20,7 @@ import {
   createEmptyWeeklyPlan
 } from '../state.js';
 import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js';
-import { calculateMacrosFromIngredients, generateRecipeFromDescription } from '../nutritionCalculator.js';
+import { calculateMacrosFromIngredients, generateRecipeFromDescription, generateRecipeWithAi } from '../nutritionCalculator.js';
 
 // MEAL SLOTS DEFINITION
 export const MEAL_SLOTS = [
@@ -1617,7 +1617,7 @@ export function openAiRecipeGeneratorModal() {
             </div>
           </div>
 
-          <button type="button" class="btn-primary" onclick="generateAiRecipeFromForm()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 1.25rem; font-size: 0.95rem; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); border: none; font-weight: 700; box-shadow: 0 4px 16px rgba(6,182,212,0.3);">
+          <button type="button" id="ai-generate-btn" class="btn-primary" onclick="generateAiRecipeFromForm()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 1.25rem; font-size: 0.95rem; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); border: none; font-weight: 700; box-shadow: 0 4px 16px rgba(6,182,212,0.3);">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Generar Receta con Macros y Pasos
           </button>
 
@@ -1641,7 +1641,8 @@ export function setAiPrompt(text) {
   }
 }
 
-export function generateAiRecipeFromForm() {
+export async function generateAiRecipeFromForm() {
+  const submitBtn = document.getElementById("ai-generate-btn");
   try {
     triggerHapticTouch();
     const promptInput = document.getElementById("ai-prompt-input");
@@ -1659,9 +1660,18 @@ export function generateAiRecipeFromForm() {
     const type = typeSelect ? typeSelect.value : "auto";
     const servings = servingsSelect ? parseInt(servingsSelect.value, 10) : 1;
 
-    const recipe = generateRecipeFromDescription(prompt, type, servings);
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando Receta y Macros...';
+    }
+
+    const recipe = await generateRecipeWithAi(prompt, type, servings);
     if (!recipe) {
       showIosToast("⚠️ No pudimos procesar la receta", "fa-solid fa-triangle-exclamation");
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generar Receta con Macros y Pasos';
+      }
       return;
     }
 
@@ -1723,6 +1733,12 @@ export function generateAiRecipeFromForm() {
     showIosToast("✨ Receta calculada con éxito", "fa-solid fa-circle-check");
   } catch(e) {
     console.error("Error generating recipe from form:", e);
+    showIosToast("❌ Error al generar la receta", "fa-solid fa-triangle-exclamation");
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generar Receta con Macros y Pasos';
+    }
   }
 }
 
