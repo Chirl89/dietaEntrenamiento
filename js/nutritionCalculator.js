@@ -1133,6 +1133,24 @@ export function getGeminiApiKey() {
 }
 
 /**
+ * Jerarquía de modelos Gemini configurada según preferencia de usuario:
+ * 1. Intermedios: Gemini 3.5 Flash, Gemini 3.6 Flash (buen equilibrio de calidad y cuota)
+ * 2. Mejores: Gemini 3.7 Flash, Gemini 3.8 Flash (máximo razonamiento y precisión)
+ * 3. Peores / Rescate: Gemini 3.5 Flash Lite, Gemini 3.1 Flash Lite (modelos ligeros con amplio margen: 15 RPM, 500 RPD)
+ */
+export const PRIORITIZED_GEMINI_MODELS = [
+  // 1. Intermedios
+  "gemini-3.5-flash",
+  "gemini-3.6-flash",
+  // 2. Los mejores
+  "gemini-3.7-flash",
+  "gemini-3.8-flash",
+  // 3. Los peores / Respaldo de alta cuota (500 peticiones al día)
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite"
+];
+
+/**
  * Google Gemini AI generation (using default shared couple key or custom user key).
  * Falls back transparently to the semantic offline engine if not configured or if offline.
  * Supports both single-dish generation and batch cooking / meal prep division.
@@ -1248,13 +1266,7 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
   ]
 }`;
 
-      const modelsToTry = [
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-        "gemini-flash-latest",
-        "gemini-3.6-flash",
-        "gemini-2.5-pro"
-      ];
+      const modelsToTry = PRIORITIZED_GEMINI_MODELS;
 
       let rawJson = null;
       let lastErrorMessage = null;
@@ -1264,7 +1276,7 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(9000),
+            signal: AbortSignal.timeout(10000),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
@@ -1451,13 +1463,7 @@ REGLAS ESTRICTAS:
   ]
 }`;
 
-      const modelsToTry = [
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-        "gemini-flash-latest",
-        "gemini-3.6-flash",
-        "gemini-2.5-pro"
-      ];
+      const modelsToTry = PRIORITIZED_GEMINI_MODELS;
 
       let rawJson = null;
       let lastErrorMessage = null;
@@ -1467,7 +1473,7 @@ REGLAS ESTRICTAS:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(9000),
+            signal: AbortSignal.timeout(10000),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
@@ -1605,13 +1611,7 @@ REGLAS ESTRICTAS:
   ]
 }`;
 
-      const modelsToTry = [
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-        "gemini-flash-latest",
-        "gemini-3.6-flash",
-        "gemini-2.5-pro"
-      ];
+      const modelsToTry = PRIORITIZED_GEMINI_MODELS;
 
       let rawJson = null;
       let lastErrorMessage = null;
@@ -1621,7 +1621,7 @@ REGLAS ESTRICTAS:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(9000),
+            signal: AbortSignal.timeout(10000),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {

@@ -5,7 +5,7 @@
  * and direct search links to tienda.mercadona.es.
  */
 
-import { getGeminiApiKey } from './nutritionCalculator.js';
+import { getGeminiApiKey, PRIORITIZED_GEMINI_MODELS } from './nutritionCalculator.js';
 
 // Interchangeable staple food families for pantry consolidation
 export const INTERCHANGEABLE_FAMILIES = [
@@ -265,27 +265,40 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura:
   ]
 }`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }],
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: "application/json"
-          }
-        })
-      });
+      let parsed = null;
+      for (const modelName of PRIORITIZED_GEMINI_MODELS) {
+        try {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: AbortSignal.timeout(10000),
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }],
+              generationConfig: {
+                temperature: 0.2,
+                responseMimeType: "application/json"
+              }
+            })
+          });
 
-      if (response.ok) {
-        const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          const parsed = JSON.parse(text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim());
-          if (parsed && Array.isArray(parsed.sections)) {
-            return parsed;
+          if (response.ok) {
+            const data = await response.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              const resJson = JSON.parse(text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim());
+              if (resJson && Array.isArray(resJson.sections)) {
+                parsed = resJson;
+                break;
+              }
+            }
           }
+        } catch(eModel) {
+          console.warn(`Mercadona optimization attempt with ${modelName} failed:`, eModel);
         }
+      }
+
+      if (parsed) {
+        return parsed;
       }
     } catch(e) {
       console.warn("Mercadona AI optimization fallback to local engine:", e);
