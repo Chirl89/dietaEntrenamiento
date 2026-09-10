@@ -400,7 +400,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
   if (!cloudData || typeof cloudData !== 'object') return false;
   if (cloudData.status !== undefined && cloudData.channels !== undefined) return false;
 
-  if (appState.lastPurgeTimetoken && cloudData._timetoken) {
+  if (appState.lastPurgeTimetoken && cloudData._timetoken && !cloudData.history) {
     try {
       if (BigInt(cloudData._timetoken) <= BigInt(appState.lastPurgeTimetoken)) {
         return false;
@@ -564,7 +564,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
 
       if (isAuthoritativeAuthorPush) {
         // Authoritative replacement from the workout owner: reconcile deletions
-        if (!dayObj.done || incomingValidList.length === 0) {
+        if (!dayObj.done) {
           if (localDay.done || localDay.sessions.length > 0) {
             localDay.done = false;
             localDay.watchData = null;
@@ -574,7 +574,7 @@ export function mergeCloudDataIntoAppState(cloudData) {
         } else {
           localDay.sessions = incomingValidList;
           localDay.done = true;
-          localDay.watchData = incomingValidList[incomingValidList.length - 1];
+          localDay.watchData = incomingValidList.length > 0 ? incomingValidList[incomingValidList.length - 1] : null;
           hasChanges = true;
         }
       } else {
@@ -763,9 +763,14 @@ export function mergeCloudDataIntoAppState(cloudData) {
 
           let mergedWorkouts = [];
           if (isAuthoritativeHistory) {
-            mergedWorkouts = Array.isArray(cloudDay.completedWorkouts) && mergedSessions.length > 0 ? cloudDay.completedWorkouts : (mergedSessions.length > 0 ? [getDayNameFromDate(dateKey)] : []);
+            mergedWorkouts = Array.isArray(cloudDay.completedWorkouts) && cloudDay.completedWorkouts.length > 0
+              ? cloudDay.completedWorkouts
+              : (mergedSessions.length > 0 ? [getDayNameFromDate(dateKey)] : (localDay.completedWorkouts || []));
           } else {
-            mergedWorkouts = Array.from(new Set([...(localDay.completedWorkouts || []), ...(cloudDay.completedWorkouts || [])])).filter(() => mergedSessions.length > 0);
+            mergedWorkouts = Array.from(new Set([...(localDay.completedWorkouts || []), ...(cloudDay.completedWorkouts || [])]));
+            if (mergedSessions.length > 0 && mergedWorkouts.length === 0) {
+              mergedWorkouts.push(getDayNameFromDate(dateKey));
+            }
           }
 
           const mergedSteps = dateKey === todayIso ? Number(m.steps || 0) : Math.max(Number(localDay.steps || 0), Number(cloudDay.steps || 0));

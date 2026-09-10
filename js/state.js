@@ -22,6 +22,38 @@ export const defaultCloudReplica = {
   she: { moveKcal: 0, exerciseMin: 0, steps: 0, hr: 0, distanceKm: 0, floors: 0, sleep: "--", lastSync: null, source: "Atajo Nube en 2º Plano" }
 };
 
+export const VERIFIED_HISTORICAL_BASELINE = {
+  he: {
+    "2026-08-24": { steps: 5194, moveKcal: 147, exerciseMin: 5, distanceKm: 3.9, floors: 5, sleep: "--", hr: 82, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-08-25": { steps: 8118, moveKcal: 515, exerciseMin: 16, distanceKm: 6.09, floors: 0, sleep: "--", hr: 83, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-08-30": { steps: 1446, moveKcal: 305, exerciseMin: 2, distanceKm: 1.08, floors: 0, sleep: "--", hr: 62, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-01": { steps: 927, moveKcal: 121, exerciseMin: 0, distanceKm: 0.7, floors: 0, sleep: "--", hr: 77, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-02": { steps: 1994, moveKcal: 9, exerciseMin: 0, distanceKm: 1.5, floors: 0, sleep: "--", hr: 74, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-03": { steps: 2242, moveKcal: 12, exerciseMin: 1, distanceKm: 1.68, floors: 0, sleep: "--", hr: 78, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-04": { steps: 3917, moveKcal: 12, exerciseMin: 1, distanceKm: 2.94, floors: 0, sleep: "--", hr: 94, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-05": { steps: 1526, moveKcal: 0, exerciseMin: 0, distanceKm: 1.14, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-06": { steps: 503, moveKcal: 0, exerciseMin: 0, distanceKm: 0.38, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-07": { steps: 2225, moveKcal: 357, exerciseMin: 1, distanceKm: 1.67, floors: 0, sleep: "--", hr: 80, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-08": { steps: 1145, moveKcal: 162, exerciseMin: 1, distanceKm: 0.86, floors: 0, sleep: "--", hr: 78, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-09": { steps: 5386, moveKcal: 4, exerciseMin: 0, distanceKm: 4.04, floors: 0, sleep: "--", hr: 75, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-10": { steps: 1155, moveKcal: 147, exerciseMin: 1, distanceKm: 0.89, floors: 0, sleep: "--", hr: 72, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true }
+  },
+  she: {
+    "2026-08-24": { steps: 7293, moveKcal: 139, exerciseMin: 6, distanceKm: 5.47, floors: 0, sleep: "--", hr: 65, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-08-25": { steps: 10560, moveKcal: 439, exerciseMin: 17, distanceKm: 7.92, floors: 0, sleep: "--", hr: 70, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-08-30": { steps: 0, moveKcal: 0, exerciseMin: 0, distanceKm: 0, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: false },
+    "2026-09-02": { steps: 0, moveKcal: 0, exerciseMin: 0, distanceKm: 0, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: false },
+    "2026-09-03": { steps: 3986, moveKcal: 0, exerciseMin: 0, distanceKm: 2.99, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-04": { steps: 5206, moveKcal: 0, exerciseMin: 0, distanceKm: 3.9, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-05": { steps: 177, moveKcal: 0, exerciseMin: 0, distanceKm: 0.13, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-06": { steps: 1536, moveKcal: 0, exerciseMin: 0, distanceKm: 1.15, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-07": { steps: 5569, moveKcal: 0, exerciseMin: 0, distanceKm: 4.18, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-08": { steps: 1145, moveKcal: 0, exerciseMin: 0, distanceKm: 0.86, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-09": { steps: 4605, moveKcal: 0, exerciseMin: 0, distanceKm: 3.45, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true },
+    "2026-09-10": { steps: 996, moveKcal: 0, exerciseMin: 0, distanceKm: 0.65, floors: 0, sleep: "--", hr: 0, completedWorkouts: [], sessions: [], isRestDay: false, hasData: true }
+  }
+};
+
 // Clean zero baseline defaults
 // (Live state is restored from LOCAL_STORAGE_KEY during loadSavedState)
 
@@ -620,12 +652,39 @@ export function loadSavedState() {
   if (!appState.history.he) appState.history.he = {};
   if (!appState.history.she) appState.history.she = {};
 
-  // CLEAN SLATE V0.21.1 RESET
-  const FULL_RESET_V21_KEY = "FITDUO_FULL_APP_RESET_V21_1";
-  if (!localStorage.getItem(FULL_RESET_V21_KEY)) {
-    performCompleteAppReset(true);
-    localStorage.setItem(FULL_RESET_V21_KEY, "true");
-  }
+  // Restore and merge verified historical baseline for all recorded days
+  ['he', 'she'].forEach(pid => {
+    const baseline = VERIFIED_HISTORICAL_BASELINE[pid] || {};
+    Object.keys(baseline).forEach(dateKey => {
+      const bEntry = baseline[dateKey];
+      if (!bEntry || !bEntry.hasData) return;
+      const existing = appState.history[pid][dateKey];
+      if (!existing || !existing.hasData) {
+        appState.history[pid][dateKey] = JSON.parse(JSON.stringify(bEntry));
+      } else {
+        existing.steps = Math.max(Number(existing.steps || 0), Number(bEntry.steps || 0));
+        existing.moveKcal = Math.max(Number(existing.moveKcal || 0), Number(bEntry.moveKcal || 0));
+        existing.exerciseMin = Math.max(Number(existing.exerciseMin || 0), Number(bEntry.exerciseMin || 0));
+        const bDist = Number(bEntry.distanceKm || 0);
+        if (!existing.distanceKm || existing.distanceKm < bDist) {
+          existing.distanceKm = bDist;
+        }
+        if (bEntry.hr > 0 && bEntry.hr <= 220 && (!existing.hr || existing.hr > 220)) {
+          existing.hr = bEntry.hr;
+        }
+        if (Array.isArray(bEntry.sessions) && bEntry.sessions.length > 0 && (!Array.isArray(existing.sessions) || existing.sessions.length === 0)) {
+          existing.sessions = [...bEntry.sessions];
+        }
+        if (Array.isArray(bEntry.completedWorkouts) && bEntry.completedWorkouts.length > 0 && (!Array.isArray(existing.completedWorkouts) || existing.completedWorkouts.length === 0)) {
+          existing.completedWorkouts = [...bEntry.completedWorkouts];
+        }
+        existing.hasData = true;
+      }
+    });
+  });
+
+  // Ensure lastPurgeTimetoken is cleared so cloud sync does not drop historical data
+  appState.lastPurgeTimetoken = null;
 
   try {
     checkDayRollover();
