@@ -503,91 +503,160 @@ export function generateRecipeFromDescription(description, preferredType = "auto
   else if (isPlancha) prepTime = 12;
   else if (isEnsalada || type === "snack") prepTime = 8;
 
-  // If batch cooking is requested or detected, generate 3 balanced recipes derived from the base preparation
+  // If batch cooking is requested or detected, dynamically generate recipes derived from the base preparation
   if (isBatch) {
     const batchId = Date.now();
-    const recipe1 = {
-      id: "custom_" + batchId + "_1",
-      name: `${mainIngredientName} al horno con patatas panaderas`,
-      type: "comida",
-      prepTime: 45,
-      calories: 485,
-      protein: 42,
-      carbs: 35,
-      fats: 17,
-      tags: ["Batch Cooking", "al horno", "aprovechamiento"],
-      ingredients: [
-        { name: `${mainIngredientName} asado`, amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Patata fresca", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Dientes de ajo y especias", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
-      ],
-      servings: safeServings,
-      instructions: [
-        `Cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} (1 kg) al horno a 190°C durante 45 minutos junto a las patatas y el adobo.`,
-        "Separar una ración de lomo con su guarnición de patatas para servir recién hecho.",
-        "Dejar enfriar el resto de la pieza cocinada, envolver y reservar en la nevera para las siguientes 2 recetas de la semana."
-      ]
-    };
+    let requestedCount = 0;
+    const countMatch = description.match(/(\d+)\s*(?:recetas?|platos?|comidas?|veces|días?)/i);
+    if (countMatch) {
+      requestedCount = parseInt(countMatch[1], 10);
+    }
+    if (!requestedCount || requestedCount <= 0) {
+      const weightMatch = description.match(/(\d+(?:[.,]\d+)?)\s*(?:kg|kilos?|g|gramos?)/i);
+      if (weightMatch) {
+        let grams = parseFloat(weightMatch[1].replace(',', '.'));
+        if (/kg|kilos?/i.test(weightMatch[0])) grams *= 1000;
+        if (grams <= 600) requestedCount = 2;
+        else if (grams <= 1100) requestedCount = 3;
+        else if (grams <= 1600) requestedCount = 4;
+        else requestedCount = 5;
+      } else {
+        requestedCount = 3;
+      }
+    }
+    requestedCount = Math.min(Math.max(requestedCount, 1), 10);
 
-    const recipe2 = {
-      id: "custom_" + batchId + "_2",
-      name: `Fajitas de ${mainIngredientName} con pimientos y cebolla`,
-      type: "comida",
-      servings: safeServings,
-      prepTime: 15,
-      calories: 495,
-      protein: 38,
-      carbs: 45,
-      fats: 16,
-      tags: ["Batch Cooking", "rápido", "aprovechamiento"],
-      ingredients: [
-        { name: `${mainIngredientName} asado en tiras`, amount: 160 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Pimiento rojo y verde", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Cebolla", amount: 70 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Tortillas integrales o de maíz", amount: 2 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Aceite de oliva virgen extra", amount: 6 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ],
-      instructions: [
-        `Cortar en tiras finas 160g de la pieza de ${mainIngredientName.toLowerCase()} reservada en la nevera.`,
-        "En una sartén con unas gotas de aceite de oliva virgen extra, saltear los pimientos y la cebolla hasta que queden tiernos.",
-        "Añadir las tiras de carne durante 1-2 minutos para que cojan calor y se impregnen de los jugos.",
-        "Calentar brevemente las tortillas y rellenar con el salteado."
-      ]
-    };
+    const pool = [
+      {
+        name: `${mainIngredientName} al horno con patatas panaderas`,
+        type: "comida",
+        prepTime: 45,
+        calories: 485,
+        protein: 42,
+        carbs: 35,
+        fats: 17,
+        tags: ["Batch Cooking", "al horno", "aprovechamiento"],
+        ingredients: [
+          { name: `${mainIngredientName} asado`, amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Patata fresca", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Dientes de ajo y especias", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+        ],
+        instructions: [
+          `Cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} al horno a 190°C durante 45 minutos junto a las patatas y el adobo.`,
+          "Separar una ración de lomo con su guarnición de patatas para servir recién hecho.",
+          "Dejar enfriar el resto de la pieza cocinada, envolver y reservar en la nevera para las siguientes comidas de la semana."
+        ]
+      },
+      {
+        name: `Fajitas de ${mainIngredientName} con pimientos y cebolla`,
+        type: "comida",
+        prepTime: 15,
+        calories: 495,
+        protein: 38,
+        carbs: 45,
+        fats: 16,
+        tags: ["Batch Cooking", "rápido", "aprovechamiento"],
+        ingredients: [
+          { name: `${mainIngredientName} asado en tiras`, amount: 160 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Pimiento rojo y verde", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Cebolla", amount: 70 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Tortillas integrales o de maíz", amount: 2 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Aceite de oliva virgen extra", amount: 6 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+        ],
+        instructions: [
+          `Cortar en tiras finas 160g de la pieza de ${mainIngredientName.toLowerCase()} reservada en la nevera.`,
+          "En una sartén con unas gotas de aceite de oliva virgen extra, saltear los pimientos y la cebolla hasta que queden tiernos.",
+          "Añadir las tiras de carne durante 1-2 minutos para que cojan calor y se impregnen de los jugos.",
+          "Calentar brevemente las tortillas y rellenar con el salteado."
+        ]
+      },
+      {
+        name: `Ensalada templada de ${mainIngredientName} con brotes y frutos secos`,
+        type: "cena",
+        prepTime: 10,
+        calories: 380,
+        protein: 36,
+        carbs: 12,
+        fats: 19,
+        tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
+        ingredients: [
+          { name: `${mainIngredientName} asado en dados`, amount: 150 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Espinacas baby o rúcula", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Queso fresco o feta", amount: 30 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+          { name: "Nueces", amount: 15 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+        ],
+        instructions: [
+          `Cortar en dados 150g de la pieza de ${mainIngredientName.toLowerCase()} cocinada y saltear 1 minuto a fuego vivo en la sartén para templarla.`,
+          "En una ensaladera o bol, colocar la base de espinacas baby y tomates cherry cortados por la mitad.",
+          "Añadir los dados templados de carne, el queso desmenuzado y las nueces picadas.",
+          "Aliñar con una cucharadita de aceite de oliva virgen extra, vinagre y sal al gusto."
+        ]
+      },
+      {
+        name: `Wok de arroz con ${mainIngredientName} y verduras salteadas`,
+        type: "comida",
+        prepTime: 15,
+        calories: 480,
+        protein: 39,
+        carbs: 48,
+        fats: 14,
+        tags: ["Batch Cooking", "wok", "aprovechamiento"],
+        ingredients: [
+          { name: `${mainIngredientName} en tiras`, amount: 150 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Arroz jazmín o basmati cocido", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Calabacín y zanahoria en juliana", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Salsa de soja baja en sal", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Aceite de sésamo o de oliva", amount: 6 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+        ],
+        instructions: [
+          "Saltear en wok o sartén amplia las verduras en juliana a fuego vivo 3 minutos.",
+          `Incorporar las tiras de ${mainIngredientName.toLowerCase()} y el arroz cocido.`,
+          "Aderezar con salsa de soja y remover 2 minutos para integrar todos los sabores."
+        ]
+      },
+      {
+        name: `Pasta integral salteada con dados de ${mainIngredientName} y cherry`,
+        type: "comida",
+        prepTime: 12,
+        calories: 490,
+        protein: 40,
+        carbs: 52,
+        fats: 13,
+        tags: ["Batch Cooking", "pasta", "aprovechamiento"],
+        ingredients: [
+          { name: `${mainIngredientName} en dados`, amount: 150 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Pasta integral hervida", amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Tomates cherry salteados", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Albahaca fresca y ajo", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+        ],
+        instructions: [
+          "Saltear los cherry con un diente de ajo laminado en una sartén con aceite.",
+          `Añadir los dados de ${mainIngredientName.toLowerCase()} cocinada y la pasta integral escurrida.`,
+          "Mezclar bien con hojas de albahaca fresca y servir caliente."
+        ]
+      }
+    ];
 
-    const recipe3 = {
-      id: "custom_" + batchId + "_3",
-      name: `Ensalada templada de ${mainIngredientName} con brotes y frutos secos`,
-      type: "cena",
-      servings: safeServings,
-      prepTime: 10,
-      calories: 380,
-      protein: 36,
-      carbs: 12,
-      fats: 19,
-      tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
-      ingredients: [
-        { name: `${mainIngredientName} asado en dados`, amount: 150 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Espinacas baby o rúcula", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Queso fresco o feta", amount: 30 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-        { name: "Nueces", amount: 15 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-      ],
-      instructions: [
-        `Cortar en dados 150g de la pieza de ${mainIngredientName.toLowerCase()} cocinada y saltear 1 minuto a fuego vivo en la sartén para templarla.`,
-        "En una ensaladera o bol, colocar la base de espinacas baby y tomates cherry cortados por la mitad.",
-        "Añadir los dados templados de carne, el queso desmenuzado y las nueces picadas.",
-        "Aliñar con una cucharadita de aceite de oliva virgen extra, vinagre y sal al gusto."
-      ]
-    };
+    const generated = [];
+    for (let i = 0; i < requestedCount; i++) {
+      const template = pool[i % pool.length];
+      generated.push({
+        ...template,
+        id: `custom_${batchId}_${i + 1}`,
+        name: i >= pool.length ? `${template.name} (Variación ${i + 1})` : template.name,
+        servings: safeServings
+      });
+    }
 
     return {
       isBatch: true,
       batchTitle: `Batch Cooking: ${mainIngredientName} (${title})`,
-      basePrep: `Hornear la pieza base entera a 190°C durante 45 minutos con aceite, ajo y hierbas. Reservar para repartir en 3 comidas equilibradas para la semana.`,
-      recipes: [recipe1, recipe2, recipe3]
+      basePrep: `Hornear o cocinar la pieza base entera a 190°C durante 45 minutos con aceite, ajo y hierbas. Reservar en frío para repartir en ${generated.length} ${generated.length === 1 ? 'comida equilibrada' : 'comidas equilibradas'} para la semana.`,
+      recipes: generated
     };
   }
 
@@ -636,15 +705,20 @@ export async function generateRecipeWithAi(description, preferredType = "auto", 
 El usuario describe una pieza grande, asado o preparación base para BATCH COOKING / COCINA DE APROVECHAMIENTO para la semana: "${description}".
 Raciones individuales por plato: ${servings}.
 
-REGLA FUNDAMENTAL: En lugar de generar una receta hipercalórica de 2500+ kcal con 1 kg entero de carne, DEBES proponer un plan de aprovechamiento que divida la preparación base en exactamente 3 RECETAS DIFERENTES, REALISTAS Y EQUILIBRADAS para la semana.
-Ejemplo con cabecero de lomo o carne asada:
-1. Comida: Receta tradicional (ej. cabecero de lomo asado al horno con patatas panaderas).
-2. Comida: Receta dinámica de aprovechamiento (ej. fajitas / tacos / salteado de cabecero de lomo en tiras con pimientos y cebolla).
-3. Cena: Receta ligera de aprovechamiento (ej. ensalada templada de cabecero de lomo en dados con brotes y frutos secos, o salteado con verduras).
+REGLA FUNDAMENTAL DE DIVISIÓN Y APROVECHAMIENTO:
+En lugar de generar una receta hipercalórica de 2500+ kcal con 1 kg entero de carne, DEBES proponer un plan de aprovechamiento que divida la preparación base en RECETAS DIFERENTES, REALISTAS Y EQUILIBRADAS para la semana.
 
-Cada una de las 3 recetas debe tener:
+CANTIDAD DINÁMICA DE RECETAS:
+- Si el usuario especifica explícitamente un número de recetas o comidas (ej. "haz 2 recetas", "para 4 días", "haz 1 sola receta", "divídelo en 5 platos", "17 recetas"), GENERA EXACTAMENTE ESA CANTIDAD en el array "recipes".
+- Si el usuario NO especifica una cantidad concreta, calcula el número óptimo según la cantidad/peso de la pieza o preparación (ej. para 1 kg de carne suelen ser 2 a 4 recetas según raciones; para 500g suelen ser 2; si solo da para 1, pon 1). El número de recetas en el array "recipes" DEBE SER DINÁMICO según lo que sea necesario.
+- NUNCA fuerces a 3 recetas si el usuario pidió otra cantidad o si la cantidad de alimento requiere más o menos platos.
+
+Variedad de momentos del día:
+Combina comidas y cenas (ej. plato tradicional al horno, fajitas / salteado rápido, ensalada templada ligera, wok de arroz o pasta). NUNCA generes desayunos salvo que el usuario lo pida explícitamente.
+
+Cada una de las recetas debe tener:
 - Gramajes individuales realistas (~140g-180g de carne preparada por ración).
-- Macros saludables (~350-520 kcal y ~30-45g proteína).
+- Macros saludables (~350-550 kcal y ~30-45g proteína).
 - Ingredientes con cantidades exactas (g, ml, ud).
 - 3 a 5 pasos de elaboración claros.
 
@@ -652,10 +726,10 @@ FORMATO ESTRICTO: Responde ÚNICAMENTE con un objeto JSON válido con esta estru
 {
   "isBatch": true,
   "batchTitle": "Batch Cooking: [Nombre de la preparación base]",
-  "basePrep": "Explicación breve (1-2 frases) de cómo cocinar la pieza base entera (1 kg) inicialmente para luego repartirla.",
+  "basePrep": "Explicación breve (1-2 frases) de cómo cocinar la pieza base entera inicialmente para luego repartirla.",
   "recipes": [
     {
-      "name": "Nombre atractivo receta 1 (Comida)",
+      "name": "Nombre atractivo receta 1",
       "type": "comida",
       "prepTime": 45,
       "calories": 485,
@@ -666,47 +740,6 @@ FORMATO ESTRICTO: Responde ÚNICAMENTE con un objeto JSON válido con esta estru
         {"name": "Cabecero de lomo asado", "amount": 180, "unit": "g"},
         {"name": "Patata fresca", "amount": 180, "unit": "g"},
         {"name": "Aceite de oliva virgen extra", "amount": 10, "unit": "ml"}
-      ],
-      "instructions": [
-        "Paso 1...",
-        "Paso 2..."
-      ]
-    },
-    {
-      "name": "Nombre atractivo receta 2 (Comida)",
-      "type": "comida",
-      "prepTime": 15,
-      "calories": 490,
-      "protein": 38,
-      "carbs": 42,
-      "fats": 16,
-      "ingredients": [
-        {"name": "Cabecero de lomo asado en tiras", "amount": 160, "unit": "g"},
-        {"name": "Pimiento rojo y verde", "amount": 120, "unit": "g"},
-        {"name": "Cebolla", "amount": 70, "unit": "g"},
-        {"name": "Tortillas integrales o de maíz", "amount": 2, "unit": "ud"},
-        {"name": "Aceite de oliva virgen extra", "amount": 6, "unit": "ml"}
-      ],
-      "instructions": [
-        "Paso 1...",
-        "Paso 2..."
-      ]
-    },
-    {
-      "name": "Nombre atractivo receta 3 (Cena)",
-      "type": "cena",
-      "prepTime": 12,
-      "calories": 380,
-      "protein": 35,
-      "carbs": 14,
-      "fats": 19,
-      "ingredients": [
-        {"name": "Cabecero de lomo asado en dados", "amount": 150, "unit": "g"},
-        {"name": "Espinacas baby o rúcula", "amount": 80, "unit": "g"},
-        {"name": "Tomates cherry", "amount": 80, "unit": "g"},
-        {"name": "Queso fresco o feta", "amount": 30, "unit": "g"},
-        {"name": "Nueces", "amount": 15, "unit": "g"},
-        {"name": "Aceite de oliva virgen extra", "amount": 8, "unit": "ml"}
       ],
       "instructions": [
         "Paso 1...",
@@ -1093,5 +1126,197 @@ REGLAS ESTRICTAS:
     tags: ["Batch Cooking", "alternativa", "aprovechamiento"],
     ingredients: altIngredients,
     instructions: altSteps
+  };
+}
+
+/**
+ * Generates an additional recipe for an existing batch cooking plan using Gemini AI,
+ * ensuring no repetition with existing recipes and taking user suggestions into account.
+ */
+export async function addBatchRecipeWithAi(batchCandidate, userInstruction = "") {
+  if (!batchCandidate || !Array.isArray(batchCandidate.recipes)) {
+    return null;
+  }
+
+  const existingRecipes = batchCandidate.recipes.map(r => `"${r.name}" (${r.type})`);
+  const servings = Number(batchCandidate.recipes[0]?.servings) || 2;
+  const batchTitle = batchCandidate.batchTitle || "Preparación base de batch cooking";
+  const basePrep = batchCandidate.basePrep || "Preparación cocinada en gran volumen";
+
+  const apiKey = getGeminiApiKey();
+
+  if (apiKey && apiKey.trim().length > 10) {
+    try {
+      const promptText = `Actúa exclusivamente como chef nutricionista deportivo de alta precisión para FitDuo.
+Estamos gestionando un lote de BATCH COOKING / COCINA DE APROVECHAMIENTO semanal.
+Preparación base ya cocinada: "${batchTitle}".
+Detalles de la cocción base: "${basePrep}".
+Raciones individuales por plato: ${servings}.
+
+En este lote ya se han creado las siguientes recetas:
+${existingRecipes.map(r => `- ${r}`).join("\n")}
+
+El usuario quiere AÑADIR UNA NUEVA RECETA COMPLEMENTARIA a este lote que aproveche la misma preparación base.
+${userInstruction && userInstruction.trim() ? `PETICIÓN Y SUGERENCIAS DEL USUARIO: "${userInstruction.trim()}". (Adapta ingredientes, ración y tipo de plato a lo que pide el usuario).` : 'El usuario quiere una nueva receta creativa que aproveche la preparación base sin repetir las recetas ya existentes.'}
+
+REGLAS ESTRICTAS:
+1. APROVECHAMIENTO: La nueva receta DEBE aprovechar la preparación base (en tiras, dados, lonchas o desmenuzado).
+2. NO REPETIR: Debe ser un plato completamente diferente a los ya creados (${existingRecipes.join(", ")}).
+3. SI EL USUARIO PIDE UN TIPO DE PLATO O INGREDIENTE (ej. "arroz", "pasta", "cena ligera", "desayuno salado", "fajitas"): CÚMPLELO FIELMENTE. Si no especifica tipo, asigna "comida" o "cena". NUNCA asignes a desayuno salvo que el usuario lo pida explícitamente.
+4. CANTIDADES REALISTAS PARA ${servings} PERSONAS: Los gramos de ingredientes deben ser para el total de ${servings} raciones.
+5. CÁLCULO DE MACROS POR RACIÓN INDIVIDUAL: Calorías y macronutrientes (calories, protein, carbs, fats) calculados POR RACIÓN (para 1 persona).
+6. FORMATO ESTRICTO: Responde ÚNICAMENTE con un JSON válido con la siguiente estructura, sin texto antes ni después, sin markdown:
+{
+  "name": "Nombre atractivo y claro de la nueva receta",
+  "type": "comida",
+  "servings": ${servings},
+  "prepTime": 15,
+  "calories": 460,
+  "protein": 38,
+  "carbs": 38,
+  "fats": 15,
+  "ingredients": [
+    {"name": "Nombre ingrediente", "amount": 160, "unit": "g"}
+  ],
+  "instructions": [
+    "Paso 1...",
+    "Paso 2...",
+    "Paso 3..."
+  ]
+}`;
+
+      const modelsToTry = [
+        "gemini-3.6-flash",
+        "gemini-3.7-flash",
+        "gemini-3.5-flash",
+        "gemini-flash-latest"
+      ];
+
+      let rawJson = null;
+      for (const modelName of modelsToTry) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }],
+              generationConfig: {
+                temperature: 0.3,
+                topP: 0.85,
+                maxOutputTokens: 2048,
+                responseMimeType: "application/json"
+              }
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text && text.trim()) {
+              rawJson = text.trim();
+              break;
+            }
+          }
+        } catch(eModel) {
+          console.warn(`Add batch recipe attempt with ${modelName} failed:`, eModel);
+        }
+      }
+
+      if (rawJson) {
+        const cleanJson = rawJson.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsed = JSON.parse(cleanJson);
+
+        if (parsed && parsed.name && Array.isArray(parsed.ingredients)) {
+          const rServings = Number(parsed.servings) || Number(servings) || 2;
+          const verifiedMacros = calculateMacrosFromIngredients(parsed.ingredients);
+          const perPersonKcal = verifiedMacros.calories > 0 ? Math.round(verifiedMacros.calories / rServings) : (Number(parsed.calories) || 450);
+          const perPersonProt = verifiedMacros.protein > 0 ? Math.round(verifiedMacros.protein / rServings) : (Number(parsed.protein) || 36);
+          const perPersonCarbs = verifiedMacros.carbs >= 0 ? Math.round(verifiedMacros.carbs / rServings) : (Number(parsed.carbs) || 30);
+          const perPersonFats = verifiedMacros.fats >= 0 ? Math.round(verifiedMacros.fats / rServings) : (Number(parsed.fats) || 14);
+
+          return {
+            id: "custom_" + Date.now() + "_extra_" + Math.random().toString(36).substr(2, 4),
+            name: parsed.name,
+            type: parsed.type || "comida",
+            servings: rServings,
+            prepTime: Number(parsed.prepTime) || 15,
+            calories: perPersonKcal,
+            protein: perPersonProt,
+            carbs: perPersonCarbs,
+            fats: perPersonFats,
+            tags: ["Batch Cooking", "Gemini Pro AI", "aprovechamiento"],
+            ingredients: parsed.ingredients.map(ing => ({
+              name: ing.name,
+              amount: Number(ing.amount) || 1,
+              unit: ing.unit || "g",
+              category: INGREDIENT_CATEGORIES.PANTRY
+            })),
+            instructions: Array.isArray(parsed.instructions) ? parsed.instructions : ["Preparar y servir."]
+          };
+        }
+      }
+    } catch(e) {
+      console.warn("Gemini add batch recipe failed, using local semantic engine:", e);
+    }
+  }
+
+  // Fallback offline generator for additional recipe
+  const baseName = batchTitle.replace(/^Batch Cooking:\s*/i, "").split("(")[0].trim() || "Carne asada";
+  const extraIndex = (batchCandidate.recipes?.length || 0) + 1;
+  const isPasta = /pasta|macarron|espagueti/i.test(userInstruction);
+  const isArroz = /arroz|wok/i.test(userInstruction);
+  const isCena = /cena|ensalada|ligera/i.test(userInstruction);
+
+  let newName = `Salteado de ${baseName} al wok con arroz y verduras`;
+  let newType = "comida";
+  let carbsVal = 44;
+  let caloriesVal = 475;
+  let ingredientsList = [
+    { name: `${baseName} en dados`, amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+    { name: "Arroz jazmín o basmati cocido", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+    { name: "Calabacín y zanahoria", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+    { name: "Salsa de soja baja en sal", amount: 10 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+    { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+  ];
+
+  if (isPasta) {
+    newName = `Pasta integral con ${baseName} desmenuzado y tomate natural`;
+    ingredientsList = [
+      { name: `${baseName} desmenuzado`, amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+      { name: "Pasta integral", amount: 70 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Tomate triturado natural", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Orégano y aceite de oliva", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+    ];
+  } else if (isCena) {
+    newName = `Wrap ligero de ${baseName} con aguacate y rúcula`;
+    newType = "cena";
+    caloriesVal = 410;
+    carbsVal = 26;
+    ingredientsList = [
+      { name: `${baseName} en tiras`, amount: 140 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+      { name: "Tortilla integral", amount: 1 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Aguacate", amount: 40 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Rúcula o brotes tiernos", amount: 50 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
+    ];
+  }
+
+  return {
+    id: "custom_" + Date.now() + "_extra_" + extraIndex,
+    name: newName,
+    type: newType,
+    servings: servings,
+    prepTime: 15,
+    calories: caloriesVal,
+    protein: 38,
+    carbs: carbsVal,
+    fats: 15,
+    tags: ["Batch Cooking", "aprovechamiento", "nueva alternativa"],
+    ingredients: ingredientsList,
+    instructions: [
+      `Aprovechar la ración de ${baseName.toLowerCase()} reservada en frío.`,
+      "Saltear brevemente junto al resto de ingredientes durante 3-5 minutos hasta que esté bien integrado y caliente.",
+      "Servir de inmediato para una comida equilibrada y rápida."
+    ]
   };
 }

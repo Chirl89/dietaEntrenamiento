@@ -20,7 +20,7 @@ import {
   createEmptyWeeklyPlan
 } from '../state.js';
 import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js';
-import { calculateMacrosFromIngredients, generateRecipeFromDescription, generateRecipeWithAi, regenerateSingleBatchRecipeWithAi } from '../nutritionCalculator.js';
+import { calculateMacrosFromIngredients, generateRecipeFromDescription, generateRecipeWithAi, regenerateSingleBatchRecipeWithAi, addBatchRecipeWithAi } from '../nutritionCalculator.js';
 
 // MEAL SLOTS DEFINITION
 export const MEAL_SLOTS = [
@@ -1054,9 +1054,17 @@ export function getBatchCookingWeeklyInsight(dayName, slotKey) {
 
     if (candidates.length === 0) return null;
 
-    // Prioritize candidates that match the current slot (e.g. comida or cena)
-    const slotMatching = candidates.filter(c => slotKey === "all" || c.recipe.type === slotKey);
-    const selectedCandidates = slotMatching.length > 0 ? slotMatching : candidates;
+    // Filter candidates strictly for the current slot if slot is specified (not "all")
+    let selectedCandidates = [];
+    if (slotKey !== "all") {
+      selectedCandidates = candidates.filter(c => c.recipe.type === slotKey);
+      if (selectedCandidates.length === 0) {
+        // No batch companion recipes exist for this specific meal type (e.g. no breakfast or snack generated)
+        return null;
+      }
+    } else {
+      selectedCandidates = candidates;
+    }
 
     const first = selectedCandidates[0];
     const firstSource = first.sourceRecipe;
@@ -2208,7 +2216,7 @@ export function renderBatchRecipesListHtml(recipes, highlightedIndex = -1) {
             </h4>
           </div>
           <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-            <span style="font-size: 0.68rem; background: rgba(245,158,11,0.15); color: var(--accent-amber); padding: 2px 7px; border-radius: 9999px; font-weight: 700;">Receta ${idx + 1}/3</span>
+            <span style="font-size: 0.68rem; background: rgba(245,158,11,0.15); color: var(--accent-amber); padding: 2px 7px; border-radius: 9999px; font-weight: 700;">Receta ${idx + 1} de ${recipes.length}</span>
             ${isHighlighted ? '<span style="font-size: 0.65rem; background: rgba(6,182,212,0.25); color: var(--accent-cyan); padding: 2px 7px; border-radius: 9999px; font-weight: 700; border: 1px solid rgba(6,182,212,0.4);"><i class="fa-solid fa-sparkles"></i> Alternativa generada</span>' : ''}
           </div>
         </div>
@@ -2231,7 +2239,7 @@ export function renderBatchRecipesListHtml(recipes, highlightedIndex = -1) {
         </div>
 
         <div style="display: flex; gap: 0.45rem; margin-top: 0.85rem; flex-wrap: wrap;">
-          <button type="button" class="btn-secondary" onclick="saveSingleBatchRecipe(${idx})" style="flex: 1; min-width: 110px; padding: 0.5rem 0.6rem; font-size: 0.76rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
+          <button type="button" class="btn-secondary" onclick="saveSingleBatchRecipe(${idx})" style="flex: 1; min-width: 100px; padding: 0.5rem 0.6rem; font-size: 0.76rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
             <i class="fa-solid fa-bookmark"></i> Guardar solo esta
           </button>
           <button type="button" class="btn-secondary" onclick="editSingleBatchRecipe(${idx})" style="padding: 0.5rem 0.6rem; font-size: 0.76rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
@@ -2239,6 +2247,9 @@ export function renderBatchRecipesListHtml(recipes, highlightedIndex = -1) {
           </button>
           <button type="button" class="btn-secondary" onclick="toggleBatchRecipeAiAlternative(${idx})" style="padding: 0.5rem 0.75rem; font-size: 0.76rem; justify-content: center; background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.3); color: var(--accent-cyan); font-weight: 600;">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Otra alternativa IA
+          </button>
+          <button type="button" class="btn-secondary" onclick="removeSingleBatchRecipe(${idx})" style="padding: 0.5rem 0.65rem; font-size: 0.76rem; justify-content: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;" title="Quitar de este lote">
+            <i class="fa-solid fa-trash-can"></i> Quitar
           </button>
         </div>
 
@@ -2288,6 +2299,9 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
   if (!container || !generatedBatchCandidate) return;
 
   const result = generatedBatchCandidate;
+  const count = (result.recipes || []).length;
+  const countLabel = count === 1 ? "1 RECETA" : `${count} RECETAS`;
+  const saveLabel = count === 1 ? "Guardar la receta en mi Catálogo" : `Guardar las ${count} recetas en mi Catálogo`;
   const batchHtml = renderBatchRecipesListHtml(result.recipes, highlightedIndex);
 
   container.style.display = "block";
@@ -2296,7 +2310,7 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.75rem;">
         <div>
           <span style="font-size: 0.72rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 3px 10px; border-radius: 9999px; font-weight: 800;">
-            <i class="fa-solid fa-layer-group"></i> PLAN DE BATCH COOKING (3 RECETAS)
+            <i class="fa-solid fa-layer-group"></i> PLAN DE BATCH COOKING (${countLabel})
           </span>
           <h3 style="font-size: 1.2rem; margin: 0.5rem 0 0.2rem 0; color: var(--text-main); font-weight: 700;">${result.batchTitle}</h3>
           <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">${result.basePrep}</p>
@@ -2304,19 +2318,43 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
       </div>
 
       <div style="margin: 0.85rem 0 1.25rem 0; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-amber); padding: 0.65rem 0.85rem; border-radius: 4px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
-        💡 <strong>Aprovechamiento inteligente:</strong> Repartido en 3 recetas saludables (~150-180g de carne, ~400-500 kcal y ~38g proteína por plato). Puedes regenerar cualquiera de ellas con IA o cambiar cantidades antes de guardar en tu catálogo.
+        💡 <strong>Aprovechamiento inteligente:</strong> Repartido en ${count} ${count === 1 ? 'receta equilibrada' : 'recetas equilibradas'} (~150-180g de carne, ~400-500 kcal y ~38g proteína por ración). Puedes añadir más recetas con IA, quitar las que no desees, regenerar cualquiera de ellas o cambiar cantidades antes de guardar en tu catálogo.
       </div>
 
       <button type="button" class="btn-primary" onclick="saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-bottom: 1.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
-        <i class="fa-solid fa-floppy-disk"></i> Guardar las 3 recetas en mi Catálogo
+        <i class="fa-solid fa-floppy-disk"></i> ${saveLabel}
       </button>
 
       <div class="batch-recipes-list">
         ${batchHtml}
       </div>
 
-      <button type="button" class="btn-primary" onclick="saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 0.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
-        <i class="fa-solid fa-floppy-disk"></i> Guardar las 3 recetas en mi Catálogo
+      <!-- ADD EXTRA RECIPE TO BATCH PANEL -->
+      <div class="glass-card" style="margin-top: 0.75rem; margin-bottom: 1.25rem; border: 1px dashed var(--accent-cyan); background: rgba(6,182,212,0.04); padding: 1rem; border-radius: var(--radius-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <strong style="font-size: 0.85rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> ¿Quieres añadir otra receta con IA a este lote?
+          </strong>
+        </div>
+        <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0 0 0.55rem 0; line-height: 1.35;">
+          Indica una sugerencia culinaria (ej. con arroz, pasta, tupper, cena ligera) o deja que la IA invente un nuevo plato complementario.
+        </p>
+        <div style="margin-bottom: 0.5rem;">
+          <input type="text" id="add-batch-recipe-input" class="ios-input" placeholder="ej. Haz un wok de arroz con verduras, o pasta integral, o una cena muy ligera..." style="font-size: 0.82rem; padding: 0.5rem 0.75rem;" />
+        </div>
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+          <button type="button" class="ai-chip-btn" onclick="setAddBatchRecipePrompt('Salteado al wok con arroz jazmín y verduras')">🍚 Con arroz / wok</button>
+          <button type="button" class="ai-chip-btn" onclick="setAddBatchRecipePrompt('Pasta integral con carne desmenuzada y salsa casera')">🍝 Con pasta</button>
+          <button type="button" class="ai-chip-btn" onclick="setAddBatchRecipePrompt('Wrap o fajita rápida con verduras')">🌯 Wrap / Fajita</button>
+          <button type="button" class="ai-chip-btn" onclick="setAddBatchRecipePrompt('Ensalada templada muy ligera para cenar')">🥗 Ensalada ligera</button>
+        </div>
+        <button type="button" id="add-batch-recipe-btn" class="btn-secondary" onclick="applyAddBatchRecipe()" style="width: 100%; justify-content: center; padding: 0.65rem; font-size: 0.82rem; background: rgba(6,182,212,0.15); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">
+          <i class="fa-solid fa-plus-circle"></i> Añadir Otra Receta con IA a este Lote
+        </button>
+      </div>
+
+      <button type="button" class="btn-primary" onclick="saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 0.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
+        <i class="fa-solid fa-floppy-disk"></i> ${saveLabel}
       </button>
     </div>
   `;
@@ -2330,6 +2368,72 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
     }, 50);
   } else {
     container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+export function removeSingleBatchRecipe(index) {
+  triggerHapticTouch();
+  if (!generatedBatchCandidate || !Array.isArray(generatedBatchCandidate.recipes)) return;
+  if (index < 0 || index >= generatedBatchCandidate.recipes.length) return;
+
+  const removedName = generatedBatchCandidate.recipes[index]?.name || "Receta";
+  generatedBatchCandidate.recipes.splice(index, 1);
+
+  if (generatedBatchCandidate.recipes.length === 0) {
+    const container = document.getElementById("ai-recipe-result-container");
+    if (container) container.style.display = "none";
+    generatedBatchCandidate = null;
+    showIosToast("Todas las recetas han sido eliminadas del lote", "fa-solid fa-trash-can");
+    return;
+  }
+
+  renderBatchCandidateView();
+  showIosToast(`🗑️ Receta quitada del lote: "${removedName}"`, "fa-solid fa-trash-can");
+}
+
+export function setAddBatchRecipePrompt(text) {
+  triggerHapticTouch();
+  const input = document.getElementById("add-batch-recipe-input");
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+}
+
+export async function applyAddBatchRecipe() {
+  triggerHapticTouch();
+  if (!generatedBatchCandidate || !Array.isArray(generatedBatchCandidate.recipes)) return;
+
+  const btn = document.getElementById("add-batch-recipe-btn");
+  const input = document.getElementById("add-batch-recipe-input");
+  const userInstruction = input ? input.value.trim() : "";
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando nueva receta con IA...';
+  }
+
+  try {
+    const newRecipe = await addBatchRecipeWithAi(generatedBatchCandidate, userInstruction);
+    if (!newRecipe) {
+      showIosToast("⚠️ No se pudo generar la nueva receta", "fa-solid fa-triangle-exclamation");
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-plus-circle"></i> Añadir Otra Receta con IA a este Lote';
+      }
+      return;
+    }
+
+    generatedBatchCandidate.recipes.push(newRecipe);
+    renderBatchCandidateView(generatedBatchCandidate.recipes.length - 1);
+    showIosToast(`✨ ¡Receta "${newRecipe.name}" añadida al lote!`, "fa-solid fa-plus");
+  } catch(e) {
+    console.error("Error adding batch recipe:", e);
+    showIosToast("❌ Error al añadir receta con IA", "fa-solid fa-triangle-exclamation");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-plus-circle"></i> Añadir Otra Receta con IA a este Lote';
+    }
   }
 }
 

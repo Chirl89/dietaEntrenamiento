@@ -1,5 +1,5 @@
 /**
- * FitDuo & Collie Coach - Main Application Orchestrator (v0.24.15)
+ * FitDuo & Collie Coach - Main Application Orchestrator (v0.24.16)
  * Clean modular entry point. Coordinates state, routing, Apple Watch telemetry, cloud sync, and views.
  */
 
@@ -185,10 +185,13 @@ import {
   editGeneratedRecipeCandidate,
   saveAllBatchCookingRecipes,
   saveSingleBatchRecipe,
+  removeSingleBatchRecipe,
   editSingleBatchRecipe,
   toggleBatchRecipeAiAlternative,
   setBatchAltPrompt,
   applyBatchRecipeAiAlternative,
+  setAddBatchRecipePrompt,
+  applyAddBatchRecipe,
   autoCalculateRecipeModalMacros,
   setShoppingRange,
   toggleShoppingDay,
@@ -437,10 +440,13 @@ const globalBindings = {
   editGeneratedRecipeCandidate,
   saveAllBatchCookingRecipes,
   saveSingleBatchRecipe,
+  removeSingleBatchRecipe,
   editSingleBatchRecipe,
   toggleBatchRecipeAiAlternative,
   setBatchAltPrompt,
   applyBatchRecipeAiAlternative,
+  setAddBatchRecipePrompt,
+  applyAddBatchRecipe,
   autoCalculateRecipeModalMacros,
   setShoppingRange,
   toggleShoppingDay,
@@ -588,7 +594,7 @@ export function initApp() {
       }
     });
 
-    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.24.15)");
+    console.log("🚀 FitDuo & Collie Coach initialized successfully (v0.24.16)");
   } catch(e) {
     console.error("Critical error during FitDuo initialization:", e);
   }
