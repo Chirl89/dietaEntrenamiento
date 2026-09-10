@@ -303,7 +303,121 @@ export function detectBatchCookingNeed(text) {
     /\b(batch|batch cooking|aprovechamiento|preparacion base|varias recetas|varios platos)\b/,
     /\b(para la semana|para toda la semana|para varios dias|3 recetas|2 recetas|4 recetas)\b/
   ];
-  return patterns.some(p => p.test(clean));
+}
+
+/**
+ * Extracts declared total weight in grams from user description for batch cooking.
+ * e.g., "1 kg", "alrededor de un kg", "1.2 kg", "medio kilo", "800g", "pieza entera".
+ */
+export function parseDeclaredBaseWeight(text) {
+  if (!text) return 1000;
+  const clean = text.toLowerCase();
+
+  if (/\bmedio\s*kilo\b/i.test(clean)) return 500;
+  if (/\bun\s*(?:kg|kilo)\b/i.test(clean)) return 1000;
+  if (/\bdos\s*(?:kg|kilos)\b/i.test(clean)) return 2000;
+  if (/\btres\s*(?:kg|kilos)\b/i.test(clean)) return 3000;
+
+  const kgMatch = clean.match(/(\d+(?:[.,]\d+)?)\s*(?:kg|kilos?)\b/i);
+  if (kgMatch) {
+    const val = parseFloat(kgMatch[1].replace(',', '.'));
+    if (!isNaN(val) && val > 0) return Math.round(val * 1000);
+  }
+
+  const gMatch = clean.match(/(\d+)\s*(?:g|gr|gramos?)\b/i);
+  if (gMatch) {
+    const val = parseInt(gMatch[1], 10);
+    if (!isNaN(val) && val >= 150) return val;
+  }
+
+  return 1000;
+}
+
+/**
+ * Identifies the main base ingredient (meat, poultry, fish, etc.) in a recipe.
+ */
+export function getRecipeBaseIngredient(recipe) {
+  if (!recipe || !Array.isArray(recipe.ingredients)) return null;
+  const keywords = ["lomo", "carne", "pollo", "ternera", "pavo", "cerdo", "pescado", "salmon", "merluza", "asado", "tiras", "dados", "desmenuzado"];
+  
+  let candidates = recipe.ingredients.filter(i => {
+    const u = (i.unit || "").toLowerCase();
+    const n = (i.name || "").toLowerCase();
+    const isGram = u === "g" || u === "gr" || u === "gramos";
+    if (!isGram) return false;
+    return keywords.some(k => n.includes(k)) || i.category === INGREDIENT_CATEGORIES.MEAT || i.category === INGREDIENT_CATEGORIES.PROTEIN;
+  });
+
+  if (candidates.length > 0) {
+    return candidates.sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0))[0];
+  }
+
+  const gramIngs = recipe.ingredients.filter(i => {
+    const u = (i.unit || "").toLowerCase();
+    return (u === "g" || u === "gr" || u === "gramos") && (Number(i.amount) || 0) >= 30;
+  });
+
+  return gramIngs.sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0))[0] || null;
+}
+
+/**
+ * Enforces strict conservation of matter: guarantees that the sum of the base ingredient
+ * across all batch cooking recipes equals EXACTLY the initial totalBaseWeight (e.g. 1000g).
+ * Recalculates individual dish macros based on the normalized grams.
+ */
+export function balanceBatchRecipesBaseIngredient(recipes, totalBaseWeight = 1000, defaultServings = 2) {
+  if (!Array.isArray(recipes) || recipes.length === 0 || !totalBaseWeight || totalBaseWeight <= 0) {
+    return recipes;
+  }
+
+  const baseIngs = recipes.map(r => getRecipeBaseIngredient(r));
+  const currentTotalGrams = baseIngs.reduce((sum, ing) => sum + (ing ? (Number(ing.amount) || 0) : 0), 0);
+
+  if (currentTotalGrams <= 0) return recipes;
+
+  let assignedGrams = 0;
+  const newAmounts = recipes.map((r, i) => {
+    const ing = baseIngs[i];
+    if (!ing) return 0;
+    const proportion = (Number(ing.amount) || 0) / currentTotalGrams;
+    let rounded = Math.round((proportion * totalBaseWeight) / 5) * 5;
+    if (rounded < 30) rounded = 30;
+    assignedGrams += rounded;
+    return rounded;
+  });
+
+  // Distribute rounding difference to ensure EXACT sum down to the single gram
+  let diff = totalBaseWeight - assignedGrams;
+  if (diff !== 0) {
+    let maxIdx = 0;
+    let maxVal = -1;
+    newAmounts.forEach((val, idx) => {
+      if (val > maxVal) {
+        maxVal = val;
+        maxIdx = idx;
+      }
+    });
+    newAmounts[maxIdx] += diff;
+  }
+
+  // Apply new amounts and update verified macros
+  recipes.forEach((r, i) => {
+    const baseIng = baseIngs[i];
+    if (baseIng && newAmounts[i] > 0) {
+      baseIng.amount = newAmounts[i];
+    }
+
+    const rServings = Number(r.servings) || defaultServings || 2;
+    const verifiedMacros = calculateMacrosFromIngredients(r.ingredients || []);
+    if (verifiedMacros.calories > 0) {
+      r.calories = Math.round(verifiedMacros.calories / rServings);
+      r.protein = Math.round(verifiedMacros.protein / rServings);
+      r.carbs = Math.round(verifiedMacros.carbs / rServings);
+      r.fats = Math.round(verifiedMacros.fats / rServings);
+    }
+  });
+
+  return recipes;
 }
 
 /**
@@ -652,11 +766,15 @@ export function generateRecipeFromDescription(description, preferredType = "auto
       });
     }
 
+    const totalBaseWeight = parseDeclaredBaseWeight(description);
+    const balancedRecipes = balanceBatchRecipesBaseIngredient(generated, totalBaseWeight, safeServings);
+
     return {
       isBatch: true,
       batchTitle: `Batch Cooking: ${mainIngredientName} (${title})`,
-      basePrep: `Hornear o cocinar la pieza base entera a 190°C durante 45 minutos con aceite, ajo y hierbas. Reservar en frío para repartir en ${generated.length} ${generated.length === 1 ? 'comida equilibrada' : 'comidas equilibradas'} para la semana.`,
-      recipes: generated
+      basePrep: `Hornear o cocinar la pieza base entera a 190°C durante 45 minutos con aceite, ajo y hierbas. Reservar en frío para repartir en ${balancedRecipes.length} ${balancedRecipes.length === 1 ? 'comida equilibrada' : 'comidas equilibradas'} para la semana.`,
+      recipes: balancedRecipes,
+      totalBaseWeight: totalBaseWeight
     };
   }
 
@@ -696,6 +814,7 @@ export function getGeminiApiKey() {
  */
 export async function generateRecipeWithAi(description, preferredType = "auto", servings = 2, forceBatch = false) {
   const isBatch = Boolean(forceBatch || detectBatchCookingNeed(description));
+  const declaredBaseWeight = parseDeclaredBaseWeight(description);
   const apiKey = getGeminiApiKey();
   
   if (apiKey && apiKey.trim().length > 10) {
@@ -703,9 +822,20 @@ export async function generateRecipeWithAi(description, preferredType = "auto", 
       const promptText = isBatch
         ? `Actúa exclusivamente como chef nutricionista deportivo de alta precisión para FitDuo.
 El usuario describe una pieza grande, asado o preparación base para BATCH COOKING / COCINA DE APROVECHAMIENTO para la semana: "${description}".
+Peso total declarado de la pieza base: ${declaredBaseWeight}g.
 Raciones individuales por plato: ${servings}.
 
-REGLA FUNDAMENTAL DE DIVISIÓN Y APROVECHAMIENTO:
+REGLA MATEMÁTICA FUNDAMENTAL DE CONSERVACIÓN DE LA MASA:
+El usuario dispone exactamente de una pieza de ${declaredBaseWeight}g (ej. 1 kg = 1000g).
+La SUMA de los gramos del ingrediente principal o carne base entre TODAS las recetas generadas (para ${servings} comensales en total) DEBE SUMAR EXACTAMENTE ${declaredBaseWeight}g.
+Ni un gramo de más ni un gramo de menos.
+Por ejemplo, si son 1000g y 3 recetas para 2 personas:
+- Comida 1: 380g de carne en total (190g/persona)
+- Comida 2: 360g de carne en total (180g/persona)
+- Cena 3: 260g de carne en total (130g/persona)
+Total suma de la carne: 380 + 360 + 260 = 1000g EXACTOS.
+
+REGLA DE DIVISIÓN Y APROVECHAMIENTO:
 En lugar de generar una receta hipercalórica de 2500+ kcal con 1 kg entero de carne, DEBES proponer un plan de aprovechamiento que divida la preparación base en RECETAS DIFERENTES, REALISTAS Y EQUILIBRADAS para la semana.
 
 CANTIDAD DINÁMICA DE RECETAS:
@@ -852,11 +982,14 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
               };
             });
 
+            const balancedRecipes = balanceBatchRecipesBaseIngredient(sanitizedRecipes, declaredBaseWeight, servings);
+
             return {
               isBatch: true,
               batchTitle: parsed.batchTitle || `Batch Cooking de ${description}`,
               basePrep: parsed.basePrep || "Preparación base cocinada con antelación para la semana.",
-              recipes: sanitizedRecipes
+              recipes: balancedRecipes,
+              totalBaseWeight: declaredBaseWeight
             };
           }
 

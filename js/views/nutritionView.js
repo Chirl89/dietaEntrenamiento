@@ -20,7 +20,16 @@ import {
   createEmptyWeeklyPlan
 } from '../state.js';
 import { RECIPES_DATABASE, INGREDIENT_CATEGORIES } from '../../data.js';
-import { calculateMacrosFromIngredients, generateRecipeFromDescription, generateRecipeWithAi, regenerateSingleBatchRecipeWithAi, addBatchRecipeWithAi } from '../nutritionCalculator.js';
+import {
+  calculateMacrosFromIngredients,
+  generateRecipeFromDescription,
+  generateRecipeWithAi,
+  regenerateSingleBatchRecipeWithAi,
+  addBatchRecipeWithAi,
+  getRecipeBaseIngredient,
+  parseDeclaredBaseWeight,
+  balanceBatchRecipesBaseIngredient
+} from '../nutritionCalculator.js';
 
 // MEAL SLOTS DEFINITION
 export const MEAL_SLOTS = [
@@ -2304,6 +2313,28 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
   const saveLabel = count === 1 ? "Guardar la receta en mi Catálogo" : `Guardar las ${count} recetas en mi Catálogo`;
   const batchHtml = renderBatchRecipesListHtml(result.recipes, highlightedIndex);
 
+  const totalBaseWeight = result.totalBaseWeight || parseDeclaredBaseWeight(result.batchTitle) || 1000;
+  
+  // Calculate exact grams per recipe for the base ingredient
+  const baseBreakdown = (result.recipes || []).map((r, i) => {
+    const baseIng = getRecipeBaseIngredient(r);
+    const grams = baseIng ? (Number(baseIng.amount) || 0) : 0;
+    return {
+      index: i + 1,
+      type: r.type || "comida",
+      name: r.name,
+      grams: grams
+    };
+  });
+
+  const sumBaseGrams = baseBreakdown.reduce((acc, b) => acc + b.grams, 0);
+
+  const pillsHtml = baseBreakdown.map(b => `
+    <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; padding: 3px 9px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+      ${b.type === 'cena' ? '🌙' : '☀️'} Plato ${b.index} (${b.type}): <span style="color:#fff;">${b.grams}g</span>
+    </span>
+  `).join("");
+
   container.style.display = "block";
   container.innerHTML = `
     <div class="glass-card generated-batch-card" style="border: 1px solid var(--accent-amber); background: rgba(245, 158, 11, 0.05); padding: 1.25rem; border-radius: var(--radius-md);">
@@ -2317,8 +2348,26 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
         </div>
       </div>
 
-      <div style="margin: 0.85rem 0 1.25rem 0; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-amber); padding: 0.65rem 0.85rem; border-radius: 4px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
+      <div style="margin: 0.85rem 0 0.75rem 0; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-amber); padding: 0.65rem 0.85rem; border-radius: 4px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
         💡 <strong>Presupuesto calórico inteligente:</strong> Calibrado por momento del día. Las <strong>comidas</strong> aportan mayor energía (~650-850 kcal) con hidratos complejos para rendir y entrenar, mientras que las <strong>cenas</strong> son más ligeras y digestivas (~380-520 kcal) para optimizar el descanso. Puedes regenerar, añadir o quitar platos según tus necesidades.
+      </div>
+
+      <!-- EXACT BASE INGREDIENT BALANCE CARD -->
+      <div class="glass-card" style="margin: 0.75rem 0 1.2rem 0; background: rgba(16, 185, 129, 0.07); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; flex-wrap: wrap; gap: 0.5rem;">
+          <span style="font-size: 0.84rem; font-weight: 800; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-scale-balanced"></i> Reparto Exacto de la Pieza Base (${totalBaseWeight}g)
+          </span>
+          <span style="font-size: 0.73rem; background: rgba(16, 185, 129, 0.22); color: var(--accent-emerald); padding: 3px 9px; border-radius: 9999px; font-weight: 800;">
+            100% aprovechado (${sumBaseGrams}g / ${totalBaseWeight}g)
+          </span>
+        </div>
+        <p style="font-size: 0.77rem; color: var(--text-muted); margin: 0 0 0.55rem 0; line-height: 1.35;">
+          Conservación matemática de la pieza: sin pérdidas ni excesos. Las comidas reciben mayor aporte energético y las cenas raciones ligeras y digestivas.
+        </p>
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; font-size: 0.74rem;">
+          ${pillsHtml}
+        </div>
       </div>
 
       <button type="button" class="btn-primary" onclick="window.saveAllBatchCookingRecipes ? window.saveAllBatchCookingRecipes() : saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-bottom: 1.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
@@ -2387,6 +2436,10 @@ export function removeSingleBatchRecipe(index) {
     return;
   }
 
+  const totalBaseWeight = generatedBatchCandidate.totalBaseWeight || parseDeclaredBaseWeight(generatedBatchCandidate.batchTitle) || 1000;
+  const servings = Number(generatedBatchCandidate.recipes[0]?.servings) || 2;
+  balanceBatchRecipesBaseIngredient(generatedBatchCandidate.recipes, totalBaseWeight, servings);
+
   renderBatchCandidateView();
   showIosToast(`🗑️ Receta quitada del lote: "${removedName}"`, "fa-solid fa-trash-can");
 }
@@ -2425,6 +2478,10 @@ export async function applyAddBatchRecipe() {
     }
 
     generatedBatchCandidate.recipes.push(newRecipe);
+    const totalBaseWeight = generatedBatchCandidate.totalBaseWeight || parseDeclaredBaseWeight(generatedBatchCandidate.batchTitle) || 1000;
+    const servings = Number(generatedBatchCandidate.recipes[0]?.servings) || 2;
+    balanceBatchRecipesBaseIngredient(generatedBatchCandidate.recipes, totalBaseWeight, servings);
+
     renderBatchCandidateView(generatedBatchCandidate.recipes.length - 1);
     showIosToast(`✨ ¡Receta "${newRecipe.name}" añadida al lote!`, "fa-solid fa-plus");
   } catch(e) {
@@ -2483,6 +2540,10 @@ export async function applyBatchRecipeAiAlternative(index) {
     }
 
     generatedBatchCandidate.recipes[index] = newRecipe;
+    const totalBaseWeight = generatedBatchCandidate.totalBaseWeight || parseDeclaredBaseWeight(generatedBatchCandidate.batchTitle) || 1000;
+    const servings = Number(generatedBatchCandidate.recipes[0]?.servings) || 2;
+    balanceBatchRecipesBaseIngredient(generatedBatchCandidate.recipes, totalBaseWeight, servings);
+
     renderBatchCandidateView(index);
     showIosToast(`✨ ¡Receta ${index + 1} actualizada con nueva alternativa!`, "fa-solid fa-wand-magic-sparkles");
   } catch(e) {
