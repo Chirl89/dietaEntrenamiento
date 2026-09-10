@@ -823,22 +823,35 @@ export function mergeCloudDataIntoAppState(cloudData) {
     }
   }
 
-  if (Array.isArray(cloudData.customRecipes) && cloudData.customRecipes.length > 0) {
-    if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
-    cloudData.customRecipes.forEach(cr => {
-      if (cr && cr.id && !appState.customRecipes.some(r => r.id === cr.id)) {
-        appState.customRecipes.push(cr);
-        hasChanges = true;
-      }
-    });
-  }
-
   if (Array.isArray(cloudData.deletedRecipeIds) && cloudData.deletedRecipeIds.length > 0) {
     if (!Array.isArray(appState.deletedRecipeIds)) appState.deletedRecipeIds = [];
     cloudData.deletedRecipeIds.forEach(id => {
       if (id && !appState.deletedRecipeIds.includes(id)) {
         appState.deletedRecipeIds.push(id);
         hasChanges = true;
+      }
+    });
+    if (Array.isArray(appState.customRecipes)) {
+      const beforeLen = appState.customRecipes.length;
+      appState.customRecipes = appState.customRecipes.filter(r => r && r.id && !appState.deletedRecipeIds.includes(r.id));
+      if (appState.customRecipes.length !== beforeLen) hasChanges = true;
+    }
+  }
+
+  if (Array.isArray(cloudData.customRecipes) && cloudData.customRecipes.length > 0) {
+    if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+    cloudData.customRecipes.forEach(cr => {
+      if (cr && cr.id && (!appState.deletedRecipeIds || !appState.deletedRecipeIds.includes(cr.id))) {
+        const existingIdx = appState.customRecipes.findIndex(r => r && r.id === cr.id);
+        if (existingIdx === -1) {
+          appState.customRecipes.push(cr);
+          hasChanges = true;
+        } else {
+          if (JSON.stringify(appState.customRecipes[existingIdx]) !== JSON.stringify(cr)) {
+            appState.customRecipes[existingIdx] = cr;
+            hasChanges = true;
+          }
+        }
       }
     });
   }

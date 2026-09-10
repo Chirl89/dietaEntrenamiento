@@ -1187,6 +1187,9 @@ export function renderNutritionRecipesView() {
           <button type="button" class="btn-primary" onclick="openCreateRecipeModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-main);">
             <i class="fa-solid fa-plus"></i> Manual
           </button>
+          <button type="button" class="btn-primary" onclick="syncRecipesWithCloudManual()" style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); color: #60a5fa;" title="Sincronizar recetas entre ambos teléfonos">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar
+          </button>
         </div>
       </div>
 
@@ -1231,6 +1234,9 @@ export function renderNutritionRecipesView() {
             </button>
             <button type="button" class="btn-primary" onclick="openCreateRecipeModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: var(--text-main);">
               <i class="fa-solid fa-plus"></i> Añadir Manualmente
+            </button>
+            <button type="button" class="btn-primary" onclick="syncRecipesWithCloudManual()" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa;">
+              <i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar con el otro teléfono
             </button>
           </div>
         `;
@@ -2613,3 +2619,23 @@ export function copyShoppingList() {
     console.error("Error copying shopping list:", e);
   }
 }
+
+/**
+ * Manual trigger to push and pull recipes to/from the cloud immediately.
+ */
+export async function syncRecipesWithCloudManual() {
+  try {
+    triggerHapticTouch();
+    showIosToast("☁️ Sincronizando con el otro teléfono...", "fa-solid fa-arrows-rotate");
+    if (window.pushToCloud) await window.pushToCloud(false);
+    if (window.pullFromCloud) await window.pullFromCloud(false);
+    renderNutritionRecipesView();
+    renderNutritionMenuView();
+    renderShoppingView();
+    showIosToast("✅ Recetas sincronizadas con éxito", "fa-solid fa-cloud-arrow-down");
+  } catch(e) {
+    console.error("Error syncing recipes manually:", e);
+    showIosToast("❌ Error al sincronizar recetas", "fa-solid fa-triangle-exclamation");
+  }
+}
+
