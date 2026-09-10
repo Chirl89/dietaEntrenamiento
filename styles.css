@@ -1998,6 +1998,33 @@ body[data-profile="she"] .btn-generate-shopping-glow:hover {
   gap: 0.35rem;
 }
 
+.compensation-banner.batch-companion-banner {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(234, 88, 12, 0.08));
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.compensation-banner.batch-companion-banner .compensation-banner-header {
+  color: var(--accent-amber);
+}
+
+.picker-recipe-item.is-batch-companion-item {
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  background: rgba(245, 158, 11, 0.04) !important;
+}
+
+.badge-batch-companion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: rgba(245, 158, 11, 0.18);
+  color: var(--accent-amber);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
 .picker-item-main {
   flex: 1;
 }

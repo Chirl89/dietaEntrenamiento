@@ -681,18 +681,21 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
         </details>
       `;
     } else {
-      // Empty Slot Call-To-Action Card
+      // Empty Slot Call-To-Action Card with Batch Cooking Leftovers Insight
+      const batchInsight = getBatchCookingWeeklyInsight(dayName, slot.key);
+      const hasBatchSuggestion = Boolean(batchInsight && batchInsight.hasSuggestion);
+
       slotCard.innerHTML = `
-        <div class="empty-slot-content" onclick="openRecipePickerModal('${dayName}', '${slot.key}')">
-          <div class="empty-slot-icon" style="color: ${slot.color};">
-            <i class="fa-solid ${slot.icon}"></i>
+        <div class="empty-slot-content ${hasBatchSuggestion ? 'has-batch-suggestion' : ''}" onclick="openRecipePickerModal('${dayName}', '${slot.key}')" ${hasBatchSuggestion ? 'style="border-color: rgba(245, 158, 11, 0.45); background: rgba(245, 158, 11, 0.04);"' : ''}>
+          <div class="empty-slot-icon" style="color: ${hasBatchSuggestion ? 'var(--accent-amber)' : slot.color};">
+            <i class="fa-solid ${hasBatchSuggestion ? 'fa-layer-group' : slot.icon}"></i>
           </div>
           <div class="empty-slot-text">
-            <h4>${slot.label} (Sin Asignar)</h4>
-            <p>Toca para seleccionar un plato del backlog de recetas</p>
+            <h4 style="${hasBatchSuggestion ? 'color: var(--accent-amber);' : ''}">${slot.label} ${hasBatchSuggestion ? '(Aprovechamiento Disponible)' : '(Sin Asignar)'}</h4>
+            <p>${hasBatchSuggestion ? `💡 Tienes base preparada de <strong>${batchInsight.sourceRecipeName}</strong> (${batchInsight.sourceDay})` : 'Toca para seleccionar un plato del backlog de recetas'}</p>
           </div>
-          <button type="button" class="btn-empty-slot-add">
-            <i class="fa-solid fa-plus"></i> Añadir Receta
+          <button type="button" class="btn-empty-slot-add" style="${hasBatchSuggestion ? 'border-color: rgba(245, 158, 11, 0.4); color: var(--accent-amber); background: rgba(245, 158, 11, 0.12);' : ''}">
+            <i class="fa-solid ${hasBatchSuggestion ? 'fa-wand-magic-sparkles' : 'fa-plus'}"></i> ${hasBatchSuggestion ? 'Aprovechar' : 'Añadir Receta'}
           </button>
         </div>
       `;
@@ -732,10 +735,13 @@ function renderFullWeekGridView(container) {
           </div>
         `;
       } else {
+        const batchInsight = getBatchCookingWeeklyInsight(dayName, slot.key);
+        const hasBatch = Boolean(batchInsight && batchInsight.hasSuggestion);
+
         return `
-          <div class="matrix-meal-cell empty-meal" onclick="openRecipePickerModal('${dayName}', '${slot.key}')">
-            <span style="color:${slot.color}; font-size:0.7rem;"><i class="fa-solid ${slot.icon}"></i> ${slot.key.toUpperCase()}</span>
-            <span class="matrix-add-plus"><i class="fa-solid fa-plus"></i> Elegir</span>
+          <div class="matrix-meal-cell empty-meal ${hasBatch ? 'batch-suggested-cell' : ''}" onclick="openRecipePickerModal('${dayName}', '${slot.key}')" ${hasBatch ? 'style="border: 1px dashed rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.04);"' : ''}>
+            <span style="color:${hasBatch ? 'var(--accent-amber)' : slot.color}; font-size:0.7rem;"><i class="fa-solid ${hasBatch ? 'fa-layer-group' : slot.icon}"></i> ${slot.key.toUpperCase()}</span>
+            <span class="matrix-add-plus" style="${hasBatch ? 'color: var(--accent-amber); font-weight: 700;' : ''}"><i class="fa-solid ${hasBatch ? 'fa-wand-magic-sparkles' : 'fa-plus'}"></i> ${hasBatch ? 'Aprovechar' : 'Elegir'}</span>
           </div>
         `;
       }
@@ -892,6 +898,117 @@ export function getCompensationInsight(dayName, slotKey) {
     filterHint: "",
     matcher: null
   };
+}
+
+/**
+ * Computes weekly batch cooking / leftovers utilization suggestions.
+ * If the user has planned a batch cooking preparation (e.g. cabecero de lomo, pollo asado, etc.)
+ * on any day this week, this function detects unassigned companion recipes in the catalog
+ * and suggests adding them to another meal slot of the week so the cooked food is utilized.
+ */
+export function getBatchCookingWeeklyInsight(dayName, slotKey) {
+  try {
+    const currentPlan = getActiveWeeklyPlan();
+    if (!currentPlan) return null;
+
+    const allRecipes = getAllRecipes();
+    if (!allRecipes || allRecipes.length === 0) return null;
+
+    // 1. Collect all recipes currently assigned this week
+    const plannedThisWeek = [];
+    const plannedRecipeIds = new Set();
+
+    DAYS_OF_WEEK.forEach(d => {
+      const dayMeals = currentPlan[d] || {};
+      MEAL_SLOTS.forEach(s => {
+        const rId = dayMeals[s.key];
+        if (rId) {
+          const r = getRecipeById(rId);
+          if (r) {
+            plannedThisWeek.push({ day: d, slot: s.key, recipe: r });
+            plannedRecipeIds.add(r.id);
+          }
+        }
+      });
+    });
+
+    if (plannedThisWeek.length === 0) return null;
+
+    // 2. Helper to detect key food words
+    const extractFoodKeywords = (recipe) => {
+      const text = ((recipe.name || "") + " " + (recipe.ingredients || []).map(i => i.name || "").join(" ")).toLowerCase();
+      const keys = ["cabecero", "lomo", "solomillo", "asado", "ternera", "pollo", "pavo", "salmon", "costillas", "merluza", "cerdo"];
+      return keys.filter(k => text.includes(k));
+    };
+
+    // 3. Look for planned batch recipes or roasts
+    const batchSources = plannedThisWeek.filter(item => {
+      const r = item.recipe;
+      const isBatchTagged = Array.isArray(r.tags) && r.tags.some(t => t.toLowerCase().includes("batch") || t.toLowerCase().includes("aprovechamiento"));
+      const keywords = extractFoodKeywords(r);
+      const nameLower = (r.name || "").toLowerCase();
+      const isRoast = nameLower.includes("asado") || nameLower.includes("horno") || nameLower.includes("entero") || nameLower.includes("batch");
+      return isBatchTagged || (keywords.length > 0 && isRoast);
+    });
+
+    if (batchSources.length === 0) return null;
+
+    // 4. Find available companion recipes in catalog that are not yet assigned this week
+    const candidates = [];
+
+    for (const source of batchSources) {
+      const sourceKeywords = extractFoodKeywords(source.recipe);
+      if (sourceKeywords.length === 0) continue;
+
+      allRecipes.forEach(cand => {
+        if (cand.id === source.recipe.id) return;
+        if (plannedRecipeIds.has(cand.id)) return; // Already on the menu this week
+
+        const candKeywords = extractFoodKeywords(cand);
+        const hasCommonKeyword = sourceKeywords.some(k => candKeywords.includes(k));
+        const candIsBatchTagged = Array.isArray(cand.tags) && cand.tags.some(t => t.toLowerCase().includes("batch") || t.toLowerCase().includes("aprovechamiento"));
+
+        if (hasCommonKeyword || (candIsBatchTagged && sourceKeywords.length > 0)) {
+          if (!candidates.some(c => c.recipe.id === cand.id)) {
+            candidates.push({
+              recipe: cand,
+              sourceRecipe: source.recipe,
+              sourceDay: source.day,
+              sourceSlot: source.slot,
+              keyword: sourceKeywords.find(k => candKeywords.includes(k)) || "carne"
+            });
+          }
+        }
+      });
+    }
+
+    if (candidates.length === 0) return null;
+
+    // Prioritize candidates that match the current slot (e.g. comida or cena)
+    const slotMatching = candidates.filter(c => slotKey === "all" || c.recipe.type === slotKey);
+    const selectedCandidates = slotMatching.length > 0 ? slotMatching : candidates;
+
+    const first = selectedCandidates[0];
+    const firstSource = first.sourceRecipe;
+    const namesList = selectedCandidates.map(c => `"${c.recipe.name}"`).join(" o ");
+
+    const slotNameText = slotKey === "cena" ? "la cena" : slotKey === "comida" ? "la comida" : "otra comida";
+
+    return {
+      hasSuggestion: true,
+      type: "batch_cooking_companion",
+      title: "🍱 Sugerencia de Aprovechamiento (Batch Cooking)",
+      sourceRecipeName: firstSource.name,
+      sourceDay: first.sourceDay,
+      message: `Como preparaste o tienes planificado <strong>${firstSource.name}</strong> (${first.sourceDay}), te recomendamos añadir para ${slotNameText} ${namesList} porque como hiciste esa preparación tienes para hacer estas otras.`,
+      filterHint: "Aprovecha la comida ya cocinada sin volver a encender el horno",
+      companionIds: new Set(selectedCandidates.map(c => c.recipe.id)),
+      matcher: (r) => selectedCandidates.some(c => c.recipe.id === r.id)
+    };
+  } catch(e) {
+    console.error("Error computing batch cooking weekly insight:", e);
+    return null;
+  }
 }
 
 /**
@@ -1065,34 +1182,56 @@ function renderRecipePickerModalContent() {
     return true;
   });
 
-  // Calculate Compensation Insight for the current slot and day
-  const insight = getCompensationInsight(activePickerContext.day, activePickerContext.slot);
+  // 1. Calculate Batch Cooking Weekly Insight (leftovers utilization)
+  const batchInsight = getBatchCookingWeeklyInsight(activePickerContext.day, activePickerContext.slot);
+
+  // 2. Calculate Compensation Insight for the current slot and day
+  const compInsight = getCompensationInsight(activePickerContext.day, activePickerContext.slot);
 
   let bannerHtml = "";
-  if (insight && insight.hasSuggestion) {
-    bannerHtml = `
-      <div class="compensation-banner">
+
+  if (batchInsight && batchInsight.hasSuggestion) {
+    bannerHtml += `
+      <div class="compensation-banner batch-companion-banner" style="margin-bottom: 0.85rem;">
         <div class="compensation-banner-header">
-          <i class="fa-solid fa-scale-balanced" style="color: var(--accent-cyan); font-size: 1.15rem;"></i>
-          <span>${insight.title}</span>
+          <i class="fa-solid fa-layer-group" style="font-size: 1.15rem;"></i>
+          <span>${batchInsight.title}</span>
         </div>
-        <p class="compensation-banner-text">${insight.message}</p>
-        <div class="compensation-banner-note">
-          <i class="fa-solid fa-star" style="color: var(--accent-amber);"></i>
-          <span>${insight.filterHint} (puedes elegir cualquier plato libremente).</span>
+        <p class="compensation-banner-text">${batchInsight.message}</p>
+        <div class="compensation-banner-note" style="color: var(--accent-amber); font-weight: 600;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>${batchInsight.filterHint} (priorizadas arriba).</span>
         </div>
       </div>
     `;
-
-    // Sort matching so recommended items appear first
-    if (typeof insight.matcher === 'function') {
-      matching.sort((a, b) => {
-        const isA = insight.matcher(a) ? 1 : 0;
-        const isB = insight.matcher(b) ? 1 : 0;
-        return isB - isA;
-      });
-    }
   }
+
+  if (compInsight && compInsight.hasSuggestion) {
+    bannerHtml += `
+      <div class="compensation-banner">
+        <div class="compensation-banner-header">
+          <i class="fa-solid fa-scale-balanced" style="color: var(--accent-cyan); font-size: 1.15rem;"></i>
+          <span>${compInsight.title}</span>
+        </div>
+        <p class="compensation-banner-text">${compInsight.message}</p>
+        <div class="compensation-banner-note">
+          <i class="fa-solid fa-star" style="color: var(--accent-amber);"></i>
+          <span>${compInsight.filterHint} (puedes elegir cualquier plato libremente).</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Sort matching: 1st Batch Companions, 2nd Compensation recommendations
+  matching.sort((a, b) => {
+    const isBatchA = (batchInsight && batchInsight.matcher && batchInsight.matcher(a)) ? 1 : 0;
+    const isBatchB = (batchInsight && batchInsight.matcher && batchInsight.matcher(b)) ? 1 : 0;
+    if (isBatchA !== isBatchB) return isBatchB - isBatchA;
+
+    const isCompA = (compInsight && compInsight.matcher && compInsight.matcher(a)) ? 1 : 0;
+    const isCompB = (compInsight && compInsight.matcher && compInsight.matcher(b)) ? 1 : 0;
+    return isCompB - isCompA;
+  });
 
   if (matching.length === 0) {
     container.innerHTML = `
@@ -1112,16 +1251,17 @@ function renderRecipePickerModalContent() {
 
   const listHtml = matching.map(recipe => {
     const isCurrentlySelected = (currentSelectedRecipeId === recipe.id);
-    const isRecommended = Boolean(insight && insight.hasSuggestion && typeof insight.matcher === 'function' && insight.matcher(recipe));
+    const isBatchRecommended = Boolean(batchInsight && batchInsight.hasSuggestion && typeof batchInsight.matcher === 'function' && batchInsight.matcher(recipe));
+    const isCompRecommended = Boolean(compInsight && compInsight.hasSuggestion && typeof compInsight.matcher === 'function' && compInsight.matcher(recipe));
     const tagsHtml = (recipe.tags || []).slice(0, 3).map(t => `<span class="macro-pill">${t}</span>`).join(" ");
 
     return `
-      <div class="picker-recipe-item ${isCurrentlySelected ? 'currently-active' : ''} ${isRecommended ? 'is-recommended-item' : ''}">
+      <div class="picker-recipe-item ${isCurrentlySelected ? 'currently-active' : ''} ${isBatchRecommended ? 'is-batch-companion-item' : isCompRecommended ? 'is-recommended-item' : ''}">
         <div class="picker-item-main">
           <div class="picker-item-type">
             <span class="type-pill ${recipe.type}">${recipe.type.toUpperCase()}</span>
             <span class="prep-time"><i class="fa-regular fa-clock"></i> ${recipe.prepTime || 15} min</span>
-            ${isRecommended ? '<span class="badge-recommended"><i class="fa-solid fa-star"></i> Sugerencia para equilibrar</span>' : ''}
+            ${isBatchRecommended ? '<span class="badge-batch-companion"><i class="fa-solid fa-layer-group"></i> 🍱 Tienes la base cocinada</span>' : isCompRecommended ? '<span class="badge-recommended"><i class="fa-solid fa-star"></i> Sugerencia para equilibrar</span>' : ''}
             ${isCurrentlySelected ? '<span class="active-badge">✓ Asignada actualmente</span>' : ''}
           </div>
           <h4 class="picker-item-title">${recipe.name}</h4>
