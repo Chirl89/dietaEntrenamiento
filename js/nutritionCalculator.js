@@ -311,11 +311,12 @@ export function detectBatchCookingNeed(text) {
  * Accurately translates descriptions into exact ingredients, sensible cooking techniques,
  * realistic steps, and precise macronutrients WITHOUT hallucinating unrelated foods.
  */
-export function generateRecipeFromDescription(description, preferredType = "auto", servings = 1, forceBatch = false) {
+export function generateRecipeFromDescription(description, preferredType = "auto", servings = 2, forceBatch = false) {
   const clean = cleanText(description);
   if (!clean) return null;
 
   const isBatch = Boolean(forceBatch || detectBatchCookingNeed(description));
+  const safeServings = Number(servings) > 0 ? Number(servings) : 2;
 
   // 1. Detect meal type
   let type = "comida";
@@ -356,7 +357,7 @@ export function generateRecipeFromDescription(description, preferredType = "auto
           matchedFoodNames.add(food.name);
           detectedIngredients.push({
             matchedFood: food,
-            amount: food.serving * servings,
+            amount: food.serving * safeServings,
             unit: food.defaultUnit
           });
         }
@@ -395,7 +396,7 @@ export function generateRecipeFromDescription(description, preferredType = "auto
 
     detectedIngredients.push({
       matchedFood: syntheticFood,
-      amount: syntheticFood.serving * servings,
+      amount: syntheticFood.serving * safeServings,
       unit: "g"
     });
   }
@@ -407,36 +408,36 @@ export function generateRecipeFromDescription(description, preferredType = "auto
   if (isHorno) {
     // Roasting needs a dash of oil, garlic and herbs
     if (!hasAove && aoveFood) {
-      detectedIngredients.push({ matchedFood: aoveFood, amount: 10 * servings, unit: "ml" });
+      detectedIngredients.push({ matchedFood: aoveFood, amount: 10 * safeServings, unit: "ml" });
     }
     const garlicFood = FOOD_DATABASE.find(f => f.name === "Dientes de ajo");
     if (garlicFood && !detectedIngredients.some(d => d.matchedFood.name === garlicFood.name)) {
-      detectedIngredients.push({ matchedFood: garlicFood, amount: 6 * servings, unit: "g" });
+      detectedIngredients.push({ matchedFood: garlicFood, amount: 6 * safeServings, unit: "g" });
     }
     const herbsFood = FOOD_DATABASE.find(f => f.name === "Hierbas aromáticas y especias");
     if (herbsFood && !detectedIngredients.some(d => d.matchedFood.name === herbsFood.name)) {
-      detectedIngredients.push({ matchedFood: herbsFood, amount: 4 * servings, unit: "g" });
+      detectedIngredients.push({ matchedFood: herbsFood, amount: 4 * safeServings, unit: "g" });
     }
     // If user mentioned potatoes
     if (clean.includes("patata") || clean.includes("papa")) {
       const potatoFood = FOOD_DATABASE.find(f => f.name === "Patata fresca");
       if (potatoFood && !detectedIngredients.some(d => d.matchedFood.name === potatoFood.name)) {
-        detectedIngredients.push({ matchedFood: potatoFood, amount: 160 * servings, unit: "g" });
+        detectedIngredients.push({ matchedFood: potatoFood, amount: 160 * safeServings, unit: "g" });
       }
     }
     // If user mentioned onion
     if (clean.includes("cebolla")) {
       const onionFood = FOOD_DATABASE.find(f => f.name === "Cebolla");
       if (onionFood && !detectedIngredients.some(d => d.matchedFood.name === onionFood.name)) {
-        detectedIngredients.push({ matchedFood: onionFood, amount: 80 * servings, unit: "g" });
+        detectedIngredients.push({ matchedFood: onionFood, amount: 80 * safeServings, unit: "g" });
       }
     }
   } else if (isPlancha || isAirfryer) {
     if (!hasAove && aoveFood && type !== "snack") {
-      detectedIngredients.push({ matchedFood: aoveFood, amount: 6 * servings, unit: "ml" });
+      detectedIngredients.push({ matchedFood: aoveFood, amount: 6 * safeServings, unit: "ml" });
     }
   } else if (!hasAove && aoveFood && type !== "snack") {
-    detectedIngredients.push({ matchedFood: aoveFood, amount: 6 * servings, unit: "ml" });
+    detectedIngredients.push({ matchedFood: aoveFood, amount: 6 * safeServings, unit: "ml" });
   }
 
   // 6. Build final ingredient objects
@@ -516,11 +517,12 @@ export function generateRecipeFromDescription(description, preferredType = "auto
       fats: 17,
       tags: ["Batch Cooking", "al horno", "aprovechamiento"],
       ingredients: [
-        { name: `${mainIngredientName} asado`, amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Patata fresca", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Dientes de ajo y especias", amount: 6, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+        { name: `${mainIngredientName} asado`, amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Patata fresca", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Dientes de ajo y especias", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
       ],
+      servings: safeServings,
       instructions: [
         `Cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} (1 kg) al horno a 190°C durante 45 minutos junto a las patatas y el adobo.`,
         "Separar una ración de lomo con su guarnición de patatas para servir recién hecho.",
@@ -532,6 +534,7 @@ export function generateRecipeFromDescription(description, preferredType = "auto
       id: "custom_" + batchId + "_2",
       name: `Fajitas de ${mainIngredientName} con pimientos y cebolla`,
       type: "comida",
+      servings: safeServings,
       prepTime: 15,
       calories: 495,
       protein: 38,
@@ -539,11 +542,11 @@ export function generateRecipeFromDescription(description, preferredType = "auto
       fats: 16,
       tags: ["Batch Cooking", "rápido", "aprovechamiento"],
       ingredients: [
-        { name: `${mainIngredientName} asado en tiras`, amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Pimiento rojo y verde", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Cebolla", amount: 70, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Tortillas integrales o de maíz", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Aceite de oliva virgen extra", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+        { name: `${mainIngredientName} asado en tiras`, amount: 160 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Pimiento rojo y verde", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Cebolla", amount: 70 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Tortillas integrales o de maíz", amount: 2 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Aceite de oliva virgen extra", amount: 6 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
       ],
       instructions: [
         `Cortar en tiras finas 160g de la pieza de ${mainIngredientName.toLowerCase()} reservada en la nevera.`,
@@ -557,6 +560,7 @@ export function generateRecipeFromDescription(description, preferredType = "auto
       id: "custom_" + batchId + "_3",
       name: `Ensalada templada de ${mainIngredientName} con brotes y frutos secos`,
       type: "cena",
+      servings: safeServings,
       prepTime: 10,
       calories: 380,
       protein: 36,
@@ -564,12 +568,12 @@ export function generateRecipeFromDescription(description, preferredType = "auto
       fats: 19,
       tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
       ingredients: [
-        { name: `${mainIngredientName} asado en dados`, amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-        { name: "Espinacas baby o rúcula", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Tomates cherry", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-        { name: "Queso fresco o feta", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-        { name: "Nueces", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-        { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+        { name: `${mainIngredientName} asado en dados`, amount: 150 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Espinacas baby o rúcula", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Queso fresco o feta", amount: 30 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+        { name: "Nueces", amount: 15 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
       ],
       instructions: [
         `Cortar en dados 150g de la pieza de ${mainIngredientName.toLowerCase()} cocinada y saltear 1 minuto a fuego vivo en la sartén para templarla.`,
@@ -591,11 +595,12 @@ export function generateRecipeFromDescription(description, preferredType = "auto
     id: "custom_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
     name: title,
     type,
+    servings: safeServings,
     prepTime,
-    calories: macroCalc.calories,
-    protein: macroCalc.protein,
-    carbs: macroCalc.carbs,
-    fats: macroCalc.fats,
+    calories: Math.round(macroCalc.calories / safeServings),
+    protein: Math.round(macroCalc.protein / safeServings),
+    carbs: Math.round(macroCalc.carbs / safeServings),
+    fats: Math.round(macroCalc.fats / safeServings),
     tags: ["asistente inteligente", isHorno ? "al horno" : isPlancha ? "a la plancha" : "saludable"],
     ingredients,
     instructions: steps
@@ -620,7 +625,7 @@ export function getGeminiApiKey() {
  * Falls back transparently to the semantic offline engine if not configured or if offline.
  * Supports both single-dish generation and batch cooking / meal prep division.
  */
-export async function generateRecipeWithAi(description, preferredType = "auto", servings = 1, forceBatch = false) {
+export async function generateRecipeWithAi(description, preferredType = "auto", servings = 2, forceBatch = false) {
   const isBatch = Boolean(forceBatch || detectBatchCookingNeed(description));
   const apiKey = getGeminiApiKey();
   
@@ -712,17 +717,18 @@ FORMATO ESTRICTO: Responde ÚNICAMENTE con un objeto JSON válido con esta estru
 }`
         : `Actúa exclusivamente como chef nutricionista deportivo de precisión para la aplicación FitDuo.
 Tu ÚNICA tarea es generar la receta exacta que solicita el usuario: "${description}".
-Raciones: ${servings}. Momento del día sugerido: ${preferredType}.
+Raciones: ${servings} (por defecto 2 personas). Momento del día sugerido: ${preferredType}.
 
 NORMAS ESTRICTAS DE CUMPLIMIENTO:
 1. FIDELIDAD TOTAL AL PLATO: Céntrate exactamente en los ingredientes y el plato pedido. No cambies el plato ni inventes alimentos no solicitados (si piden cabecero de lomo, usa cabecero de lomo o lomo de cerdo, jamás pollo ni sustitutos).
-2. CANTIDADES REALISTAS: Especifica los gramos (g), mililitros (ml) o unidades (ud) reales para ${servings} ración/es.
+2. CANTIDADES REALISTAS PARA ${servings} PERSONAS: Especifica los gramos (g), mililitros (ml) o unidades (ud) reales en total para cocinar las ${servings} raciones.
 3. PASOS CLAROS Y NUMERADOS: Redacta de 3 a 5 pasos secuenciales de cocina sencillos y prácticos.
-4. CÁLCULO DE MACROS: Proporciona las calorías y macronutrientes totales calculados fielmente para el plato.
+4. CÁLCULO DE MACROS POR RACIÓN INDIVIDUAL: Proporciona las calorías y macronutrientes (calories, protein, carbs, fats) calculados fielmente POR RACIÓN (para 1 persona, ej. 450-600 kcal y 35-45g P), para que el balance calórico diario personal de Carlos y Andrea sea exacto.
 5. FORMATO ESTRICTO: Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura, sin texto previo ni posterior, sin explicaciones ni markdown:
 {
   "name": "Nombre descriptivo y atractivo del plato",
   "type": "desayuno" | "comida" | "cena" | "snack",
+  "servings": ${servings},
   "prepTime": 35,
   "calories": 480,
   "protein": 42,
@@ -737,31 +743,41 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
   ]
 }`;
 
+    try {
       const modelsToTry = [
-        "gemini-3.6-flash",
         "gemini-2.5-flash",
-        "gemini-1.5-flash"
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-2.0-flash"
       ];
 
       let rawJson = null;
-
       for (const modelName of modelsToTry) {
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey.trim()}`, {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+          const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: promptText }] }],
-              generationConfig: { responseMimeType: "application/json" }
+              contents: [{ parts: [{ text: systemPrompt }] }],
+              generationConfig: {
+                temperature: 0.2,
+                topP: 0.8,
+                maxOutputTokens: 2048,
+                responseMimeType: "application/json"
+              }
             })
           });
 
-          if (res.ok) {
-            const data = await res.json();
-            rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (rawJson) break;
+          if (response.ok) {
+            const data = await response.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text && text.trim()) {
+              rawJson = text.trim();
+              break;
+            }
           }
-        } catch (eModel) {
+        } catch(eModel) {
           console.warn(`Attempt with ${modelName} failed:`, eModel);
         }
       }
@@ -771,19 +787,25 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
         const parsed = JSON.parse(cleanJson);
 
         if (parsed) {
-          // If Gemini produced a batch cooking plan
           if (parsed.isBatch && Array.isArray(parsed.recipes) && parsed.recipes.length > 0) {
             const sanitizedRecipes = parsed.recipes.map((r, idx) => {
+              const rServings = Number(r.servings) || Number(servings) || 2;
               const verifiedMacros = calculateMacrosFromIngredients(r.ingredients || []);
+              const perPersonKcal = verifiedMacros.calories > 0 ? Math.round(verifiedMacros.calories / rServings) : (Number(r.calories) || 450);
+              const perPersonProt = verifiedMacros.protein > 0 ? Math.round(verifiedMacros.protein / rServings) : (Number(r.protein) || 35);
+              const perPersonCarbs = verifiedMacros.carbs >= 0 ? Math.round(verifiedMacros.carbs / rServings) : (Number(r.carbs) || 30);
+              const perPersonFats = verifiedMacros.fats >= 0 ? Math.round(verifiedMacros.fats / rServings) : (Number(r.fats) || 12);
+
               return {
                 id: "custom_" + Date.now() + "_" + idx + "_" + Math.random().toString(36).substr(2, 4),
                 name: r.name || `Receta ${idx + 1}`,
                 type: r.type || (idx === parsed.recipes.length - 1 ? "cena" : "comida"),
+                servings: rServings,
                 prepTime: Number(r.prepTime) || 25,
-                calories: verifiedMacros.calories || Number(r.calories) || 450,
-                protein: verifiedMacros.protein || Number(r.protein) || 35,
-                carbs: verifiedMacros.carbs || Number(r.carbs) || 30,
-                fats: verifiedMacros.fats || Number(r.fats) || 12,
+                calories: perPersonKcal,
+                protein: perPersonProt,
+                carbs: perPersonCarbs,
+                fats: perPersonFats,
                 tags: ["Batch Cooking", "Gemini Pro AI", "aprovechamiento"],
                 ingredients: (r.ingredients || []).map(ing => ({
                   name: ing.name,
@@ -803,18 +825,24 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
             };
           }
 
-          // Single recipe flow
           if (parsed.name && Array.isArray(parsed.ingredients)) {
+            const rServings = Number(parsed.servings) || Number(servings) || 2;
             const verifiedMacros = calculateMacrosFromIngredients(parsed.ingredients);
+            const perPersonKcal = verifiedMacros.calories > 0 ? Math.round(verifiedMacros.calories / rServings) : (Number(parsed.calories) || 450);
+            const perPersonProt = verifiedMacros.protein > 0 ? Math.round(verifiedMacros.protein / rServings) : (Number(parsed.protein) || 35);
+            const perPersonCarbs = verifiedMacros.carbs >= 0 ? Math.round(verifiedMacros.carbs / rServings) : (Number(parsed.carbs) || 30);
+            const perPersonFats = verifiedMacros.fats >= 0 ? Math.round(verifiedMacros.fats / rServings) : (Number(parsed.fats) || 12);
+
             return {
               id: "custom_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
               name: parsed.name,
               type: parsed.type || (preferredType !== "auto" ? preferredType : "comida"),
+              servings: rServings,
               prepTime: Number(parsed.prepTime) || 25,
-              calories: verifiedMacros.calories || Number(parsed.calories) || 450,
-              protein: verifiedMacros.protein || Number(parsed.protein) || 35,
-              carbs: verifiedMacros.carbs || Number(parsed.carbs) || 30,
-              fats: verifiedMacros.fats || Number(parsed.fats) || 12,
+              calories: perPersonKcal,
+              protein: perPersonProt,
+              carbs: perPersonCarbs,
+              fats: perPersonFats,
               tags: ["Gemini Pro AI", "personalizada"],
               ingredients: parsed.ingredients.map(ing => ({
                 name: ing.name,

@@ -352,6 +352,56 @@ export function removeMealFromSlot(dayName, slotKey) {
 }
 
 /**
+ * Get servings for a meal slot in a week (Defaults to 2 for couple: Carlos y Andrea)
+ */
+export function getMealSlotServings(weekKey, dayName, slotKey) {
+  const wKey = weekKey || appState.activeNutritionWeekKey || getCurrentWeekKey();
+  if (appState.weeklyMealServings?.[wKey]?.[dayName]?.[slotKey]) {
+    return Number(appState.weeklyMealServings[wKey][dayName][slotKey]) || 2;
+  }
+  return 2; // Default for FitDuo couple (Carlos y Andrea)
+}
+
+/**
+ * Set servings for a meal slot in a week
+ */
+export function setMealSlotServings(dayName, slotKey, servings, weekKey) {
+  try {
+    triggerHapticTouch();
+    const wKey = weekKey || appState.activeNutritionWeekKey || getCurrentWeekKey();
+    if (!appState.weeklyMealServings) appState.weeklyMealServings = {};
+    if (!appState.weeklyMealServings[wKey]) appState.weeklyMealServings[wKey] = {};
+    if (!appState.weeklyMealServings[wKey][dayName]) appState.weeklyMealServings[wKey][dayName] = {};
+
+    appState.weeklyMealServings[wKey][dayName][slotKey] = Number(servings) || 2;
+    appState.mealPlansLastModified = Date.now();
+    saveState();
+    if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
+
+    renderNutritionMenuView();
+    renderShoppingView();
+    showIosToast(`👥 ${dayName} (${slotKey}): ${servings} ${servings === 1 ? 'persona' : 'personas'}`, "fa-solid fa-users");
+  } catch(e) {
+    console.error("Error setting meal slot servings:", e);
+  }
+}
+
+/**
+ * Toggle servings between 1 and 2 for a specific meal slot
+ */
+export function toggleSlotServings(dayName, slotKey) {
+  try {
+    triggerHapticTouch();
+    const wKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    const current = getMealSlotServings(wKey, dayName, slotKey);
+    const next = current === 2 ? 1 : 2;
+    setMealSlotServings(dayName, slotKey, next, wKey);
+  } catch(e) {
+    console.error("Error toggling slot servings:", e);
+  }
+}
+
+/**
  * Generate and navigate to Shopping List
  */
 export function generateShoppingListFromPlan() {
@@ -637,6 +687,14 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
     slotCard.className = `glass-card meal-card vertical-meal-card slot-card ${recipe ? 'has-recipe' : 'is-empty'}`;
 
     if (recipe) {
+      const activeWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+      const slotServings = getMealSlotServings(activeWeekKey, dayName, slot.key);
+      const recipeServings = Number(recipe.servings) || 2;
+      const perPersonKcal = Math.round(Number(recipe.calories || 0) / recipeServings);
+      const perPersonProt = Math.round(Number(recipe.protein || 0) / recipeServings);
+      const perPersonCarbs = Math.round(Number(recipe.carbs || 0) / recipeServings);
+      const perPersonFats = Math.round(Number(recipe.fats || 0) / recipeServings);
+
       const tagsHtml = (recipe.tags || []).map(t => `<span class="macro-pill">${t}</span>`).join(" ");
 
       slotCard.innerHTML = `
@@ -645,10 +703,13 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
             <i class="fa-solid ${slot.icon}"></i> <strong>${slot.label}</strong> • ${recipe.prepTime || 15} min prep
           </div>
           <div class="slot-actions-group">
+            <button type="button" class="btn-slot-servings ${slotServings === 2 ? 'is-couple' : 'is-single'}" onclick="toggleSlotServings('${dayName}', '${slot.key}')" title="Alternar raciones (1 o 2 personas)">
+              <i class="fa-solid ${slotServings === 2 ? 'fa-users' : 'fa-user'}"></i> ${slotServings} pers
+            </button>
             <button type="button" class="btn-slot-action edit" onclick="openRecipePickerModal('${dayName}', '${slot.key}')" title="Cambiar receta">
               <i class="fa-solid fa-rotate"></i> Cambiar
             </button>
-            <button type="button" class="btn-slot-action view" onclick="openRecipeDetailModal('${recipe.id}')" title="Ver receta y preparación">
+            <button type="button" class="btn-slot-action view" onclick="openRecipeDetailModal('${recipe.id}', ${slotServings})" title="Ver receta y preparación">
               <i class="fa-solid fa-book-open"></i> Ver
             </button>
             <button type="button" class="btn-slot-action remove" onclick="removeMealFromSlot('${dayName}', '${slot.key}')" title="Quitar de este día">
@@ -657,16 +718,17 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
           </div>
         </div>
 
-        <h3 class="meal-card-title clickable-meal-title" onclick="openRecipeDetailModal('${recipe.id}')">
+        <h3 class="meal-card-title clickable-meal-title" onclick="openRecipeDetailModal('${recipe.id}', ${slotServings})">
           <span>${recipe.name}</span>
           <i class="fa-solid fa-chevron-right" style="font-size: 0.85rem; color: var(--accent-cyan); opacity: 0.8;"></i>
         </h3>
 
         <div class="meal-macros-pills">
-          <span class="macro-pill" style="color:var(--accent-amber); font-weight:600;"><i class="fa-solid fa-fire"></i> ${recipe.calories} kcal</span>
-          <span class="macro-pill" style="color:var(--accent-emerald); font-weight:600;"><i class="fa-solid fa-dumbbell"></i> ${recipe.protein}g Proteína</span>
-          <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${recipe.carbs}g Carbs</span>
-          <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${recipe.fats}g Grasas</span>
+          <span class="macro-pill" style="color:var(--accent-amber); font-weight:600;"><i class="fa-solid fa-fire"></i> ${perPersonKcal} kcal/p</span>
+          <span class="macro-pill" style="color:var(--accent-emerald); font-weight:600;"><i class="fa-solid fa-dumbbell"></i> ${perPersonProt}g Prot</span>
+          <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${perPersonCarbs}g Carbs</span>
+          <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${perPersonFats}g Grasas</span>
+          <span class="macro-pill" style="color:var(--text-muted); font-size:0.72rem;">(${slotServings} ${slotServings === 1 ? 'persona' : 'personas'})</span>
         </div>
 
         ${tagsHtml ? `<div style="margin-bottom: 0.6rem;">${tagsHtml}</div>` : ''}
@@ -714,6 +776,7 @@ function renderFullWeekGridView(container) {
   const gridWrapper = document.createElement("div");
   gridWrapper.className = "planner-week-matrix-grid";
   const currentWeeklyPlan = getActiveWeeklyPlan();
+  const activeWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
 
   DAYS_OF_WEEK.forEach(dayName => {
     const dayPlan = currentWeeklyPlan?.[dayName] || {};
@@ -725,13 +788,20 @@ function renderFullWeekGridView(container) {
       const r = getRecipeById(rId);
 
       if (r) {
+        const slotServings = getMealSlotServings(activeWeekKey, dayName, slot.key);
+        const recipeServings = Number(r.servings) || 2;
+        const perPersonKcal = Math.round(Number(r.calories || 0) / recipeServings);
+
         return `
-          <div class="matrix-meal-cell has-meal" onclick="openRecipePickerModal('${dayName}', '${slot.key}')">
-            <div class="matrix-cell-header" style="color:${slot.color};">
-              <i class="fa-solid ${slot.icon}"></i> <span>${slot.key.toUpperCase()}</span>
+          <div class="matrix-meal-cell has-meal" onclick="openRecipeDetailModal('${r.id}', ${slotServings})">
+            <div class="matrix-cell-header" style="color:${slot.color}; display: flex; justify-content: space-between; align-items: center;">
+              <div><i class="fa-solid ${slot.icon}"></i> <span>${slot.key.toUpperCase()}</span></div>
+              <span class="matrix-servings-badge" onclick="event.stopPropagation(); toggleSlotServings('${dayName}', '${slot.key}')" title="Alternar 1 o 2 personas" style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: ${slotServings === 2 ? 'rgba(6, 182, 212, 0.15)' : 'rgba(245, 158, 11, 0.15)'}; color: ${slotServings === 2 ? 'var(--accent-cyan)' : 'var(--accent-amber)'}; font-weight: 700; cursor: pointer;">
+                <i class="fa-solid ${slotServings === 2 ? 'fa-users' : 'fa-user'}"></i> ${slotServings}p
+              </span>
             </div>
             <div class="matrix-meal-name">${r.name}</div>
-            <div class="matrix-meal-meta">${r.calories} kcal • ${r.protein}g P</div>
+            <div class="matrix-meal-meta">${perPersonKcal} kcal/p • ${r.protein}g P</div>
           </div>
         `;
       } else {
@@ -1578,7 +1648,10 @@ export function saveQuickAssignRecipe(event, recipeId) {
 /**
  * RECIPE DETAIL MODAL
  */
-export function openRecipeDetailModal(recipeId) {
+/**
+ * RECIPE DETAIL MODAL (with dynamic servings scaler: 1 persona / 2 personas)
+ */
+export function openRecipeDetailModal(recipeId, targetServings = null) {
   try {
     triggerHapticTouch();
     const recipe = getRecipeById(recipeId);
@@ -1592,12 +1665,30 @@ export function openRecipeDetailModal(recipeId) {
       document.body.appendChild(modal);
     }
 
-    const ingredientsHtml = (recipe.ingredients || []).map(ing => `
-      <li style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px dashed var(--border-color); font-size: 0.88rem;">
-        <span>${ing.name}</span>
-        <strong>${ing.amount} ${ing.unit}</strong>
-      </li>
-    `).join("");
+    const baseServings = Number(recipe.servings) || 2;
+    const currentServings = targetServings !== null ? Number(targetServings) : baseServings;
+    const scale = currentServings / baseServings;
+
+    const perPersonKcal = Math.round(Number(recipe.calories || 0));
+    const perPersonProt = Math.round(Number(recipe.protein || 0));
+    const perPersonCarbs = Math.round(Number(recipe.carbs || 0));
+    const perPersonFats = Math.round(Number(recipe.fats || 0));
+
+    const totalKcal = Math.round(perPersonKcal * currentServings);
+    const totalProt = Math.round(perPersonProt * currentServings);
+    const totalCarbs = Math.round(perPersonCarbs * currentServings);
+    const totalFats = Math.round(perPersonFats * currentServings);
+
+    const ingredientsHtml = (recipe.ingredients || []).map(ing => {
+      const rawAmt = Number(ing.amount || 0);
+      const scaledAmt = Math.round((rawAmt * scale) * 10) / 10;
+      return `
+        <li style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px dashed var(--border-color); font-size: 0.88rem;">
+          <span>${ing.name}</span>
+          <strong style="color:var(--text-main);">${scaledAmt} ${ing.unit}</strong>
+        </li>
+      `;
+    }).join("");
 
     const stepsHtml = (recipe.instructions || []).map((s, idx) => `
       <li style="margin-bottom: 0.6rem; line-height: 1.5; font-size: 0.88rem; color: var(--text-secondary);">
@@ -1619,18 +1710,42 @@ export function openRecipeDetailModal(recipeId) {
         </div>
 
         <div class="modal-body" style="padding-top: 1rem;">
-          <div class="meal-macros-pills" style="margin-bottom: 1rem;">
-            <span class="macro-pill" style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${recipe.calories} kcal</span>
-            <span class="macro-pill" style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${recipe.protein}g Proteína</span>
-            <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${recipe.carbs}g Carbs</span>
-            <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${recipe.fats}g Grasas</span>
+          <!-- SERVINGS SELECTOR -->
+          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem 0.85rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <span style="font-size: 0.84rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
+              <i class="fa-solid fa-users" style="color: var(--accent-cyan);"></i> Raciones a preparar:
+            </span>
+            <div style="display: flex; gap: 0.35rem;">
+              <button type="button" onclick="openRecipeDetailModal('${recipe.id}', 1)" style="padding: 4px 10px; font-size: 0.78rem; border-radius: 6px; border: 1px solid ${currentServings === 1 ? 'var(--accent-cyan)' : 'var(--border-color)'}; background: ${currentServings === 1 ? 'rgba(6,182,212,0.18)' : 'rgba(255,255,255,0.04)'}; color: ${currentServings === 1 ? 'var(--accent-cyan)' : 'var(--text-muted)'}; font-weight: 700; cursor: pointer;">
+                👤 1 persona
+              </button>
+              <button type="button" onclick="openRecipeDetailModal('${recipe.id}', 2)" style="padding: 4px 10px; font-size: 0.78rem; border-radius: 6px; border: 1px solid ${currentServings === 2 ? 'var(--accent-cyan)' : 'var(--border-color)'}; background: ${currentServings === 2 ? 'rgba(6,182,212,0.18)' : 'rgba(255,255,255,0.04)'}; color: ${currentServings === 2 ? 'var(--accent-cyan)' : 'var(--text-muted)'}; font-weight: 700; cursor: pointer;">
+                👥 2 personas (Carlos y Andrea)
+              </button>
+            </div>
           </div>
 
-          <h4 style="margin: 1rem 0 0.5rem 0; font-size: 0.95rem; color: var(--accent-emerald);"><i class="fa-solid fa-basket-shopping"></i> Ingredientes necesarios:</h4>
+          <div class="meal-macros-pills" style="margin-bottom: 0.5rem;">
+            <span class="macro-pill" style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${perPersonKcal} kcal/p</span>
+            <span class="macro-pill" style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${perPersonProt}g Prot</span>
+            <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${perPersonCarbs}g Carbs</span>
+            <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${perPersonFats}g Grasas</span>
+          </div>
+
+          ${currentServings > 1 ? `
+            <div style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 4px;">
+              Total en sartén/cazuela (${currentServings} raciones): <strong style="color:var(--accent-amber);">${totalKcal} kcal</strong> (${totalProt}g P • ${totalCarbs}g C • ${totalFats}g G)
+            </div>
+          ` : '<div style="margin-bottom: 0.75rem;"></div>'}
+
+          <h4 style="margin: 1rem 0 0.5rem 0; font-size: 0.95rem; color: var(--accent-emerald); display: flex; justify-content: space-between; align-items: center;">
+            <span><i class="fa-solid fa-basket-shopping"></i> Ingredientes necesarios:</span>
+            <span style="font-size: 0.78rem; font-weight: 600; color: var(--accent-cyan);">${currentServings === 1 ? 'Para 1 persona' : 'Para 2 personas'}</span>
+          </h4>
           <ul style="list-style:none; padding: 0;">${ingredientsHtml}</ul>
 
           <h4 style="margin: 1.25rem 0 0.5rem 0; font-size: 0.95rem; color: var(--accent-cyan);"><i class="fa-solid fa-list-ol"></i> Pasos de preparación:</h4>
-          <ol style="padding-left: 1rem;">${stepsHtml}</ol>
+          <ol style="padding-left: 1.15rem; margin-top: 0.4rem;">${stepsHtml}</ol>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
             <button type="button" class="btn-primary" onclick="document.getElementById('recipe-detail-modal').classList.remove('active'); openAssignRecipeModal('${recipe.id}');" style="flex: 1; justify-content: center;">
@@ -1647,11 +1762,8 @@ export function openRecipeDetailModal(recipeId) {
   }
 }
 
-let generatedRecipeCandidate = null;
-let generatedBatchCandidate = null;
-
 /**
- * Automatically calculates macros for the modal form inputs based on the ingredients entered.
+ * AUTO CALCULATE MACROS FOR CUSTOM RECIPE MODALS (Per person based on servings)
  */
 export function autoCalculateRecipeModalMacros(prefix = 'new') {
   try {
@@ -1660,6 +1772,9 @@ export function autoCalculateRecipeModalMacros(prefix = 'new') {
     const raw = textarea.value.trim();
     if (!raw) return;
 
+    const servingsSelect = document.getElementById(`${prefix}-recipe-servings`);
+    const servings = servingsSelect ? (Number(servingsSelect.value) || 2) : 2;
+
     const result = calculateMacrosFromIngredients(raw);
     const kcalInput = document.getElementById(`${prefix}-recipe-kcal`);
     const protInput = document.getElementById(`${prefix}-recipe-prot`);
@@ -1667,15 +1782,20 @@ export function autoCalculateRecipeModalMacros(prefix = 'new') {
     const fatsInput = document.getElementById(`${prefix}-recipe-fats`);
     const hintElem = document.getElementById(`${prefix}-recipe-macro-hint`);
 
-    if (kcalInput && result.calories > 0) kcalInput.value = result.calories;
-    if (protInput && result.protein >= 0) protInput.value = result.protein;
-    if (carbsInput && result.carbs >= 0) carbsInput.value = result.carbs;
-    if (fatsInput && result.fats >= 0) fatsInput.value = result.fats;
+    const perPersonKcal = Math.round(result.calories / servings);
+    const perPersonProt = Math.round(result.protein / servings);
+    const perPersonCarbs = Math.round(result.carbs / servings);
+    const perPersonFats = Math.round(result.fats / servings);
+
+    if (kcalInput && result.calories > 0) kcalInput.value = perPersonKcal;
+    if (protInput && result.protein >= 0) protInput.value = perPersonProt;
+    if (carbsInput && result.carbs >= 0) carbsInput.value = perPersonCarbs;
+    if (fatsInput && result.fats >= 0) fatsInput.value = perPersonFats;
 
     if (hintElem) {
       hintElem.innerHTML = `
         <div style="background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.25); border-radius: 6px; padding: 5px 10px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px; font-size: 0.78rem;">
-          <span style="color: var(--text-main);"><i class="fa-solid fa-calculator" style="color:var(--accent-cyan); margin-right: 4px;"></i> Macros calculados: <strong style="color:var(--accent-amber);">${result.calories} kcal</strong> (${result.protein}g Prot • ${result.carbs}g Carbs • ${result.fats}g Grasas)</span>
+          <span style="color: var(--text-main);"><i class="fa-solid fa-calculator" style="color:var(--accent-cyan); margin-right: 4px;"></i> Por ración (${servings} ${servings === 1 ? 'persona' : 'personas'}): <strong style="color:var(--accent-amber);">${perPersonKcal} kcal</strong> (${perPersonProt}g Prot • ${perPersonCarbs}g Carbs • ${perPersonFats}g G) ${servings > 1 ? `• <small style="color:var(--text-muted);">Total cazuela: ${result.calories} kcal</small>` : ''}</span>
           <span style="color: var(--accent-emerald); font-weight: 600;">✓ Auto-rellenado</span>
         </div>
       `;
@@ -1753,8 +1873,8 @@ export function openAiRecipeGeneratorModal() {
             <div class="form-group">
               <label>Raciones por plato</label>
               <select id="ai-servings" class="custom-select" style="width: 100%;">
-                <option value="1">1 Ración (Individual)</option>
-                <option value="2">2 Raciones (Carlos y Andrea)</option>
+                <option value="2" selected>👥 2 Raciones (Carlos y Andrea - Por defecto)</option>
+                <option value="1">👤 1 Ración (Individual)</option>
               </select>
             </div>
           </div>
@@ -1822,7 +1942,7 @@ export async function generateAiRecipeFromForm() {
     }
 
     const type = typeSelect ? typeSelect.value : "auto";
-    const servings = servingsSelect ? parseInt(servingsSelect.value, 10) : 1;
+    const servings = servingsSelect ? parseInt(servingsSelect.value, 10) : 2;
     const forceBatch = batchToggle ? batchToggle.checked : false;
 
     if (submitBtn) {
@@ -2184,9 +2304,17 @@ export function openCreateRecipeModal() {
                 </select>
               </div>
               <div class="form-group">
-                <label>Tiempo de Preparación (min)</label>
-                <input type="number" id="new-recipe-prep" class="ios-input" value="15" required min="1" max="180">
+                <label>Raciones Base</label>
+                <select id="new-recipe-servings" class="custom-select" style="width: 100%;" onchange="autoCalculateRecipeModalMacros('new')">
+                  <option value="2" selected>👥 2 Raciones (Carlos y Andrea)</option>
+                  <option value="1">👤 1 Ración (Individual)</option>
+                </select>
               </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <label>Tiempo de Preparación (min)</label>
+              <input type="number" id="new-recipe-prep" class="ios-input" value="15" required min="1" max="180">
             </div>
 
             <div class="form-group" style="margin-top: 0.75rem;">
@@ -2196,28 +2324,28 @@ export function openCreateRecipeModal() {
                   <i class="fa-solid fa-calculator"></i> Calcular Macros
                 </button>
               </div>
-              <textarea id="new-recipe-ingredients" class="ios-input" rows="4" placeholder="Pasta integral, 85, g&#10;Carne picada de ternera, 150, g&#10;Tomate frito, 80, g&#10;Aceite de oliva, 5, ml" oninput="autoCalculateRecipeModalMacros('new')" style="font-family: monospace; font-size: 0.82rem;"></textarea>
+              <textarea id="new-recipe-ingredients" class="ios-input" rows="4" placeholder="Pasta integral, 160, g&#10;Carne picada de ternera, 300, g&#10;Tomate frito, 160, g&#10;Aceite de oliva, 10, ml" oninput="autoCalculateRecipeModalMacros('new')" style="font-family: monospace; font-size: 0.82rem;"></textarea>
               <div id="new-recipe-macro-hint"></div>
             </div>
 
             <div class="form-grid-2" style="margin-top: 0.75rem;">
               <div class="form-group">
-                <label>Calorías (kcal) <small style="color:var(--accent-cyan);">(Auto-calculadas)</small></label>
+                <label>Calorías / ración (kcal) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="new-recipe-kcal" class="ios-input" placeholder="ej. 520" required min="0" max="2500">
               </div>
               <div class="form-group">
-                <label>Proteína (g) <small style="color:var(--accent-cyan);">(Auto-calculada)</small></label>
+                <label>Proteína / ración (g) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="new-recipe-prot" class="ios-input" placeholder="ej. 42" required min="0" max="200">
               </div>
             </div>
 
             <div class="form-grid-2" style="margin-top: 0.75rem;">
               <div class="form-group">
-                <label>Carbohidratos (g) <small style="color:var(--accent-cyan);">(Auto-calculados)</small></label>
+                <label>Carbohidratos (g) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="new-recipe-carbs" class="ios-input" placeholder="ej. 55" value="0" min="0" max="300">
               </div>
               <div class="form-group">
-                <label>Grasas (g) <small style="color:var(--accent-cyan);">(Auto-calculadas)</small></label>
+                <label>Grasas (g) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="new-recipe-fats" class="ios-input" placeholder="ej. 14" value="0" min="0" max="200">
               </div>
             </div>
@@ -2249,6 +2377,7 @@ export function saveCustomRecipeFromModal(event) {
     if (!name) return;
 
     const type = document.getElementById("new-recipe-type")?.value || "comida";
+    const servings = Number(document.getElementById("new-recipe-servings")?.value || 2);
     const prepTime = Number(document.getElementById("new-recipe-prep")?.value || 15);
     const calories = Number(document.getElementById("new-recipe-kcal")?.value || 450);
     const protein = Number(document.getElementById("new-recipe-prot")?.value || 35);
@@ -2274,6 +2403,7 @@ export function saveCustomRecipeFromModal(event) {
       id: "custom_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
       name: name,
       type: type,
+      servings: servings,
       prepTime: prepTime,
       calories: calories,
       protein: protein,
@@ -2325,6 +2455,7 @@ export function openEditRecipeModal(recipeId) {
 
     const ingText = (recipe.ingredients || []).map(i => `${i.name || ''}, ${i.amount || 1}, ${i.unit || 'g'}`).join("\n");
     const stepsText = (recipe.instructions || []).join("\n");
+    const recipeServings = Number(recipe.servings) || 2;
 
     modal.innerHTML = `
       <div class="glass-modal" style="max-width: 540px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
@@ -2359,9 +2490,17 @@ export function openEditRecipeModal(recipeId) {
                 </select>
               </div>
               <div class="form-group">
-                <label>Tiempo de Preparación (min)</label>
-                <input type="number" id="edit-recipe-prep" class="ios-input" value="${recipe.prepTime || 15}" required min="1" max="180">
+                <label>Raciones Base</label>
+                <select id="edit-recipe-servings" class="custom-select" style="width: 100%;" onchange="autoCalculateRecipeModalMacros('edit')">
+                  <option value="2" ${recipeServings === 2 ? 'selected' : ''}>👥 2 Raciones (Carlos y Andrea)</option>
+                  <option value="1" ${recipeServings === 1 ? 'selected' : ''}>👤 1 Ración (Individual)</option>
+                </select>
               </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <label>Tiempo de Preparación (min)</label>
+              <input type="number" id="edit-recipe-prep" class="ios-input" value="${recipe.prepTime || 15}" required min="1" max="180">
             </div>
 
             <div class="form-group" style="margin-top: 0.75rem;">
@@ -2377,11 +2516,11 @@ export function openEditRecipeModal(recipeId) {
 
             <div class="form-grid-2" style="margin-top: 0.75rem;">
               <div class="form-group">
-                <label>Calorías (kcal) <small style="color:var(--accent-cyan);">(Auto)</small></label>
+                <label>Calorías / ración (kcal) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="edit-recipe-kcal" class="ios-input" value="${recipe.calories || 0}" required min="0" max="2500">
               </div>
               <div class="form-group">
-                <label>Proteína (g) <small style="color:var(--accent-cyan);">(Auto)</small></label>
+                <label>Proteína / ración (g) <small style="color:var(--accent-cyan);">(Auto)</small></label>
                 <input type="number" id="edit-recipe-prot" class="ios-input" value="${recipe.protein || 0}" required min="0" max="200">
               </div>
             </div>
@@ -2429,6 +2568,7 @@ export function saveEditedRecipeFromModal(event, recipeId) {
     if (!name) return;
 
     const type = document.getElementById("edit-recipe-type")?.value || "comida";
+    const servings = Number(document.getElementById("edit-recipe-servings")?.value || 2);
     const prepTime = Number(document.getElementById("edit-recipe-prep")?.value || 15);
     const calories = Number(document.getElementById("edit-recipe-kcal")?.value || 0);
     const protein = Number(document.getElementById("edit-recipe-prot")?.value || 0);
@@ -2457,6 +2597,7 @@ export function saveEditedRecipeFromModal(event, recipeId) {
       id: recipeId,
       name: name,
       type: type,
+      servings: servings,
       prepTime: prepTime,
       calories: calories,
       protein: protein,
@@ -2645,6 +2786,10 @@ export function renderShoppingView() {
         if (!meal) return;
 
         totalMealsCount++;
+        const slotServings = getMealSlotServings(activeWeekKey, day, slot.key);
+        const baseServings = Number(meal.servings) || 2;
+        const scale = slotServings / baseServings;
+
         (meal.ingredients || []).forEach(ing => {
           const key = `${(ing.name || "").trim().toLowerCase()}___${(ing.unit || "").trim().toLowerCase()}`;
           if (!aggregated[key]) {
@@ -2655,7 +2800,7 @@ export function renderShoppingView() {
               category: ing.category || INGREDIENT_CATEGORIES.PANTRY
             };
           }
-          aggregated[key].amount += Number(ing.amount || 0);
+          aggregated[key].amount += (Number(ing.amount || 0) * scale);
         });
       });
     });

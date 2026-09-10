@@ -1639,6 +1639,53 @@ body[data-profile="she"] .btn-generate-shopping-glow:hover {
   background: rgba(6, 182, 212, 0.1);
 }
 
+.btn-slot-servings {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.btn-slot-servings.is-couple {
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: var(--accent-cyan);
+}
+
+.btn-slot-servings.is-couple:hover {
+  background: rgba(6, 182, 212, 0.25);
+  border-color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
+
+.btn-slot-servings.is-single {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--accent-amber);
+}
+
+.btn-slot-servings.is-single:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: var(--accent-amber);
+  transform: translateY(-1px);
+}
+
+.matrix-servings-badge {
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.matrix-servings-badge:hover {
+  transform: scale(1.08);
+  filter: brightness(1.2);
+}
+
 .empty-slot-content {
   display: flex;
   align-items: center;
