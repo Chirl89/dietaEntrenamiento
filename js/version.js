@@ -2,7 +2,7 @@
  * FitDuo & Collie Coach - Centralized Application Version
  * AUTO-GENERATED - DO NOT EDIT MANUALLY
  */
-export const APP_VERSION = "0.24.24";
+export const APP_VERSION = "0.24.25";
 
 /**
  * Dynamically synchronize and reflect the current app version across all UI badges

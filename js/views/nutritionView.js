@@ -1981,7 +1981,7 @@ export async function generateAiRecipeFromForm() {
 
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analizando preparación con IA...';
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Diseñando recetas con Gemini AI...';
     }
 
     const result = await generateRecipeWithAi(prompt, type, servings, forceBatch);

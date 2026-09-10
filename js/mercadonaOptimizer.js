@@ -5,7 +5,7 @@
  * and direct search links to tienda.mercadona.es.
  */
 
-import { getGeminiApiKey, PRIORITIZED_GEMINI_MODELS } from './nutritionCalculator.js';
+import { getGeminiApiKey, PRIORITIZED_GEMINI_MODELS, GEMINI_REQUEST_TIMEOUT_MS } from './nutritionCalculator.js';
 
 // Interchangeable staple food families for pantry consolidation
 export const INTERCHANGEABLE_FAMILIES = [
@@ -271,7 +271,7 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura:
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(10000),
+            signal: AbortSignal.timeout(GEMINI_REQUEST_TIMEOUT_MS),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {

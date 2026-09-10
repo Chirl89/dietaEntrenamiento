@@ -1150,6 +1150,9 @@ export const PRIORITIZED_GEMINI_MODELS = [
   "gemini-3.1-flash-lite"
 ];
 
+// Timeout prudencial para permitir la generación completa de respuestas complejas de Batch Cooking (32 segundos)
+export const GEMINI_REQUEST_TIMEOUT_MS = 32000;
+
 /**
  * Google Gemini AI generation (using default shared couple key or custom user key).
  * Falls back transparently to the semantic offline engine if not configured or if offline.
@@ -1276,7 +1279,7 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(10000),
+            signal: AbortSignal.timeout(GEMINI_REQUEST_TIMEOUT_MS),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
@@ -1473,7 +1476,7 @@ REGLAS ESTRICTAS:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(10000),
+            signal: AbortSignal.timeout(GEMINI_REQUEST_TIMEOUT_MS),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
@@ -1621,7 +1624,7 @@ REGLAS ESTRICTAS:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(10000),
+            signal: AbortSignal.timeout(GEMINI_REQUEST_TIMEOUT_MS),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
