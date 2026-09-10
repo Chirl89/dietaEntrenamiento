@@ -499,83 +499,108 @@ export function generateRecipeFromDescription(description, preferredType = "auto
   };
 }
 
+// Base64-encoded default key
+const DEFAULT_KEY_B64 = "QVEuQWI4Uk42S2dYemVSamRIWjN5V0JrbjNyR0x0UXBLdjhqNU9FaTh4cnE2SkxkUUFrdWc=";
+
+export function getGeminiApiKey() {
+  const custom = localStorage.getItem("FITDUO_GEMINI_API_KEY");
+  if (custom && custom.trim().length > 10) return custom.trim();
+  try {
+    return atob(DEFAULT_KEY_B64);
+  } catch(e) {
+    return "";
+  }
+}
+
 /**
- * Optional Google Gemini AI generation (when user configures a Gemini API key in Settings).
+ * Google Gemini AI generation (using default shared couple key or custom user key).
  * Falls back transparently to the semantic offline engine if not configured or if offline.
  */
 export async function generateRecipeWithAi(description, preferredType = "auto", servings = 1) {
-  const apiKey = localStorage.getItem("FITDUO_GEMINI_API_KEY") || "";
+  const apiKey = getGeminiApiKey();
   
   if (apiKey && apiKey.trim().length > 10) {
     try {
-      const promptText = `Actúa como chef nutricionista deportivo. Genera una receta precisa en formato JSON estricto basada en la descripción: "${description}".
-Raciones: ${servings}. Momento preferido: ${preferredType}.
-Responde ÚNICAMENTE con un objeto JSON sin bloques de código markdown ni texto adicional, con este esquema exacto:
+      const promptText = `Actúa exclusivamente como chef nutricionista deportivo de precisión para la aplicación FitDuo.
+Tu ÚNICA tarea es generar la receta exacta que solicita el usuario: "${description}".
+Raciones: ${servings}. Momento del día sugerido: ${preferredType}.
+
+NORMAS ESTRICTAS DE CUMPLIMIENTO:
+1. FIDELIDAD TOTAL AL PLATO: Céntrate exactamente en los ingredientes y el plato pedido. No cambies el plato ni inventes alimentos no solicitados (si piden cabecero de lomo, usa cabecero de lomo o lomo de cerdo, jamás pollo ni sustitutos).
+2. CANTIDADES REALISTAS: Especifica los gramos (g), mililitros (ml) o unidades (ud) reales para ${servings} ración/es.
+3. PASOS CLAROS Y NUMERADOS: Redacta de 3 a 5 pasos secuenciales de cocina sencillos y prácticos.
+4. CÁLCULO DE MACROS: Proporciona las calorías y macronutrientes totales calculados fielmente para el plato.
+5. FORMATO ESTRICTO: Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura, sin texto previo ni posterior, sin explicaciones ni markdown:
 {
-  "name": "Nombre descriptivo y atractivo",
+  "name": "Nombre descriptivo y atractivo del plato",
   "type": "desayuno" | "comida" | "cena" | "snack",
-  "prepTime": 30,
+  "prepTime": 35,
   "calories": 480,
   "protein": 42,
-  "carbs": 35,
-  "fats": 16,
+  "carbs": 15,
+  "fats": 22,
   "ingredients": [
-    {"name": "Ingrediente", "amount": 150, "unit": "g"}
+    {"name": "Nombre ingrediente", "amount": 180, "unit": "g"}
   ],
   "instructions": [
-    "Paso 1 detallado",
-    "Paso 2 detallado"
+    "Paso 1...",
+    "Paso 2..."
   ]
 }`;
 
-      let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      });
+      const modelsToTry = [
+        "gemini-3.6-flash",
+        "gemini-2.5-flash",
+        "gemini-1.5-flash"
+      ];
 
-      if (!res.ok) {
-        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: { responseMimeType: "application/json" }
-          })
-        });
+      let rawJson = null;
+
+      for (const modelName of modelsToTry) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey.trim()}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }],
+              generationConfig: { responseMimeType: "application/json" }
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawJson) break;
+          }
+        } catch (eModel) {
+          console.warn(`Attempt with ${modelName} failed:`, eModel);
+        }
       }
 
-      if (res.ok) {
-        const data = await res.json();
-        const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (rawJson) {
-          const cleanJson = rawJson.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
-          const parsed = JSON.parse(cleanJson);
-          if (parsed && parsed.name && Array.isArray(parsed.ingredients)) {
-            // Recalculate or validate macros using our engine for guaranteed accuracy
-            const verifiedMacros = calculateMacrosFromIngredients(parsed.ingredients);
-            return {
-              id: "custom_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
-              name: parsed.name,
-              type: parsed.type || (preferredType !== "auto" ? preferredType : "comida"),
-              prepTime: Number(parsed.prepTime) || 25,
-              calories: verifiedMacros.calories || Number(parsed.calories) || 450,
-              protein: verifiedMacros.protein || Number(parsed.protein) || 35,
-              carbs: verifiedMacros.carbs || Number(parsed.carbs) || 30,
-              fats: verifiedMacros.fats || Number(parsed.fats) || 12,
-              tags: ["Gemini AI", "personalizada"],
-              ingredients: parsed.ingredients.map(ing => ({
-                name: ing.name,
-                amount: Number(ing.amount) || 1,
-                unit: ing.unit || "g",
-                category: INGREDIENT_CATEGORIES.PANTRY
-              })),
-              instructions: Array.isArray(parsed.instructions) ? parsed.instructions : ["Preparar y disfrutar."]
-            };
-          }
+      if (rawJson) {
+        const cleanJson = rawJson.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsed = JSON.parse(cleanJson);
+        if (parsed && parsed.name && Array.isArray(parsed.ingredients)) {
+          // Recalculate or validate macros using our engine for guaranteed accuracy
+          const verifiedMacros = calculateMacrosFromIngredients(parsed.ingredients);
+          return {
+            id: "custom_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+            name: parsed.name,
+            type: parsed.type || (preferredType !== "auto" ? preferredType : "comida"),
+            prepTime: Number(parsed.prepTime) || 25,
+            calories: verifiedMacros.calories || Number(parsed.calories) || 450,
+            protein: verifiedMacros.protein || Number(parsed.protein) || 35,
+            carbs: verifiedMacros.carbs || Number(parsed.carbs) || 30,
+            fats: verifiedMacros.fats || Number(parsed.fats) || 12,
+            tags: ["Gemini Pro AI", "personalizada"],
+            ingredients: parsed.ingredients.map(ing => ({
+              name: ing.name,
+              amount: Number(ing.amount) || 1,
+              unit: ing.unit || "g",
+              category: INGREDIENT_CATEGORIES.PANTRY
+            })),
+            instructions: Array.isArray(parsed.instructions) ? parsed.instructions : ["Preparar y disfrutar."]
+          };
         }
       }
     } catch(e) {
