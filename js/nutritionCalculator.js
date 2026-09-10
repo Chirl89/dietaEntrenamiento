@@ -528,7 +528,7 @@ Responde ÚNICAMENTE con un objeto JSON sin bloques de código markdown ni texto
   ]
 }`;
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`, {
+      let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -537,11 +537,23 @@ Responde ÚNICAMENTE con un objeto JSON sin bloques de código markdown ni texto
         })
       });
 
+      if (!res.ok) {
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+      }
+
       if (res.ok) {
         const data = await res.json();
         const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (rawJson) {
-          const parsed = JSON.parse(rawJson);
+          const cleanJson = rawJson.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+          const parsed = JSON.parse(cleanJson);
           if (parsed && parsed.name && Array.isArray(parsed.ingredients)) {
             // Recalculate or validate macros using our engine for guaranteed accuracy
             const verifiedMacros = calculateMacrosFromIngredients(parsed.ingredients);
