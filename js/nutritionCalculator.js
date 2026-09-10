@@ -727,7 +727,7 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
 5. FORMATO ESTRICTO: Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura, sin texto previo ni posterior, sin explicaciones ni markdown:
 {
   "name": "Nombre descriptivo y atractivo del plato",
-  "type": "desayuno" | "comida" | "cena" | "snack",
+  "type": "comida",
   "servings": ${servings},
   "prepTime": 35,
   "calories": 480,

@@ -1805,6 +1805,9 @@ export function autoCalculateRecipeModalMacros(prefix = 'new') {
   }
 }
 
+let generatedRecipeCandidate = null;
+let generatedBatchCandidate = null;
+
 /**
  * AI RECIPE GENERATOR MODAL (Modo Inteligente)
  */
