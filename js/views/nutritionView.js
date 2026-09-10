@@ -35,6 +35,10 @@ import {
   getExistingBatchBases,
   KITCHEN_APPLIANCES
 } from '../batchCookingEngine.js';
+import {
+  unifyAndOptimizeForMercadona,
+  optimizeMercadonaListWithAi
+} from '../mercadonaOptimizer.js';
 
 // MEAL SLOTS DEFINITION
 export const MEAL_SLOTS = [
@@ -2580,6 +2584,7 @@ if (typeof window !== "undefined") {
   window.openBatchCookingView = openBatchCookingView;
   window.renderBatchCookingView = renderBatchCookingView;
   window.copyBatchCookingPlanToClipboard = copyBatchCookingPlanToClipboard;
+  window.copyMercadonaShoppingList = copyMercadonaShoppingList;
 }
 
 /**
@@ -3217,9 +3222,13 @@ export function renderShoppingView() {
     `;
     container.appendChild(dayFilterCard);
 
+    // Consolidate interchangeable ingredients (e.g. Arroz Bomba + Basmati -> predominant variant) and match with Mercadona
+    const rawAggregatedList = Object.values(aggregated);
+    const optimizedAggregatedList = unifyAndOptimizeForMercadona(rawAggregatedList);
+
     // Group by category
     const categories = {};
-    Object.values(aggregated).forEach(item => {
+    optimizedAggregatedList.forEach(item => {
       if (!categories[item.category]) categories[item.category] = [];
       categories[item.category].push(item);
     });
@@ -3243,25 +3252,32 @@ export function renderShoppingView() {
     };
 
     // Render Summary Banner
-    const totalItemsCount = Object.keys(aggregated).length + (appState.shoppingExtras || []).length;
+    const totalItemsCount = optimizedAggregatedList.length + (appState.shoppingExtras || []).length;
     const summaryBanner = document.createElement("div");
     summaryBanner.className = "shopping-summary-banner glass-card";
     summaryBanner.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
         <div>
           <span style="font-size:0.78rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Planificación Activa</span>
-          <h3 style="font-family:var(--font-heading); font-size:1.1rem; color:var(--accent-emerald);">
+          <h3 style="font-family:var(--font-heading); font-size:1.1rem; color:var(--accent-emerald); margin: 0.2rem 0 0 0;">
             🛒 ${totalItemsCount} productos para ${totalMealsCount} comidas planificadas
           </h3>
         </div>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <div style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+          <button type="button" class="btn-planner-tool" onclick="copyMercadonaShoppingList()" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-weight: 700;">
+            <i class="fa-solid fa-basket-shopping"></i> Copiar Mercadona
+          </button>
           <button type="button" class="btn-planner-tool" onclick="openAddExtraShoppingModal()">
-            <i class="fa-solid fa-plus"></i> Añadir Extra
+            <i class="fa-solid fa-plus"></i> Extra
           </button>
           <button type="button" class="btn-planner-tool" onclick="clearCheckedShoppingItems()">
-            <i class="fa-solid fa-rotate-left"></i> Desmarcar Todo
+            <i class="fa-solid fa-rotate-left"></i> Desmarcar
           </button>
         </div>
+      </div>
+
+      <div style="margin-top: 0.75rem; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; padding: 0.55rem 0.85rem; border-radius: 4px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+        💡 <strong>Despensa Inteligente Mercadona:</strong> Se unifican automáticamente ingredientes equivalentes (ej. arroz bomba y basmati) en la variedad predominante para no comprar paquetes duplicados. Si ya dispones de arroz o básicos en tu despensa, ¡aprovéchalos sin comprar de más!
       </div>
     `;
     container.appendChild(summaryBanner);
@@ -3297,12 +3313,37 @@ export function renderShoppingView() {
         const itemKey = item.name.toLowerCase().trim();
         const isChecked = !!appState.checkedShoppingItems?.[itemKey];
         const displayAmount = Math.round(item.amount * 10) / 10;
+        const merc = item.mercadona;
 
         return `
-          <div class="shopping-item ${isChecked ? 'checked' : ''}" onclick="toggleShoppingItem('${itemKey}', this)">
-            <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleShoppingItem('${itemKey}', this.parentNode);">
-            <span class="shopping-item-name">${item.name}</span>
-            <span class="shopping-item-qty">${displayAmount} ${item.unit}</span>
+          <div class="shopping-item ${isChecked ? 'checked' : ''}" onclick="toggleShoppingItem('${itemKey}', this)" style="flex-direction: column; align-items: stretch; gap: 0.35rem; padding: 0.75rem 0.9rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 0.55rem; flex: 1;">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleShoppingItem('${itemKey}', this.parentNode.parentNode);">
+                <span class="shopping-item-name" style="font-weight: 700; font-size: 0.9rem;">${item.name}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="shopping-item-qty" style="font-weight: 700;">${displayAmount} ${item.unit}</span>
+                ${merc?.searchUrl ? `
+                  <a href="${merc.searchUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="Buscar en Mercadona Online" style="color: #10b981; font-size: 0.72rem; padding: 2px 7px; background: rgba(16,185,129,0.12); border-radius: 4px; border: 1px solid rgba(16,185,129,0.3); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; font-weight: 600;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Mercadona
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+
+            ${merc ? `
+              <div style="font-size: 0.74rem; color: #34d399; display: flex; justify-content: space-between; align-items: center; padding-left: 1.65rem;">
+                <span><i class="fa-solid fa-basket-shopping"></i> <em>${merc.productName}</em></span>
+                <span style="color: var(--text-muted); font-size: 0.7rem;">(${merc.recommendedPack})</span>
+              </div>
+            ` : ''}
+
+            ${item.isUnified && item.unificationNote ? `
+              <div style="font-size: 0.72rem; color: #f59e0b; background: rgba(245,158,11,0.09); border-radius: 4px; padding: 3px 7px; margin-left: 1.65rem; line-height: 1.35; border: 1px dashed rgba(245,158,11,0.3);">
+                ${item.unificationNote}
+              </div>
+            ` : ''}
           </div>
         `;
       }).join("");
@@ -3448,6 +3489,52 @@ export function copyShoppingList() {
     }
   } catch(e) {
     console.error("Error copying shopping list:", e);
+  }
+}
+
+/**
+ * Copy Mercadona-Optimized Shopping List to Clipboard
+ */
+export function copyMercadonaShoppingList() {
+  try {
+    triggerHapticTouch();
+    const activeWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    let text = `🛒 LISTA DE LA COMPRA MERCADONA - FITDUO (${getWeekDisplayLabel(activeWeekKey)}) 🛍️\n`;
+    text += `Para: ${getProfileShortName(appState.activeProfileId || 'he')}\n\n`;
+    text += `💡 REGLAS DE DESPENSA Y AHORRO:\n`;
+    text += `• Variedades equivalentes (ej. arroz bomba y basmati) se han unificado en la de mayor volumen.\n`;
+    text += `• Si ya dispones de arroz, pasta o legumbres de cualquier tipo en casa, ¡no compres más!\n\n`;
+
+    document.querySelectorAll(".shopping-category").forEach(cat => {
+      const titleElem = cat.querySelector(".shopping-cat-title");
+      if (!titleElem) return;
+      const title = titleElem.innerText.replace(/\s*\(\d+\)$/, '').trim();
+      text += `=== ${title.toUpperCase()} ===\n`;
+      cat.querySelectorAll(".shopping-item").forEach(item => {
+        const name = item.querySelector(".shopping-item-name")?.innerText || "";
+        const qty = item.querySelector(".shopping-item-qty")?.innerText || "";
+        const mercTag = item.querySelector("em")?.innerText || "";
+        const checked = item.classList.contains("checked") ? "[X]" : "[ ]";
+        text += `${checked} ${name} (${qty})`;
+        if (mercTag) text += ` -> Mercadona: ${mercTag}`;
+        text += `\n`;
+      });
+      text += `\n`;
+    });
+
+    text += `--- Generado por FitDuo & Collie ---\n`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showIosToast("🛒 ¡Lista para Mercadona copiada al portapapeles!", "fa-solid fa-basket-shopping");
+      }).catch(() => {
+        prompt("Copia manualmente la lista de Mercadona:", text);
+      });
+    } else {
+      prompt("Copia manualmente la lista de Mercadona:", text);
+    }
+  } catch(e) {
+    console.error("Error copying Mercadona shopping list:", e);
   }
 }
 
