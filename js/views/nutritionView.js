@@ -2239,16 +2239,16 @@ export function renderBatchRecipesListHtml(recipes, highlightedIndex = -1) {
         </div>
 
         <div style="display: flex; gap: 0.45rem; margin-top: 0.85rem; flex-wrap: wrap;">
-          <button type="button" class="btn-secondary" onclick="saveSingleBatchRecipe(${idx})" style="flex: 1; min-width: 100px; padding: 0.5rem 0.6rem; font-size: 0.76rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
+          <button type="button" class="btn-secondary" onclick="window.saveSingleBatchRecipe ? window.saveSingleBatchRecipe(${idx}) : saveSingleBatchRecipe(${idx})" style="flex: 1; min-width: 100px; padding: 0.5rem 0.6rem; font-size: 0.76rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
             <i class="fa-solid fa-bookmark"></i> Guardar solo esta
           </button>
-          <button type="button" class="btn-secondary" onclick="editSingleBatchRecipe(${idx})" style="padding: 0.5rem 0.6rem; font-size: 0.76rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
+          <button type="button" class="btn-secondary" onclick="window.editSingleBatchRecipe ? window.editSingleBatchRecipe(${idx}) : editSingleBatchRecipe(${idx})" style="padding: 0.5rem 0.6rem; font-size: 0.76rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
             <i class="fa-solid fa-pen-to-square"></i> Retocar
           </button>
-          <button type="button" class="btn-secondary" onclick="toggleBatchRecipeAiAlternative(${idx})" style="padding: 0.5rem 0.75rem; font-size: 0.76rem; justify-content: center; background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.3); color: var(--accent-cyan); font-weight: 600;">
+          <button type="button" class="btn-secondary" onclick="window.toggleBatchRecipeAiAlternative ? window.toggleBatchRecipeAiAlternative(${idx}) : toggleBatchRecipeAiAlternative(${idx})" style="padding: 0.5rem 0.75rem; font-size: 0.76rem; justify-content: center; background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.3); color: var(--accent-cyan); font-weight: 600;">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Otra alternativa IA
           </button>
-          <button type="button" class="btn-secondary" onclick="removeSingleBatchRecipe(${idx})" style="padding: 0.5rem 0.65rem; font-size: 0.76rem; justify-content: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;" title="Quitar de este lote">
+          <button type="button" class="btn-secondary" onclick="window.removeSingleBatchRecipe ? window.removeSingleBatchRecipe(${idx}) : removeSingleBatchRecipe(${idx})" style="padding: 0.5rem 0.65rem; font-size: 0.76rem; justify-content: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;" title="Quitar de este lote">
             <i class="fa-solid fa-trash-can"></i> Quitar
           </button>
         </div>
@@ -2259,13 +2259,13 @@ export function renderBatchRecipesListHtml(recipes, highlightedIndex = -1) {
             <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.35rem;">
               <i class="fa-solid fa-wand-magic-sparkles"></i> Pedir alternativa a la IA (Receta ${idx + 1})
             </span>
-            <button type="button" onclick="toggleBatchRecipeAiAlternative(${idx})" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 2px 6px;">
+            <button type="button" onclick="window.toggleBatchRecipeAiAlternative ? window.toggleBatchRecipeAiAlternative(${idx}) : toggleBatchRecipeAiAlternative(${idx})" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 2px 6px;">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
 
           <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0 0 0.5rem 0; line-height: 1.35;">
-            Indica tus preferencias (ingredientes, cantidad de carne ej. <em>250g</em>, o estilo) o pulsa una idea rápida. Si lo dejas vacío, la IA propondrá una idea diferente automáticamente.
+            Indica tus preferencias (ingredientes, ración de carne o estilo) o pulsa una idea rápida. Si lo dejas vacío, la IA propondrá una idea diferente automáticamente.
           </p>
 
           <div style="margin-bottom: 0.5rem;">
@@ -2273,18 +2273,18 @@ export function renderBatchRecipesListHtml(recipes, highlightedIndex = -1) {
           </div>
 
           <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-            <button type="button" class="ai-chip-btn" onclick="setBatchAltPrompt(${idx}, 'Ensalada fresca y ligera para cenar')">🥗 Ensalada ligera</button>
-            <button type="button" class="ai-chip-btn" onclick="setBatchAltPrompt(${idx}, 'Con pasta integral y salsa de tomate')">🍝 Con pasta</button>
-            <button type="button" class="ai-chip-btn" onclick="setBatchAltPrompt(${idx}, 'Arroz salteado estilo wok con verduras')">🍚 Con arroz / wok</button>
-            <button type="button" class="ai-chip-btn" onclick="setBatchAltPrompt(${idx}, 'Fajitas o tacos con pimientos y cebolla')">🌯 Fajitas / Tacos</button>
-            <button type="button" class="ai-chip-btn" onclick="setBatchAltPrompt(${idx}, 'Ración más generosa con 220g de carne')">🥩 Más carne (220g)</button>
+            <button type="button" class="ai-chip-btn" onclick="window.setBatchAltPrompt ? window.setBatchAltPrompt(${idx}, 'Ensalada fresca y ligera para cenar') : setBatchAltPrompt(${idx}, 'Ensalada fresca y ligera para cenar')">🥗 Ensalada ligera</button>
+            <button type="button" class="ai-chip-btn" onclick="window.setBatchAltPrompt ? window.setBatchAltPrompt(${idx}, 'Con pasta integral y salsa de tomate') : setBatchAltPrompt(${idx}, 'Con pasta integral y salsa de tomate')">🍝 Con pasta</button>
+            <button type="button" class="ai-chip-btn" onclick="window.setBatchAltPrompt ? window.setBatchAltPrompt(${idx}, 'Arroz salteado estilo wok con verduras') : setBatchAltPrompt(${idx}, 'Arroz salteado estilo wok con verduras')">🍚 Con arroz / wok</button>
+            <button type="button" class="ai-chip-btn" onclick="window.setBatchAltPrompt ? window.setBatchAltPrompt(${idx}, 'Fajitas o tacos con pimientos y cebolla') : setBatchAltPrompt(${idx}, 'Fajitas o tacos con pimientos y cebolla')">🌯 Fajitas / Tacos</button>
+            <button type="button" class="ai-chip-btn" onclick="window.setBatchAltPrompt ? window.setBatchAltPrompt(${idx}, 'Ración más generosa con 220g de carne') : setBatchAltPrompt(${idx}, 'Ración más generosa con 220g de carne')">🥩 Más carne (220g)</button>
           </div>
 
           <div style="display: flex; gap: 0.5rem;">
-            <button type="button" id="batch-alt-submit-${idx}" class="btn-primary" onclick="applyBatchRecipeAiAlternative(${idx})" style="flex: 1; justify-content: center; padding: 0.55rem 0.85rem; font-size: 0.82rem; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); border: none; font-weight: 700;">
+            <button type="button" id="batch-alt-submit-${idx}" class="btn-primary" onclick="window.applyBatchRecipeAiAlternative ? window.applyBatchRecipeAiAlternative(${idx}) : applyBatchRecipeAiAlternative(${idx})" style="flex: 1; justify-content: center; padding: 0.55rem 0.85rem; font-size: 0.82rem; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); border: none; font-weight: 700;">
               <i class="fa-solid fa-wand-magic-sparkles"></i> Generar Alternativa con IA
             </button>
-            <button type="button" class="btn-secondary" onclick="toggleBatchRecipeAiAlternative(${idx})" style="padding: 0.55rem 0.75rem; font-size: 0.82rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);">
+            <button type="button" class="btn-secondary" onclick="window.toggleBatchRecipeAiAlternative ? window.toggleBatchRecipeAiAlternative(${idx}) : toggleBatchRecipeAiAlternative(${idx})" style="padding: 0.55rem 0.75rem; font-size: 0.82rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);">
               Cancelar
             </button>
           </div>
@@ -2321,7 +2321,7 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
         💡 <strong>Presupuesto calórico inteligente:</strong> Calibrado por momento del día. Las <strong>comidas</strong> aportan mayor energía (~650-850 kcal) con hidratos complejos para rendir y entrenar, mientras que las <strong>cenas</strong> son más ligeras y digestivas (~380-520 kcal) para optimizar el descanso. Puedes regenerar, añadir o quitar platos según tus necesidades.
       </div>
 
-      <button type="button" class="btn-primary" onclick="saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-bottom: 1.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
+      <button type="button" class="btn-primary" onclick="window.saveAllBatchCookingRecipes ? window.saveAllBatchCookingRecipes() : saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-bottom: 1.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
         <i class="fa-solid fa-floppy-disk"></i> ${saveLabel}
       </button>
 
@@ -2343,17 +2343,17 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
           <input type="text" id="add-batch-recipe-input" class="ios-input" placeholder="ej. Haz un wok de arroz con verduras, o pasta integral, o una cena muy ligera..." style="font-size: 0.82rem; padding: 0.5rem 0.75rem;" />
         </div>
         <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-          <button type="button" class="ai-chip-btn" onclick="setAddBatchRecipePrompt('Salteado al wok con arroz jazmín y verduras')">🍚 Con arroz / wok</button>
-          <button type="button" class="ai-chip-btn" onclick="setAddBatchRecipePrompt('Pasta integral con carne desmenuzada y salsa casera')">🍝 Con pasta</button>
-          <button type="button" class="ai-chip-btn" onclick="setAddBatchRecipePrompt('Wrap o fajita rápida con verduras')">🌯 Wrap / Fajita</button>
-          <button type="button" class="ai-chip-btn" onclick="setAddBatchRecipePrompt('Ensalada templada muy ligera para cenar')">🥗 Ensalada ligera</button>
+          <button type="button" class="ai-chip-btn" onclick="window.setAddBatchRecipePrompt ? window.setAddBatchRecipePrompt('Salteado al wok con arroz jazmín y verduras') : setAddBatchRecipePrompt('Salteado al wok con arroz jazmín y verduras')">🍚 Con arroz / wok</button>
+          <button type="button" class="ai-chip-btn" onclick="window.setAddBatchRecipePrompt ? window.setAddBatchRecipePrompt('Pasta integral con carne desmenuzada y salsa casera') : setAddBatchRecipePrompt('Pasta integral con carne desmenuzada y salsa casera')">🍝 Con pasta</button>
+          <button type="button" class="ai-chip-btn" onclick="window.setAddBatchRecipePrompt ? window.setAddBatchRecipePrompt('Wrap o fajita rápida con verduras') : setAddBatchRecipePrompt('Wrap o fajita rápida con verduras')">🌯 Wrap / Fajita</button>
+          <button type="button" class="ai-chip-btn" onclick="window.setAddBatchRecipePrompt ? window.setAddBatchRecipePrompt('Ensalada templada muy ligera para cenar') : setAddBatchRecipePrompt('Ensalada templada muy ligera para cenar')">🥗 Ensalada ligera</button>
         </div>
-        <button type="button" id="add-batch-recipe-btn" class="btn-secondary" onclick="applyAddBatchRecipe()" style="width: 100%; justify-content: center; padding: 0.65rem; font-size: 0.82rem; background: rgba(6,182,212,0.15); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">
+        <button type="button" id="add-batch-recipe-btn" class="btn-secondary" onclick="window.applyAddBatchRecipe ? window.applyAddBatchRecipe() : applyAddBatchRecipe()" style="width: 100%; justify-content: center; padding: 0.65rem; font-size: 0.82rem; background: rgba(6,182,212,0.15); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">
           <i class="fa-solid fa-plus-circle"></i> Añadir Otra Receta con IA a este Lote
         </button>
       </div>
 
-      <button type="button" class="btn-primary" onclick="saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 0.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
+      <button type="button" class="btn-primary" onclick="window.saveAllBatchCookingRecipes ? window.saveAllBatchCookingRecipes() : saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 0.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
         <i class="fa-solid fa-floppy-disk"></i> ${saveLabel}
       </button>
     </div>
@@ -2493,6 +2493,19 @@ export async function applyBatchRecipeAiAlternative(index) {
       submitBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generar Alternativa con IA';
     }
   }
+}
+
+// Ensure batch cooking actions are globally accessible immediately upon module load
+if (typeof window !== "undefined") {
+  window.saveAllBatchCookingRecipes = saveAllBatchCookingRecipes;
+  window.saveSingleBatchRecipe = saveSingleBatchRecipe;
+  window.editSingleBatchRecipe = editSingleBatchRecipe;
+  window.removeSingleBatchRecipe = removeSingleBatchRecipe;
+  window.toggleBatchRecipeAiAlternative = toggleBatchRecipeAiAlternative;
+  window.setBatchAltPrompt = setBatchAltPrompt;
+  window.applyBatchRecipeAiAlternative = applyBatchRecipeAiAlternative;
+  window.setAddBatchRecipePrompt = setAddBatchRecipePrompt;
+  window.applyAddBatchRecipe = applyAddBatchRecipe;
 }
 
 /**
