@@ -2000,13 +2000,22 @@ export async function generateAiRecipeFromForm() {
       generatedRecipeCandidate = null;
 
       renderBatchCandidateView();
-      showIosToast("🍱 ¡3 recetas de aprovechamiento generadas!", "fa-solid fa-layer-group");
+      if (result.aiPowered) {
+        showIosToast(`✨ ¡${result.recipes.length} recetas generadas con Gemini Pro AI!`, "fa-solid fa-wand-magic-sparkles");
+      } else {
+        showIosToast(`⚡ ¡${result.recipes.length} recetas generadas con el motor culinario!`, "fa-solid fa-layer-group");
+      }
       return;
     }
 
     // SINGLE RECIPE FLOW
     generatedRecipeCandidate = result;
     generatedBatchCandidate = null;
+    if (result.aiPowered) {
+      showIosToast("✨ ¡Receta generada con Gemini Pro AI!", "fa-solid fa-wand-magic-sparkles");
+    } else {
+      showIosToast("⚡ ¡Receta generada con el motor culinario!", "fa-solid fa-bolt");
+    }
 
     const ingHtml = (result.ingredients || []).map(i => `
       <li style="display:flex; justify-content:space-between; padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 0.84rem;">
@@ -2026,7 +2035,12 @@ export async function generateAiRecipeFromForm() {
       <div class="glass-card generated-recipe-card" style="border: 1px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.06); padding: 1.25rem; border-radius: var(--radius-md);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
           <div>
-            <span class="type-pill ${result.type}" style="font-size: 0.72rem;">${result.type.toUpperCase()} • ${result.prepTime} min</span>
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+              <span class="type-pill ${result.type}" style="font-size: 0.72rem;">${result.type.toUpperCase()} • ${result.prepTime} min</span>
+              ${result.aiPowered 
+                ? '<span style="font-size: 0.70rem; background: rgba(168,85,247,0.2); color: #c084fc; padding: 2px 8px; border-radius: 9999px; font-weight: 800;"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini Pro AI</span>'
+                : '<span style="font-size: 0.70rem; background: rgba(14,165,233,0.18); color: #38bdf8; padding: 2px 8px; border-radius: 9999px; font-weight: 800;"><i class="fa-solid fa-bolt"></i> Motor Culinario Local</span>'}
+            </div>
             <h3 style="font-size: 1.15rem; margin: 0.4rem 0 0.2rem 0; color: var(--text-main); font-weight: 700;">${result.name}</h3>
           </div>
           <span style="font-size: 0.72rem; background: rgba(16,185,129,0.15); color: var(--accent-emerald); padding: 2px 8px; border-radius: 9999px; font-weight: 700;">✨ Calculado</span>
@@ -2354,9 +2368,14 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
     <div class="glass-card generated-batch-card" style="border: 1px solid var(--accent-amber); background: rgba(245, 158, 11, 0.05); padding: 1.25rem; border-radius: var(--radius-md);">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.75rem;">
         <div>
-          <span style="font-size: 0.72rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 3px 10px; border-radius: 9999px; font-weight: 800;">
-            <i class="fa-solid fa-layer-group"></i> PLAN DE BATCH COOKING (${countLabel})
-          </span>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+            <span style="font-size: 0.72rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 3px 10px; border-radius: 9999px; font-weight: 800;">
+              <i class="fa-solid fa-layer-group"></i> PLAN DE BATCH COOKING (${countLabel})
+            </span>
+            ${result.aiPowered 
+              ? '<span style="font-size: 0.70rem; background: rgba(168,85,247,0.2); color: #c084fc; padding: 3px 9px; border-radius: 9999px; font-weight: 800;"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini Pro AI</span>'
+              : '<span style="font-size: 0.70rem; background: rgba(14,165,233,0.18); color: #38bdf8; padding: 3px 9px; border-radius: 9999px; font-weight: 800;"><i class="fa-solid fa-bolt"></i> Motor Culinario Local</span>'}
+          </div>
           <h3 style="font-size: 1.2rem; margin: 0.5rem 0 0.2rem 0; color: var(--text-main); font-weight: 700;">${result.batchTitle}</h3>
           <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">${result.basePrep}</p>
         </div>

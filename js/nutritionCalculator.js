@@ -93,6 +93,7 @@ export const FOOD_DATABASE = [
   { keys: ["edamame"], name: "Edamame desgranado", kcal: 122, prot: 11, carbs: 9, fats: 5, defaultUnit: "g", category: INGREDIENT_CATEGORIES.PRODUCE, serving: 90 },
 
   // VERDURAS Y HORTALIZAS
+  { keys: ["pisto manchego", "pisto", "ratatouille", "escalivada"], name: "Pisto manchego casero", kcal: 78, prot: 1.4, carbs: 7.2, fats: 4.8, defaultUnit: "g", category: INGREDIENT_CATEGORIES.PRODUCE, serving: 250 },
   { keys: ["salsa de tomate", "tomate frito", "tomate triturado"], name: "Salsa de tomate / Tomate frito", kcal: 65, prot: 1.5, carbs: 8, fats: 3, defaultUnit: "g", category: INGREDIENT_CATEGORIES.PRODUCE, serving: 80 },
   { keys: ["tomates cherry", "tomates", "tomate"], name: "Tomates frescos", kcal: 18, prot: 0.9, carbs: 3.9, fats: 0.2, defaultUnit: "g", category: INGREDIENT_CATEGORIES.PRODUCE, serving: 100 },
   { keys: ["calabacin fresco", "calabacin"], name: "Calabacín fresco", kcal: 17, prot: 1.2, carbs: 3.1, fats: 0.3, defaultUnit: "g", category: INGREDIENT_CATEGORIES.PRODUCE, serving: 150 },
@@ -298,11 +299,69 @@ export function detectBatchCookingNeed(text) {
   if (!text) return false;
   const clean = cleanText(text);
   const patterns = [
-    /\b(\d+)\s*(kg|kilo|kilos)\b/,
-    /\b(entero|entera|pieza entera)\b/,
-    /\b(batch|batch cooking|aprovechamiento|preparacion base|varias recetas|varios platos)\b/,
-    /\b(para la semana|para toda la semana|para varios dias|3 recetas|2 recetas|4 recetas)\b/
+    /\b(\d+(?:[.,]\d+)?)\s*(?:kg|kilo|kilos)\b/,
+    /\b(?:un|medio|dos|tres)\s*(?:kg|kilo|kilos)\b/,
+    /\b(?:como|alrededor de|sobre|unos?)\s*(?:\d+|un|medio)\s*(?:kg|kilo|kilos|g|gr|gramos)\b/,
+    /\b(?:entero|entera|pieza entera)\b/,
+    /\b(?:batch|batch cooking|aprovechamiento|preparacion base|varias recetas|varios platos)\b/,
+    /\b(?:para la semana|para toda la semana|para varios dias|\d+\s*recetas|\d+\s*platos|\d+\s*comidas)\b/
   ];
+  return patterns.some(p => p.test(clean));
+}
+
+/**
+ * Robust NLP entity extractor that strips conversational filler, quantities,
+ * batch markers, and techniques to isolate the pure culinary subject.
+ * e.g., "Quiero hacer como un kilo de pisto manchego" -> "Pisto manchego"
+ *       "Tengo 1.5kg de cabecero de lomo al horno" -> "Cabecero de lomo"
+ */
+export function extractCleanCulinarySubject(text) {
+  if (!text) return "Plato saludable";
+  let s = text;
+
+  // 1. Conversational intent / actions
+  s = s.replace(/\b(?:quiero\s+hacer|quiero\s+cocinar|quiero\s+preparar|me\s+gustar[ií]a\s+hacer|me\s+gustar[ií]a\s+preparar|me\s+gustar[ií]a\s+cocinar|voy\s+a\s+hacer|voy\s+a\s+preparar|voy\s+a\s+cocinar|hazme\s+una\s+receta\s+de|hazme\s+un\s+plato\s+de|hazme|haz|prepara|preparar|cocinar|hacer|tengo|necesito|quiero|quisiera)\b/gi, '');
+
+  // 2. Quantities, weights & approximate volume
+  s = s.replace(/\b(?:como\s+|alrededor\s+de\s+|sobre\s+|cerca\s+de\s+|aproximadamente\s+|unos?\s+)?(?:\d+(?:[.,]\d+)?|un|medio|dos|tres|cuatro|cinco)\s*(?:kilos?|kg|gramos?|g|gr|litros?|l)\s*(?:de)?\b/gi, '');
+
+  // 3. Batch / weekly / goals / meal types
+  s = s.replace(/\b(?:para\s+)?(?:toda\s+)?(?:la\s+)?semana\b/gi, '');
+  s = s.replace(/\b(?:en\s+)?(?:batch(?:\s+cooking)?|aprovechamiento|cocina\s+de\s+aprovechamiento)\b/gi, '');
+  s = s.replace(/\b(?:para\s+comer|para\s+cenar|para\s+desayunar|para\s+merendar)\b/gi, '');
+  s = s.replace(/\b(?:receta\s+de|plato\s+de|un\s+plato\s+de|una\s+receta\s+de)\b/gi, '');
+
+  // 4. Cooking techniques
+  s = s.replace(/\b(?:al\s+horno|a\s+la\s+plancha|en\s+airfryer|en\s+freidora(?:\s+de\s+aire)?|al\s+vapor|en\s+olla(?:\s+express)?|a\s+fuego\s+lento)\b/gi, '');
+
+  // 5. Clean punctuation and edge connectors
+  s = s.replace(/^[,\s.:;¿?¡!]+|[,\s.:;¿?¡!]+$/g, '').trim();
+  s = s.replace(/^(?:de|con|del|un|una|el|la|los|las)\s+/i, '').trim();
+  s = s.replace(/\s+(?:para|de|con|en)$/i, '').trim();
+
+  if (!s || s.length < 2) return text.trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Detects the culinary category of a batch ingredient/preparation
+ * Returns: "veggie_stew" | "legume_stew" | "fish" | "grain_base" | "meat"
+ */
+export function detectBatchFoodCategory(foodName, description = "") {
+  const text = cleanText((foodName || "") + " " + (description || ""));
+  if (text.includes("pisto") || text.includes("ratatouille") || text.includes("escalivada") || text.includes("sofrito") || text.includes("crema") || text.includes("verdura") || text.includes("espinaca") || text.includes("champinon") || text.includes("calabacin") || text.includes("berenjena")) {
+    return "veggie_stew";
+  }
+  if (text.includes("lenteja") || text.includes("garbanzo") || text.includes("alubia") || text.includes("judia") || text.includes("fabada") || text.includes("potaje")) {
+    return "legume_stew";
+  }
+  if (text.includes("merluza") || text.includes("salmon") || text.includes("bacalao") || text.includes("lubina") || text.includes("dorada") || text.includes("atun") || text.includes("pescado") || text.includes("sepia") || text.includes("calamar") || text.includes("gamba")) {
+    return "fish";
+  }
+  if (text.includes("arroz") || text.includes("pasta") || text.includes("macarron") || text.includes("espagueti") || text.includes("quinoa")) {
+    return "grain_base";
+  }
+  return "meat";
 }
 
 /**
@@ -338,7 +397,10 @@ export function parseDeclaredBaseWeight(text) {
  */
 export function getRecipeBaseIngredient(recipe) {
   if (!recipe || !Array.isArray(recipe.ingredients)) return null;
-  const keywords = ["lomo", "carne", "pollo", "ternera", "pavo", "cerdo", "pescado", "salmon", "merluza", "asado", "tiras", "dados", "desmenuzado"];
+  const keywords = [
+    "lomo", "carne", "pollo", "ternera", "pavo", "cerdo", "pescado", "salmon", "merluza", "asado",
+    "tiras", "dados", "desmenuzado", "pisto", "lentejas", "garbanzos", "alubias", "sofrito", "verdura", "crema"
+  ];
   
   let candidates = recipe.ingredients.filter(i => {
     const u = (i.unit || "").toLowerCase();
@@ -481,31 +543,19 @@ export function generateRecipeFromDescription(description, preferredType = "auto
   }
 
   // 4. If NO ingredient was detected in FOOD_DATABASE, NEVER SUBSTITUTE with random chicken/zucchini!
-  // Instead, parse the actual subject from the user's prompt!
+  // Instead, parse the actual subject from the user's prompt cleanly!
+  const cleanSubject = extractCleanCulinarySubject(description);
+
   if (detectedIngredients.length === 0) {
-    // Strip common filler and technique words to isolate the core food
-    let rawSubject = description
-      .replace(/al\s+horno/gi, '')
-      .replace(/a\s+la\s+plancha/gi, '')
-      .replace(/en\s+airfryer/gi, '')
-      .replace(/en\s+freidora\s+de\s+aire/gi, '')
-      .replace(/receta\s+de/gi, '')
-      .replace(/un\s+plato\s+de/gi, '')
-      .replace(/para\s+cenar/gi, '')
-      .replace(/para\s+comer/gi, '')
-      .replace(/para\s+desayunar/gi, '')
-      .trim();
-
-    if (!rawSubject || rawSubject.length < 2) rawSubject = description.trim();
-    const formattedSubject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
-
-    const isProbableMeat = clean.includes("lomo") || clean.includes("cerdo") || clean.includes("carne") || clean.includes("ternera") || clean.includes("pollo") || clean.includes("pavo") || clean.includes("pescado") || clean.includes("cordero") || clean.includes("conejo");
+    const category = detectBatchFoodCategory(cleanSubject, description);
+    const isMeat = category === "meat";
+    const isFish = category === "fish";
     const syntheticFood = {
-      name: formattedSubject,
-      category: isProbableMeat ? INGREDIENT_CATEGORIES.PROTEIN : INGREDIENT_CATEGORIES.PRODUCE,
-      serving: isProbableMeat ? 180 : 150,
+      name: cleanSubject,
+      category: (isMeat || isFish) ? INGREDIENT_CATEGORIES.PROTEIN : INGREDIENT_CATEGORIES.PRODUCE,
+      serving: (isMeat || isFish) ? 180 : 200,
       defaultUnit: "g",
-      keys: [cleanText(formattedSubject)]
+      keys: [cleanText(cleanSubject)]
     };
 
     detectedIngredients.push({
@@ -566,19 +616,29 @@ export function generateRecipeFromDescription(description, preferredType = "auto
   const macroCalc = calculateMacrosFromIngredients(ingredients);
 
   // 8. Generate appropriate Title
-  let title = description.trim();
-  title = title.charAt(0).toUpperCase() + title.slice(1);
-  // Sanitize title length
-  if (title.length > 55) {
-    const mainItem = detectedIngredients[0]?.matchedFood?.name || "Plato personalizado";
-    title = `${mainItem} ${isHorno ? 'al horno' : isPlancha ? 'a la plancha' : isAirfryer ? 'en airfryer' : 'saludable'}`;
+  const mainIngredientName = detectedIngredients[0]?.matchedFood?.name || cleanSubject;
+  const foodCategory = detectBatchFoodCategory(mainIngredientName, description);
+
+  let title = `${mainIngredientName} ${isHorno ? 'al horno' : isPlancha ? 'a la plancha' : isAirfryer ? 'en airfryer' : 'saludable'}`;
+  if (foodCategory === "veggie_stew") {
+    title = `${mainIngredientName} casero tradicional`;
+  } else if (foodCategory === "legume_stew") {
+    title = `Guiso de ${mainIngredientName.toLowerCase()} con verduras`;
   }
 
   // 9. Generate realistic step-by-step preparation instructions
-  const mainIngredientName = detectedIngredients[0]?.matchedFood?.name || "el ingrediente principal";
   const steps = [];
 
-  if (isHorno) {
+  if (foodCategory === "veggie_stew") {
+    steps.push(`Lavar y cortar en dados los ingredientes para la base de ${mainIngredientName.toLowerCase()}.`);
+    steps.push("Poner a pochar a fuego suave-medio en una cazuela amplia o sartén con el aceite de oliva virgen extra.");
+    steps.push("Cocinar durante 20-25 minutos removiendo periódicamente hasta que todo quede tierno y bien confitado.");
+    steps.push("Rectificar de sal al gusto y servir caliente como plato principal o guarnición.");
+  } else if (foodCategory === "legume_stew") {
+    steps.push(`Poner a cocer las ${mainIngredientName.toLowerCase()} con agua o caldo y las verduras en una olla.`);
+    steps.push("Cocinar a fuego suave hasta que estén tiernas y el caldo haya trabado.");
+    steps.push("Servir caliente en plato hondo con un hilo de AOVE virgen extra.");
+  } else if (isHorno) {
     steps.push("Precalentar el horno a 190°C con calor arriba y abajo.");
     steps.push(`Limpiar y sazonar ${mainIngredientName.toLowerCase()} con sal, pimienta negra, ajo y las hierbas aromáticas al gusto.`);
     steps.push(`Disponer en una fuente apta para horno y regar con el hilo de aceite de oliva virgen extra${ingredients.some(i => i.name.includes("Patata") || i.name.includes("Cebolla")) ? ' junto con la guarnición' : ''}.`);
@@ -612,7 +672,7 @@ export function generateRecipeFromDescription(description, preferredType = "auto
   // Estimated preparation time
   let prepTime = 20;
   if (isHorno) prepTime = 40;
-  else if (isGuiso) prepTime = 45;
+  else if (isGuiso || foodCategory === "veggie_stew" || foodCategory === "legume_stew") prepTime = 30;
   else if (isAirfryer) prepTime = 18;
   else if (isPlancha) prepTime = 12;
   else if (isEnsalada || type === "snack") prepTime = 8;
@@ -640,133 +700,383 @@ export function generateRecipeFromDescription(description, preferredType = "auto
     }
     requestedCount = Math.min(Math.max(requestedCount, 1), 10);
 
-    const isSlowOrWine = clean.includes("vino") || clean.includes("mechada") || clean.includes("horas") || clean.includes("deshilach") || clean.includes("lento") || clean.includes("guis");
+    let pool = [];
+    let basePrep = "";
 
-    const pool = [
-      {
-        name: isSlowOrWine
-          ? `${mainIngredientName} asado con patatas panaderas y reducción de vino`
-          : `${mainIngredientName} al horno con patatas panaderas`,
-        type: "comida",
-        prepTime: 45,
-        calories: 740,
-        protein: 44,
-        carbs: 68,
-        fats: 24,
-        tags: ["Batch Cooking", "al horno", "comida principal"],
-        ingredients: [
-          { name: `${mainIngredientName} asado`, amount: 200 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Patata fresca", amount: 260 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Aceite de oliva virgen extra", amount: 12 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Dientes de ajo y especias", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
-        ],
-        instructions: [
-          `Cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} al horno a 190°C durante 45-55 minutos junto a las patatas y el adobo.`,
-          "Separar una ración con su guarnición de patatas para servir recién hecho como comida energética.",
-          "Dejar enfriar el resto de la pieza cocinada, envolver y reservar en la nevera para las siguientes comidas y cenas de la semana."
-        ]
-      },
-      {
-        name: isSlowOrWine 
-          ? `Fajitas calientes de ${mainIngredientName} mechado con pimientos y cebolla pochada`
-          : `Fajitas de ${mainIngredientName} salteado con pimientos y cebolla`,
-        type: "comida",
-        prepTime: 15,
-        calories: 680,
-        protein: 42,
-        carbs: 65,
-        fats: 22,
-        tags: ["Batch Cooking", "aprovechamiento", "comida principal"],
-        ingredients: [
-          { name: isSlowOrWine ? `${mainIngredientName} mechado en sus jugos` : `${mainIngredientName} asado en tiras`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Pimiento rojo y verde", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Cebolla", amount: 70 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Tortillas integrales o de maíz", amount: 3 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-        ],
-        instructions: [
-          `Separar ${190 * safeServings}g de la carne de ${mainIngredientName.toLowerCase()} reservada en frío.`,
-          "En una sartén con aceite de oliva virgen extra, pochar los pimientos y la cebolla hasta que queden tiernos.",
-          "Añadir la carne durante 2 minutos para que coja calor y se impregne de los jugos del sofrito.",
-          "Calentar las tortillas y rellenar para un almuerzo completo, caliente y saciante."
-        ]
-      },
-      {
-        name: isSlowOrWine
-          ? `Salteado caliente de ${mainIngredientName} mechado con calabacín, champiñones y reducción de sus jugos`
-          : `Ensalada templada de ${mainIngredientName} con brotes y frutos secos`,
-        type: "cena",
-        prepTime: 12,
-        calories: 395,
-        protein: 36,
-        carbs: 14,
-        fats: 20,
-        tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
-        ingredients: [
-          { name: isSlowOrWine ? `${mainIngredientName} mechado` : `${mainIngredientName} asado en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: isSlowOrWine ? "Calabacín en dados" : "Espinacas baby o rúcula", amount: (isSlowOrWine ? 120 : 90) * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: isSlowOrWine ? "Champiñones salteados" : "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: isSlowOrWine ? "Reducción de jugo del asado" : "Queso fresco o feta", amount: 25 * safeServings, unit: isSlowOrWine ? "ml" : "g", category: isSlowOrWine ? INGREDIENT_CATEGORIES.PANTRY : INGREDIENT_CATEGORIES.DAIRY },
-          { name: isSlowOrWine ? "Ajo laminado" : "Nueces picadas", amount: (isSlowOrWine ? 5 : 15) * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-        ],
-        instructions: isSlowOrWine ? [
-          `Deshilachar la ración de ${mainIngredientName.toLowerCase()} cocinada a fuego lento.`,
-          "Saltear el calabacín y champiñones con ajo y AOVE durante 5 minutos a fuego medio.",
-          "Incorporar la carne mechada y la reducción de sus jugos durante 2 minutos hasta integrar.",
-          "Servir caliente en bol: cena ligera, digestiva y adaptada a la melosidad del asado."
-        ] : [
-          `Cortar en dados 140g de la pieza de ${mainIngredientName.toLowerCase()} cocinada y templar 1 minuto a fuego suave en la sartén.`,
-          "En una ensaladera o bol, colocar la base de espinacas baby y tomates cherry partidos.",
-          "Añadir los dados de carne templada, el queso desmenuzado y las nueces picadas.",
-          "Aliñar con AOVE, vinagre y sal. Una cena ligera, digestiva y alta en proteínas."
-        ]
-      },
-      {
-        name: `Wok de arroz basmati con ${mainIngredientName} y verduras salteadas`,
-        type: "comida",
-        prepTime: 15,
-        calories: 720,
-        protein: 43,
-        carbs: 75,
-        fats: 18,
-        tags: ["Batch Cooking", "wok", "comida principal"],
-        ingredients: [
-          { name: `${mainIngredientName} en tiras`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Arroz jazmín o basmati cocido", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Calabacín y zanahoria en juliana", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Salsa de soja baja en sal", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Aceite de oliva o sésamo", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-        ],
-        instructions: [
-          "Saltear en sartén amplia o wok las verduras en juliana a fuego vivo 3 minutos con aceite.",
-          `Incorporar las tiras de ${mainIngredientName.toLowerCase()} y el arroz cocido para una comida de alto valor energético.`,
-          "Aderezar con salsa de soja y remover 2 minutos para integrar todos los sabores."
-        ]
-      },
-      {
-        name: `Salteado ligero de ${mainIngredientName} con calabacín, champiñones y cherry`,
-        type: "cena",
-        prepTime: 12,
-        calories: 405,
-        protein: 38,
-        carbs: 15,
-        fats: 19,
-        tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
-        ingredients: [
-          { name: `${mainIngredientName} en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Calabacín en dados", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Champiñones laminados", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Tomates cherry", amount: 60 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-        ],
-        instructions: [
-          "Saltear el calabacín y los champiñones a fuego medio con el aceite durante 5 minutos.",
-          `Añadir los dados de ${mainIngredientName.toLowerCase()} cocinada y los cherry para que tomen temperatura.`,
-          "Servir caliente: plato rico en fibra y proteína con muy baja carga glucémica para antes de dormir."
-        ]
-      }
-    ];
+    if (foodCategory === "veggie_stew") {
+      basePrep = `Cocinar la base de ${mainIngredientName.toLowerCase()} en cazuela o sartén amplia con aceite de oliva virgen extra a fuego lento hasta que las hortalizas queden melosas y pochadas. Dejar atemperar y reservar en recipientes herméticos en la nevera para repartir en las comidas de la semana.`;
+      pool = [
+        {
+          name: `${mainIngredientName} tradicional con huevos camperos a la plancha y patatas`,
+          type: "comida",
+          prepTime: 20,
+          calories: 620,
+          protein: 28,
+          carbs: 58,
+          fats: 26,
+          tags: ["Batch Cooking", "comida principal", "tradicional"],
+          ingredients: [
+            { name: mainIngredientName, amount: 240 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Huevos frescos", amount: 2 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+            { name: "Patata fresca", amount: 200 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            `Calentar la porción de ${mainIngredientName.toLowerCase()} reservada en sartén a fuego medio durante 3 minutos.`,
+            "Cocinar los huevos a la plancha o escalfados dejando la yema líquida.",
+            "Asar las patatas en cubos (o cocinarlas al microondas o airfryer con un hilo de AOVE) y servir junto con el pisto y los huevos recién hechos."
+          ]
+        },
+        {
+          name: `Arroz basmati con ${mainIngredientName} y pechuga de pollo a la plancha`,
+          type: "comida",
+          prepTime: 18,
+          calories: 690,
+          protein: 46,
+          carbs: 72,
+          fats: 16,
+          tags: ["Batch Cooking", "alta proteina", "comida principal"],
+          ingredients: [
+            { name: mainIngredientName, amount: 220 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Pechuga de pollo", amount: 160 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+            { name: "Arroz jazmín o basmati cocido", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+            { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Marcar los filetes o dados de pechuga de pollo en sartén caliente con unas gotas de AOVE hasta dorar.",
+            `Incorporar la ración de ${mainIngredientName.toLowerCase()} del batch cooking para que tome temperatura y se impregne de los jugos del pollo.`,
+            "Servir sobre la base de arroz caliente para una comida deportiva rica en hidratos complejos y proteína magra."
+          ]
+        },
+        {
+          name: `Tostas crujientes con ${mainIngredientName} y queso de cabra o feta gratinado`,
+          type: "cena",
+          prepTime: 12,
+          calories: 420,
+          protein: 22,
+          carbs: 36,
+          fats: 18,
+          tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
+          ingredients: [
+            { name: mainIngredientName, amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Pan de masa madre o integral", amount: 60 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+            { name: "Queso Feta o rulo de cabra", amount: 40 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+            { name: "Orégano o albahaca", amount: 2 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Tostar ligeramente las rebanadas de pan en tostadora o sartén.",
+            `Colocar una base generosa de ${mainIngredientName.toLowerCase()} templado sobre cada tosta.`,
+            "Desmenuzar el queso por encima y gratinar 2 minutos en airfryer o microondas hasta que funda.",
+            "Espolvorear orégano y servir caliente como cena ligera, reconfortante y digestiva."
+          ]
+        },
+        {
+          name: `Salteado de garbanzos cocidos con ${mainIngredientName} y huevo poché`,
+          type: "cena",
+          prepTime: 12,
+          calories: 440,
+          protein: 24,
+          carbs: 45,
+          fats: 14,
+          tags: ["Batch Cooking", "fibra y proteina", "cena ligera"],
+          ingredients: [
+            { name: mainIngredientName, amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Garbanzos cocidos", amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+            { name: "Huevos frescos", amount: 1 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+            { name: "Pimentón de la Vera dulce", amount: 2 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Enjuagar los garbanzos cocidos y saltearlos en una sartén 2 minutos.",
+            `Añadir la porción de ${mainIngredientName.toLowerCase()} reservada y mezclar hasta calentar bien.`,
+            "Coronar con un huevo cocido o poché y un toque de pimentón para una cena saciante rica en fibra."
+          ]
+        },
+        {
+          name: `Pasta integral con ${mainIngredientName} y atún al natural con orégano`,
+          type: "comida",
+          prepTime: 15,
+          calories: 660,
+          protein: 42,
+          carbs: 70,
+          fats: 15,
+          tags: ["Batch Cooking", "comida principal", "energia"],
+          ingredients: [
+            { name: mainIngredientName, amount: 220 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Pasta integral cocida", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+            { name: "Atún fresco / al natural", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+            { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Cocer la pasta integral hasta que esté al dente.",
+            `En la sartén, juntar la ración de ${mainIngredientName.toLowerCase()} con el atún escurrido para templar.`,
+            "Mezclar la pasta con la salsa de pisto y servir bien caliente con orégano fresco."
+          ]
+        }
+      ];
+    } else if (foodCategory === "legume_stew") {
+      basePrep = `Cocinar o hervir las ${mainIngredientName.toLowerCase()} en olla con verduras y hierbas aromáticas. Reservar en recipientes herméticos en la nevera para repartir en las comidas de la semana.`;
+      pool = [
+        {
+          name: `Guiso reconfortante de ${mainIngredientName.toLowerCase()} con patata y sofrito`,
+          type: "comida",
+          prepTime: 20,
+          calories: 650,
+          protein: 34,
+          carbs: 85,
+          fats: 14,
+          tags: ["Batch Cooking", "legumbres", "comida principal"],
+          ingredients: [
+            { name: mainIngredientName, amount: 220 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+            { name: "Patata fresca", amount: 200 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Zanahoria fresca", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            `Calentar la ración de ${mainIngredientName.toLowerCase()} junto con las patatas en cazuela durante 8 minutos.`,
+            "Ajustar de especias y servir caliente."
+          ]
+        },
+        {
+          name: `Ensalada templada de ${mainIngredientName.toLowerCase()} con atún, huevo y cherry`,
+          type: "cena",
+          prepTime: 12,
+          calories: 430,
+          protein: 38,
+          carbs: 38,
+          fats: 14,
+          tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
+          ingredients: [
+            { name: mainIngredientName, amount: 160 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+            { name: "Atún fresco / al natural", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+            { name: "Huevos frescos", amount: 1 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+            { name: "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Aceite de oliva virgen extra", amount: 6 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            `Templar ligeramente las ${mainIngredientName.toLowerCase()} reservadas en frío.`,
+            "Mezclar con los cherry partidos, el huevo duro y el atún.",
+            "Aliñar con AOVE, vinagre y una pizca de sal."
+          ]
+        },
+        {
+          name: `Salteado de ${mainIngredientName.toLowerCase()} con espinacas baby y ajo doradito`,
+          type: "cena",
+          prepTime: 12,
+          calories: 410,
+          protein: 26,
+          carbs: 42,
+          fats: 12,
+          tags: ["Batch Cooking", "cena ligera", "fibra"],
+          ingredients: [
+            { name: mainIngredientName, amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+            { name: "Espinacas baby o rúcula", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Dientes de ajo", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Dorar los ajos laminados en sartén con AOVE.",
+            "Añadir las espinacas hasta que reduzcan de volumen.",
+            `Incorporar las ${mainIngredientName.toLowerCase()} y saltear 2 minutos todo junto.`
+          ]
+        }
+      ];
+    } else if (foodCategory === "fish") {
+      basePrep = `Cocinar los lomos de ${mainIngredientName.toLowerCase()} al horno a 180°C con un hilo de AOVE y limón durante 15 minutos. Desmigar o racionar y reservar en la nevera para la semana.`;
+      pool = [
+        {
+          name: `${mainIngredientName} al horno con patatas panaderas y cebolla pochada`,
+          type: "comida",
+          prepTime: 30,
+          calories: 630,
+          protein: 42,
+          carbs: 62,
+          fats: 18,
+          tags: ["Batch Cooking", "pescado", "comida principal"],
+          ingredients: [
+            { name: `${mainIngredientName} horneado`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+            { name: "Patata fresca", amount: 240 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Cebolla", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Hornear la base con patatas panaderas y cebolla.",
+            "Servir la primera ración recién hecha.",
+            "Reservar el resto del pescado en frío para las siguientes comidas."
+          ]
+        },
+        {
+          name: `Wok de arroz basmati con ${mainIngredientName.toLowerCase()} desmigado y verduras`,
+          type: "comida",
+          prepTime: 15,
+          calories: 660,
+          protein: 40,
+          carbs: 70,
+          fats: 16,
+          tags: ["Batch Cooking", "wok", "comida principal"],
+          ingredients: [
+            { name: `${mainIngredientName} en tiras`, amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+            { name: "Arroz jazmín o basmati cocido", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+            { name: "Pimientos variados", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Salsa de soja baja en sal", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Saltear las verduras en juliana 3 minutos con un hilo de aceite.",
+            `Añadir el ${mainIngredientName.toLowerCase()} cocinado y el arroz para calentar todo junto.`,
+            "Aderezar con salsa de soja y servir."
+          ]
+        },
+        {
+          name: `Revuelto suave de ${mainIngredientName.toLowerCase()} con espárragos verdes`,
+          type: "cena",
+          prepTime: 10,
+          calories: 390,
+          protein: 36,
+          carbs: 8,
+          fats: 22,
+          tags: ["Batch Cooking", "cena ligera", "bajos carbos"],
+          ingredients: [
+            { name: `${mainIngredientName} en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+            { name: "Espárragos verdes", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Huevos frescos", amount: 2 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+            { name: "Aceite de oliva virgen extra", amount: 6 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Saltear los espárragos troceados en sartén con AOVE.",
+            `Agregar el ${mainIngredientName.toLowerCase()} para que tome temperatura.`,
+            "Verter los huevos batidos y cuajar a fuego suave removiendo suavemente."
+          ]
+        }
+      ];
+    } else {
+      // MEAT ROAST POOL
+      const isSlowOrWine = clean.includes("vino") || clean.includes("mechada") || clean.includes("horas") || clean.includes("deshilach") || clean.includes("lento") || clean.includes("guis");
+      basePrep = `Hornear o cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} a 190°C durante 45-55 minutos con aceite, ajo y hierbas aromáticas. Reservar en frío para repartir en las comidas equilibradas de la semana.`;
+      pool = [
+        {
+          name: isSlowOrWine
+            ? `${mainIngredientName} asado con patatas panaderas y reducción de vino`
+            : `${mainIngredientName} al horno con patatas panaderas`,
+          type: "comida",
+          prepTime: 45,
+          calories: 740,
+          protein: 44,
+          carbs: 68,
+          fats: 24,
+          tags: ["Batch Cooking", "al horno", "comida principal"],
+          ingredients: [
+            { name: `${mainIngredientName} asado`, amount: 200 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+            { name: "Patata fresca", amount: 260 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Aceite de oliva virgen extra", amount: 12 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+            { name: "Dientes de ajo y especias", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            `Cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} al horno a 190°C durante 45-55 minutos junto a las patatas y el adobo.`,
+            "Separar una ración con su guarnición de patatas para servir recién hecho como comida energética.",
+            "Dejar enfriar el resto de la pieza cocinada, envolver y reservar en la nevera para las siguientes comidas y cenas de la semana."
+          ]
+        },
+        {
+          name: isSlowOrWine 
+            ? `Fajitas calientes de ${mainIngredientName} mechado con pimientos y cebolla pochada`
+            : `Fajitas de ${mainIngredientName} salteado con pimientos y cebolla`,
+          type: "comida",
+          prepTime: 15,
+          calories: 680,
+          protein: 42,
+          carbs: 65,
+          fats: 22,
+          tags: ["Batch Cooking", "aprovechamiento", "comida principal"],
+          ingredients: [
+            { name: isSlowOrWine ? `${mainIngredientName} mechado en sus jugos` : `${mainIngredientName} asado en tiras`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+            { name: "Pimiento rojo y verde", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Cebolla", amount: 70 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Tortillas integrales o de maíz", amount: 3 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
+            { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            `Separar ${190 * safeServings}g de la carne de ${mainIngredientName.toLowerCase()} reservada en frío.`,
+            "En una sartén con aceite de oliva virgen extra, pochar los pimientos y la cebolla hasta que queden tiernos.",
+            "Añadir la carne durante 2 minutos para que coja calor y se impregne de los jugos del sofrito.",
+            "Calentar las tortillas y rellenar para un almuerzo completo, caliente y saciante."
+          ]
+        },
+        {
+          name: isSlowOrWine
+            ? `Salteado caliente de ${mainIngredientName} mechado con calabacín, champiñones y reducción de sus jugos`
+            : `Ensalada templada de ${mainIngredientName} con brotes y frutos secos`,
+          type: "cena",
+          prepTime: 12,
+          calories: 395,
+          protein: 36,
+          carbs: 14,
+          fats: 20,
+          tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
+          ingredients: [
+            { name: isSlowOrWine ? `${mainIngredientName} mechado` : `${mainIngredientName} asado en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+            { name: isSlowOrWine ? "Calabacín en dados" : "Espinacas baby o rúcula", amount: (isSlowOrWine ? 120 : 90) * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: isSlowOrWine ? "Champiñones salteados" : "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: isSlowOrWine ? "Reducción de jugo del asado" : "Queso fresco o feta", amount: 25 * safeServings, unit: isSlowOrWine ? "ml" : "g", category: isSlowOrWine ? INGREDIENT_CATEGORIES.PANTRY : INGREDIENT_CATEGORIES.DAIRY },
+            { name: isSlowOrWine ? "Ajo laminado" : "Nueces picadas", amount: (isSlowOrWine ? 5 : 15) * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+            { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: isSlowOrWine ? [
+            `Deshilachar la ración de ${mainIngredientName.toLowerCase()} cocinada a fuego lento.`,
+            "Saltear el calabacín y champiñones con ajo y AOVE durante 5 minutos a fuego medio.",
+            "Incorporar la carne mechada y la reducción de sus jugos durante 2 minutos hasta integrar.",
+            "Servir caliente en bol: cena ligera, digestiva y adaptada a la melosidad del asado."
+          ] : [
+            `Cortar en dados 140g de la pieza de ${mainIngredientName.toLowerCase()} cocinada y templar 1 minuto a fuego suave en la sartén.`,
+            "En una ensaladera o bol, colocar la base de espinacas baby y tomates cherry partidos.",
+            "Añadir los dados de carne templada, el queso desmenuzado y las nueces picadas.",
+            "Aliñar con AOVE, vinagre y sal. Una cena ligera, digestiva y alta en proteínas."
+          ]
+        },
+        {
+          name: `Wok de arroz basmati con ${mainIngredientName} y verduras salteadas`,
+          type: "comida",
+          prepTime: 15,
+          calories: 720,
+          protein: 43,
+          carbs: 75,
+          fats: 18,
+          tags: ["Batch Cooking", "wok", "comida principal"],
+          ingredients: [
+            { name: `${mainIngredientName} en tiras`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+            { name: "Arroz jazmín o basmati cocido", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+            { name: "Calabacín y zanahoria en juliana", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Salsa de soja baja en sal", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+            { name: "Aceite de oliva o sésamo", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Saltear en sartén amplia o wok las verduras en juliana a fuego vivo 3 minutos con aceite.",
+            `Incorporar las tiras de ${mainIngredientName.toLowerCase()} y el arroz cocido para una comida de alto valor energético.`,
+            "Aderezar con salsa de soja y remover 2 minutos para integrar todos los sabores."
+          ]
+        },
+        {
+          name: `Salteado ligero de ${mainIngredientName} con calabacín, champiñones y cherry`,
+          type: "cena",
+          prepTime: 12,
+          calories: 405,
+          protein: 38,
+          carbs: 15,
+          fats: 19,
+          tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
+          ingredients: [
+            { name: `${mainIngredientName} en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+            { name: "Calabacín en dados", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Champiñones laminados", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Tomates cherry", amount: 60 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+            { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          ],
+          instructions: [
+            "Saltear el calabacín y los champiñones a fuego medio con el aceite durante 5 minutos.",
+            `Añadir los dados de ${mainIngredientName.toLowerCase()} cocinada y los cherry para que tomen temperatura.`,
+            "Servir caliente: plato rico en fibra y proteína con muy baja carga glucémica para antes de dormir."
+          ]
+        }
+      ];
+    }
 
     const generated = [];
     for (let i = 0; i < requestedCount; i++) {
@@ -784,10 +1094,11 @@ export function generateRecipeFromDescription(description, preferredType = "auto
 
     return {
       isBatch: true,
-      batchTitle: `Batch Cooking: ${mainIngredientName} (${title})`,
-      basePrep: `Hornear o cocinar la pieza base entera a 190°C durante 45 minutos con aceite, ajo y hierbas. Reservar en frío para repartir en ${balancedRecipes.length} ${balancedRecipes.length === 1 ? 'comida equilibrada' : 'comidas equilibradas'} para la semana.`,
+      batchTitle: `Batch Cooking: ${mainIngredientName}`,
+      basePrep: basePrep,
       recipes: balancedRecipes,
-      totalBaseWeight: totalBaseWeight
+      totalBaseWeight: totalBaseWeight,
+      aiPowered: false
     };
   }
 
@@ -803,7 +1114,8 @@ export function generateRecipeFromDescription(description, preferredType = "auto
     fats: Math.round(macroCalc.fats / safeServings),
     tags: ["asistente inteligente", isHorno ? "al horno" : isPlancha ? "a la plancha" : "saludable"],
     ingredients,
-    instructions: steps
+    instructions: steps,
+    aiPowered: false
   };
 }
 
@@ -862,10 +1174,19 @@ En nutrición deportiva de precisión, una comida (almuerzo) requiere muchas má
 - CENAS: Deben ser considerablemente más LIGERAS y digestivas, entre 380 y 520 kcal por ración. Deben priorizar verduras, ensaladas templadas, cremas o salteados con grasas saludables (AOVE, frutos secos, aguacate) y una porción moderada de la preparación base (~120-150g por ración) para favorecer la digestión y el descanso.
 - NUNCA generes desayunos salvo que el usuario lo pida explícitamente.
 
-REGLA DE COHERENCIA CULINARIA Y PERFIL DE TEXTURA (CARNE MECHADA VS ENSALADA):
-Si la preparación base es un asado de varias horas, carne al vino, cocción lenta o queda con textura tierna/deshilachada (carne mechada):
-- AFINIDADES OBLIGATORIAS: Platos calientes o templados que ensalcen la jugosidad y su salsa (fajitas/tacos calientes con pimientos y cebolla, bowls calientes con arroz o patatas panaderas, pasta integral con reducción de sus jugos, salteados al wok o wraps calientes).
-- DESCARTES: NUNCA propongas ensaladas frías crudas incompatibles con la carne mechada melosa, salvo que el usuario lo pida explícitamente.
+REGLA DE COHERENCIA CULINARIA SEGÚN EL TIPO DE ALIMENTO:
+- Si el alimento es una verdura, guiso vegetal o salsa (ej. PISTO MANCHEGO, ratatouille, sofrito, verduras asadas, crema, salsa boloñesa):
+  ¡NUNCA lo trates como una pieza de carne para hornear entera ni propongas "fajitas de pisto asado con cebolla"!
+  El pisto o sofrito es una preparación melosa que se cocina en cazuela o sartén con AOVE y sirve de base o acompañamiento estrella para platos reales:
+  1. Pisto manchego tradicional con huevos a la plancha / escalfados y patatas asadas.
+  2. Arroz integral o basmati con pisto manchego y proteína magra (pollo, atún o ternera).
+  3. Tostas crujientes de pan con pisto manchego y queso de cabra o feta gratinado.
+  4. Salteado de garbanzos o alubias con pisto manchego y huevo poché.
+  5. Pasta integral con salsa de pisto manchego y atún al natural.
+- Si es legumbre (lentejas, garbanzos, alubias, fabada): Guisos tradicionales con verduras, ensaladas templadas con atún y huevo duro, salteados con espinacas y ajo.
+- Si es pescado (merluza, salmón, bacalao): Lomos horneados con patatas panaderas, wok con arroz y verduras, revueltos o ensaladas templadas.
+- Si es carne para asar (lomo, cabecero, pollo entero): Asados con patatas, fajitas, salteados al wok.
+- Si es carne mechada, al vino o cocción lenta: Platos calientes/templados melosos (fajitas calientes, pasta con sus jugos, wok). NUNCA ensaladas frías crudas incompatibles.
 
 Cada una de las recetas debe tener:
 - Gramajes individuales realistas y coherentes con su momento del día.
@@ -904,7 +1225,7 @@ Tu ÚNICA tarea es generar la receta exacta que solicita el usuario: "${descript
 Raciones: ${servings} (por defecto 2 personas). Momento del día sugerido: ${preferredType}.
 
 NORMAS ESTRICTAS DE CUMPLIMIENTO:
-1. FIDELIDAD TOTAL AL PLATO: Céntrate exactamente en los ingredientes y el plato pedido. No cambies el plato ni inventes alimentos no solicitados (si piden cabecero de lomo, usa cabecero de lomo o lomo de cerdo, jamás pollo ni sustitutos).
+1. FIDELIDAD TOTAL AL PLATO: Céntrate exactamente en los ingredientes y el plato pedido. No cambies el plato ni inventes alimentos no solicitados (si piden cabecero de lomo, usa cabecero de lomo o lomo de cerdo; si piden pisto manchego, usa pisto manchego tradicional con verduras y acompañamiento natural como huevos o arroz, jamás carne ni sustitutos no solicitados).
 2. CANTIDADES REALISTAS PARA ${servings} PERSONAS: Especifica los gramos (g), mililitros (ml) o unidades (ud) reales en total para cocinar las ${servings} raciones.
 3. PASOS CLAROS Y NUMERADOS: Redacta de 3 a 5 pasos secuenciales de cocina sencillos y prácticos.
 4. CÁLCULO DE MACROS POR RACIÓN INDIVIDUAL: Proporciona las calorías y macronutrientes (calories, protein, carbs, fats) calculados fielmente POR RACIÓN (para 1 persona, ej. 450-600 kcal y 35-45g P), para que el balance calórico diario personal de Carlos y Andrea sea exacto.
@@ -929,9 +1250,10 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
 
       const modelsToTry = [
         "gemini-3.6-flash",
-        "gemini-3.7-flash",
-        "gemini-3.5-flash",
-        "gemini-flash-latest"
+        "gemini-flash-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-pro"
       ];
 
       let rawJson = null;
@@ -941,6 +1263,7 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            signal: AbortSignal.timeout(9000),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
@@ -996,7 +1319,8 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
                   unit: ing.unit || "g",
                   category: INGREDIENT_CATEGORIES.PANTRY
                 })),
-                instructions: Array.isArray(r.instructions) ? r.instructions : ["Preparar y disfrutar."]
+                instructions: Array.isArray(r.instructions) ? r.instructions : ["Preparar y disfrutar."],
+                aiPowered: true
               };
             });
 
@@ -1004,10 +1328,11 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
 
             return {
               isBatch: true,
-              batchTitle: parsed.batchTitle || `Batch Cooking de ${description}`,
+              batchTitle: parsed.batchTitle || `Batch Cooking de ${extractCleanCulinarySubject(description)}`,
               basePrep: parsed.basePrep || "Preparación base cocinada con antelación para la semana.",
               recipes: balancedRecipes,
-              totalBaseWeight: declaredBaseWeight
+              totalBaseWeight: declaredBaseWeight,
+              aiPowered: true
             };
           }
 
@@ -1036,7 +1361,8 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
                 unit: ing.unit || "g",
                 category: INGREDIENT_CATEGORIES.PANTRY
               })),
-              instructions: Array.isArray(parsed.instructions) ? parsed.instructions : ["Preparar y disfrutar."]
+              instructions: Array.isArray(parsed.instructions) ? parsed.instructions : ["Preparar y disfrutar."],
+              aiPowered: true
             };
           }
         }
@@ -1112,9 +1438,10 @@ REGLAS ESTRICTAS:
 
       const modelsToTry = [
         "gemini-3.6-flash",
-        "gemini-3.7-flash",
-        "gemini-3.5-flash",
-        "gemini-flash-latest"
+        "gemini-flash-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-pro"
       ];
 
       let rawJson = null;
@@ -1124,6 +1451,7 @@ REGLAS ESTRICTAS:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            signal: AbortSignal.timeout(9000),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
@@ -1179,7 +1507,8 @@ REGLAS ESTRICTAS:
             })),
             instructions: Array.isArray(parsed.instructions) && parsed.instructions.length > 0 
               ? parsed.instructions 
-              : ["Saltear o calentar la base de carne ya preparada.", "Mezclar con la guarnición y servir."]
+              : ["Saltear o calentar la base ya preparada.", "Mezclar con la guarnición y servir."],
+            aiPowered: true
           };
         }
       }
@@ -1189,76 +1518,136 @@ REGLAS ESTRICTAS:
   }
 
   // Fallback offline generator for the alternative
-  const baseName = currentRecipe.name || "Carne asada";
+  const baseIngredient = getRecipeBaseIngredient(currentRecipe);
+  const baseName = baseIngredient ? baseIngredient.name : extractCleanCulinarySubject(batchTitle);
+  const foodCategory = detectBatchFoodCategory(baseName, batchTitle);
   const userText = (userInstruction || "").toLowerCase();
 
-  // Extract requested meat quantity if user typed e.g. "200g" or "250g"
+  // Extract requested base quantity if user typed e.g. "200g" or "250g"
   const amountMatch = userText.match(/(\d+)\s*(g|gr|gramos)/i);
-  const meatGramsPerPerson = amountMatch ? Math.max(80, Math.min(350, parseInt(amountMatch[1], 10))) : 160;
-  const totalMeatGrams = meatGramsPerPerson * servings;
+  const baseGramsPerPerson = amountMatch ? Math.max(80, Math.min(350, parseInt(amountMatch[1], 10))) : 160;
+  const totalBaseGrams = baseGramsPerPerson * servings;
 
   let altName = "";
   let altType = currentRecipe.type || "comida";
   let altIngredients = [];
   let altSteps = [];
 
-  if (userText.includes("pasta") || userText.includes("macarrones") || userText.includes("espaguetis")) {
-    altName = `Pasta salteada con tiras de carne preparada y tomate`;
-    altIngredients = [
-      { name: "Carne preparada en tiras", amount: totalMeatGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-      { name: "Pasta integral", amount: 75 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Salsa de tomate casera", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Queso parmesano rallado", amount: 15 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aceite de oliva virgen extra", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-    ];
-    altSteps = [
-      "Cocer la pasta en abundante agua con sal durante 8-10 minutos hasta que esté al dente.",
-      "Calentar en sartén la salsa de tomate e incorporar la carne en tiras durante 2 minutos para que coja temperatura.",
-      "Mezclar la pasta escurrida con la salsa y la carne, espolvorear parmesano y servir caliente."
-    ];
-  } else if (userText.includes("arroz") || userText.includes("wok")) {
-    altName = `Arroz salteado estilo wok con carne y verduras`;
-    altIngredients = [
-      { name: "Carne preparada en dados", amount: totalMeatGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-      { name: "Arroz basmati", amount: 70 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Zanahoria y calabacín en bastones", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
-      { name: "Salsa de soja baja en sal", amount: 10 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Aceite de sésamo o de oliva", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-    ];
-    altSteps = [
-      "Cocer el arroz basmati o usar arroz ya cocido.",
-      "Saltear a fuego fuerte en sartén o wok las verduras con un hilo de aceite durante 4 minutos.",
-      "Agregar la carne en dados y el arroz cocido, regar con la salsa de soja y saltear 2 minutos todo junto."
-    ];
-  } else if (userText.includes("ensalada") || userText.includes("ligera") || altType === "cena") {
-    altName = `Bowl templado de ensalada con dados de carne, rúcula y nueces`;
-    altType = "cena";
-    altIngredients = [
-      { name: "Carne preparada en dados templados", amount: totalMeatGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-      { name: "Rúcula y canónigos", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
-      { name: "Tomates cherry partidos", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
-      { name: "Queso feta o rulo de cabra", amount: 25 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Nueces picadas", amount: 15 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-    ];
-    altSteps = [
-      "Dar un golpe de sartén rápido a los dados de carne para templarlos ligeramente.",
-      "Colocar en cada plato o bowl la base de rúcula, cherrys partidos y queso.",
-      "Añadir la carne templada por encima, las nueces picadas y aliñar con AOVE y una pizca de sal y vinagre."
-    ];
+  if (foodCategory === "veggie_stew") {
+    if (userText.includes("pasta") || userText.includes("macarrones") || userText.includes("espaguetis")) {
+      altName = `Pasta integral con ${baseName} y atún al natural`;
+      altIngredients = [
+        { name: baseName, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Pasta integral cocida", amount: 90 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+        { name: "Atún fresco / al natural", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+        { name: "Aceite de oliva virgen extra", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      altSteps = [
+        "Cocer la pasta integral al dente.",
+        `Calentar en sartén la ración de ${baseName.toLowerCase()} junto con el atún escurrido.`,
+        "Mezclar la pasta con la salsa y servir bien caliente con hierbas aromáticas."
+      ];
+    } else if (userText.includes("arroz") || userText.includes("wok")) {
+      altName = `Arroz basmati con ${baseName} y pechuga de pollo a la plancha`;
+      altIngredients = [
+        { name: baseName, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Arroz jazmín o basmati cocido", amount: 90 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+        { name: "Pechuga de pollo", amount: 80 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+        { name: "Aceite de oliva virgen extra", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      altSteps = [
+        "Dorar los dados de pechuga de pollo en sartén caliente.",
+        `Añadir la porción de ${baseName.toLowerCase()} reservada para que tome temperatura.`,
+        "Servir sobre la base de arroz basmati caliente."
+      ];
+    } else if (userText.includes("ensalada") || userText.includes("ligera") || altType === "cena") {
+      altName = `Tostas crujientes con ${baseName} y queso feta gratinado`;
+      altType = "cena";
+      altIngredients = [
+        { name: baseName, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Pan de masa madre o integral", amount: 50 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+        { name: "Queso Feta o rulo de cabra", amount: 35 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+        { name: "Orégano y aceite de oliva", amount: 4 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      altSteps = [
+        "Tostar las rebanadas de pan de masa madre.",
+        `Cubrir con una generosa base de ${baseName.toLowerCase()} templado y desmenuzar el queso por encima.`,
+        "Dar 2 minutos de calor en airfryer o grill y servir caliente."
+      ];
+    } else {
+      altName = `${baseName} tradicional con huevos a la plancha y patatas`;
+      altIngredients = [
+        { name: baseName, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Huevos frescos", amount: 2 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+        { name: "Patata fresca", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      altSteps = [
+        `Calentar la ración de ${baseName.toLowerCase()} en sartén 3 minutos.`,
+        "Cocinar los huevos a la plancha dejando la yema líquida.",
+        "Acompañar con patatas en cubos asadas o al microondas."
+      ];
+    }
   } else {
-    altName = `Salteado rápido de carne con champiñones al ajillo`;
-    altIngredients = [
-      { name: "Carne preparada en tiras", amount: totalMeatGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-      { name: "Champiñones laminados", amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
-      { name: "Dientes de ajo y perejil picado", amount: 2 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.VEGETABLES },
-      { name: "Aceite de oliva virgen extra", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-    ];
-    altSteps = [
-      "Dorar en sartén los ajos laminados con el AOVE a fuego medio.",
-      "Añadir los champiñones y saltear 5 minutos hasta que estén tiernos.",
-      "Incorporar la carne en tiras y el perejil, saltear 2 minutos para amalgamar sabores y servir."
-    ];
+    // Meat or fish category
+    if (userText.includes("pasta") || userText.includes("macarrones") || userText.includes("espaguetis")) {
+      altName = `Pasta salteada con tiras de ${baseName.toLowerCase()} y tomate`;
+      altIngredients = [
+        { name: `${baseName} en tiras`, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Pasta integral", amount: 75 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Salsa de tomate casera", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Queso parmesano rallado", amount: 15 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+        { name: "Aceite de oliva virgen extra", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      altSteps = [
+        "Cocer la pasta en abundante agua con sal durante 8-10 minutos hasta que esté al dente.",
+        `Calentar en sartén la salsa de tomate e incorporar la carne de ${baseName.toLowerCase()} en tiras durante 2 minutos.`,
+        "Mezclar la pasta escurrida con la salsa y la carne, espolvorear parmesano y servir caliente."
+      ];
+    } else if (userText.includes("arroz") || userText.includes("wok")) {
+      altName = `Arroz salteado estilo wok con ${baseName.toLowerCase()} y verduras`;
+      altIngredients = [
+        { name: `${baseName} en dados`, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Arroz basmati", amount: 70 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Zanahoria y calabacín en bastones", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
+        { name: "Salsa de soja baja en sal", amount: 10 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Aceite de sésamo o de oliva", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      altSteps = [
+        "Cocer el arroz basmati o usar arroz ya cocido.",
+        "Saltear a fuego fuerte en sartén o wok las verduras con un hilo de aceite durante 4 minutos.",
+        `Agregar los dados de ${baseName.toLowerCase()} y el arroz cocido, regar con la salsa de soja y saltear 2 minutos todo junto.`
+      ];
+    } else if (userText.includes("ensalada") || userText.includes("ligera") || altType === "cena") {
+      altName = `Bowl templado de ensalada con dados de ${baseName.toLowerCase()}, rúcula y nueces`;
+      altType = "cena";
+      altIngredients = [
+        { name: `${baseName} en dados templados`, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Rúcula y canónigos", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
+        { name: "Tomates cherry partidos", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
+        { name: "Queso feta o rulo de cabra", amount: 25 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+        { name: "Nueces picadas", amount: 15 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      altSteps = [
+        `Dar un golpe de sartén rápido a los dados de ${baseName.toLowerCase()} para templarlos ligeramente.`,
+        "Colocar en cada plato o bowl la base de rúcula, cherrys partidos y queso.",
+        "Añadir la carne templada por encima, las nueces picadas y aliñar con AOVE y una pizca de sal y vinagre."
+      ];
+    } else {
+      altName = `Salteado rápido de ${baseName.toLowerCase()} con champiñones al ajillo`;
+      altIngredients = [
+        { name: `${baseName} en tiras`, amount: totalBaseGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Champiñones laminados", amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
+        { name: "Dientes de ajo y perejil picado", amount: 2 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.VEGETABLES },
+        { name: "Aceite de oliva virgen extra", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      altSteps = [
+        "Dorar en sartén los ajos laminados con el AOVE a fuego medio.",
+        "Añadir los champiñones y saltear 5 minutos hasta que estén tiernos.",
+        `Incorporar las tiras de ${baseName.toLowerCase()} y el perejil, saltear 2 minutos para amalgamar sabores y servir.`
+      ];
+    }
   }
 
   const verifiedMacros = calculateMacrosFromIngredients(altIngredients);
@@ -1279,7 +1668,8 @@ REGLAS ESTRICTAS:
     fats: perPersonFats,
     tags: ["Batch Cooking", "alternativa", "aprovechamiento"],
     ingredients: altIngredients,
-    instructions: altSteps
+    instructions: altSteps,
+    aiPowered: false
   };
 }
 
@@ -1340,9 +1730,10 @@ REGLAS ESTRICTAS:
 
       const modelsToTry = [
         "gemini-3.6-flash",
-        "gemini-3.7-flash",
-        "gemini-3.5-flash",
-        "gemini-flash-latest"
+        "gemini-flash-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-pro"
       ];
 
       let rawJson = null;
@@ -1352,6 +1743,7 @@ REGLAS ESTRICTAS:
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            signal: AbortSignal.timeout(9000),
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
@@ -1405,7 +1797,8 @@ REGLAS ESTRICTAS:
               unit: ing.unit || "g",
               category: INGREDIENT_CATEGORIES.PANTRY
             })),
-            instructions: Array.isArray(parsed.instructions) ? parsed.instructions : ["Preparar y servir."]
+            instructions: Array.isArray(parsed.instructions) ? parsed.instructions : ["Preparar y servir."],
+            aiPowered: true
           };
         }
       }
@@ -1415,43 +1808,140 @@ REGLAS ESTRICTAS:
   }
 
   // Fallback offline generator for additional recipe
-  const baseName = batchTitle.replace(/^Batch Cooking:\s*/i, "").split("(")[0].trim() || "Carne asada";
+  const firstRecipe = batchCandidate.recipes?.[0];
+  const baseIngredient = firstRecipe ? getRecipeBaseIngredient(firstRecipe) : null;
+  const rawBaseName = batchTitle.replace(/^Batch Cooking:\s*/i, "").split("(")[0].trim();
+  const baseName = baseIngredient ? baseIngredient.name : extractCleanCulinarySubject(rawBaseName);
+  const foodCategory = detectBatchFoodCategory(baseName, batchTitle);
   const extraIndex = (batchCandidate.recipes?.length || 0) + 1;
   const isPasta = /pasta|macarron|espagueti/i.test(userInstruction);
   const isArroz = /arroz|wok/i.test(userInstruction);
   const isCena = /cena|ensalada|ligera/i.test(userInstruction);
 
-  let newName = `Salteado de ${baseName} al wok con arroz y verduras`;
-  let newType = "comida";
-  let carbsVal = 44;
-  let caloriesVal = 475;
-  let ingredientsList = [
-    { name: `${baseName} en dados`, amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-    { name: "Arroz jazmín o basmati cocido", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-    { name: "Calabacín y zanahoria", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-    { name: "Salsa de soja baja en sal", amount: 10 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-    { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-  ];
+  let newName = "";
+  let newType = isCena ? "cena" : "comida";
+  let carbsVal = 45;
+  let caloriesVal = 500;
+  let proteinVal = 35;
+  let fatsVal = 16;
+  let ingredientsList = [];
+  let instructionsList = [];
 
-  if (isPasta) {
-    newName = `Pasta integral con ${baseName} desmenuzado y tomate natural`;
-    ingredientsList = [
-      { name: `${baseName} desmenuzado`, amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-      { name: "Pasta integral", amount: 70 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Tomate triturado natural", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Orégano y aceite de oliva", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
-    ];
-  } else if (isCena) {
-    newName = `Wrap ligero de ${baseName} con aguacate y rúcula`;
-    newType = "cena";
-    caloriesVal = 410;
-    carbsVal = 26;
-    ingredientsList = [
-      { name: `${baseName} en tiras`, amount: 140 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-      { name: "Tortilla integral", amount: 1 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Aguacate", amount: 40 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Rúcula o brotes tiernos", amount: 50 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
-    ];
+  if (foodCategory === "veggie_stew") {
+    if (isPasta) {
+      newName = `Pasta integral con ${baseName} y atún al natural`;
+      caloriesVal = 580;
+      proteinVal = 38;
+      carbsVal = 65;
+      fatsVal = 14;
+      ingredientsList = [
+        { name: baseName, amount: 180 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Pasta integral cocida", amount: 140 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+        { name: "Atún fresco / al natural", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      instructionsList = [
+        "Cocer la pasta al dente.",
+        `Templar en sartén la ración de ${baseName.toLowerCase()} junto con el atún.`,
+        "Mezclar y servir con orégano."
+      ];
+    } else if (isArroz) {
+      newName = `Arroz basmati con ${baseName} y pechuga a la plancha`;
+      caloriesVal = 620;
+      proteinVal = 42;
+      carbsVal = 68;
+      fatsVal = 14;
+      ingredientsList = [
+        { name: baseName, amount: 180 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Arroz jazmín o basmati cocido", amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+        { name: "Pechuga de pollo", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      instructionsList = [
+        "Marcar los dados de pollo a la plancha.",
+        `Incorporar la porción de ${baseName.toLowerCase()} del batch cooking.`,
+        "Servir sobre el arroz caliente."
+      ];
+    } else if (isCena) {
+      newName = `Tostas crujientes con ${baseName} y queso feta gratinado`;
+      caloriesVal = 420;
+      proteinVal = 22;
+      carbsVal = 36;
+      fatsVal = 18;
+      ingredientsList = [
+        { name: baseName, amount: 180 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Pan de masa madre o integral", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+        { name: "Queso Feta o rulo de cabra", amount: 40 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+        { name: "Orégano o albahaca", amount: 2 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      instructionsList = [
+        "Tostar las rebanadas de pan.",
+        `Colocar la base de ${baseName.toLowerCase()} templado y desmenuzar el queso.`,
+        "Gratinar 2 minutos y servir caliente."
+      ];
+    } else {
+      newName = `${baseName} tradicional con huevos a la plancha y patatas`;
+      caloriesVal = 590;
+      proteinVal = 26;
+      carbsVal = 55;
+      fatsVal = 24;
+      ingredientsList = [
+        { name: baseName, amount: 200 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Huevos frescos", amount: 2 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+        { name: "Patata fresca", amount: 160 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Aceite de oliva virgen extra", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      instructionsList = [
+        `Calentar el ${baseName.toLowerCase()} en sartén 3 minutos.`,
+        "Cocinar los huevos a la plancha.",
+        "Acompañar con patatas en cubos asadas o al microondas."
+      ];
+    }
+  } else {
+    // Meat or fish
+    if (isPasta) {
+      newName = `Pasta integral con ${baseName} desmenuzado y tomate natural`;
+      ingredientsList = [
+        { name: `${baseName} desmenuzado`, amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Pasta integral", amount: 70 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Tomate triturado natural", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Orégano y aceite de oliva", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      instructionsList = [
+        "Cocer la pasta al dente.",
+        `Saltear en sartén con el tomate y la carne de ${baseName.toLowerCase()}.`,
+        "Servir caliente con orégano."
+      ];
+    } else if (isCena) {
+      newName = `Wrap ligero de ${baseName} con aguacate y rúcula`;
+      caloriesVal = 410;
+      carbsVal = 26;
+      ingredientsList = [
+        { name: `${baseName} en tiras`, amount: 140 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Tortilla integral", amount: 1 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Aguacate", amount: 40 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Rúcula o brotes tiernos", amount: 50 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
+      ];
+      instructionsList = [
+        `Templar las tiras de ${baseName.toLowerCase()} en sartén.`,
+        "Rellenar la tortilla con la verdura, el aguacate y la carne templada.",
+        "Enrollar y servir de inmediato."
+      ];
+    } else {
+      newName = `Salteado de ${baseName} al wok con arroz y verduras`;
+      ingredientsList = [
+        { name: `${baseName} en dados`, amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+        { name: "Arroz jazmín o basmati cocido", amount: 120 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Calabacín y zanahoria", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+        { name: "Salsa de soja baja en sal", amount: 10 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+        { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      ];
+      instructionsList = [
+        "Saltear las verduras 3 minutos en sartén o wok.",
+        `Incorporar los dados de ${baseName.toLowerCase()} y el arroz cocido.`,
+        "Aderezar con soja y servir caliente."
+      ];
+    }
   }
 
   return {
@@ -1461,15 +1951,12 @@ REGLAS ESTRICTAS:
     servings: servings,
     prepTime: 15,
     calories: caloriesVal,
-    protein: 38,
+    protein: proteinVal,
     carbs: carbsVal,
-    fats: 15,
+    fats: fatsVal,
     tags: ["Batch Cooking", "aprovechamiento", "nueva alternativa"],
     ingredients: ingredientsList,
-    instructions: [
-      `Aprovechar la ración de ${baseName.toLowerCase()} reservada en frío.`,
-      "Saltear brevemente junto al resto de ingredientes durante 3-5 minutos hasta que esté bien integrado y caliente.",
-      "Servir de inmediato para una comida equilibrada y rápida."
-    ]
+    instructions: instructionsList,
+    aiPowered: false
   };
 }
