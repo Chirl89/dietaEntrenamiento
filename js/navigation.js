@@ -17,7 +17,7 @@ import {
 } from './state.js';
 import { updateAppleWatchModalUI, updateHeaderWatchBadge } from './appleWatch.js';
 import { renderSummaryView, renderProfileView } from './views/summaryView.js';
-import { renderNutritionMenuView, renderNutritionRecipesView, renderShoppingView } from './views/nutritionView.js';
+import { renderNutritionMenuView, renderNutritionRecipesView, renderShoppingView, renderBatchCookingView } from './views/nutritionView.js';
 import { renderWorkoutsView, renderExerciseTableView } from './views/workoutsView.js';
 import { renderBooWorkoutView } from './views/booView.js';
 import { renderProgressView } from './views/progressView.js';
@@ -39,6 +39,7 @@ export const NAVIGATION_CATEGORIES = {
     sidebarId: "sidebar-nav-nutrition",
     subtabs: [
       { id: "nutrition-menu-view", label: "Plan Semanal", icon: "fa-solid fa-calendar-week" },
+      { id: "nutrition-batch-view", label: "Batch Cooking", icon: "fa-solid fa-layer-group" },
       { id: "nutrition-recipes-view", label: "Backlog Recetas", icon: "fa-solid fa-book-open" },
       { id: "nutrition-shopping-view", label: "Lista Compra", icon: "fa-solid fa-cart-shopping" }
     ]
@@ -159,6 +160,7 @@ export function renderAll() {
   try { renderSummaryView(); } catch(e) { console.error("Error in renderSummaryView:", e); }
   try { renderProfileView(); } catch(e) { console.error("Error in renderProfileView:", e); }
   try { renderNutritionMenuView(); } catch(e) { console.error("Error in renderNutritionMenuView:", e); }
+  try { renderBatchCookingView(); } catch(e) { console.error("Error in renderBatchCookingView:", e); }
   try { renderNutritionRecipesView(); } catch(e) { console.error("Error in renderNutritionRecipesView:", e); }
   try { renderShoppingView(); } catch(e) { console.error("Error in renderShoppingView:", e); }
   try { renderWorkoutsView(); } catch(e) { console.error("Error in renderWorkoutsView:", e); }
@@ -258,6 +260,8 @@ export function showTab(tabId, btnElement) {
         renderSummaryView();
       } else if (tabId === 'nutrition-menu-view') {
         renderNutritionMenuView();
+      } else if (tabId === 'nutrition-batch-view') {
+        renderBatchCookingView();
       } else if (tabId === 'nutrition-recipes-view') {
         renderNutritionRecipesView();
       } else if (tabId === 'nutrition-shopping-view') {

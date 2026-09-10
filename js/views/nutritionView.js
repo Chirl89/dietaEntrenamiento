@@ -30,6 +30,11 @@ import {
   parseDeclaredBaseWeight,
   balanceBatchRecipesBaseIngredient
 } from '../nutritionCalculator.js';
+import {
+  analyzeWeeklyPlanForBatchCooking,
+  getExistingBatchBases,
+  KITCHEN_APPLIANCES
+} from '../batchCookingEngine.js';
 
 // MEAL SLOTS DEFINITION
 export const MEAL_SLOTS = [
@@ -557,13 +562,18 @@ export function renderNutritionMenuView() {
 
       <div class="planner-actions-bar">
         <button type="button" class="btn-generate-shopping-glow" onclick="generateShoppingListFromPlan()">
-          <i class="fa-solid fa-cart-shopping"></i> Generar Lista de la Compra
-          <span class="shopping-count-badge">${totalScheduled}/28 platos</span>
+          <i class="fa-solid fa-cart-shopping"></i> Lista de la Compra
+          <span class="shopping-count-badge">${totalScheduled}/28</span>
+        </button>
+
+        <button type="button" class="btn-generate-shopping-glow" onclick="openBatchCookingView()" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(234, 88, 12, 0.3)); border: 1px solid var(--accent-amber); color: #fde68a;">
+          <i class="fa-solid fa-layer-group" style="color: var(--accent-amber);"></i> Plan Batch Cooking
+          <span class="shopping-count-badge" style="background: rgba(245, 158, 11, 0.3); color: #fff;"><i class="fa-solid fa-robot"></i> Cocina</span>
         </button>
 
         <div class="planner-quick-tools">
           <button type="button" class="btn-planner-tool" onclick="autoFillWeeklyPlan()" title="Auto-rellenar semana con platos variados">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Auto-completar</span>
+            <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Auto</span>
           </button>
           <button type="button" class="btn-planner-tool" onclick="copyWeeklyMenuToClipboard()" title="Copiar menú semanal a texto">
             <i class="fa-solid fa-share-nodes"></i> <span>Compartir</span>
@@ -2567,6 +2577,9 @@ if (typeof window !== "undefined") {
   window.applyBatchRecipeAiAlternative = applyBatchRecipeAiAlternative;
   window.setAddBatchRecipePrompt = setAddBatchRecipePrompt;
   window.applyAddBatchRecipe = applyAddBatchRecipe;
+  window.openBatchCookingView = openBatchCookingView;
+  window.renderBatchCookingView = renderBatchCookingView;
+  window.copyBatchCookingPlanToClipboard = copyBatchCookingPlanToClipboard;
 }
 
 /**
@@ -3437,4 +3450,327 @@ export function copyShoppingList() {
     console.error("Error copying shopping list:", e);
   }
 }
+
+/**
+ * Open the dedicated Batch Cooking View tab
+ */
+export function openBatchCookingView() {
+  try {
+    triggerHapticTouch();
+    if (window.showTab) {
+      window.showTab("nutrition-batch-view");
+    }
+    renderBatchCookingView();
+  } catch(e) {
+    console.error("Error opening batch cooking view:", e);
+  }
+}
+
+/**
+ * Renders the weekly Batch Cooking consolidation and multi-appliance parallel schedule view
+ */
+export function renderBatchCookingView() {
+  try {
+    const container = document.getElementById("batch-cooking-container");
+    if (!container) return;
+
+    const targetWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    const batchData = analyzeWeeklyPlanForBatchCooking(targetWeekKey);
+    const existingBases = getExistingBatchBases();
+
+    if (!batchData.hasBatchWork) {
+      container.innerHTML = `
+        <div class="glass-card" style="padding: 2.5rem 1.5rem; text-align: center; border-radius: var(--radius-md); border: 1px dashed rgba(245,158,11,0.35); background: rgba(245,158,11,0.03);">
+          <div style="font-size: 3rem; margin-bottom: 0.75rem; color: var(--accent-amber);">🥘</div>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">
+            Plan de Batch Cooking (${batchData.weekLabel})
+          </h3>
+          <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
+            Aún no hay suficientes platos planificados para consolidar ingredientes en bloque. Asigna tus comidas en el <strong>Plan Semanal</strong> o deja que la app auto-complete la semana para orquestar tu cocinado en paralelo.
+          </p>
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn-primary" onclick="autoFillWeeklyPlan(); renderBatchCookingView();" style="background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; padding: 0.75rem 1.25rem;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-completar Semana y Generar Batch
+            </button>
+            <button type="button" class="btn-secondary" onclick="window.showTab ? window.showTab('nutrition-menu-view') : null" style="padding: 0.75rem 1.25rem;">
+              <i class="fa-solid fa-calendar-week"></i> Ir al Plan Semanal
+            </button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Previous batch bases notification banner
+    const existingBasesHtml = existingBases.length > 0 ? `
+      <div class="glass-card" style="margin-bottom: 1.25rem; border: 1px solid rgba(6,182,212,0.4); background: rgba(6,182,212,0.05); padding: 1rem 1.25rem; border-radius: var(--radius-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 250px;">
+            <span style="font-size: 0.75rem; background: rgba(6,182,212,0.2); color: var(--accent-cyan); padding: 2px 8px; border-radius: 9999px; font-weight: 800;">
+              <i class="fa-solid fa-link"></i> VINCULACIÓN DE LOTES ANTERIORES
+            </span>
+            <h4 style="font-size: 0.98rem; font-weight: 700; color: var(--text-main); margin: 0.4rem 0 0.2rem 0;">
+              ¿Quieres también considerar las recetas preparadas en batch anteriormente?
+            </h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+              Detectadas <strong>${existingBases.length}</strong> recetas de preparaciones base en tu catálogo (${existingBases.slice(0, 3).map(b => `<em>${b.name}</em>`).join(", ")}${existingBases.length > 3 ? '...' : ''}). Puedes aprovecharlas para este menú o cocinar un nuevo lote independiente.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary" onclick="window.showTab ? window.showTab('nutrition-recipes-view') : null" style="font-size: 0.78rem; padding: 0.5rem 0.8rem; background: rgba(6,182,212,0.15); border-color: var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">
+              <i class="fa-solid fa-book-open"></i> Ver Lotes en Catálogo
+            </button>
+            <button type="button" class="btn-primary" onclick="window.showTab ? window.showTab('nutrition-recipes-view') : null" style="font-size: 0.78rem; padding: 0.5rem 0.8rem; background: linear-gradient(135deg, var(--accent-cyan), #2563eb); border: none; font-weight: 700;">
+              <i class="fa-solid fa-plus-circle"></i> Nuevo Lote con IA
+            </button>
+          </div>
+        </div>
+      </div>
+    ` : '';
+
+    // Equipment badges
+    const appliancesBadgesHtml = Object.values(KITCHEN_APPLIANCES).map(app => `
+      <div class="glass-card" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.75rem; border-radius: 9999px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); font-size: 0.75rem;">
+        <i class="${app.icon}" style="color: ${app.color};"></i>
+        <strong style="color: var(--text-main); font-weight: 600;">${app.name}</strong>
+      </div>
+    `).join("");
+
+    // Consolidated ingredients cards
+    const consolidatedCardsHtml = batchData.batchCandidates.map((item, idx) => {
+      const usageListHtml = item.usage.map(u => `
+        <li style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: flex; justify-content: space-between; align-items: center;">
+          <span>
+            <strong style="color: var(--text-main);">${u.day} (${u.recipeType}):</strong> ${u.recipeName}
+          </span>
+          <span style="background: rgba(245,158,11,0.15); color: var(--accent-amber); padding: 1px 7px; border-radius: 9999px; font-weight: 700; font-size: 0.75rem;">
+            ${u.amount}${item.unit}
+          </span>
+        </li>
+      `).join("");
+
+      return `
+        <div class="glass-card" style="padding: 1.15rem; border-radius: var(--radius-sm); margin-bottom: 0.9rem; border-left: 4px solid ${item.category.color}; background: rgba(255,255,255,0.025);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem;">
+            <div>
+              <span style="font-size: 0.7rem; color: ${item.category.color}; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="${item.category.icon}"></i> ${item.category.label}
+              </span>
+              <h4 style="font-size: 1.1rem; color: var(--text-main); font-weight: 700; margin: 0.25rem 0 0.1rem 0;">
+                ${item.name}
+              </h4>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 1.05rem; font-weight: 800; color: #fff; background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); padding: 3px 10px; border-radius: 8px;">
+                ${item.totalAmount} ${item.unit} TOTAL
+              </span>
+            </div>
+          </div>
+
+          <!-- APPLIANCE DIRECTIVE BADGE -->
+          <div style="margin: 0.55rem 0; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 0.55rem 0.8rem; border-left: 3px solid ${item.appliance.color}; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+            <strong style="color: ${item.appliance.color}; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.15rem;">
+              <i class="${item.appliance.icon}"></i> ${item.containerZone} (${item.appliance.name}):
+            </strong>
+            ${item.prepGuideline}
+          </div>
+
+          <div style="margin-top: 0.65rem;">
+            <span style="font-size: 0.76rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">
+              <i class="fa-solid fa-boxes-stacked"></i> Reparto en la semana (${item.usage.length} comidas):
+            </span>
+            <ul style="list-style: none; padding: 0; margin: 0; background: rgba(255,255,255,0.015); padding: 0.5rem 0.75rem; border-radius: 6px;">
+              ${usageListHtml}
+            </ul>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Timeline phases HTML
+    const timelineHtml = batchData.timeline.map((phase) => {
+      let contentHtml = "";
+
+      if (phase.actions) {
+        contentHtml = `
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+            ${phase.actions.map(a => `<li style="margin-bottom: 0.35rem;"><i class="fa-solid fa-circle-check" style="color: ${phase.color}; font-size: 0.75rem; margin-right: 0.4rem;"></i> ${a}</li>`).join("")}
+          </ul>
+        `;
+      } else if (phase.stations) {
+        contentHtml = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin-top: 0.5rem;">
+            ${phase.stations.map(st => `
+              <div class="glass-card" style="padding: 0.85rem; border-radius: 6px; background: rgba(0,0,0,0.25); border-top: 2px solid ${st.appliance.color};">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <strong style="color: ${st.appliance.color}; font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i class="${st.appliance.icon}"></i> ${st.appliance.name}
+                  </strong>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);">${st.time}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 600; margin-bottom: 0.3rem;">${st.zone}</div>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0; line-height: 1.35;">${st.instruction}</p>
+              </div>
+            `).join("")}
+          </div>
+        `;
+      } else if (phase.instructions) {
+        contentHtml = `
+          <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+            ${phase.instructions.map(ins => `<p style="margin: 0 0 0.35rem 0;"><i class="fa-solid fa-snowflake" style="color: var(--accent-cyan); font-size: 0.75rem; margin-right: 0.35rem;"></i> ${ins}</p>`).join("")}
+          </div>
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            ${phase.tuppers.map(t => `
+              <div style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); padding: 4px 8px; border-radius: 6px; font-size: 0.74rem;">
+                <strong style="color: #34d399;">${t.day} (${t.recipeType}):</strong> ${t.amount} ${t.ingredient}
+              </div>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="glass-card" style="padding: 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span style="background: ${phase.color}22; color: ${phase.color}; width: 28px; height: 28px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                ${phase.step}
+              </span>
+              <h4 style="font-size: 1.02rem; font-weight: 700; color: var(--text-main); margin: 0;">
+                ${phase.title}
+              </h4>
+            </div>
+            <span style="font-size: 0.75rem; background: rgba(255,255,255,0.06); color: var(--text-muted); padding: 2px 8px; border-radius: 9999px; font-weight: 700;">
+              <i class="fa-solid fa-clock"></i> ${phase.timeRange}
+            </span>
+          </div>
+          ${contentHtml}
+        </div>
+      `;
+    }).join("");
+
+    container.innerHTML = `
+      <div style="margin-bottom: 1.25rem;">
+        <!-- BANNER DE LOTES ANTERIORES -->
+        ${existingBasesHtml}
+
+        <!-- APPLIANCES STRIP -->
+        <div style="margin-bottom: 1.25rem;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; display: block; margin-bottom: 0.45rem;">
+            <i class="fa-solid fa-kitchen-set"></i> Estaciones de cocina disponibles para paralelizar:
+          </span>
+          <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+            ${appliancesBadgesHtml}
+          </div>
+        </div>
+
+        <!-- SECTION 1: CONSOLIDATED INGREDIENTS TABLE -->
+        <div style="margin-bottom: 1.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin: 0;">
+                <i class="fa-solid fa-scale-balanced" style="color: var(--accent-emerald);"></i> 1. Ingredientes Consolidados en Bloque
+              </h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">
+                Cantidades totales calculadas para toda la semana sin duplicar cocinados ni ensuciar de más.
+              </p>
+            </div>
+            <span style="font-size: 0.78rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 3px 10px; border-radius: 9999px; font-weight: 800;">
+              ${batchData.batchCandidates.length} alimentos en bloque
+            </span>
+          </div>
+
+          <div class="batch-consolidated-list">
+            ${consolidatedCardsHtml}
+          </div>
+        </div>
+
+        <!-- SECTION 2: PARALLEL TIMELINE -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin: 0;">
+                <i class="fa-solid fa-stopwatch" style="color: var(--accent-cyan);"></i> 2. Cronograma de Cocinado en Paralelo (0 a 75 min)
+              </h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">
+                Orquestado para tu Robot Cecotec (jarra + vaporera), Horno, Airfryer y Fuegos.
+              </p>
+            </div>
+            <button type="button" class="btn-secondary" onclick="copyBatchCookingPlanToClipboard()" style="font-size: 0.78rem; padding: 0.45rem 0.85rem; font-weight: 700;">
+              <i class="fa-solid fa-share-nodes"></i> Compartir Guía
+            </button>
+          </div>
+
+          <div class="batch-timeline-container">
+            ${timelineHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    console.error("Error rendering batch cooking view:", e);
+  }
+}
+
+/**
+ * Copies the complete Batch Cooking Plan and Kitchen Parallel Schedule to clipboard
+ */
+export function copyBatchCookingPlanToClipboard() {
+  try {
+    triggerHapticTouch();
+    const targetWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
+    const batchData = analyzeWeeklyPlanForBatchCooking(targetWeekKey);
+
+    if (!batchData.hasBatchWork) {
+      showIosToast("No hay ingredientes consolidados para copiar", "fa-solid fa-triangle-exclamation");
+      return;
+    }
+
+    let text = `🥘 GUÍA DE BATCH COOKING & COCINADO EN PARALELO - FITDUO 🥑\n`;
+    text += `Semana: ${batchData.weekLabel}\n`;
+    text += `Electrodomésticos: Robot Cecotec + Vaporera, Horno, Airfryer, 3 Fuegos y Microondas\n\n`;
+
+    text += `=== 1. INGREDIENTES CONSOLIDADOS PARA COCINAR EN BLOQUE ===\n`;
+    batchData.batchCandidates.forEach(cand => {
+      text += `\n• ${cand.name.toUpperCase()}: ${cand.totalAmount} ${cand.unit} en total\n`;
+      text += `  Estación: ${cand.containerZone} (${cand.appliance.name})\n`;
+      text += `  Técnica: ${cand.prepGuideline}\n`;
+      text += `  Reparto semanal:\n`;
+      cand.usage.forEach(u => {
+        text += `    - ${u.day} (${u.recipeType}): ${u.amount}${cand.unit} para "${u.recipeName}"\n`;
+      });
+    });
+
+    text += `\n=== 2. CRONOGRAMA DE COCINADO EN PARALELO (60-75 MIN) ===\n`;
+    batchData.timeline.forEach(phase => {
+      text += `\n[${phase.timeRange}] FASE ${phase.step}: ${phase.title.toUpperCase()}\n`;
+      if (phase.actions) {
+        phase.actions.forEach(a => text += `  ✓ ${a}\n`);
+      }
+      if (phase.stations) {
+        phase.stations.forEach(s => {
+          text += `  • ${s.appliance.name} (${s.zone}): ${s.instruction}\n`;
+        });
+      }
+      if (phase.instructions) {
+        phase.instructions.forEach(ins => text += `  ✓ ${ins}\n`);
+      }
+    });
+
+    text += `\n--- Generado automáticamente por FitDuo ---\n`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showIosToast("🥘 ¡Guía de Batch Cooking copiada al portapapeles!", "fa-solid fa-copy");
+      }).catch(() => {
+        prompt("Copia manualmente la guía:", text);
+      });
+    } else {
+      prompt("Copia manualmente la guía:", text);
+    }
+  } catch(e) {
+    console.error("Error copying batch plan:", e);
+  }
+}
+
 

@@ -640,9 +640,13 @@ export function generateRecipeFromDescription(description, preferredType = "auto
     }
     requestedCount = Math.min(Math.max(requestedCount, 1), 10);
 
+    const isSlowOrWine = clean.includes("vino") || clean.includes("mechada") || clean.includes("horas") || clean.includes("deshilach") || clean.includes("lento") || clean.includes("guis");
+
     const pool = [
       {
-        name: `${mainIngredientName} al horno con patatas panaderas`,
+        name: isSlowOrWine
+          ? `${mainIngredientName} asado con patatas panaderas y reducción de vino`
+          : `${mainIngredientName} al horno con patatas panaderas`,
         type: "comida",
         prepTime: 45,
         calories: 740,
@@ -657,52 +661,61 @@ export function generateRecipeFromDescription(description, preferredType = "auto
           { name: "Dientes de ajo y especias", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
         ],
         instructions: [
-          `Cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} al horno a 190°C durante 45 minutos junto a las patatas y el adobo.`,
-          "Separar una ración de lomo con su guarnición de patatas para servir recién hecho como comida energética.",
+          `Cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} al horno a 190°C durante 45-55 minutos junto a las patatas y el adobo.`,
+          "Separar una ración con su guarnición de patatas para servir recién hecho como comida energética.",
           "Dejar enfriar el resto de la pieza cocinada, envolver y reservar en la nevera para las siguientes comidas y cenas de la semana."
         ]
       },
       {
-        name: `Fajitas de ${mainIngredientName} con pimientos, cebolla y maíz`,
+        name: isSlowOrWine 
+          ? `Fajitas calientes de ${mainIngredientName} mechado con pimientos y cebolla pochada`
+          : `Fajitas de ${mainIngredientName} salteado con pimientos y cebolla`,
         type: "comida",
         prepTime: 15,
-        calories: 695,
+        calories: 680,
         protein: 42,
-        carbs: 62,
-        fats: 21,
-        tags: ["Batch Cooking", "rápido", "comida principal"],
+        carbs: 65,
+        fats: 22,
+        tags: ["Batch Cooking", "aprovechamiento", "comida principal"],
         ingredients: [
-          { name: `${mainIngredientName} asado en tiras`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: isSlowOrWine ? `${mainIngredientName} mechado en sus jugos` : `${mainIngredientName} asado en tiras`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
           { name: "Pimiento rojo y verde", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
           { name: "Cebolla", amount: 70 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
           { name: "Tortillas integrales o de maíz", amount: 3 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
           { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
         ],
         instructions: [
-          `Cortar en tiras 190g de la pieza de ${mainIngredientName.toLowerCase()} reservada en frío.`,
-          "En una sartén con aceite de oliva virgen extra, saltear los pimientos y la cebolla hasta que queden tiernos.",
-          "Añadir las tiras de carne durante 2 minutos para que cojan calor y se impregnen de los jugos.",
-          "Calentar las tortillas y rellenar para un almuerzo completo y saciante."
+          `Separar ${190 * safeServings}g de la carne de ${mainIngredientName.toLowerCase()} reservada en frío.`,
+          "En una sartén con aceite de oliva virgen extra, pochar los pimientos y la cebolla hasta que queden tiernos.",
+          "Añadir la carne durante 2 minutos para que coja calor y se impregne de los jugos del sofrito.",
+          "Calentar las tortillas y rellenar para un almuerzo completo, caliente y saciante."
         ]
       },
       {
-        name: `Ensalada templada de ${mainIngredientName} con brotes y frutos secos`,
+        name: isSlowOrWine
+          ? `Salteado caliente de ${mainIngredientName} mechado con calabacín, champiñones y reducción de sus jugos`
+          : `Ensalada templada de ${mainIngredientName} con brotes y frutos secos`,
         type: "cena",
-        prepTime: 10,
+        prepTime: 12,
         calories: 395,
         protein: 36,
         carbs: 14,
         fats: 20,
         tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
         ingredients: [
-          { name: `${mainIngredientName} asado en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Espinacas baby o rúcula", amount: 90 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Queso fresco o feta", amount: 25 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-          { name: "Nueces picadas", amount: 15 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: isSlowOrWine ? `${mainIngredientName} mechado` : `${mainIngredientName} asado en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: isSlowOrWine ? "Calabacín en dados" : "Espinacas baby o rúcula", amount: (isSlowOrWine ? 120 : 90) * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: isSlowOrWine ? "Champiñones salteados" : "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: isSlowOrWine ? "Reducción de jugo del asado" : "Queso fresco o feta", amount: 25 * safeServings, unit: isSlowOrWine ? "ml" : "g", category: isSlowOrWine ? INGREDIENT_CATEGORIES.PANTRY : INGREDIENT_CATEGORIES.DAIRY },
+          { name: isSlowOrWine ? "Ajo laminado" : "Nueces picadas", amount: (isSlowOrWine ? 5 : 15) * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
           { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
         ],
-        instructions: [
+        instructions: isSlowOrWine ? [
+          `Deshilachar la ración de ${mainIngredientName.toLowerCase()} cocinada a fuego lento.`,
+          "Saltear el calabacín y champiñones con ajo y AOVE durante 5 minutos a fuego medio.",
+          "Incorporar la carne mechada y la reducción de sus jugos durante 2 minutos hasta integrar.",
+          "Servir caliente en bol: cena ligera, digestiva y adaptada a la melosidad del asado."
+        ] : [
           `Cortar en dados 140g de la pieza de ${mainIngredientName.toLowerCase()} cocinada y templar 1 minuto a fuego suave en la sartén.`,
           "En una ensaladera o bol, colocar la base de espinacas baby y tomates cherry partidos.",
           "Añadir los dados de carne templada, el queso desmenuzado y las nueces picadas.",
@@ -848,6 +861,11 @@ En nutrición deportiva de precisión, una comida (almuerzo) requiere muchas má
 - COMIDAS (Almuerzo): Deben aportar entre 650 y 850 kcal por ración. Son el aporte energético clave del día, con raciones más generosas de la preparación base (~180-220g por ración) e hidratos de carbono complejos (patatas, arroz, pasta integral, legumbres, boniato).
 - CENAS: Deben ser considerablemente más LIGERAS y digestivas, entre 380 y 520 kcal por ración. Deben priorizar verduras, ensaladas templadas, cremas o salteados con grasas saludables (AOVE, frutos secos, aguacate) y una porción moderada de la preparación base (~120-150g por ración) para favorecer la digestión y el descanso.
 - NUNCA generes desayunos salvo que el usuario lo pida explícitamente.
+
+REGLA DE COHERENCIA CULINARIA Y PERFIL DE TEXTURA (CARNE MECHADA VS ENSALADA):
+Si la preparación base es un asado de varias horas, carne al vino, cocción lenta o queda con textura tierna/deshilachada (carne mechada):
+- AFINIDADES OBLIGATORIAS: Platos calientes o templados que ensalcen la jugosidad y su salsa (fajitas/tacos calientes con pimientos y cebolla, bowls calientes con arroz o patatas panaderas, pasta integral con reducción de sus jugos, salteados al wok o wraps calientes).
+- DESCARTES: NUNCA propongas ensaladas frías crudas incompatibles con la carne mechada melosa, salvo que el usuario lo pida explícitamente.
 
 Cada una de las recetas debe tener:
 - Gramajes individuales realistas y coherentes con su momento del día.
