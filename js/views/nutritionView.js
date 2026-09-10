@@ -1508,6 +1508,7 @@ export function openRecipeDetailModal(recipeId) {
 }
 
 let generatedRecipeCandidate = null;
+let generatedBatchCandidate = null;
 
 /**
  * Automatically calculates macros for the modal form inputs based on the ingredients entered.
@@ -1545,7 +1546,7 @@ export function autoCalculateRecipeModalMacros(prefix = 'new') {
 }
 
 /**
- * AI / SMART RECIPE GENERATOR MODAL
+ * AI RECIPE GENERATOR MODAL (Modo Inteligente)
  */
 export function openAiRecipeGeneratorModal() {
   try {
@@ -1559,9 +1560,10 @@ export function openAiRecipeGeneratorModal() {
     }
 
     generatedRecipeCandidate = null;
+    generatedBatchCandidate = null;
 
     modal.innerHTML = `
-      <div class="glass-modal ai-generator-modal-card" style="max-width: 580px; max-height: 92vh; overflow-y: auto;" onclick="event.stopPropagation()">
+      <div class="glass-modal ai-generator-modal-card" style="max-width: 620px; max-height: 92vh; overflow-y: auto;" onclick="event.stopPropagation()">
         <div class="modal-header">
           <div class="modal-header-title">
             <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(6,182,212,0.3);">
@@ -1569,7 +1571,7 @@ export function openAiRecipeGeneratorModal() {
             </div>
             <div>
               <h3>Modo Inteligente: Generador de Recetas</h3>
-              <p>Describe tu plato o ingredientes y calcularemos pasos y macros</p>
+              <p>Describe tu plato o lote (ej. 1 kg de carne) y calcularemos pasos y macros</p>
             </div>
           </div>
           <button type="button" class="modal-close-btn" onclick="document.getElementById('ai-recipe-generator-modal').classList.remove('active')">
@@ -1580,20 +1582,20 @@ export function openAiRecipeGeneratorModal() {
         <div class="modal-body" style="padding-top: 1rem;">
           <div class="form-group">
             <label style="font-weight: 600; display:flex; justify-content:space-between; margin-bottom: 0.4rem;">
-              <span>Describe la receta que quieres</span>
+              <span>Describe la receta o preparación que quieres</span>
               <span style="font-size:0.75rem; color:var(--accent-cyan);">Lenguaje natural</span>
             </label>
-            <textarea id="ai-prompt-input" class="ios-input" rows="3" placeholder="ej. Quiero un plato de pasta con carne picada de ternera magra, tomate frito y un poco de queso rallado"></textarea>
+            <textarea id="ai-prompt-input" class="ios-input" rows="3" placeholder="ej. Cabecero de lomo entero (1 kg) al horno para dividir en 3 recetas de la semana"></textarea>
           </div>
 
           <div style="margin: 0.85rem 0;">
             <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom: 0.4rem;">💡 Pulsa una sugerencia rápida para probar:</span>
             <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+              <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Cabecero de lomo entero (1 kg) al horno para dividir en 3 recetas de la semana')">🍱 Cabecero de Lomo (1 kg Batch)</button>
               <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Pasta integral con carne picada de ternera magra, salsa de tomate y queso parmesano')">🍝 Pasta con Ternera</button>
               <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Arroz basmati con pechuga de pollo y pimientos salteados')">🍚 Arroz con Pollo</button>
               <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Lomo de salmón a la plancha con patatas al horno y espárragos trigueros')">🐟 Salmón con Patatas</button>
               <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Tortilla francesa de 2 huevos con espinacas baby y queso feta')">🍳 Tortilla con Espinacas</button>
-              <button type="button" class="ai-chip-btn" onclick="setAiPrompt('Bowl de yogur griego con copos de avena, plátano y nueces')">🥣 Bowl de Avena y Yogur</button>
             </div>
           </div>
 
@@ -1609,12 +1611,28 @@ export function openAiRecipeGeneratorModal() {
               </select>
             </div>
             <div class="form-group">
-              <label>Raciones</label>
+              <label>Raciones por plato</label>
               <select id="ai-servings" class="custom-select" style="width: 100%;">
                 <option value="1">1 Ración (Individual)</option>
                 <option value="2">2 Raciones (Carlos y Andrea)</option>
               </select>
             </div>
+          </div>
+
+          <!-- BATCH COOKING OPTION -->
+          <div style="margin-top: 0.85rem; padding: 0.75rem 1rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+            <div>
+              <span style="font-size: 0.84rem; font-weight: 700; color: var(--accent-amber); display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-layer-group"></i> Modo Batch Cooking / Aprovechamiento
+              </span>
+              <span style="font-size: 0.74rem; color: var(--text-muted); display: block; margin-top: 2px;">
+                Divide piezas grandes (ej. 1 kg de carne) en 3 recetas variadas y equilibradas para la semana
+              </span>
+            </div>
+            <label class="switch" style="margin: 0; flex-shrink: 0;">
+              <input type="checkbox" id="ai-batch-cooking-toggle">
+              <span class="slider round"></span>
+            </label>
           </div>
 
           <button type="button" id="ai-generate-btn" class="btn-primary" onclick="generateAiRecipeFromForm()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 1.25rem; font-size: 0.95rem; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald)); border: none; font-weight: 700; box-shadow: 0 4px 16px rgba(6,182,212,0.3);">
@@ -1637,6 +1655,11 @@ export function setAiPrompt(text) {
   const input = document.getElementById("ai-prompt-input");
   if (input) {
     input.value = text;
+    // Auto-check batch cooking toggle if text includes 1 kg or batch
+    const toggle = document.getElementById("ai-batch-cooking-toggle");
+    if (toggle && (text.includes("1 kg") || text.includes("kilo") || text.includes("Batch") || text.includes("dividir"))) {
+      toggle.checked = true;
+    }
     input.focus();
   }
 }
@@ -1648,6 +1671,7 @@ export async function generateAiRecipeFromForm() {
     const promptInput = document.getElementById("ai-prompt-input");
     const typeSelect = document.getElementById("ai-meal-type");
     const servingsSelect = document.getElementById("ai-servings");
+    const batchToggle = document.getElementById("ai-batch-cooking-toggle");
     const container = document.getElementById("ai-recipe-result-container");
 
     if (!promptInput || !container) return;
@@ -1659,14 +1683,15 @@ export async function generateAiRecipeFromForm() {
 
     const type = typeSelect ? typeSelect.value : "auto";
     const servings = servingsSelect ? parseInt(servingsSelect.value, 10) : 1;
+    const forceBatch = batchToggle ? batchToggle.checked : false;
 
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando Receta y Macros...';
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analizando preparación con IA...';
     }
 
-    const recipe = await generateRecipeWithAi(prompt, type, servings);
-    if (!recipe) {
+    const result = await generateRecipeWithAi(prompt, type, servings, forceBatch);
+    if (!result) {
       showIosToast("⚠️ No pudimos procesar la receta", "fa-solid fa-triangle-exclamation");
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -1675,16 +1700,114 @@ export async function generateAiRecipeFromForm() {
       return;
     }
 
-    generatedRecipeCandidate = recipe;
+    // CHECK IF RESULT IS A BATCH COOKING MULTI-RECIPE PLAN
+    if (result.isBatch && Array.isArray(result.recipes) && result.recipes.length > 0) {
+      generatedBatchCandidate = result;
+      generatedRecipeCandidate = null;
 
-    const ingHtml = (recipe.ingredients || []).map(i => `
+      const batchHtml = result.recipes.map((r, idx) => {
+        const ingList = (r.ingredients || []).map(i => `
+          <li style="display:flex; justify-content:space-between; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.06); font-size: 0.8rem;">
+            <span>${i.name}</span>
+            <strong style="color:var(--text-main);">${i.amount} ${i.unit}</strong>
+          </li>
+        `).join("");
+
+        const stepsList = (r.instructions || []).map((s, sIdx) => `
+          <li style="margin-bottom: 0.35rem; font-size: 0.8rem; line-height: 1.4;">
+            <strong style="color:var(--accent-cyan);">${sIdx + 1}.</strong> ${s}
+          </li>
+        `).join("");
+
+        return `
+          <div class="glass-card" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <div>
+                <span class="type-pill ${r.type}" style="font-size: 0.68rem;">${r.type.toUpperCase()} • ${r.prepTime} min</span>
+                <h4 style="font-size: 1.05rem; margin: 0.35rem 0 0.2rem 0; color: var(--text-main); font-weight: 700;">
+                  ${idx + 1}. ${r.name}
+                </h4>
+              </div>
+              <span style="font-size: 0.68rem; background: rgba(245,158,11,0.15); color: var(--accent-amber); padding: 2px 7px; border-radius: 9999px; font-weight: 700;">Receta ${idx + 1}/3</span>
+            </div>
+
+            <div class="meal-macros-pills" style="margin: 0.6rem 0;">
+              <span class="macro-pill" style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${r.calories} kcal</span>
+              <span class="macro-pill" style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${r.protein}g Prot</span>
+              <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${r.carbs}g Carbs</span>
+              <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${r.fats}g Grasas</span>
+            </div>
+
+            <div style="margin-top: 0.6rem;">
+              <span style="font-size: 0.8rem; color: var(--accent-emerald); font-weight: 600; display: block; margin-bottom: 0.3rem;"><i class="fa-solid fa-basket-shopping"></i> Ingredientes:</span>
+              <ul style="list-style: none; padding: 0; margin: 0;">${ingList}</ul>
+            </div>
+
+            <div style="margin-top: 0.6rem;">
+              <span style="font-size: 0.8rem; color: var(--accent-cyan); font-weight: 600; display: block; margin-bottom: 0.3rem;"><i class="fa-solid fa-list-ol"></i> Pasos:</span>
+              <ol style="padding-left: 1.1rem; margin: 0; color: var(--text-muted);">${stepsList}</ol>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.85rem;">
+              <button type="button" class="btn-secondary" onclick="saveSingleBatchRecipe(${idx})" style="flex: 1; padding: 0.5rem 0.75rem; font-size: 0.78rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
+                <i class="fa-solid fa-bookmark"></i> Guardar solo esta
+              </button>
+              <button type="button" class="btn-secondary" onclick="editSingleBatchRecipe(${idx})" style="padding: 0.5rem 0.75rem; font-size: 0.78rem; justify-content: center; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);">
+                <i class="fa-solid fa-pen-to-square"></i> Retocar
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      container.style.display = "block";
+      container.innerHTML = `
+        <div class="glass-card generated-batch-card" style="border: 1px solid var(--accent-amber); background: rgba(245, 158, 11, 0.05); padding: 1.25rem; border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <div>
+              <span style="font-size: 0.72rem; background: rgba(245,158,11,0.2); color: var(--accent-amber); padding: 3px 10px; border-radius: 9999px; font-weight: 800;">
+                <i class="fa-solid fa-layer-group"></i> PLAN DE BATCH COOKING (3 RECETAS)
+              </span>
+              <h3 style="font-size: 1.2rem; margin: 0.5rem 0 0.2rem 0; color: var(--text-main); font-weight: 700;">${result.batchTitle}</h3>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">${result.basePrep}</p>
+            </div>
+          </div>
+
+          <div style="margin: 0.85rem 0 1.25rem 0; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-amber); padding: 0.65rem 0.85rem; border-radius: 4px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
+            💡 <strong>Aprovechamiento inteligente:</strong> Para evitar una receta desmedida de 2500+ kcal, hemos repartido la pieza de 1 kg en 3 raciones individuales saludables (~150-180g de carne, ~400-500 kcal y ~38g proteína por plato).
+          </div>
+
+          <button type="button" class="btn-primary" onclick="saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-bottom: 1.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar las 3 recetas en mi Catálogo
+          </button>
+
+          <div class="batch-recipes-list">
+            ${batchHtml}
+          </div>
+
+          <button type="button" class="btn-primary" onclick="saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 0.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar las 3 recetas en mi Catálogo
+          </button>
+        </div>
+      `;
+
+      container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      showIosToast("🍱 ¡3 recetas de aprovechamiento generadas!", "fa-solid fa-layer-group");
+      return;
+    }
+
+    // SINGLE RECIPE FLOW
+    generatedRecipeCandidate = result;
+    generatedBatchCandidate = null;
+
+    const ingHtml = (result.ingredients || []).map(i => `
       <li style="display:flex; justify-content:space-between; padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 0.84rem;">
         <span>${i.name}</span>
         <strong style="color:var(--text-main);">${i.amount} ${i.unit}</strong>
       </li>
     `).join("");
 
-    const stepsHtml = (recipe.instructions || []).map((s, idx) => `
+    const stepsHtml = (result.instructions || []).map((s, idx) => `
       <li style="margin-bottom: 0.5rem; font-size: 0.84rem; line-height: 1.45;">
         <strong style="color:var(--accent-cyan);">${idx + 1}.</strong> ${s}
       </li>
@@ -1695,17 +1818,17 @@ export async function generateAiRecipeFromForm() {
       <div class="glass-card generated-recipe-card" style="border: 1px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.06); padding: 1.25rem; border-radius: var(--radius-md);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
           <div>
-            <span class="type-pill ${recipe.type}" style="font-size: 0.72rem;">${recipe.type.toUpperCase()} • ${recipe.prepTime} min</span>
-            <h3 style="font-size: 1.15rem; margin: 0.4rem 0 0.2rem 0; color: var(--text-main); font-weight: 700;">${recipe.name}</h3>
+            <span class="type-pill ${result.type}" style="font-size: 0.72rem;">${result.type.toUpperCase()} • ${result.prepTime} min</span>
+            <h3 style="font-size: 1.15rem; margin: 0.4rem 0 0.2rem 0; color: var(--text-main); font-weight: 700;">${result.name}</h3>
           </div>
           <span style="font-size: 0.72rem; background: rgba(16,185,129,0.15); color: var(--accent-emerald); padding: 2px 8px; border-radius: 9999px; font-weight: 700;">✨ Calculado</span>
         </div>
 
         <div class="meal-macros-pills" style="margin: 0.85rem 0;">
-          <span class="macro-pill" style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${recipe.calories} kcal</span>
-          <span class="macro-pill" style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${recipe.protein}g Prot</span>
-          <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${recipe.carbs}g Carbs</span>
-          <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${recipe.fats}g Grasas</span>
+          <span class="macro-pill" style="color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-fire"></i> ${result.calories} kcal</span>
+          <span class="macro-pill" style="color:var(--accent-emerald); font-weight:700;"><i class="fa-solid fa-dumbbell"></i> ${result.protein}g Prot</span>
+          <span class="macro-pill" style="color:var(--accent-cyan); font-weight:600;"><i class="fa-solid fa-wheat-awn"></i> ${result.carbs}g Carbs</span>
+          <span class="macro-pill" style="color:var(--accent-violet); font-weight:600;"><i class="fa-solid fa-droplet"></i> ${result.fats}g Grasas</span>
         </div>
 
         <div style="margin-top: 0.85rem;">
@@ -1792,6 +1915,87 @@ export function editGeneratedRecipeCandidate() {
       autoCalculateRecipeModalMacros('new');
     }
     if (stepsEl) stepsEl.value = (candidate.instructions || []).join("\n");
+  }, 100);
+}
+
+export function saveAllBatchCookingRecipes() {
+  if (!generatedBatchCandidate || !Array.isArray(generatedBatchCandidate.recipes)) return;
+  if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+
+  const recipes = generatedBatchCandidate.recipes;
+  recipes.forEach(r => {
+    appState.customRecipes.push(r);
+    if (Array.isArray(appState.deletedRecipeIds)) {
+      appState.deletedRecipeIds = appState.deletedRecipeIds.filter(id => id !== r.id);
+    }
+  });
+
+  appState.mealPlansLastModified = Date.now();
+  saveState();
+  if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
+
+  const modal = document.getElementById("ai-recipe-generator-modal");
+  if (modal) modal.classList.remove("active");
+
+  renderNutritionRecipesView();
+  renderNutritionMenuView();
+  renderShoppingView();
+  showIosToast(`🎉 ¡${recipes.length} recetas de batch cooking guardadas y publicadas!`, "fa-solid fa-cloud-arrow-up");
+}
+
+export function saveSingleBatchRecipe(index) {
+  if (!generatedBatchCandidate || !Array.isArray(generatedBatchCandidate.recipes)) return;
+  const recipe = generatedBatchCandidate.recipes[index];
+  if (!recipe) return;
+
+  if (!Array.isArray(appState.customRecipes)) appState.customRecipes = [];
+  appState.customRecipes.push(recipe);
+  if (Array.isArray(appState.deletedRecipeIds)) {
+    appState.deletedRecipeIds = appState.deletedRecipeIds.filter(id => id !== recipe.id);
+  }
+
+  appState.mealPlansLastModified = Date.now();
+  saveState();
+  if (window.pushToCloud) window.pushToCloud(false).catch(() => {});
+
+  renderNutritionRecipesView();
+  renderNutritionMenuView();
+  renderShoppingView();
+  showIosToast(`🎉 "${recipe.name}" guardada en el catálogo`, "fa-solid fa-bookmark");
+}
+
+export function editSingleBatchRecipe(index) {
+  if (!generatedBatchCandidate || !Array.isArray(generatedBatchCandidate.recipes)) return;
+  const recipe = generatedBatchCandidate.recipes[index];
+  if (!recipe) return;
+
+  const modal = document.getElementById("ai-recipe-generator-modal");
+  if (modal) modal.classList.remove("active");
+
+  openCreateRecipeModal();
+  setTimeout(() => {
+    const nameEl = document.getElementById("new-recipe-name");
+    const typeEl = document.getElementById("new-recipe-type");
+    const prepEl = document.getElementById("new-recipe-prep");
+    const kcalEl = document.getElementById("new-recipe-kcal");
+    const protEl = document.getElementById("new-recipe-prot");
+    const carbsEl = document.getElementById("new-recipe-carbs");
+    const fatsEl = document.getElementById("new-recipe-fats");
+    const ingEl = document.getElementById("new-recipe-ingredients");
+    const stepsEl = document.getElementById("new-recipe-steps");
+
+    if (nameEl) nameEl.value = recipe.name;
+    if (typeEl) typeEl.value = recipe.type;
+    if (prepEl) prepEl.value = recipe.prepTime;
+    if (kcalEl) kcalEl.value = recipe.calories;
+    if (protEl) protEl.value = recipe.protein;
+    if (carbsEl) carbsEl.value = recipe.carbs;
+    if (fatsEl) fatsEl.value = recipe.fats;
+    if (ingEl) {
+      ingEl.value = (recipe.ingredients || []).map(i => `${i.name}, ${i.amount}, ${i.unit}`).join("\n");
+      autoCalculateRecipeModalMacros('new');
+    }
+    if (stepsEl) stepsEl.value = (recipe.instructions || []).join("\n");
   }, 100);
 }
 
