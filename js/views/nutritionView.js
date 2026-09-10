@@ -2318,7 +2318,7 @@ export function renderBatchCandidateView(highlightedIndex = -1) {
       </div>
 
       <div style="margin: 0.85rem 0 1.25rem 0; background: rgba(0,0,0,0.25); border-left: 3px solid var(--accent-amber); padding: 0.65rem 0.85rem; border-radius: 4px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
-        💡 <strong>Aprovechamiento inteligente:</strong> Repartido en ${count} ${count === 1 ? 'receta equilibrada' : 'recetas equilibradas'} (~150-180g de carne, ~400-500 kcal y ~38g proteína por ración). Puedes añadir más recetas con IA, quitar las que no desees, regenerar cualquiera de ellas o cambiar cantidades antes de guardar en tu catálogo.
+        💡 <strong>Presupuesto calórico inteligente:</strong> Calibrado por momento del día. Las <strong>comidas</strong> aportan mayor energía (~650-850 kcal) con hidratos complejos para rendir y entrenar, mientras que las <strong>cenas</strong> son más ligeras y digestivas (~380-520 kcal) para optimizar el descanso. Puedes regenerar, añadir o quitar platos según tus necesidades.
       </div>
 
       <button type="button" class="btn-primary" onclick="saveAllBatchCookingRecipes()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-bottom: 1.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; box-shadow: 0 4px 16px rgba(245,158,11,0.3);">

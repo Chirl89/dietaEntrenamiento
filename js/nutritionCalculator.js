@@ -531,112 +531,112 @@ export function generateRecipeFromDescription(description, preferredType = "auto
         name: `${mainIngredientName} al horno con patatas panaderas`,
         type: "comida",
         prepTime: 45,
-        calories: 485,
-        protein: 42,
-        carbs: 35,
-        fats: 17,
-        tags: ["Batch Cooking", "al horno", "aprovechamiento"],
+        calories: 740,
+        protein: 44,
+        carbs: 68,
+        fats: 24,
+        tags: ["Batch Cooking", "al horno", "comida principal"],
         ingredients: [
-          { name: `${mainIngredientName} asado`, amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Patata fresca", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: `${mainIngredientName} asado`, amount: 200 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Patata fresca", amount: 260 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Aceite de oliva virgen extra", amount: 12 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
           { name: "Dientes de ajo y especias", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
         ],
         instructions: [
           `Cocinar la pieza base entera de ${mainIngredientName.toLowerCase()} al horno a 190°C durante 45 minutos junto a las patatas y el adobo.`,
-          "Separar una ración de lomo con su guarnición de patatas para servir recién hecho.",
-          "Dejar enfriar el resto de la pieza cocinada, envolver y reservar en la nevera para las siguientes comidas de la semana."
+          "Separar una ración de lomo con su guarnición de patatas para servir recién hecho como comida energética.",
+          "Dejar enfriar el resto de la pieza cocinada, envolver y reservar en la nevera para las siguientes comidas y cenas de la semana."
         ]
       },
       {
-        name: `Fajitas de ${mainIngredientName} con pimientos y cebolla`,
+        name: `Fajitas de ${mainIngredientName} con pimientos, cebolla y maíz`,
         type: "comida",
         prepTime: 15,
-        calories: 495,
-        protein: 38,
-        carbs: 45,
-        fats: 16,
-        tags: ["Batch Cooking", "rápido", "aprovechamiento"],
+        calories: 695,
+        protein: 42,
+        carbs: 62,
+        fats: 21,
+        tags: ["Batch Cooking", "rápido", "comida principal"],
         ingredients: [
-          { name: `${mainIngredientName} asado en tiras`, amount: 160 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: `${mainIngredientName} asado en tiras`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
           { name: "Pimiento rojo y verde", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
           { name: "Cebolla", amount: 70 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Tortillas integrales o de maíz", amount: 2 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Aceite de oliva virgen extra", amount: 6 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          { name: "Tortillas integrales o de maíz", amount: 3 * safeServings, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
         ],
         instructions: [
-          `Cortar en tiras finas 160g de la pieza de ${mainIngredientName.toLowerCase()} reservada en la nevera.`,
-          "En una sartén con unas gotas de aceite de oliva virgen extra, saltear los pimientos y la cebolla hasta que queden tiernos.",
-          "Añadir las tiras de carne durante 1-2 minutos para que cojan calor y se impregnen de los jugos.",
-          "Calentar brevemente las tortillas y rellenar con el salteado."
+          `Cortar en tiras 190g de la pieza de ${mainIngredientName.toLowerCase()} reservada en frío.`,
+          "En una sartén con aceite de oliva virgen extra, saltear los pimientos y la cebolla hasta que queden tiernos.",
+          "Añadir las tiras de carne durante 2 minutos para que cojan calor y se impregnen de los jugos.",
+          "Calentar las tortillas y rellenar para un almuerzo completo y saciante."
         ]
       },
       {
         name: `Ensalada templada de ${mainIngredientName} con brotes y frutos secos`,
         type: "cena",
         prepTime: 10,
-        calories: 380,
+        calories: 395,
         protein: 36,
-        carbs: 12,
-        fats: 19,
+        carbs: 14,
+        fats: 20,
         tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
         ingredients: [
-          { name: `${mainIngredientName} asado en dados`, amount: 150 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Espinacas baby o rúcula", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: `${mainIngredientName} asado en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Espinacas baby o rúcula", amount: 90 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
           { name: "Tomates cherry", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Queso fresco o feta", amount: 30 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-          { name: "Nueces", amount: 15 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: "Queso fresco o feta", amount: 25 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+          { name: "Nueces picadas", amount: 15 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
           { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
         ],
         instructions: [
-          `Cortar en dados 150g de la pieza de ${mainIngredientName.toLowerCase()} cocinada y saltear 1 minuto a fuego vivo en la sartén para templarla.`,
-          "En una ensaladera o bol, colocar la base de espinacas baby y tomates cherry cortados por la mitad.",
-          "Añadir los dados templados de carne, el queso desmenuzado y las nueces picadas.",
-          "Aliñar con una cucharadita de aceite de oliva virgen extra, vinagre y sal al gusto."
+          `Cortar en dados 140g de la pieza de ${mainIngredientName.toLowerCase()} cocinada y templar 1 minuto a fuego suave en la sartén.`,
+          "En una ensaladera o bol, colocar la base de espinacas baby y tomates cherry partidos.",
+          "Añadir los dados de carne templada, el queso desmenuzado y las nueces picadas.",
+          "Aliñar con AOVE, vinagre y sal. Una cena ligera, digestiva y alta en proteínas."
         ]
       },
       {
-        name: `Wok de arroz con ${mainIngredientName} y verduras salteadas`,
+        name: `Wok de arroz basmati con ${mainIngredientName} y verduras salteadas`,
         type: "comida",
         prepTime: 15,
-        calories: 480,
-        protein: 39,
-        carbs: 48,
-        fats: 14,
-        tags: ["Batch Cooking", "wok", "aprovechamiento"],
+        calories: 720,
+        protein: 43,
+        carbs: 75,
+        fats: 18,
+        tags: ["Batch Cooking", "wok", "comida principal"],
         ingredients: [
-          { name: `${mainIngredientName} en tiras`, amount: 150 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Arroz jazmín o basmati cocido", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+          { name: `${mainIngredientName} en tiras`, amount: 190 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Arroz jazmín o basmati cocido", amount: 180 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
           { name: "Calabacín y zanahoria en juliana", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
           { name: "Salsa de soja baja en sal", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Aceite de sésamo o de oliva", amount: 6 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          { name: "Aceite de oliva o sésamo", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
         ],
         instructions: [
-          "Saltear en wok o sartén amplia las verduras en juliana a fuego vivo 3 minutos.",
-          `Incorporar las tiras de ${mainIngredientName.toLowerCase()} y el arroz cocido.`,
+          "Saltear en sartén amplia o wok las verduras en juliana a fuego vivo 3 minutos con aceite.",
+          `Incorporar las tiras de ${mainIngredientName.toLowerCase()} y el arroz cocido para una comida de alto valor energético.`,
           "Aderezar con salsa de soja y remover 2 minutos para integrar todos los sabores."
         ]
       },
       {
-        name: `Pasta integral salteada con dados de ${mainIngredientName} y cherry`,
-        type: "comida",
+        name: `Salteado ligero de ${mainIngredientName} con calabacín, champiñones y cherry`,
+        type: "cena",
         prepTime: 12,
-        calories: 490,
-        protein: 40,
-        carbs: 52,
-        fats: 13,
-        tags: ["Batch Cooking", "pasta", "aprovechamiento"],
+        calories: 405,
+        protein: 38,
+        carbs: 15,
+        fats: 19,
+        tags: ["Batch Cooking", "cena ligera", "aprovechamiento"],
         ingredients: [
-          { name: `${mainIngredientName} en dados`, amount: 150 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
-          { name: "Pasta integral hervida", amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Tomates cherry salteados", amount: 80 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-          { name: "Albahaca fresca y ajo", amount: 6 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-          { name: "Aceite de oliva virgen extra", amount: 8 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+          { name: `${mainIngredientName} en dados`, amount: 140 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+          { name: "Calabacín en dados", amount: 120 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Champiñones laminados", amount: 100 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Tomates cherry", amount: 60 * safeServings, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+          { name: "Aceite de oliva virgen extra", amount: 10 * safeServings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
         ],
         instructions: [
-          "Saltear los cherry con un diente de ajo laminado en una sartén con aceite.",
-          `Añadir los dados de ${mainIngredientName.toLowerCase()} cocinada y la pasta integral escurrida.`,
-          "Mezclar bien con hojas de albahaca fresca y servir caliente."
+          "Saltear el calabacín y los champiñones a fuego medio con el aceite durante 5 minutos.",
+          `Añadir los dados de ${mainIngredientName.toLowerCase()} cocinada y los cherry para que tomen temperatura.`,
+          "Servir caliente: plato rico en fibra y proteína con muy baja carga glucémica para antes de dormir."
         ]
       }
     ];
@@ -713,13 +713,16 @@ CANTIDAD DINÁMICA DE RECETAS:
 - Si el usuario NO especifica una cantidad concreta, calcula el número óptimo según la cantidad/peso de la pieza o preparación (ej. para 1 kg de carne suelen ser 2 a 4 recetas según raciones; para 500g suelen ser 2; si solo da para 1, pon 1). El número de recetas en el array "recipes" DEBE SER DINÁMICO según lo que sea necesario.
 - NUNCA fuerces a 3 recetas si el usuario pidió otra cantidad o si la cantidad de alimento requiere más o menos platos.
 
-Variedad de momentos del día:
-Combina comidas y cenas (ej. plato tradicional al horno, fajitas / salteado rápido, ensalada templada ligera, wok de arroz o pasta). NUNCA generes desayunos salvo que el usuario lo pida explícitamente.
+REGLA DE ORO DE PRESUPUESTO CALÓRICO POR MOMENTO DEL DÍA:
+En nutrición deportiva de precisión, una comida (almuerzo) requiere muchas más calorías que una cena. El reparto de la preparación base y sus guarniciones DEBE ajustarse fielmente a este presupuesto:
+- COMIDAS (Almuerzo): Deben aportar entre 650 y 850 kcal por ración. Son el aporte energético clave del día, con raciones más generosas de la preparación base (~180-220g por ración) e hidratos de carbono complejos (patatas, arroz, pasta integral, legumbres, boniato).
+- CENAS: Deben ser considerablemente más LIGERAS y digestivas, entre 380 y 520 kcal por ración. Deben priorizar verduras, ensaladas templadas, cremas o salteados con grasas saludables (AOVE, frutos secos, aguacate) y una porción moderada de la preparación base (~120-150g por ración) para favorecer la digestión y el descanso.
+- NUNCA generes desayunos salvo que el usuario lo pida explícitamente.
 
 Cada una de las recetas debe tener:
-- Gramajes individuales realistas (~140g-180g de carne preparada por ración).
-- Macros saludables (~350-550 kcal y ~30-45g proteína).
-- Ingredientes con cantidades exactas (g, ml, ud).
+- Gramajes individuales realistas y coherentes con su momento del día.
+- Macros calibrados según sea comida (~650-850 kcal) o cena (~380-520 kcal).
+- Ingredientes con cantidades exactas (g, ml, ud) para el total de raciones (${servings} personas).
 - 3 a 5 pasos de elaboración claros.
 
 FORMATO ESTRICTO: Responde ÚNICAMENTE con un objeto JSON válido con esta estructura, sin texto previo ni posterior, sin markdown ni explicaciones:
@@ -729,17 +732,17 @@ FORMATO ESTRICTO: Responde ÚNICAMENTE con un objeto JSON válido con esta estru
   "basePrep": "Explicación breve (1-2 frases) de cómo cocinar la pieza base entera inicialmente para luego repartirla.",
   "recipes": [
     {
-      "name": "Nombre atractivo receta 1",
+      "name": "Nombre atractivo comida 1",
       "type": "comida",
       "prepTime": 45,
-      "calories": 485,
-      "protein": 42,
-      "carbs": 35,
-      "fats": 17,
+      "calories": 720,
+      "protein": 44,
+      "carbs": 65,
+      "fats": 22,
       "ingredients": [
-        {"name": "Cabecero de lomo asado", "amount": 180, "unit": "g"},
-        {"name": "Patata fresca", "amount": 180, "unit": "g"},
-        {"name": "Aceite de oliva virgen extra", "amount": 10, "unit": "ml"}
+        {"name": "Cabecero de lomo asado", "amount": 200, "unit": "g"},
+        {"name": "Patata fresca", "amount": 260, "unit": "g"},
+        {"name": "Aceite de oliva virgen extra", "amount": 12, "unit": "ml"}
       ],
       "instructions": [
         "Paso 1...",
@@ -935,7 +938,7 @@ REGLAS ESTRICTAS:
 2. NO REPETIR: Debe ser un plato completamente diferente a las otras recetas ya elegidas (${otherRecipes.join(", ")}).
 3. FIDELIDAD A LAS SUGERENCIAS: Si el usuario pidió una cantidad concreta (ej. 200g o 250g de carne), o un ingrediente específico (ej. pasta integral, ensalada ligera, arroz, taco), RESPÉTALO FIELMENTE en los ingredientes y cantidades.
 4. CANTIDADES REALISTAS PARA ${servings} PERSONAS: Los gramos totales de los ingredientes deben ser para cocinar para ${servings} raciones.
-5. CÁLCULO DE MACROS POR RACIÓN INDIVIDUAL: Calorías y macronutrientes (calories, protein, carbs, fats) calculados POR RACIÓN (para 1 persona).
+5. PRESUPUESTO CALÓRICO POR MOMENTO DEL DÍA: Si el plato es "comida", debe ser saciante y energético (~650-850 kcal y ~38-45g P) con carbohidratos y guarnición adecuada. Si es "cena", debe ser ligera y digestiva (~380-520 kcal y ~30-40g P) con verduras/ensalada y baja carga glucémica.
 6. FORMATO ESTRICTO: Responde ÚNICAMENTE con un JSON válido con la siguiente estructura, sin texto antes ni después, sin markdown:
 {
   "name": "Nombre apetitoso y claro de la nueva receta alternativa",
@@ -1163,20 +1166,19 @@ REGLAS ESTRICTAS:
 1. APROVECHAMIENTO: La nueva receta DEBE aprovechar la preparación base (en tiras, dados, lonchas o desmenuzado).
 2. NO REPETIR: Debe ser un plato completamente diferente a los ya creados (${existingRecipes.join(", ")}).
 3. SI EL USUARIO PIDE UN TIPO DE PLATO O INGREDIENTE (ej. "arroz", "pasta", "cena ligera", "desayuno salado", "fajitas"): CÚMPLELO FIELMENTE. Si no especifica tipo, asigna "comida" o "cena". NUNCA asignes a desayuno salvo que el usuario lo pida explícitamente.
-4. CANTIDADES REALISTAS PARA ${servings} PERSONAS: Los gramos de ingredientes deben ser para el total de ${servings} raciones.
-5. CÁLCULO DE MACROS POR RACIÓN INDIVIDUAL: Calorías y macronutrientes (calories, protein, carbs, fats) calculados POR RACIÓN (para 1 persona).
+5. PRESUPUESTO CALÓRICO POR MOMENTO DEL DÍA: Si el plato es "comida", debe ser saciante y energético (~650-850 kcal y ~38-45g P) con hidratos de carbono y guarnición abundante. Si es "cena", debe ser ligera y digestiva (~380-520 kcal y ~30-40g P) con verduras/ensalada y baja carga glucémica.
 6. FORMATO ESTRICTO: Responde ÚNICAMENTE con un JSON válido con la siguiente estructura, sin texto antes ni después, sin markdown:
 {
   "name": "Nombre atractivo y claro de la nueva receta",
   "type": "comida",
   "servings": ${servings},
   "prepTime": 15,
-  "calories": 460,
-  "protein": 38,
-  "carbs": 38,
-  "fats": 15,
+  "calories": 700,
+  "protein": 40,
+  "carbs": 60,
+  "fats": 20,
   "ingredients": [
-    {"name": "Nombre ingrediente", "amount": 160, "unit": "g"}
+    {"name": "Nombre ingrediente", "amount": 180, "unit": "g"}
   ],
   "instructions": [
     "Paso 1...",
