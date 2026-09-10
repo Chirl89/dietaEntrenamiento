@@ -13,6 +13,7 @@ import {
   showIosToast
 } from '../state.js';
 import { getCloudSyncKey, updateCloudSyncUI, pushToCloud } from '../cloudSync.js';
+import { getGeminiApiKey } from '../nutritionCalculator.js';
 
 export function populateSettingsInputs() {
   try {
@@ -84,7 +85,9 @@ export function populateSettingsInputs() {
 
     // Gemini API Key Input
     const inputGeminiKey = document.getElementById("setting-gemini-key-input");
-    if (inputGeminiKey) inputGeminiKey.value = localStorage.getItem("FITDUO_GEMINI_API_KEY") || "";
+    if (inputGeminiKey) {
+      inputGeminiKey.value = getGeminiApiKey() || "";
+    }
   } catch(e) {
     console.error("Error populating settings inputs:", e);
   }

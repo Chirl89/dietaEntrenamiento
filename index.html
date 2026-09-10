@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Application CSS -->
-  <link rel="stylesheet" href="styles.css?v=0.24.11">
+  <link rel="stylesheet" href="styles.css?v=0.24.12">
 
   <!-- Chart.js for progress graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -50,7 +50,7 @@
   <header class="ios-top-bar">
     <div class="ios-header-brand">
       <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
-      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.24.11</span></span>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.24.12</span></span>
     </div>
 
     <div class="ios-header-actions">
@@ -78,7 +78,7 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div>
-            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.24.11</span></div>
+            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.24.12</span></div>
             <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
           </div>
         </div>
@@ -830,16 +830,21 @@
               </div>
             </div>
 
-            <!-- GOOGLE GEMINI API KEY (OPTIONAL ADVANCED AI) -->
-            <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.25rem;">
-              <div style="font-weight: 700; font-size: 0.95rem; color: var(--accent-emerald); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Inteligencia Artificial Avanzada (Google Gemini - Opcional)
+            <!-- GOOGLE GEMINI API KEY (INTEGRATED & ACTIVE) -->
+            <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.35); margin-bottom: 1.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="font-weight: 700; font-size: 0.95rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Inteligencia Artificial Avanzada (Google Gemini)
+                </div>
+                <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(16,185,129,0.15); color: var(--accent-emerald); border: 1px solid rgba(16,185,129,0.3); font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                  <i class="fa-solid fa-circle-check"></i> Activa e Integrada
+                </span>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                FitDuo incluye un motor culinario offline integrado. Si quieres generar recetas con la IA de Google Gemini, puedes introducir tu clave gratuita de Google AI Studio:
+                Tu API Key de Google Gemini Pro está <strong>configurada y activa en el código</strong> para ambos teléfonos. La ves rellenada aquí abajo; no necesitas pegarla a mano a menos que quieras sustituirla:
               </p>
               <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <input type="password" id="setting-gemini-key-input" class="ios-input" placeholder="AIzaSy..." style="flex: 1; min-width: 240px; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-family: monospace;">
+                <input type="password" id="setting-gemini-key-input" class="ios-input" placeholder="Clave Gemini..." style="flex: 1; min-width: 240px; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); font-family: monospace;">
                 <button type="button" class="btn-secondary-sm" onclick="saveGeminiApiKeyFromInput()" style="padding: 0.6rem 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; background: var(--accent-emerald); color: #000; border: none; cursor: pointer; border-radius: var(--radius-sm);">
                   <i class="fa-solid fa-floppy-disk"></i> Guardar API Key
                 </button>
@@ -926,10 +931,10 @@
                 </div>
               </div>
               <div id="cloud-sync-status-text" style="font-size: 0.82rem; font-weight: 600; color: var(--accent-emerald); margin-bottom: 0.5rem;">
-                Estado: Conectado a la Nube (v0.24.11)
+                Estado: Conectado a la Nube (v0.24.12)
               </div>
               <div id="sync-diagnostic-console" style="font-family: monospace; font-size: 0.75rem; color: #a3e635; background: #090d16; padding: 0.6rem; border-radius: 6px; max-height: 120px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); white-space: pre-wrap;">
-⚡ fitduo_v2 sync engine v0.24.11 listo.
+⚡ fitduo_v2 sync engine v0.24.12 listo.
               </div>
             </div>
           </div>
@@ -1441,6 +1446,6 @@
   <div id="ios-toast-container" class="ios-toast-container"></div>
 
   <!-- Application Logic -->
-  <script type="module" src="app.js?v=0.24.11"></script>
+  <script type="module" src="app.js?v=0.24.12"></script>
 </body>
 </html>
