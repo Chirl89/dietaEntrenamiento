@@ -743,7 +743,6 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
   ]
 }`;
 
-    try {
       const modelsToTry = [
         "gemini-2.5-flash",
         "gemini-1.5-flash",
@@ -759,7 +758,7 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: systemPrompt }] }],
+              contents: [{ parts: [{ text: promptText }] }],
               generationConfig: {
                 temperature: 0.2,
                 topP: 0.8,
