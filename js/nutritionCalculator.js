@@ -862,3 +862,236 @@ NORMAS ESTRICTAS DE CUMPLIMIENTO:
   // Fallback to local semantic culinary engine
   return generateRecipeFromDescription(description, preferredType, servings, isBatch);
 }
+
+/**
+ * Regenerates an individual recipe from a Batch Cooking plan using Gemini AI,
+ * allowing the user to provide custom suggestions (e.g. ingredients, quantities, style)
+ * while ensuring it does not duplicate the other recipes in the batch.
+ */
+export async function regenerateSingleBatchRecipeWithAi(batchCandidate, indexToReplace, userInstruction = "") {
+  if (!batchCandidate || !Array.isArray(batchCandidate.recipes) || !batchCandidate.recipes[indexToReplace]) {
+    return null;
+  }
+
+  const currentRecipe = batchCandidate.recipes[indexToReplace];
+  const otherRecipes = batchCandidate.recipes
+    .filter((_, i) => i !== indexToReplace)
+    .map(r => `"${r.name}" (${r.type})`);
+  const servings = Number(currentRecipe.servings) || 2;
+  const batchTitle = batchCandidate.batchTitle || "Preparación base de carne/pescado";
+  const basePrep = batchCandidate.basePrep || "Preparación asada o cocinada en gran volumen";
+
+  const apiKey = getGeminiApiKey();
+
+  if (apiKey && apiKey.trim().length > 10) {
+    try {
+      const promptText = `Actúa exclusivamente como chef nutricionista deportivo de alta precisión para FitDuo.
+Estamos gestionando un lote de BATCH COOKING / COCINA DE APROVECHAMIENTO semanal.
+Preparación base ya cocinada: "${batchTitle}".
+Detalles de la cocción base: "${basePrep}".
+Raciones individuales por plato: ${servings}.
+
+En este lote ya se han seleccionado las siguientes recetas para otros días:
+${otherRecipes.map(r => `- ${r}`).join("\n")}
+
+La receta que queremos SUSTITUIR es la número ${indexToReplace + 1}: "${currentRecipe.name}" (tipo: ${currentRecipe.type}).
+${userInstruction && userInstruction.trim() ? `PETICIÓN Y SUGERENCIAS DEL USUARIO: "${userInstruction.trim()}". (Adapta ingredientes, cantidades de carne y estilo culinario a lo que pide el usuario).` : 'El usuario quiere una ALTERNATIVA NUEVA, CREATIVA Y DIFERENTE que aproveche la preparación base sin repetir las otras recetas.'}
+
+REGLAS ESTRICTAS:
+1. APROVECHAMIENTO: La receta DEBE usar la preparación base ya cocinada (ej. carne/pescado asado o cocinado en dados, tiras, desmenuzado o lonchas).
+2. NO REPETIR: Debe ser un plato completamente diferente a las otras recetas ya elegidas (${otherRecipes.join(", ")}).
+3. FIDELIDAD A LAS SUGERENCIAS: Si el usuario pidió una cantidad concreta (ej. 200g o 250g de carne), o un ingrediente específico (ej. pasta integral, ensalada ligera, arroz, taco), RESPÉTALO FIELMENTE en los ingredientes y cantidades.
+4. CANTIDADES REALISTAS PARA ${servings} PERSONAS: Los gramos totales de los ingredientes deben ser para cocinar para ${servings} raciones.
+5. CÁLCULO DE MACROS POR RACIÓN INDIVIDUAL: Calorías y macronutrientes (calories, protein, carbs, fats) calculados POR RACIÓN (para 1 persona).
+6. FORMATO ESTRICTO: Responde ÚNICAMENTE con un JSON válido con la siguiente estructura, sin texto antes ni después, sin markdown:
+{
+  "name": "Nombre apetitoso y claro de la nueva receta alternativa",
+  "type": "${currentRecipe.type || 'comida'}",
+  "servings": ${servings},
+  "prepTime": 15,
+  "calories": 460,
+  "protein": 39,
+  "carbs": 36,
+  "fats": 15,
+  "ingredients": [
+    {"name": "Nombre ingrediente", "amount": 160, "unit": "g"}
+  ],
+  "instructions": [
+    "Paso 1...",
+    "Paso 2...",
+    "Paso 3..."
+  ]
+}`;
+
+      const modelsToTry = [
+        "gemini-3.6-flash",
+        "gemini-3.7-flash",
+        "gemini-3.5-flash",
+        "gemini-flash-latest"
+      ];
+
+      let rawJson = null;
+      for (const modelName of modelsToTry) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }],
+              generationConfig: {
+                temperature: 0.3,
+                topP: 0.85,
+                maxOutputTokens: 2048,
+                responseMimeType: "application/json"
+              }
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text && text.trim()) {
+              rawJson = text.trim();
+              break;
+            }
+          }
+        } catch(eModel) {
+          console.warn(`Alternative attempt with ${modelName} failed:`, eModel);
+        }
+      }
+
+      if (rawJson) {
+        const cleanJson = rawJson.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsed = JSON.parse(cleanJson);
+
+        if (parsed && parsed.name && Array.isArray(parsed.ingredients)) {
+          const rServings = Number(parsed.servings) || Number(servings) || 2;
+          const verifiedMacros = calculateMacrosFromIngredients(parsed.ingredients);
+          const perPersonKcal = verifiedMacros.calories > 0 ? Math.round(verifiedMacros.calories / rServings) : (Number(parsed.calories) || 450);
+          const perPersonProt = verifiedMacros.protein > 0 ? Math.round(verifiedMacros.protein / rServings) : (Number(parsed.protein) || 36);
+          const perPersonCarbs = verifiedMacros.carbs >= 0 ? Math.round(verifiedMacros.carbs / rServings) : (Number(parsed.carbs) || 30);
+          const perPersonFats = verifiedMacros.fats >= 0 ? Math.round(verifiedMacros.fats / rServings) : (Number(parsed.fats) || 14);
+
+          return {
+            id: "custom_" + Date.now() + "_" + indexToReplace + "_" + Math.random().toString(36).substr(2, 4),
+            name: parsed.name,
+            type: parsed.type || currentRecipe.type || "comida",
+            servings: rServings,
+            prepTime: Number(parsed.prepTime) || 15,
+            calories: perPersonKcal,
+            protein: perPersonProt,
+            carbs: perPersonCarbs,
+            fats: perPersonFats,
+            tags: ["Batch Cooking", "Gemini Pro AI", "alternativa", "aprovechamiento"],
+            ingredients: parsed.ingredients.map(ing => ({
+              name: ing.name,
+              amount: Number(ing.amount) || 1,
+              unit: ing.unit || "g",
+              category: INGREDIENT_CATEGORIES.PANTRY
+            })),
+            instructions: Array.isArray(parsed.instructions) && parsed.instructions.length > 0 
+              ? parsed.instructions 
+              : ["Saltear o calentar la base de carne ya preparada.", "Mezclar con la guarnición y servir."]
+          };
+        }
+      }
+    } catch(e) {
+      console.warn("Gemini regenerate alternative failed, using local semantic engine:", e);
+    }
+  }
+
+  // Fallback offline generator for the alternative
+  const baseName = currentRecipe.name || "Carne asada";
+  const userText = (userInstruction || "").toLowerCase();
+
+  // Extract requested meat quantity if user typed e.g. "200g" or "250g"
+  const amountMatch = userText.match(/(\d+)\s*(g|gr|gramos)/i);
+  const meatGramsPerPerson = amountMatch ? Math.max(80, Math.min(350, parseInt(amountMatch[1], 10))) : 160;
+  const totalMeatGrams = meatGramsPerPerson * servings;
+
+  let altName = "";
+  let altType = currentRecipe.type || "comida";
+  let altIngredients = [];
+  let altSteps = [];
+
+  if (userText.includes("pasta") || userText.includes("macarrones") || userText.includes("espaguetis")) {
+    altName = `Pasta salteada con tiras de carne preparada y tomate`;
+    altIngredients = [
+      { name: "Carne preparada en tiras", amount: totalMeatGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+      { name: "Pasta integral", amount: 75 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Salsa de tomate casera", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Queso parmesano rallado", amount: 15 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+    ];
+    altSteps = [
+      "Cocer la pasta en abundante agua con sal durante 8-10 minutos hasta que esté al dente.",
+      "Calentar en sartén la salsa de tomate e incorporar la carne en tiras durante 2 minutos para que coja temperatura.",
+      "Mezclar la pasta escurrida con la salsa y la carne, espolvorear parmesano y servir caliente."
+    ];
+  } else if (userText.includes("arroz") || userText.includes("wok")) {
+    altName = `Arroz salteado estilo wok con carne y verduras`;
+    altIngredients = [
+      { name: "Carne preparada en dados", amount: totalMeatGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+      { name: "Arroz basmati", amount: 70 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Zanahoria y calabacín en bastones", amount: 100 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
+      { name: "Salsa de soja baja en sal", amount: 10 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Aceite de sésamo o de oliva", amount: 5 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+    ];
+    altSteps = [
+      "Cocer el arroz basmati o usar arroz ya cocido.",
+      "Saltear a fuego fuerte en sartén o wok las verduras con un hilo de aceite durante 4 minutos.",
+      "Agregar la carne en dados y el arroz cocido, regar con la salsa de soja y saltear 2 minutos todo junto."
+    ];
+  } else if (userText.includes("ensalada") || userText.includes("ligera") || altType === "cena") {
+    altName = `Bowl templado de ensalada con dados de carne, rúcula y nueces`;
+    altType = "cena";
+    altIngredients = [
+      { name: "Carne preparada en dados templados", amount: totalMeatGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+      { name: "Rúcula y canónigos", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
+      { name: "Tomates cherry partidos", amount: 60 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
+      { name: "Queso feta o rulo de cabra", amount: 25 * servings, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Nueces picadas", amount: 15 * servings, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Aceite de oliva virgen extra", amount: 6 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+    ];
+    altSteps = [
+      "Dar un golpe de sartén rápido a los dados de carne para templarlos ligeramente.",
+      "Colocar en cada plato o bowl la base de rúcula, cherrys partidos y queso.",
+      "Añadir la carne templada por encima, las nueces picadas y aliñar con AOVE y una pizca de sal y vinagre."
+    ];
+  } else {
+    altName = `Salteado rápido de carne con champiñones al ajillo`;
+    altIngredients = [
+      { name: "Carne preparada en tiras", amount: totalMeatGrams, unit: "g", category: INGREDIENT_CATEGORIES.MEAT },
+      { name: "Champiñones laminados", amount: 150 * servings, unit: "g", category: INGREDIENT_CATEGORIES.VEGETABLES },
+      { name: "Dientes de ajo y perejil picado", amount: 2 * servings, unit: "ud", category: INGREDIENT_CATEGORIES.VEGETABLES },
+      { name: "Aceite de oliva virgen extra", amount: 8 * servings, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+    ];
+    altSteps = [
+      "Dorar en sartén los ajos laminados con el AOVE a fuego medio.",
+      "Añadir los champiñones y saltear 5 minutos hasta que estén tiernos.",
+      "Incorporar la carne en tiras y el perejil, saltear 2 minutos para amalgamar sabores y servir."
+    ];
+  }
+
+  const verifiedMacros = calculateMacrosFromIngredients(altIngredients);
+  const perPersonKcal = verifiedMacros.calories > 0 ? Math.round(verifiedMacros.calories / servings) : 460;
+  const perPersonProt = verifiedMacros.protein > 0 ? Math.round(verifiedMacros.protein / servings) : 38;
+  const perPersonCarbs = verifiedMacros.carbs >= 0 ? Math.round(verifiedMacros.carbs / servings) : 25;
+  const perPersonFats = verifiedMacros.fats >= 0 ? Math.round(verifiedMacros.fats / servings) : 15;
+
+  return {
+    id: "custom_" + Date.now() + "_" + indexToReplace + "_" + Math.random().toString(36).substr(2, 4),
+    name: altName,
+    type: altType,
+    servings: servings,
+    prepTime: 15,
+    calories: perPersonKcal,
+    protein: perPersonProt,
+    carbs: perPersonCarbs,
+    fats: perPersonFats,
+    tags: ["Batch Cooking", "alternativa", "aprovechamiento"],
+    ingredients: altIngredients,
+    instructions: altSteps
+  };
+}
