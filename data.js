@@ -1,4 +1,4 @@
-﻿// FitDuo & Collie Coach - Database
+// FitDuo & Collie Coach - Database
 
 export const INITIAL_PROFILES = {
   he: {
@@ -70,7 +70,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "sentadilla_ring_con",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-squat.gif",
         name: "Sentadilla a Silla con Contrapeso de Ring-Con",
         sets: 3,
         reps: "10 - 12",
@@ -110,7 +109,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
       },
       {
         id: "traccion_escapular_ring",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-standing-rear-delt-row.gif",
         name: "Tracción Escapular Isométrica con Ring-Con",
         sets: 3,
         reps: "8 - 10 (3s aguante)",
@@ -181,7 +179,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "martes_calentamiento",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Paseo Activo de Calentamiento",
         sets: 1,
         reps: "10 min",
@@ -196,7 +193,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
       },
       {
         id: "martes_fartlek",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-high-knees-lunge.gif",
         name: "Fartlek: 1 min trote suave + 2 min caminata (5 Bloques)",
         sets: 5,
         reps: "3 min c/u",
@@ -304,7 +300,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
       },
       {
         id: "prensa_pectoral_core_ring",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/push-up.gif",
         name: "Prensa Pectoral & Core Isométrica con Ring-Con",
         sets: 3,
         reps: "10 reps (3s compresión)",
@@ -324,7 +319,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
       },
       {
         id: "bird_dog_mcgill",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/spine/upward-facing-dog.gif",
         name: "Bird-Dog (Perro de Caza con Pausa Isométrica)",
         sets: 3,
         reps: "8 - 10 / lado (3s pausa)",
@@ -375,7 +369,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "jueves_paseo",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Paseo Tranquilo de Olfateo con Boo",
         sets: 1,
         reps: "25 min",
@@ -390,7 +383,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
       },
       {
         id: "jueves_gatovaca",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/spine/upward-facing-dog.gif",
         name: "Movilidad Columna 'Gato-Vaca' Suave",
         sets: 2,
         reps: "10",
@@ -460,7 +452,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
       },
       {
         id: "traccion_w_banda",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-y-raise.gif",
         name: "Tracción en 'W' con Banda Elástica (Retracción Escapular Baja)",
         sets: 3,
         reps: "12",
@@ -473,14 +464,13 @@ export const CARLOS_WORKOUT_SCHEDULE = {
           "De pie, con las rodillas suaves y el abdomen activo, sujeta la banda elástica con ambas manos a unos 25 cm de distancia.",
           "Comienza con los brazos semiflexionados frente a ti.",
           "Tira de la banda hacia afuera mientras flexionas los codos y los pegas a los costados, formando una clara letra 'W' con tus brazos.",
-          "Junta las escápulas atrás y abajo durante 2 segundos, y regresa inhalando."
+          "Junta las escápulas atrás y abajo durante 2 segundos, y regresa inhalando.",
         ],
         commonMistakes: ["Subir los hombros hacia el cuello", "Arquear la zona lumbar", "Perder la tensión en la banda"],
         visualType: "w_extension"
       },
       {
         id: "elevaciones_yt_prono",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-y-raise.gif",
         name: "Elevaciones en 'Y' y 'T' en Esterilla (Descompresión Dorsal)",
         sets: 3,
         reps: "10 reps en 'Y' + 10 en 'T'",
@@ -500,7 +490,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
       },
       {
         id: "traccion_escapular_ring_v",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-standing-rear-delt-row.gif",
         name: "Tracción Escapular Isométrica con Ring-Con",
         sets: 3,
         reps: "10 reps (3s aguante)",
@@ -550,7 +539,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "sabado_marcha",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Marcha Activa a Ritmo Vivo (5.5 km/h)",
         sets: 1,
         reps: "25 min",
@@ -580,7 +568,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
       },
       {
         id: "sabado_enfriamiento",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Caminata de Regreso y Enfriamiento",
         sets: 1,
         reps: "20 min",
@@ -617,7 +604,6 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "domingo_paseo",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Paseo Libre en Familia con Boo",
         sets: 1,
         reps: "Libre",
@@ -780,7 +766,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "andrea_calentamiento_boo",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Paseo Activo de Calentamiento con Boo",
         sets: 1,
         reps: "10 min",
@@ -799,7 +784,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
       },
       {
         id: "andrea_fartlek_parque",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-high-knees-lunge.gif",
         name: "Fartlek Intervalar con Boo (1' trote + 2' caminata)",
         sets: 5,
         reps: "3 min c/u (15 min total)",
@@ -990,7 +974,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "andrea_paseo_relajado",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Paseo de Olfateo & Desconexión con Boo",
         sets: 1,
         reps: "25 - 30 min",
@@ -1049,7 +1032,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
       },
       {
         id: "andrea_gato_camello",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/spine/upward-facing-dog.gif",
         name: "Gato-Camello de Movilidad y Liberación Espinal",
         sets: 2,
         reps: "10 repeticiones",
@@ -1178,7 +1160,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
       },
       {
         id: "andrea_bird_dog",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/spine/upward-facing-dog.gif",
         name: "Bird-Dog Dinámico con Pausa Isométrica",
         sets: 3,
         reps: "10 / lado (2s pausa)",
@@ -1209,7 +1190,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "andrea_trail_marcha",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Marcha Activa en Desnivel con Boo (5.5 km/h)",
         sets: 1,
         reps: "25 min",
@@ -1228,7 +1208,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
       },
       {
         id: "andrea_trail_trote",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-high-knees-lunge.gif",
         name: "Intervalos de Trote Trail con Boo (4 bloques x 3')",
         sets: 4,
         reps: "3 min c/u",
@@ -1266,7 +1245,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
       },
       {
         id: "andrea_trail_enfriamiento",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Caminata de Descenso & Enfriamiento Suave",
         sets: 1,
         reps: "15 min",
@@ -1307,7 +1285,6 @@ export const ANDREA_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "andrea_domingo_paseo",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/walking-on-incline-treadmill.gif",
         name: "Paseo Libre en Familia con Boo",
         sets: 1,
         reps: "30 - 40 min",

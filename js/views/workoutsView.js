@@ -1704,13 +1704,26 @@ export function openExerciseGuideModal(dayName, exerciseIdx, customProfileId) {
 
     const mediaHtml = ex.gifUrl ? `
       <div class="exercise-media-wrapper">
+        <div class="exercise-media-switcher-tabs">
+          <button type="button" id="btn-media-svg" class="btn-media-tab active" onclick="if(window.switchExerciseMediaStage) window.switchExerciseMediaStage('svg');">
+            <i class="fa-solid fa-cube"></i> Animación 3D Técnica
+          </button>
+          <button type="button" id="btn-media-gif" class="btn-media-tab" onclick="if(window.switchExerciseMediaStage) window.switchExerciseMediaStage('gif');">
+            <i class="fa-solid fa-play"></i> Demostración Real
+          </button>
+        </div>
         <div class="exercise-media-player">
-          <div class="exercise-media-badge">
-            <i class="fa-solid fa-person-running"></i> Demostración Anatómica 3D
-          </div>
-          <img src="${ex.gifUrl}" alt="${ex.name}" class="exercise-real-gif" loading="eager" onerror="this.style.display='none'; const fb = document.getElementById('exercise-fallback-svg'); if (fb) fb.style.display='flex';" />
-          <div id="exercise-fallback-svg" class="exercise-fallback-stage" style="display:none;">
+          <div id="exercise-stage-svg" class="exercise-media-stage" style="display: flex;">
+            <div class="exercise-media-badge">
+              <i class="fa-solid fa-shield-halved"></i> Biomecánica & Alineación Segura
+            </div>
             ${visualSvg}
+          </div>
+          <div id="exercise-stage-gif" class="exercise-media-stage" style="display: none;">
+            <div class="exercise-media-badge" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8;">
+              <i class="fa-solid fa-circle-play" style="color: #38bdf8;"></i> Demostración en Vivo
+            </div>
+            <img src="${ex.gifUrl}" alt="${ex.name}" class="exercise-real-gif" loading="eager" onerror="if(window.switchExerciseMediaStage) window.switchExerciseMediaStage('svg'); const bg = document.getElementById('btn-media-gif'); if (bg) bg.style.display='none';" />
           </div>
         </div>
         <div class="exercise-phases-timeline">
@@ -1740,7 +1753,41 @@ export function openExerciseGuideModal(dayName, exerciseIdx, customProfileId) {
         </div>
       </div>
     ` : `
-      ${visualSvg}
+      <div class="exercise-media-wrapper">
+        <div class="exercise-media-player">
+          <div class="exercise-media-badge">
+            <i class="fa-solid fa-shield-halved"></i> Guía Técnica Oficial (100% Precisa)
+          </div>
+          <div id="exercise-stage-svg" class="exercise-media-stage" style="display: flex;">
+            ${visualSvg}
+          </div>
+        </div>
+        <div class="exercise-phases-timeline">
+          <div class="exercise-phase-chip">
+            <span class="phase-badge">1</span>
+            <div class="phase-info">
+              <strong>Inicio & Postura</strong>
+              <p>Alineación articular y respiración</p>
+            </div>
+          </div>
+          <div class="exercise-phase-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          <div class="exercise-phase-chip">
+            <span class="phase-badge">2</span>
+            <div class="phase-info">
+              <strong>Fase Concéntrica</strong>
+              <p>Fuerza controlada sin inercia</p>
+            </div>
+          </div>
+          <div class="exercise-phase-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          <div class="exercise-phase-chip">
+            <span class="phase-badge">3</span>
+            <div class="phase-info">
+              <strong>Pico & Retorno</strong>
+              <p>1s contracción y descenso lento</p>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
 
     bodyEl.innerHTML = `
@@ -1807,6 +1854,30 @@ export function openExerciseGuideModal(dayName, exerciseIdx, customProfileId) {
     modal.classList.add("active");
   } catch(e) {
     console.error("Error opening exercise guide modal:", e);
+  }
+}
+
+export function switchExerciseMediaStage(stage) {
+  try {
+    triggerHapticTouch();
+    const btnSvg = document.getElementById("btn-media-svg");
+    const btnGif = document.getElementById("btn-media-gif");
+    const stageSvg = document.getElementById("exercise-stage-svg");
+    const stageGif = document.getElementById("exercise-stage-gif");
+
+    if (stage === 'gif' && stageGif) {
+      if (stageSvg) stageSvg.style.display = 'none';
+      stageGif.style.display = 'flex';
+      if (btnSvg) btnSvg.classList.remove('active');
+      if (btnGif) btnGif.classList.add('active');
+    } else if (stageSvg) {
+      if (stageGif) stageGif.style.display = 'none';
+      stageSvg.style.display = 'flex';
+      if (btnGif) btnGif.classList.remove('active');
+      if (btnSvg) btnSvg.classList.add('active');
+    }
+  } catch(e) {
+    console.error("Error switching exercise media stage:", e);
   }
 }
 
