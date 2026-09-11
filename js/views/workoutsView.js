@@ -205,7 +205,7 @@ export function syncAppleWatchData() {
   if (window.triggerManualSync) window.triggerManualSync();
 }
 
-export function openTodayWorkouts() {
+export function openTodayWorkouts(scrollToExercises = false) {
   try {
     triggerHapticTouch();
     const today = getTodayDayName();
@@ -216,7 +216,16 @@ export function openTodayWorkouts() {
       }
     });
     selectWorkoutDay(today, targetBtn);
+    appState.activeExerciseDay = today;
+    const selectElem = document.getElementById("exercise-day-select");
+    if (selectElem) selectElem.value = today;
     if (window.showTab) window.showTab("workouts-view", document.getElementById("dock-btn-workouts"));
+    if (scrollToExercises) {
+      setTimeout(() => {
+        const el = document.getElementById("exercise-routines-container") || document.querySelector(".workout-exercises-section");
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
   } catch(e) {
     console.error("Error opening today workouts:", e);
   }
@@ -428,97 +437,99 @@ export function renderWorkoutsView() {
   try {
     updateWorkoutPendingStatusBadge();
     const container = document.getElementById("workouts-daily-container") || document.getElementById("routines-container");
-    if (!container) return;
-    container.innerHTML = "";
+    if (container) {
+      container.innerHTML = "";
 
-    const profileId = appState.activeProfileId;
-    const today = getTodayDayName();
-    const sessions = getDaySessions(profileId, today);
+      const profileId = appState.activeProfileId;
+      const today = getTodayDayName();
+      const sessions = getDaySessions(profileId, today);
 
-    if (sessions.length === 0) {
-      const emptyCard = document.createElement("div");
-      emptyCard.className = "glass-card";
-      emptyCard.style.cssText = "text-align: center; padding: 2.8rem 1.5rem; border: 1px dashed var(--border-color); border-radius: var(--radius-md);";
-      emptyCard.innerHTML = `
-        <div style="font-size: 2.8rem; margin-bottom: 0.75rem; color: var(--text-muted); opacity: 0.5;">
-          <i class="fa-solid fa-dumbbell"></i>
-        </div>
-        <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 0.4rem;">
-          Hoy no se han registrado entrenamientos
-        </h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 1.5rem auto; line-height: 1.45;">
-          Los entrenamientos que ejecutes con los atajos de Apple Watch o añadas manualmente se guardarán en esta lista diaria.
-        </p>
-        <button type="button" class="btn-primary" onclick="if(window.openManualWorkoutModal) window.openManualWorkoutModal();" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; padding: 0.55rem 1.1rem; margin: 0 auto;">
-          <i class="fa-solid fa-plus"></i> + Añadir Entrenamiento Manual
-        </button>
-      `;
-      container.appendChild(emptyCard);
-      return;
-    }
-
-    const totalMin = sessions.reduce((acc, s) => acc + (s.durationMin || 0), 0);
-    const totalKcal = sessions.reduce((acc, s) => acc + (s.kcal || 0), 0);
-
-    const summaryCard = document.createElement("div");
-    summaryCard.className = "glass-card watch-workout-summary-card";
-    summaryCard.style.marginBottom = "1.25rem";
-
-    summaryCard.innerHTML = `
-      <div class="watch-summary-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-        <div class="watch-summary-title">
-          <div class="watch-icon-glow"><i class="fa-solid fa-bolt"></i></div>
-          <div>
-            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-main);">
-              Entrenamientos Registrados Hoy (${today})
-            </h3>
-            <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
-              ${sessions.length} ${sessions.length === 1 ? 'sesión completada' : 'sesiones completadas'}
-            </p>
+      if (sessions.length === 0) {
+        const emptyCard = document.createElement("div");
+        emptyCard.className = "glass-card";
+        emptyCard.style.cssText = "text-align: center; padding: 2.8rem 1.5rem; border: 1px dashed var(--border-color); border-radius: var(--radius-md);";
+        emptyCard.innerHTML = `
+          <div style="font-size: 2.8rem; margin-bottom: 0.75rem; color: var(--text-muted); opacity: 0.5;">
+            <i class="fa-solid fa-dumbbell"></i>
           </div>
-        </div>
-        <button type="button" class="btn-secondary-sm" onclick="if(window.openManualWorkoutModal) window.openManualWorkoutModal();" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 8px;">
-          <i class="fa-solid fa-plus"></i> + Añadir otra sesión
-        </button>
-      </div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main); margin-bottom: 0.4rem;">
+            Hoy no se han registrado entrenamientos
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 1.5rem auto; line-height: 1.45;">
+            Los entrenamientos que ejecutes con los atajos de Apple Watch o añadas manualmente se guardarán en esta lista diaria.
+          </p>
+          <button type="button" class="btn-primary" onclick="if(window.openManualWorkoutModal) window.openManualWorkoutModal();" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; padding: 0.55rem 1.1rem; margin: 0 auto;">
+            <i class="fa-solid fa-plus"></i> + Añadir Entrenamiento Manual
+          </button>
+        `;
+        container.appendChild(emptyCard);
+      } else {
+        const totalMin = sessions.reduce((acc, s) => acc + (s.durationMin || 0), 0);
+        const totalKcal = sessions.reduce((acc, s) => acc + (s.kcal || 0), 0);
 
-      <div class="watch-summary-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 0.85rem;">
-        <div class="summary-metric-box">
-          <span class="metric-lbl"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Tiempo Total Medido</span>
-          <span class="metric-val" style="color:var(--accent-cyan);">${totalMin} <small>min</small></span>
-        </div>
-        <div class="summary-metric-box">
-          <span class="metric-lbl"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías Totales</span>
-          <span class="metric-val" style="color:var(--accent-rose);">${totalKcal} <small>kcal</small></span>
-        </div>
-      </div>
+        const summaryCard = document.createElement("div");
+        summaryCard.className = "glass-card watch-workout-summary-card";
+        summaryCard.style.marginBottom = "1.25rem";
 
-      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-        <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
-          <i class="fa-solid fa-list-check"></i> Desglose de Sesiones de Hoy:
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.45rem;">
-          ${sessions.map((s, idx) => `
-            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); padding: 0.55rem 0.85rem; border-radius: 8px; font-size: 0.83rem;">
+        summaryCard.innerHTML = `
+          <div class="watch-summary-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div class="watch-summary-title">
+              <div class="watch-icon-glow"><i class="fa-solid fa-bolt"></i></div>
               <div>
-                <span style="font-weight: 600; color: var(--text-main);"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Sesión ${idx + 1}</span>
-                <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.4rem;">(${s.timestamp || '--'})</span>
-                <span style="color: var(--text-muted); font-size: 0.72rem; margin-left: 0.3rem;">• ${s.deviceName || 'Apple Watch'}</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <span style="color: var(--accent-cyan); font-weight: 600;">${s.durationMin || 0} min</span>
-                <span style="color: var(--accent-rose); font-weight: 600;">${s.kcal || 0} kcal</span>
-                <button type="button" onclick="if(window.deleteWorkoutSession) window.deleteWorkoutSession('${today}', ${idx});" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 2px 6px; font-size: 0.85rem;" title="Eliminar esta sesión">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
+                <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-main);">
+                  Entrenamientos Registrados Hoy (${today})
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
+                  ${sessions.length} ${sessions.length === 1 ? 'sesión completada' : 'sesiones completadas'}
+                </p>
               </div>
             </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+            <button type="button" class="btn-secondary-sm" onclick="if(window.openManualWorkoutModal) window.openManualWorkoutModal();" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 8px;">
+              <i class="fa-solid fa-plus"></i> + Añadir otra sesión
+            </button>
+          </div>
 
-    container.appendChild(summaryCard);
+          <div class="watch-summary-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 0.85rem;">
+            <div class="summary-metric-box">
+              <span class="metric-lbl"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Tiempo Total Medido</span>
+              <span class="metric-val" style="color:var(--accent-cyan);">${totalMin} <small>min</small></span>
+            </div>
+            <div class="summary-metric-box">
+              <span class="metric-lbl"><i class="fa-solid fa-fire" style="color:var(--accent-rose);"></i> Calorías Totales</span>
+              <span class="metric-val" style="color:var(--accent-rose);">${totalKcal} <small>kcal</small></span>
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+              <i class="fa-solid fa-list-check"></i> Desglose de Sesiones de Hoy:
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+              ${sessions.map((s, idx) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); padding: 0.55rem 0.85rem; border-radius: 8px; font-size: 0.83rem;">
+                  <div>
+                    <span style="font-weight: 600; color: var(--text-main);"><i class="fa-solid fa-stopwatch" style="color:var(--accent-cyan);"></i> Sesión ${idx + 1}</span>
+                    <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.4rem;">(${s.timestamp || '--'})</span>
+                    <span style="color: var(--text-muted); font-size: 0.72rem; margin-left: 0.3rem;">• ${s.deviceName || 'Apple Watch'}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="color: var(--accent-cyan); font-weight: 600;">${s.durationMin || 0} min</span>
+                    <span style="color: var(--accent-rose); font-weight: 600;">${s.kcal || 0} kcal</span>
+                    <button type="button" onclick="if(window.deleteWorkoutSession) window.deleteWorkoutSession('${today}', ${idx});" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 2px 6px; font-size: 0.85rem;" title="Eliminar esta sesión">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        container.appendChild(summaryCard);
+      }
+    }
+
+    renderExerciseTableView();
   } catch(e) {
     console.error("Error rendering Workouts View:", e);
   }

@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Application CSS -->
-  <link rel="stylesheet" href="styles.css?v=0.24.25">
+  <link rel="stylesheet" href="styles.css?v=0.25.0">
 
   <!-- Chart.js for progress graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -50,7 +50,7 @@
   <header class="ios-top-bar">
     <div class="ios-header-brand">
       <div class="brand-icon-sm"><i class="fa-solid fa-bolt"></i></div>
-      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.24.25</span></span>
+      <span class="ios-header-title">FitDuo <span class="ios-header-tag">iOS</span> <span class="app-version-tag">v0.25.0</span></span>
     </div>
 
     <div class="ios-header-actions">
@@ -78,7 +78,7 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div>
-            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.24.25</span></div>
+            <div class="brand-title">FitDuo & Collie <span class="app-version-tag">v0.25.0</span></div>
             <div class="brand-subtitle">Entrenador & Dieta Virtual</div>
           </div>
         </div>
@@ -255,7 +255,7 @@
             <p style="font-size: 0.8rem; color: var(--text-secondary);">Consulta las comidas planificadas para hoy.</p>
           </div>
 
-          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="openTodayWorkouts()">
+          <div class="glass-card" style="padding: 1.1rem; cursor: pointer; transition: transform 0.2s ease;" onclick="openTodayWorkouts(true)">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
               <h3 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.5rem;">
                 <i class="fa-solid fa-dumbbell"></i> Rutina de Ejercicios
@@ -352,6 +352,34 @@
         <div id="workouts-daily-container">
           <!-- Daily Workouts render dynamically -->
         </div>
+
+        <!-- TABLA DE EJERCICIOS DE HOY DEBAJO DE REGISTRO DE ENTRENAMIENTOS -->
+        <div class="workout-exercises-section" style="margin-top: 2rem;">
+          <div class="header-title-group" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+            <div>
+              <h2 class="page-title" style="font-size: 1.35rem;"><i class="fa-solid fa-list-check" style="color: var(--accent-cyan);"></i> Tabla de Ejercicios</h2>
+              <p class="page-subtitle">Rutina detallada, técnica, series y descansos</p>
+            </div>
+
+            <!-- DAY SELECTOR DROPDOWN (defaults to today) -->
+            <div class="nutrition-day-selector-card">
+              <label for="exercise-day-select" class="selector-label"><i class="fa-solid fa-calendar-day"></i> Selección de Día:</label>
+              <select id="exercise-day-select" class="custom-select" onchange="selectExerciseDayFromDropdown(this.value)">
+                <option value="Lunes">Lunes</option>
+                <option value="Martes">Martes</option>
+                <option value="Miércoles">Miércoles</option>
+                <option value="Jueves">Jueves</option>
+                <option value="Viernes">Viernes</option>
+                <option value="Sábado">Sábado</option>
+                <option value="Domingo">Domingo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="routine-cards-container" id="exercise-routines-container">
+            <!-- Exercise Table Content Renders Dynamically -->
+          </div>
+        </div>
       </section>
 
       <!-- TAB 3 - SUBTAB 2: ENTRENAMIENTO Y ADIESTRAMIENTO DE BOO -->
@@ -379,34 +407,6 @@
 
         <div id="boo-workout-container">
           <!-- Boo Workout Content Renders Dynamically via app.js -->
-        </div>
-      </section>
-
-      <!-- TAB 3 - SUBTAB 3: TABLA DE EJERCICIOS SEMANAL -->
-      <section id="workouts-exercises-view" class="view-panel">
-        <div class="header-title-group" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
-          <div>
-            <h1 class="page-title"><i class="fa-solid fa-list-check" style="color: var(--accent-cyan);"></i> Tabla de Ejercicios</h1>
-            <p class="page-subtitle">Rutina detallada, técnica, series y descansos por día</p>
-          </div>
-
-          <!-- DAY SELECTOR DROPDOWN (defaults to today) -->
-          <div class="nutrition-day-selector-card">
-            <label for="exercise-day-select" class="selector-label"><i class="fa-solid fa-calendar-day"></i> Selección de Día:</label>
-            <select id="exercise-day-select" class="custom-select" onchange="selectExerciseDayFromDropdown(this.value)">
-              <option value="Lunes">Lunes</option>
-              <option value="Martes">Martes</option>
-              <option value="Miércoles">Miércoles</option>
-              <option value="Jueves">Jueves</option>
-              <option value="Viernes">Viernes</option>
-              <option value="Sábado">Sábado</option>
-              <option value="Domingo">Domingo</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="routine-cards-container" id="exercise-routines-container">
-          <!-- Exercise Table Content Renders Dynamically -->
         </div>
       </section>
 
@@ -950,10 +950,10 @@
                 </div>
               </div>
               <div id="cloud-sync-status-text" style="font-size: 0.82rem; font-weight: 600; color: var(--accent-emerald); margin-bottom: 0.5rem;">
-                Estado: Conectado a la Nube (v0.24.25)
+                Estado: Conectado a la Nube (v0.25.0)
               </div>
               <div id="sync-diagnostic-console" style="font-family: monospace; font-size: 0.75rem; color: #a3e635; background: #090d16; padding: 0.6rem; border-radius: 6px; max-height: 120px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); white-space: pre-wrap;">
-⚡ fitduo_v2 sync engine v0.24.25 listo.
+⚡ fitduo_v2 sync engine v0.25.0 listo.
               </div>
             </div>
           </div>
@@ -1465,6 +1465,6 @@
   <div id="ios-toast-container" class="ios-toast-container"></div>
 
   <!-- Application Logic -->
-  <script type="module" src="app.js?v=0.24.25"></script>
+  <script type="module" src="app.js?v=0.25.0"></script>
 </body>
 </html>

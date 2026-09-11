@@ -49,9 +49,8 @@ export const NAVIGATION_CATEGORIES = {
     dockId: "dock-btn-workouts",
     sidebarId: "sidebar-nav-workouts",
     subtabs: [
-      { id: "workouts-view", label: "Entrenamientos", icon: "fa-solid fa-dumbbell" },
-      { id: "workouts-boo-view", label: "Boo", icon: "fa-solid fa-dog" },
-      { id: "workouts-exercises-view", label: "Tabla de Ejercicios", icon: "fa-solid fa-list-check" }
+      { id: "workouts-view", label: "Entrenamiento", icon: "fa-solid fa-dumbbell" },
+      { id: "workouts-boo-view", label: "Boo", icon: "fa-solid fa-dog" }
     ]
   },
   profile: {
@@ -75,10 +74,13 @@ export function switchCategory(categoryKey, targetTabId = null, btnElement = nul
       const today = getTodayDayName();
       appState.activeWorkoutDay = today;
       appState.activeBooDay = today;
+      appState.activeExerciseDay = today;
       const selectElem = document.getElementById("workout-day-select");
       if (selectElem) selectElem.value = today;
       const booSelect = document.getElementById("boo-day-select");
       if (booSelect) booSelect.value = today;
+      const exerciseSelect = document.getElementById("exercise-day-select");
+      if (exerciseSelect) exerciseSelect.value = today;
     }
 
     let tabToOpen = cat.subtabs[0].id;
@@ -224,6 +226,8 @@ export function showTab(tabId, btnElement) {
       tabId = 'nutrition-menu-view';
     } else if (tabId === 'shopping-view') {
       tabId = 'nutrition-shopping-view';
+    } else if (tabId === 'workouts-exercises-view') {
+      tabId = 'workouts-view';
     }
 
     let activeCatKey = 'summary';
@@ -268,9 +272,11 @@ export function showTab(tabId, btnElement) {
         renderShoppingView();
       } else if (tabId === 'workouts-view') {
         renderWorkoutsView();
+        renderExerciseTableView();
       } else if (tabId === 'workouts-boo-view') {
         renderBooWorkoutView();
       } else if (tabId === 'workouts-exercises-view') {
+        renderWorkoutsView();
         renderExerciseTableView();
       } else if (tabId === 'apple-watch-view') {
         updateAppleWatchModalUI();
