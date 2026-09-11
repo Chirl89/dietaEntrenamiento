@@ -610,56 +610,71 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
 
   if (vType === "ring_squat") {
     return `
-    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 420 220" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
       ${commonDefs}
-      <style>
-        @keyframes squatCycle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(40px); }
-        }
-        .anim-squat-torso { animation: squatCycle 3.4s ease-in-out infinite; transform-origin: 160px 175px; }
-      </style>
-      <line x1="30" y1="185" x2="290" y2="185" stroke="#334155" stroke-width="2.5" stroke-dasharray="6 4" />
-      <ellipse cx="160" cy="186" rx="90" ry="7" fill="url(#gradFloor_${vType})" />
-      
-      <ellipse cx="140" cy="185" rx="8" ry="4" fill="#64748b" />
-      <ellipse cx="180" cy="185" rx="8" ry="4" fill="#64748b" />
+      <rect x="0" y="0" width="420" height="220" rx="12" fill="#080d1a"/>
 
-      <g class="anim-squat-torso">
-        <circle cx="160" cy="138" r="8" fill="#475569" />
-        
-        <line x1="140" y1="185" x2="148" y2="155" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-        <line x1="180" y1="185" x2="172" y2="155" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-        <line x1="148" y1="155" x2="160" y2="138" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-        <line x1="172" y1="155" x2="160" y2="138" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <!-- Left: Posición de Pie (Preparación) -->
+      <g transform="translate(20, 15)">
+        <rect x="10" y="5" width="80" height="18" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+        <text x="50" y="17" font-size="8.5" fill="#94a3b8" font-weight="bold" text-anchor="middle">1. DE PIE</text>
 
-        <!-- Protected Spine (EMERALD GLOW) -->
-        <line x1="160" y1="138" x2="160" y2="82" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
-        
-        <!-- Head -->
-        <circle cx="160" cy="65" r="14" fill="#38bdf8" />
-        <circle cx="166" cy="63" r="2.5" fill="#0f172a" />
+        <!-- Standing Figure -->
+        <line x1="60" y1="180" x2="60" y2="130" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+        <line x1="60" y1="130" x2="60" y2="65" stroke="#10b981" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="60" cy="50" r="11" fill="#38bdf8"/>
+        <!-- Extended arms with Ring -->
+        <line x1="60" y1="75" x2="95" y2="75" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round"/>
+        <circle cx="108" cy="75" r="13" fill="none" stroke="#f43f5e" stroke-width="4"/>
+        <rect x="105" y="62" width="6" height="4" rx="1" fill="#38bdf8"/>
 
-        <!-- Arms holding Ring-Con Extended Forward -->
-        <line x1="160" y1="88" x2="205" y2="92" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
-        <line x1="160" y1="94" x2="202" y2="98" stroke="#64748b" stroke-width="4.5" stroke-linecap="round" />
-        
-        <!-- Nintendo Switch Ring-Con -->
-        <g transform="translate(222, 95)">
-          <circle cx="0" cy="0" r="18" fill="none" stroke="#f43f5e" stroke-width="5" filter="url(#glowRose_${vType})" />
-          <rect x="-3" y="-19" width="6" height="5" rx="2" fill="#38bdf8" />
-          <rect x="-3" y="14" width="6" height="5" rx="2" fill="#38bdf8" />
-          <text x="0" y="3" font-size="8" fill="#fff" font-weight="bold" text-anchor="middle">RING</text>
-        </g>
+        <text x="60" y="196" font-size="8" fill="#94a3b8" text-anchor="middle">Pies a anchura de hombros</text>
       </g>
 
-      <g transform="translate(10, 26)">
-        <rect x="0" y="0" width="160" height="22" rx="6" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1" />
-        <text x="8" y="15" font-size="10" fill="#34d399" font-weight="700">🛡️ Columna Neutra (Sin Carga)</text>
+      <!-- Transition Arrow -->
+      <g transform="translate(150, 95)">
+        <circle cx="10" cy="15" r="14" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="10" y="19" font-size="12" fill="#34d399" font-weight="bold" text-anchor="middle">→</text>
       </g>
-      <g transform="translate(180, 26)">
-        <rect x="0" y="0" width="130" height="22" rx="6" fill="rgba(244, 63, 94, 0.15)" stroke="#f43f5e" stroke-width="1" />
-        <text x="8" y="15" font-size="10" fill="#fb7185" font-weight="700">🎯 Ring-Con Contrapeso</text>
+
+      <!-- Right: Sentadilla Rozando Silla -->
+      <g transform="translate(185, 15)">
+        <rect x="10" y="5" width="135" height="18" rx="4" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="1"/>
+        <text x="77" y="17" font-size="8.5" fill="#34d399" font-weight="bold" text-anchor="middle">2. ROZAR LA SILLA</text>
+
+        <!-- Chair Drawn clearly -->
+        <rect x="15" y="125" width="45" height="8" rx="2" fill="#475569"/>
+        <line x1="20" y1="133" x2="20" y2="180" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+        <line x1="55" y1="133" x2="55" y2="180" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+        <line x1="16" y1="80" x2="16" y2="133" stroke="#475569" stroke-width="4.5" stroke-linecap="round"/>
+        <text x="37" y="120" font-size="7.5" fill="#94a3b8" text-anchor="middle">SILLA</text>
+
+        <!-- Squatting Figure -->
+        <line x1="55" y1="126" x2="105" y2="126" stroke="#64748b" stroke-width="6.5" stroke-linecap="round"/>
+        <line x1="105" y1="126" x2="105" y2="180" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+        <line x1="100" y1="180" x2="118" y2="180" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- Upright Spine protected -->
+        <line x1="55" y1="126" x2="68" y2="68" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})"/>
+        <circle cx="70" cy="54" r="11" fill="#38bdf8"/>
+
+        <!-- Arms holding Ring-Con Extended horizontally -->
+        <line x1="68" y1="78" x2="120" y2="78" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+        <!-- Nintendo Ring-Con with Joy-Con colors -->
+        <circle cx="138" cy="78" r="16" fill="none" stroke="#f43f5e" stroke-width="4.5" filter="url(#glowRose_${vType})"/>
+        <rect x="135" y="62" width="6" height="5" rx="1.5" fill="#38bdf8"/>
+        <rect x="135" y="89" width="6" height="5" rx="1.5" fill="#38bdf8"/>
+        <text x="138" y="81" font-size="7.5" fill="#fff" font-weight="bold" text-anchor="middle">RING</text>
+
+        <!-- Callout Tag -->
+        <text x="110" y="165" font-size="8.5" fill="#34d399" font-weight="bold" text-anchor="middle">El Ring-Con erige el torso</text>
+        <text x="110" y="177" font-size="7.5" fill="#94a3b8" text-anchor="middle">Empuja desde los talones</text>
+      </g>
+
+      <!-- Bottom Bar Legend -->
+      <g transform="translate(15, 195)">
+        <rect x="0" y="0" width="390" height="20" rx="5" fill="rgba(15, 23, 42, 0.7)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="195" y="14" font-size="9" fill="#e2e8f0" font-weight="600" text-anchor="middle">🛡️ El contrapeso del Ring-Con impide encorvar la espalda dorsal (0 presión en D7-D11)</text>
       </g>
     </svg>`;
   }
@@ -713,41 +728,64 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
 
   if (vType === "ring_pull") {
     return `
-    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 420 220" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
       ${commonDefs}
-      <style>
-        @keyframes ringOutwardPull {
-          0%, 100% { transform: scaleX(1); }
-          50% { transform: scaleX(1.15); filter: drop-shadow(0 0 10px #f43f5e); }
-        }
-        .anim-ring-tension { animation: ringOutwardPull 2.4s ease-in-out infinite; transform-origin: 160px 105px; }
-      </style>
-      <line x1="30" y1="185" x2="290" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
-      <ellipse cx="160" cy="186" rx="80" ry="6" fill="url(#gradFloor_${vType})" />
+      <rect x="0" y="0" width="420" height="220" rx="12" fill="#080d1a"/>
 
-      <line x1="145" y1="185" x2="152" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-      <line x1="175" y1="185" x2="168" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-      
-      <line x1="160" y1="140" x2="160" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
-      <circle cx="160" cy="60" r="14" fill="#38bdf8" />
-      
-      <path d="M 135 85 Q 160 95 185 85" fill="none" stroke="#34d399" stroke-width="3" stroke-dasharray="4 2" />
+      <!-- Left Side: Front/Torso View pulling Ring-Con -->
+      <g transform="translate(30, 20)">
+        <path d="M 40 80 Q 90 60 140 80 L 125 150 L 55 150 Z" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+        <circle cx="90" cy="40" r="16" fill="#38bdf8"/>
 
-      <line x1="145" y1="84" x2="120" y2="105" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
-      <line x1="175" y1="84" x2="200" y2="105" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+        <!-- Arms pulling outward -->
+        <line x1="40" y1="80" x2="58" y2="100" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+        <line x1="140" y1="80" x2="122" y2="100" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
 
-      <g class="anim-ring-tension">
-        <circle cx="160" cy="105" r="26" fill="none" stroke="#f43f5e" stroke-width="5" filter="url(#glowRose_${vType})" />
-        <circle cx="134" cy="105" r="4.5" fill="#38bdf8" />
-        <circle cx="186" cy="105" r="4.5" fill="#38bdf8" />
-        <text x="160" y="108" font-size="8" fill="#fff" font-weight="bold" text-anchor="middle">RING-CON</text>
+        <!-- Ring-Con Stretched Outward horizontally -->
+        <ellipse cx="90" cy="100" rx="34" ry="24" fill="none" stroke="#f43f5e" stroke-width="5" filter="url(#glowRose_${vType})"/>
+        <rect x="53" y="93" width="7" height="14" rx="2" fill="#38bdf8"/>
+        <rect x="120" y="93" width="7" height="14" rx="2" fill="#38bdf8"/>
+
+        <!-- Dynamic Expansion Arrows -->
+        <g fill="#f59e0b">
+          <path d="M 48 100 L 34 95 L 34 105 Z"/>
+          <path d="M 132 100 L 146 95 L 146 105 Z"/>
+        </g>
+        <text x="90" y="104" font-size="8" fill="#fff" font-weight="bold" text-anchor="middle">RING-CON</text>
       </g>
 
-      <text x="96" y="110" font-size="16" fill="#f59e0b" font-weight="bold">⮜⮜</text>
-      <text x="206" y="110" font-size="16" fill="#f59e0b" font-weight="bold">⮞⮞</text>
+      <!-- Right Side: Explanatory Step Card & Scapula Focus -->
+      <g transform="translate(215, 25)">
+        <rect x="0" y="0" width="180" height="155" rx="10" fill="rgba(15, 23, 42, 0.7)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="15" y="24" font-size="11" fill="#38bdf8" font-weight="bold">TRACCIÓN ESCAPULAR</text>
 
-      <text x="160" y="30" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Tracción Isométrica Externa: Romboides & Espalda Media</text>
-      <text x="160" y="172" font-size="9.5" fill="#94a3b8" text-anchor="middle">Tira de los extremos hacia afuera 4s sin mover la columna dorsal</text>
+        <!-- Step 1 -->
+        <circle cx="22" cy="46" r="8" fill="rgba(56, 189, 248, 0.2)"/>
+        <text x="22" y="49" font-size="9" fill="#38bdf8" font-weight="bold" text-anchor="middle">1</text>
+        <text x="36" y="48" font-size="9" fill="#e2e8f0" font-weight="600">Sujeta el aro al frente</text>
+
+        <!-- Step 2 -->
+        <circle cx="22" cy="74" r="8" fill="rgba(245, 158, 11, 0.2)"/>
+        <text x="22" y="77" font-size="9" fill="#f59e0b" font-weight="bold" text-anchor="middle">2</text>
+        <text x="36" y="73" font-size="9" fill="#f59e0b" font-weight="bold">Tira hacia afuera (4s)</text>
+        <text x="36" y="85" font-size="8" fill="#94a3b8">Separa las manos con fuerza constante</text>
+
+        <!-- Step 3 -->
+        <circle cx="22" cy="106" r="8" fill="rgba(16, 185, 129, 0.2)"/>
+        <text x="22" y="109" font-size="9" fill="#34d399" font-weight="bold" text-anchor="middle">3</text>
+        <text x="36" y="105" font-size="9" fill="#34d399" font-weight="bold">Junta los omóplatos</text>
+        <text x="36" y="117" font-size="8" fill="#94a3b8">Atrapa una moneda en la espalda</text>
+
+        <!-- Badge -->
+        <rect x="10" y="128" width="160" height="20" rx="4" fill="rgba(16, 185, 129, 0.15)"/>
+        <text x="90" y="141" font-size="8" fill="#34d399" font-weight="bold" text-anchor="middle">🛡️ Romboides & Trapecio Medio</text>
+      </g>
+
+      <!-- Bottom Bar Legend -->
+      <g transform="translate(15, 195)">
+        <rect x="0" y="0" width="390" height="20" rx="5" fill="rgba(15, 23, 42, 0.7)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="195" y="14" font-size="9" fill="#e2e8f0" font-weight="600" text-anchor="middle">Isometría pura: activa la musculatura interescapular sin mover articulaciones vertebrales</text>
+      </g>
     </svg>`;
   }
 
@@ -872,78 +910,154 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
 
   if (vType === "ring_chest_core") {
     return `
-    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 420 220" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
       ${commonDefs}
-      <style>
-        @keyframes ringCompressCycle {
-          0%, 100% { transform: scaleX(1) scaleY(1); }
-          50% { transform: scaleX(0.78) scaleY(1.08); filter: drop-shadow(0 0 10px #f43f5e); }
-        }
-        .anim-ring-compress { animation: ringCompressCycle 2.4s ease-in-out infinite; transform-origin: 160px 105px; }
-      </style>
-      <line x1="30" y1="185" x2="290" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
-      <ellipse cx="160" cy="186" rx="80" ry="6" fill="url(#gradFloor_${vType})" />
+      <rect x="0" y="0" width="420" height="220" rx="12" fill="#080d1a"/>
 
-      <line x1="148" y1="185" x2="154" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-      <line x1="172" y1="185" x2="166" y2="140" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-      
-      <line x1="160" y1="140" x2="160" y2="78" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
-      <circle cx="160" cy="58" r="14" fill="#38bdf8" />
+      <!-- Left Side: Frontal Torso & Ring Compression -->
+      <g transform="translate(30, 20)">
+        <path d="M 40 80 Q 90 60 140 80 L 125 150 L 55 150 Z" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+        <circle cx="90" cy="40" r="16" fill="#38bdf8"/>
+        
+        <!-- Chest Muscles -->
+        <path d="M 60 85 Q 90 95 90 115 Q 65 110 60 85" fill="rgba(244,63,94,0.3)" stroke="#f43f5e" stroke-width="1.5"/>
+        <path d="M 120 85 Q 90 95 90 115 Q 115 110 120 85" fill="rgba(244,63,94,0.3)" stroke="#f43f5e" stroke-width="1.5"/>
 
-      <line x1="145" y1="86" x2="136" y2="105" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
-      <line x1="175" y1="86" x2="184" y2="105" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+        <!-- Core / Transverse Abdominal Glow -->
+        <rect x="68" y="122" width="44" height="24" rx="6" fill="rgba(16,185,129,0.25)" stroke="#10b981" stroke-width="1.5" filter="url(#glowGreen_${vType})"/>
+        <text x="90" y="138" font-size="7.5" fill="#34d399" font-weight="bold" text-anchor="middle">CORE ACTIVO</text>
 
-      <g class="anim-ring-compress">
-        <circle cx="160" cy="105" r="24" fill="none" stroke="#f43f5e" stroke-width="5" filter="url(#glowRose_${vType})" />
-        <rect x="133" y="100" width="6" height="10" rx="2" fill="#38bdf8" />
-        <rect x="181" y="100" width="6" height="10" rx="2" fill="#38bdf8" />
+        <!-- Arms compressing Ring-Con -->
+        <line x1="40" y1="80" x2="62" y2="100" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+        <line x1="140" y1="80" x2="118" y2="100" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+
+        <!-- Ring-Con Compressed into Oval -->
+        <ellipse cx="90" cy="100" rx="25" ry="32" fill="none" stroke="#f43f5e" stroke-width="5" filter="url(#glowRose_${vType})"/>
+        <rect x="62" y="93" width="7" height="14" rx="2" fill="#38bdf8"/>
+        <rect x="111" y="93" width="7" height="14" rx="2" fill="#38bdf8"/>
+
+        <!-- Dynamic Compression Arrows -->
+        <g fill="#f43f5e">
+          <path d="M 38 100 L 52 95 L 52 105 Z"/>
+          <path d="M 142 100 L 128 95 L 128 105 Z"/>
+        </g>
       </g>
 
-      <text x="110" y="110" font-size="16" fill="#f43f5e" font-weight="bold">⮞</text>
-      <text x="195" y="110" font-size="16" fill="#f43f5e" font-weight="bold">⮜</text>
+      <!-- Right Side: Explanatory Step Card -->
+      <g transform="translate(215, 25)">
+        <rect x="0" y="0" width="180" height="155" rx="10" fill="rgba(15, 23, 42, 0.7)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        
+        <text x="15" y="24" font-size="11" fill="#38bdf8" font-weight="bold">INSTRUCCIÓN TÉCNICA</text>
+        
+        <!-- Step 1 -->
+        <circle cx="22" cy="46" r="8" fill="rgba(56, 189, 248, 0.2)"/>
+        <text x="22" y="49" font-size="9" fill="#38bdf8" font-weight="bold" text-anchor="middle">1</text>
+        <text x="36" y="48" font-size="9" fill="#e2e8f0" font-weight="600">Sujeta el aro al pecho</text>
+        
+        <!-- Step 2 -->
+        <circle cx="22" cy="74" r="8" fill="rgba(244, 63, 94, 0.2)"/>
+        <text x="22" y="77" font-size="9" fill="#fb7185" font-weight="bold" text-anchor="middle">2</text>
+        <text x="36" y="73" font-size="9" fill="#fb7185" font-weight="bold">Comprime hacia adentro</text>
+        <text x="36" y="85" font-size="8" fill="#94a3b8">Aprieta fuerte durante 3 segundos</text>
 
-      <text x="160" y="30" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Prensa Pectoral Isométrica + Core Activo</text>
-      <text x="160" y="172" font-size="9.5" fill="#94a3b8" text-anchor="middle">Aprieta el Ring-Con hacia el centro 3s exhalando y metiendo ombligo</text>
+        <!-- Step 3 -->
+        <circle cx="22" cy="106" r="8" fill="rgba(16, 185, 129, 0.2)"/>
+        <text x="22" y="109" font-size="9" fill="#34d399" font-weight="bold" text-anchor="middle">3</text>
+        <text x="36" y="105" font-size="9" fill="#34d399" font-weight="bold">Exhala y activa core</text>
+        <text x="36" y="117" font-size="8" fill="#94a3b8">Mete el ombligo como cremallera</text>
+
+        <!-- Note badge -->
+        <rect x="10" y="128" width="160" height="20" rx="4" fill="rgba(16, 185, 129, 0.15)"/>
+        <text x="90" y="141" font-size="8" fill="#34d399" font-weight="bold" text-anchor="middle">🛡️ 0 flexión ni rotación vertebral</text>
+      </g>
+
+      <!-- Bottom Bar Legend -->
+      <g transform="translate(15, 195)">
+        <rect x="0" y="0" width="390" height="20" rx="5" fill="rgba(15, 23, 42, 0.7)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="195" y="14" font-size="9" fill="#e2e8f0" font-weight="600" text-anchor="middle">Co-activación isométrica refleja: tonifica pectoral y faja abdominal sin carga en discos</text>
+      </g>
     </svg>`;
   }
 
   if (vType === "bird_dog") {
     return `
-    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 420 220" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
       ${commonDefs}
-      <style>
-        @keyframes birdDogLimbCycle {
-          0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(-28deg); }
-        }
-        @keyframes birdDogLegCycle {
-          0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(26deg); }
-        }
-        .anim-birddog-arm { animation: birdDogLimbCycle 3.6s ease-in-out infinite; transform-origin: 125px 125px; }
-        .anim-birddog-leg { animation: birdDogLegCycle 3.6s ease-in-out infinite; transform-origin: 195px 125px; }
-      </style>
-      <rect x="40" y="170" width="240" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+      <rect x="0" y="0" width="420" height="220" rx="12" fill="#080d1a"/>
       
-      <line x1="125" y1="125" x2="125" y2="170" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
-      <line x1="195" y1="125" x2="195" y2="170" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
-
-      <line x1="120" y1="122" x2="200" y2="122" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
-      <circle cx="102" cy="118" r="12" fill="#38bdf8" />
-      <circle cx="98" cy="122" r="2.5" fill="#0f172a" />
-
-      <g class="anim-birddog-arm">
-        <line x1="125" y1="125" x2="65" y2="122" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
-        <circle cx="65" cy="122" r="4.5" fill="#38bdf8" />
+      <!-- Panel 1: Posición Inicial -->
+      <g transform="translate(15, 15)">
+        <rect x="10" y="145" width="165" height="6" rx="3" fill="#0284c7" opacity="0.8"/>
+        <rect x="10" y="5" width="80" height="18" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+        <text x="50" y="17" font-size="8.5" fill="#94a3b8" font-weight="bold" text-anchor="middle">1. INICIO</text>
+        
+        <!-- Torso & Pelvis -->
+        <rect x="55" y="95" width="70" height="22" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+        <line x1="55" y1="97" x2="125" y2="97" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+        <!-- Head -->
+        <circle cx="42" cy="100" r="11" fill="#38bdf8"/>
+        <circle cx="39" cy="104" r="2" fill="#0f172a"/>
+        <!-- Arms under shoulders (90 deg) -->
+        <line x1="58" y1="108" x2="58" y2="145" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+        <!-- Knees under hips (90 deg) -->
+        <line x1="118" y1="108" x2="118" y2="145" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+        <line x1="118" y1="145" x2="135" y2="145" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
+        
+        <text x="92" y="166" font-size="8" fill="#64748b" text-anchor="middle">Manos bajo hombros</text>
+        <text x="92" y="178" font-size="8" fill="#64748b" text-anchor="middle">Rodillas bajo caderas</text>
       </g>
 
-      <g class="anim-birddog-leg">
-        <line x1="195" y1="125" x2="260" y2="122" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round" />
-        <circle cx="260" cy="122" r="4.5" fill="#cbd5e1" />
+      <!-- Divider Arrow -->
+      <g transform="translate(195, 95)">
+        <circle cx="10" cy="15" r="14" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="10" y="19" font-size="12" fill="#34d399" font-weight="bold" text-anchor="middle">→</text>
       </g>
 
-      <text x="160" y="32" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Bird-Dog (Patrón McGill) • Músculos Multifidos y Erectores</text>
-      <text x="160" y="52" font-size="9.5" fill="#94a3b8" text-anchor="middle">Línea horizontal perfecta • Cero basculación de pelvis</text>
+      <!-- Panel 2: Extensión Bird-Dog (Pico) -->
+      <g transform="translate(225, 15)">
+        <rect x="10" y="145" width="170" height="6" rx="3" fill="#0284c7" opacity="0.8"/>
+        <rect x="10" y="5" width="120" height="18" rx="4" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="1"/>
+        <text x="70" y="17" font-size="8.5" fill="#34d399" font-weight="bold" text-anchor="middle">2. EXTENSIÓN (3s)</text>
+
+        <!-- Horizontal Laser Line -->
+        <line x1="0" y1="96" x2="180" y2="96" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+
+        <!-- Support Arm on Mat -->
+        <line x1="75" y1="104" x2="75" y2="145" stroke="#94a3b8" stroke-width="5.5" stroke-linecap="round"/>
+        <!-- Support Knee on Mat -->
+        <line x1="115" y1="104" x2="115" y2="145" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+
+        <!-- Body Torso -->
+        <rect x="68" y="90" width="55" height="20" rx="9" fill="#0f172a" stroke="#10b981" stroke-width="2.5" filter="url(#glowGreen_${vType})"/>
+        <!-- Head neutral looking down -->
+        <circle cx="58" cy="94" r="10" fill="#38bdf8"/>
+        <circle cx="56" cy="98" r="2" fill="#0f172a"/>
+
+        <!-- Extended Arm (Right Arm forward horizontally) -->
+        <line x1="72" y1="96" x2="10" y2="96" stroke="#38bdf8" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="10" cy="96" r="3.5" fill="#38bdf8"/>
+        <!-- Motion Arrow forward -->
+        <path d="M 18 88 L 8 96 L 18 104" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Extended Leg (Left Leg backward horizontally) -->
+        <line x1="118" y1="96" x2="175" y2="96" stroke="#34d399" stroke-width="5.5" stroke-linecap="round" filter="url(#glowGreen_${vType})"/>
+        <circle cx="175" cy="96" r="4" fill="#34d399"/>
+        <!-- Motion Arrow backward -->
+        <path d="M 168 88 L 178 96 L 168 104" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Active Glute & Erector Glow -->
+        <circle cx="120" cy="96" r="8" fill="#10b981" opacity="0.4"/>
+
+        <!-- Callout -->
+        <text x="95" y="166" font-size="8.5" fill="#34d399" font-weight="bold" text-anchor="middle">Línea recta 180° horizontal</text>
+        <text x="95" y="178" font-size="7.5" fill="#94a3b8" text-anchor="middle">Cero torsión de pelvis</text>
+      </g>
+
+      <!-- Bottom Bar Legend -->
+      <g transform="translate(15, 195)">
+        <rect x="0" y="0" width="390" height="20" rx="5" fill="rgba(15, 23, 42, 0.7)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="195" y="14" font-size="9" fill="#e2e8f0" font-weight="600" text-anchor="middle">🛡️ Stuart McGill Big 3: Despierta multífidos y erectores dorsales con compresión discal CERO</text>
+      </g>
     </svg>`;
   }
 
@@ -1100,49 +1214,71 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
 
   if (vType === "yt_raises" || vType === "w_extension") {
     return `
-    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 420 220" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
       ${commonDefs}
-      <style>
-        @keyframes ytArmCycle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-22px); }
-        }
-        @keyframes scapulaPulse {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 1; filter: drop-shadow(0 0 8px #f59e0b); }
-        }
-        .anim-yt-arms { animation: ytArmCycle 2.8s ease-in-out infinite; }
-        .anim-scapula-glow { animation: scapulaPulse 2.8s ease-in-out infinite; }
-      </style>
-      <rect x="30" y="165" width="260" height="8" rx="4" fill="#0284c7" opacity="0.8" />
-      
-      <!-- Towel under forehead -->
-      <rect x="65" y="152" width="30" height="12" rx="4" fill="#38bdf8" opacity="0.6" />
-      <text x="80" y="148" font-size="7.5" fill="#94a3b8" text-anchor="middle">Toalla</text>
+      <!-- Background / Mat Ground -->
+      <rect x="15" y="15" width="390" height="190" rx="12" fill="rgba(15, 23, 42, 0.65)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" />
+      <line x1="210" y1="20" x2="210" y2="195" stroke="#334155" stroke-width="1.5" stroke-dasharray="4 4" />
 
-      <!-- Body flat on mat (zero spinal load!) -->
-      <circle cx="80" cy="142" r="12" fill="#38bdf8" />
-      <line x1="92" y1="148" x2="235" y2="162" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
-      <line x1="235" y1="162" x2="275" y2="164" stroke="#64748b" stroke-width="5" stroke-linecap="round" />
+      <!-- Left Panel: FASE 1 - ELEVACIÓN EN 'Y' (45°) -->
+      <g transform="translate(10, 0)">
+        <rect x="15" y="24" width="170" height="22" rx="6" fill="rgba(56, 189, 248, 0.15)" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1"/>
+        <text x="100" y="39" font-size="9" fill="#38bdf8" font-weight="bold" text-anchor="middle">FASE 1: ELEVACIÓN 'Y' (45°)</text>
 
-      <!-- Scapular activation indicator -->
-      <g class="anim-scapula-glow">
-        <path d="M 130 144 Q 145 136 160 144" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
-        <text x="145" y="132" font-size="8" fill="#f59e0b" font-weight="bold" text-anchor="middle">RETRACCIÓN ESCAPULAR</text>
+        <!-- Mat -->
+        <rect x="25" y="155" width="150" height="6" rx="3" fill="#0284c7" opacity="0.6"/>
+        <!-- Towel under forehead -->
+        <rect x="42" y="145" width="24" height="10" rx="3" fill="#38bdf8" opacity="0.8"/>
+        <text x="54" y="142" font-size="7" fill="#94a3b8" text-anchor="middle">Toalla</text>
+
+        <!-- Prone Body -->
+        <circle cx="54" cy="136" r="10" fill="#38bdf8"/>
+        <line x1="64" y1="140" x2="145" y2="152" stroke="#10b981" stroke-width="6" stroke-linecap="round" filter="url(#glowGreen_${vType})"/>
+        <line x1="145" y1="152" x2="168" y2="154" stroke="#64748b" stroke-width="4.5" stroke-linecap="round"/>
+
+        <!-- Arms in 'Y' position lifting up -->
+        <line x1="82" y1="140" x2="48" y2="110" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="48" cy="110" r="4.5" fill="#f43f5e"/>
+        <text x="36" y="105" font-size="10" fill="#f59e0b" font-weight="bold">👍</text>
+
+        <!-- Motion Arrow Up -->
+        <path d="M 45 125 L 45 110 L 40 115" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Target callout -->
+        <text x="100" y="80" font-size="8.5" fill="#f59e0b" font-weight="bold" text-anchor="middle">Pulgares hacia el techo 👍</text>
+        <text x="100" y="92" font-size="7.5" fill="#94a3b8" text-anchor="middle">Trapecio inferior & Romboides</text>
+        <text x="100" y="178" font-size="7.5" fill="#34d399" font-weight="600" text-anchor="middle">Frente pegada • Cuello neutro</text>
       </g>
 
-      <!-- Arms lifting up (Y / W raise) -->
-      <g class="anim-yt-arms">
-        <line x1="120" y1="148" x2="90" y2="120" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
-        <circle cx="90" cy="120" r="4.5" fill="#f43f5e" />
-        <line x1="120" y1="148" x2="150" y2="115" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
-        <circle cx="150" cy="115" r="4.5" fill="#f43f5e" />
-        <text x="90" y="108" font-size="10" fill="#38bdf8" font-weight="bold" text-anchor="middle">Y</text>
-        <text x="150" y="103" font-size="10" fill="#38bdf8" font-weight="bold" text-anchor="middle">T</text>
-      </g>
+      <!-- Right Panel: FASE 2 - CONTRACCIÓN EN 'T' / 'W' (90°) -->
+      <g transform="translate(210, 0)">
+        <rect x="15" y="24" width="170" height="22" rx="6" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1"/>
+        <text x="100" y="39" font-size="9" fill="#34d399" font-weight="bold" text-anchor="middle">FASE 2: CONTRACCIÓN 'T' / 'W'</text>
 
-      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Elevaciones Y-T en Suelo • Romboides & Trapecio Medio</text>
-      <text x="160" y="48" font-size="9.5" fill="#94a3b8" text-anchor="middle">Frente apoyada en toalla • Cero hiperextensión lumbar o cervical</text>
+        <!-- Mat -->
+        <rect x="25" y="155" width="150" height="6" rx="3" fill="#0284c7" opacity="0.6"/>
+        <rect x="42" y="145" width="24" height="10" rx="3" fill="#38bdf8" opacity="0.8"/>
+
+        <!-- Prone Body -->
+        <circle cx="54" cy="136" r="10" fill="#38bdf8"/>
+        <line x1="64" y1="140" x2="145" y2="152" stroke="#10b981" stroke-width="6" stroke-linecap="round" filter="url(#glowGreen_${vType})"/>
+        <line x1="145" y1="152" x2="168" y2="154" stroke="#64748b" stroke-width="4.5" stroke-linecap="round"/>
+
+        <!-- Scapular Retraction Glow between shoulder blades -->
+        <ellipse cx="88" cy="138" rx="14" ry="7" fill="rgba(244, 63, 94, 0.3)" stroke="#f43f5e" stroke-width="1.5"/>
+
+        <!-- Arms horizontal 'T' retracted -->
+        <line x1="88" y1="138" x2="88" y2="104" stroke="#34d399" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="88" cy="104" r="4.5" fill="#f43f5e"/>
+        <text x="88" y="98" font-size="10" fill="#34d399" font-weight="bold" text-anchor="middle">T / W</text>
+
+        <!-- Arrows indicating squeezing shoulder blades -->
+        <path d="M 80 120 L 88 126 L 96 120" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/>
+
+        <text x="100" y="76" font-size="8.5" fill="#34d399" font-weight="bold" text-anchor="middle">Pellizca escápulas 2 seg</text>
+        <text x="100" y="88" font-size="7.5" fill="#94a3b8" text-anchor="middle">Sin arquear la zona lumbar</text>
+        <text x="100" y="178" font-size="7.5" fill="#cbd5e1" text-anchor="middle">Postura antigorila • Cero impacto</text>
+      </g>
     </svg>`;
   }
 
@@ -1191,121 +1327,141 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
 
   if (vType === "walking") {
     return `
-    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 420 220" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
       ${commonDefs}
       <style>
-        @keyframes walkLegCycleL {
-          0%, 100% { transform: rotate(-24deg); }
-          50% { transform: rotate(24deg); }
+        @keyframes booPaws {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
         }
-        @keyframes walkLegCycleR {
-          0%, 100% { transform: rotate(24deg); }
-          50% { transform: rotate(-24deg); }
+        @keyframes walkPacing {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(4px); }
         }
-        @keyframes walkArmCycleL {
-          0%, 100% { transform: rotate(26deg); }
-          50% { transform: rotate(-26deg); }
-        }
-        @keyframes walkArmCycleR {
-          0%, 100% { transform: rotate(-26deg); }
-          50% { transform: rotate(26deg); }
-        }
-        @keyframes walkBobbing {
-          0%, 50%, 100% { transform: translateY(0); }
-          25%, 75% { transform: translateY(-4px); }
-        }
-        .anim-walk-body { animation: walkBobbing 1.2s ease-in-out infinite; }
-        .anim-leg-l { animation: walkLegCycleL 1.2s ease-in-out infinite; transform-origin: 135px 135px; }
-        .anim-leg-r { animation: walkLegCycleR 1.2s ease-in-out infinite; transform-origin: 135px 135px; }
-        .anim-arm-l { animation: walkArmCycleL 1.2s ease-in-out infinite; transform-origin: 135px 82px; }
-        .anim-arm-r { animation: walkArmCycleR 1.2s ease-in-out infinite; transform-origin: 135px 82px; }
+        .anim-boo-walk { animation: booPaws 0.8s ease-in-out infinite; }
+        .anim-carlos-walk { animation: walkPacing 1.4s ease-in-out infinite; }
       </style>
-      <line x1="20" y1="185" x2="300" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
-      <ellipse cx="140" cy="186" rx="95" ry="6" fill="url(#gradFloor_${vType})" />
+      <rect x="15" y="15" width="390" height="190" rx="12" fill="rgba(15, 23, 42, 0.65)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" />
 
-      <g class="anim-walk-body">
-        <!-- Walking Figure Carlos -->
-        <line x1="135" y1="135" x2="135" y2="76" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
-        <circle cx="135" cy="56" r="13" fill="#38bdf8" />
+      <!-- Path / Floor -->
+      <line x1="30" y1="175" x2="390" y2="175" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+      <ellipse cx="210" cy="177" rx="160" ry="8" fill="url(#gradFloor_${vType})" />
 
-        <!-- Back Leg -->
-        <g class="anim-leg-r">
-          <line x1="135" y1="135" x2="145" y2="160" stroke="#475569" stroke-width="5.5" stroke-linecap="round" />
-          <line x1="145" y1="160" x2="155" y2="185" stroke="#475569" stroke-width="5" stroke-linecap="round" />
-          <circle cx="155" cy="185" r="3.5" fill="#94a3b8" />
-        </g>
+      <!-- Top Title & Metrics Badges -->
+      <rect x="30" y="24" width="170" height="22" rx="6" fill="rgba(56, 189, 248, 0.15)" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1"/>
+      <text x="115" y="39" font-size="9" fill="#38bdf8" font-weight="bold" text-anchor="middle">PASEO ACTIVO & FARTLEK</text>
 
-        <!-- Front Leg -->
-        <g class="anim-leg-l">
-          <line x1="135" y1="135" x2="125" y2="160" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-          <line x1="125" y1="160" x2="115" y2="185" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" />
-          <circle cx="115" cy="185" r="4" fill="#38bdf8" />
-        </g>
+      <rect x="220" y="24" width="170" height="22" rx="6" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1"/>
+      <text x="305" y="39" font-size="9" fill="#34d399" font-weight="bold" text-anchor="middle">ZONA 2 • 5.0 - 5.5 KM/H</text>
 
-        <!-- Back Arm -->
-        <g class="anim-arm-r">
-          <line x1="135" y1="82" x2="155" y2="112" stroke="#475569" stroke-width="4.5" stroke-linecap="round" />
-        </g>
+      <!-- Carlos / Andrea Figure -->
+      <g class="anim-carlos-walk" transform="translate(10, 0)">
+        <!-- Upright neutral spine -->
+        <line x1="140" y1="125" x2="140" y2="70" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})"/>
+        <circle cx="140" cy="52" r="13" fill="#38bdf8"/>
 
-        <!-- Front Arm + Dog Leash -->
-        <g class="anim-arm-l">
-          <line x1="135" y1="82" x2="115" y2="110" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
-          <circle cx="115" cy="110" r="3.5" fill="#38bdf8" />
-          <!-- Leash to Boo -->
-          <path d="M 115 110 Q 170 135 220 155" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3 2" />
-        </g>
+        <!-- Legs in athletic forward stride -->
+        <line x1="140" y1="125" x2="160" y2="150" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+        <line x1="160" y1="150" x2="170" y2="175" stroke="#64748b" stroke-width="5.5" stroke-linecap="round"/>
+        <circle cx="170" cy="175" r="4" fill="#38bdf8"/>
+
+        <line x1="140" y1="125" x2="120" y2="150" stroke="#475569" stroke-width="5.5" stroke-linecap="round"/>
+        <line x1="120" y1="150" x2="110" y2="175" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="110" cy="175" r="4" fill="#cbd5e1"/>
+
+        <!-- Arms swinging naturally & Leash -->
+        <line x1="140" y1="78" x2="122" y2="105" stroke="#475569" stroke-width="4.5" stroke-linecap="round"/>
+        <line x1="140" y1="78" x2="165" y2="105" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round"/>
+        <circle cx="165" cy="105" r="4" fill="#38bdf8"/>
+
+        <!-- Leash stretching to Boo -->
+        <path d="M 165 105 Q 215 130 260 148" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 2"/>
       </g>
 
-      <!-- Boo the Dog Walking -->
-      <g>
-        <!-- Body -->
-        <ellipse cx="230" cy="162" rx="16" ry="10" fill="#f59e0b" />
-        <circle cx="244" cy="154" r="8" fill="#f59e0b" />
-        <polygon points="246,146 250,152 244,152" fill="#b45309" />
-        <circle cx="248" cy="154" r="1.5" fill="#0f172a" />
-        <!-- Tail -->
-        <path d="M 215 160 Q 210 150 216 145" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
-        <!-- Legs -->
-        <line x1="222" y1="170" x2="220" y2="185" stroke="#b45309" stroke-width="3" stroke-linecap="round" />
-        <line x1="228" y1="170" x2="230" y2="185" stroke="#b45309" stroke-width="3" stroke-linecap="round" />
-        <line x1="238" y1="170" x2="236" y2="185" stroke="#b45309" stroke-width="3" stroke-linecap="round" />
-        <line x1="244" y1="170" x2="246" y2="185" stroke="#b45309" stroke-width="3" stroke-linecap="round" />
-        <text x="230" y="142" font-size="8" fill="#f59e0b" font-weight="bold" text-anchor="middle">Boo 🐾</text>
+      <!-- Boo the Dog with harness & energetic posture -->
+      <g class="anim-boo-walk" transform="translate(10, 0)">
+        <!-- Harness on dog -->
+        <ellipse cx="270" cy="152" rx="20" ry="12" fill="#f59e0b"/>
+        <ellipse cx="266" cy="150" rx="9" ry="11" fill="none" stroke="#ef4444" stroke-width="2"/>
+        <circle cx="286" cy="142" r="9" fill="#f59e0b"/>
+        <!-- Boo ear & snout -->
+        <polygon points="288,132 294,140 286,140" fill="#b45309"/>
+        <polygon points="295,142 300,146 293,148" fill="#1e293b"/>
+        <circle cx="290" cy="141" r="1.5" fill="#0f172a"/>
+        <!-- Wagging happy tail -->
+        <path d="M 250 150 Q 242 138 248 132" fill="none" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+        <!-- Dog paws running -->
+        <line x1="260" y1="162" x2="256" y2="175" stroke="#b45309" stroke-width="3" stroke-linecap="round"/>
+        <line x1="268" y1="162" x2="272" y2="175" stroke="#b45309" stroke-width="3" stroke-linecap="round"/>
+        <line x1="278" y1="162" x2="275" y2="175" stroke="#b45309" stroke-width="3" stroke-linecap="round"/>
+        <line x1="284" y1="162" x2="288" y2="175" stroke="#b45309" stroke-width="3" stroke-linecap="round"/>
+        <text x="270" y="130" font-size="9" fill="#f59e0b" font-weight="bold" text-anchor="middle">Boo 🐾 (Arnés)</text>
       </g>
 
-      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Caminata Activa Ligera / Media con Boo</text>
-      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Movimiento natural de brazos • Descompresión del disco intervertebral</text>
+      <!-- Technical Callouts at the bottom -->
+      <g transform="translate(30, 186)">
+        <text x="180" y="10" font-size="8.5" fill="#94a3b8" text-anchor="middle">Descompresión intervertebral • Brace abdominal activo en subidas • Ritmo conversacional</text>
+      </g>
     </svg>`;
   }
 
   if (vType === "cat_cow") {
     return `
-    <svg viewBox="0 0 320 210" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 420 220" class="exercise-anim-svg" xmlns="http://www.w3.org/2000/svg">
       ${commonDefs}
-      <style>
-        @keyframes catCowWave {
-          0%, 100% { transform: scaleY(1); }
-          50% { transform: scaleY(-0.6); }
-        }
-        .anim-cat-cow { animation: catCowWave 4s ease-in-out infinite; transform-origin: 160px 125px; }
-      </style>
-      <rect x="40" y="168" width="240" height="8" rx="4" fill="#0284c7" opacity="0.8" />
+      <rect x="15" y="15" width="390" height="190" rx="12" fill="rgba(15, 23, 42, 0.65)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" />
+      <line x1="210" y1="20" x2="210" y2="195" stroke="#334155" stroke-width="1.5" stroke-dasharray="4 4" />
 
-      <!-- Limbs on floor (Quadrupedia) -->
-      <line x1="115" y1="125" x2="115" y2="168" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
-      <line x1="205" y1="125" x2="205" y2="168" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+      <!-- Left Panel: GATO (EXHALA) -->
+      <g transform="translate(10, 0)">
+        <rect x="15" y="24" width="170" height="22" rx="6" fill="rgba(56, 189, 248, 0.15)" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1"/>
+        <text x="100" y="39" font-size="9" fill="#38bdf8" font-weight="bold" text-anchor="middle">1. GATO (EXHALA - ARQUEA)</text>
 
-      <!-- Head -->
-      <circle cx="95" cy="120" r="12" fill="#38bdf8" />
+        <!-- Mat -->
+        <rect x="25" y="155" width="150" height="6" rx="3" fill="#0284c7" opacity="0.6"/>
 
-      <!-- Animated gentle thoracic spine wave (cat / cow) -->
-      <g class="anim-cat-cow">
-        <path d="M 115 125 Q 160 102 205 125" fill="none" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
+        <!-- Support Arms & Thighs vertical -->
+        <line x1="65" y1="120" x2="65" y2="155" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+        <line x1="135" y1="125" x2="135" y2="155" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- Head tucked down -->
+        <circle cx="52" cy="128" r="10" fill="#38bdf8"/>
+
+        <!-- Cat Arch: Upward curved spine -->
+        <path d="M 65 120 Q 100 82 135 125" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" filter="url(#glowGreen_${vType})"/>
+
+        <!-- Directional motion arrow UP -->
+        <path d="M 100 102 L 100 88 L 95 93 M 100 88 L 105 93" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+
+        <text x="100" y="72" font-size="8.5" fill="#38bdf8" font-weight="bold" text-anchor="middle">Ombligo hacia la columna</text>
+        <text x="100" y="174" font-size="7.5" fill="#94a3b8" text-anchor="middle">Abre espacio intervertebral D7-D11</text>
       </g>
 
-      <text x="160" y="30" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Gato-Camello Controlado • Movilidad Torácica (McGill)</text>
-      <text x="160" y="50" font-size="9.5" fill="#94a3b8" text-anchor="middle">Onda suave de columna sin forzar los rangos finales de flexión</text>
-      <text x="160" y="196" font-size="9" fill="#38bdf8" text-anchor="middle">Sincroniza con respiración lenta: Inhala al bajar suave, exhala al redondear</text>
+      <!-- Right Panel: VACA / CAMELLO (INHALA) -->
+      <g transform="translate(210, 0)">
+        <rect x="15" y="24" width="170" height="22" rx="6" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1"/>
+        <text x="100" y="39" font-size="9" fill="#34d399" font-weight="bold" text-anchor="middle">2. VACA (INHALA - DESCOMPRIME)</text>
+
+        <!-- Mat -->
+        <rect x="25" y="155" width="150" height="6" rx="3" fill="#0284c7" opacity="0.6"/>
+
+        <!-- Support Arms & Thighs vertical -->
+        <line x1="65" y1="120" x2="65" y2="155" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+        <line x1="135" y1="125" x2="135" y2="155" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- Head looking slightly forward/up -->
+        <circle cx="50" cy="110" r="10" fill="#34d399"/>
+
+        <!-- Cow Dip: Gentle downward sag, safe McGill range -->
+        <path d="M 65 120 Q 100 134 135 125" fill="none" stroke="#34d399" stroke-width="6" stroke-linecap="round" filter="url(#glowGreen_${vType})"/>
+
+        <!-- Directional motion arrow DOWN -->
+        <path d="M 100 120 L 100 134 L 95 129 M 100 134 L 105 129" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round"/>
+
+        <text x="100" y="72" font-size="8.5" fill="#34d399" font-weight="bold" text-anchor="middle">Abre pecho y clavículas</text>
+        <text x="100" y="84" font-size="7.5" fill="#f59e0b" font-weight="600" text-anchor="middle">⚠️ Cero hiperextensión lumbar</text>
+        <text x="100" y="174" font-size="7.5" fill="#94a3b8" text-anchor="middle">Movimiento fluido y sin rebotes</text>
+      </g>
     </svg>`;
   }
 
@@ -1705,25 +1861,25 @@ export function openExerciseGuideModal(dayName, exerciseIdx, customProfileId) {
     const mediaHtml = ex.gifUrl ? `
       <div class="exercise-media-wrapper">
         <div class="exercise-media-switcher-tabs">
-          <button type="button" id="btn-media-svg" class="btn-media-tab active" onclick="if(window.switchExerciseMediaStage) window.switchExerciseMediaStage('svg');">
-            <i class="fa-solid fa-cube"></i> Animación 3D Técnica
+          <button type="button" id="btn-media-gif" class="btn-media-tab active" onclick="if(window.switchExerciseMediaStage) window.switchExerciseMediaStage('gif');">
+            <i class="fa-solid fa-play"></i> Demostración Real (GIF)
           </button>
-          <button type="button" id="btn-media-gif" class="btn-media-tab" onclick="if(window.switchExerciseMediaStage) window.switchExerciseMediaStage('gif');">
-            <i class="fa-solid fa-play"></i> Demostración Real
+          <button type="button" id="btn-media-svg" class="btn-media-tab" onclick="if(window.switchExerciseMediaStage) window.switchExerciseMediaStage('svg');">
+            <i class="fa-solid fa-chalkboard-user"></i> Guía Técnica & Infografía
           </button>
         </div>
         <div class="exercise-media-player">
-          <div id="exercise-stage-svg" class="exercise-media-stage" style="display: flex;">
-            <div class="exercise-media-badge">
-              <i class="fa-solid fa-shield-halved"></i> Biomecánica & Alineación Segura
-            </div>
-            ${visualSvg}
-          </div>
-          <div id="exercise-stage-gif" class="exercise-media-stage" style="display: none;">
+          <div id="exercise-stage-gif" class="exercise-media-stage" style="display: flex;">
             <div class="exercise-media-badge" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8;">
               <i class="fa-solid fa-circle-play" style="color: #38bdf8;"></i> Demostración en Vivo
             </div>
             <img src="${ex.gifUrl}" alt="${ex.name}" class="exercise-real-gif" loading="eager" onerror="if(window.switchExerciseMediaStage) window.switchExerciseMediaStage('svg'); const bg = document.getElementById('btn-media-gif'); if (bg) bg.style.display='none';" />
+          </div>
+          <div id="exercise-stage-svg" class="exercise-media-stage" style="display: none;">
+            <div class="exercise-media-badge">
+              <i class="fa-solid fa-shield-halved"></i> Biomecánica & Alineación Segura
+            </div>
+            ${visualSvg}
           </div>
         </div>
         <div class="exercise-phases-timeline">

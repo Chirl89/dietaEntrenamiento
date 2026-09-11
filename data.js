@@ -70,6 +70,7 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     exercises: [
       {
         id: "sentadilla_ring_con",
+        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-squat.gif",
         name: "Sentadilla a Silla con Contrapeso de Ring-Con",
         sets: 3,
         reps: "10 - 12",

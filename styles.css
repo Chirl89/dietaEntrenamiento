@@ -4638,6 +4638,15 @@ body[data-profile="she"] .btn-save-calibration {
   position: relative;
 }
 
+.exercise-anim-svg {
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+  max-height: 275px;
+  display: block;
+  margin: 0 auto;
+}
+
 .exercise-media-player {
   position: relative;
   width: 100%;
