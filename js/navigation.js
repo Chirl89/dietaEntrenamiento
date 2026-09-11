@@ -18,7 +18,7 @@ import {
 import { updateAppleWatchModalUI, updateHeaderWatchBadge } from './appleWatch.js';
 import { renderSummaryView, renderProfileView } from './views/summaryView.js';
 import { renderNutritionMenuView, renderNutritionRecipesView, renderShoppingView, renderBatchCookingView } from './views/nutritionView.js';
-import { renderWorkoutsView, renderExerciseTableView } from './views/workoutsView.js';
+import { renderWorkoutsView, renderExerciseTableView, renderWorkoutsHistoryView } from './views/workoutsView.js';
 import { renderBooWorkoutView } from './views/booView.js';
 import { renderProgressView } from './views/progressView.js';
 import { renderSettingsView } from './views/settingsView.js';
@@ -50,7 +50,8 @@ export const NAVIGATION_CATEGORIES = {
     sidebarId: "sidebar-nav-workouts",
     subtabs: [
       { id: "workouts-view", label: "Entrenamiento", icon: "fa-solid fa-dumbbell" },
-      { id: "workouts-boo-view", label: "Boo", icon: "fa-solid fa-dog" }
+      { id: "workouts-boo-view", label: "Boo", icon: "fa-solid fa-dog" },
+      { id: "workouts-history-view", label: "Histórico", icon: "fa-solid fa-clock-rotate-left" }
     ]
   },
   profile: {
@@ -168,6 +169,7 @@ export function renderAll() {
   try { renderWorkoutsView(); } catch(e) { console.error("Error in renderWorkoutsView:", e); }
   try { renderBooWorkoutView(); } catch(e) { console.error("Error in renderBooWorkoutView:", e); }
   try { renderExerciseTableView(); } catch(e) { console.error("Error in renderExerciseTableView:", e); }
+  try { renderWorkoutsHistoryView(); } catch(e) { console.error("Error in renderWorkoutsHistoryView:", e); }
   try { renderProgressView(); } catch(e) { console.error("Error in renderProgressView:", e); }
   try { renderSettingsView(); } catch(e) { console.error("Error in renderSettingsView:", e); }
   try { updateHeaderWatchBadge(); } catch(e) { console.error("Error in updateHeaderWatchBadge:", e); }
@@ -275,6 +277,8 @@ export function showTab(tabId, btnElement) {
         renderExerciseTableView();
       } else if (tabId === 'workouts-boo-view') {
         renderBooWorkoutView();
+      } else if (tabId === 'workouts-history-view') {
+        renderWorkoutsHistoryView();
       } else if (tabId === 'workouts-exercises-view') {
         renderWorkoutsView();
         renderExerciseTableView();

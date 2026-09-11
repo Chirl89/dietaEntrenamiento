@@ -23,6 +23,7 @@ import {
   WEEKLY_WORKOUT_SCHEDULE_BY_PROFILE,
   getWeeklyWorkoutSchedule
 } from '../../data.js';
+import { getHistoricalData } from './progressView.js';
 
 export function isDayCompleted(profileId, dayName) {
   const dayData = appState.completedWorkouts?.[profileId]?.[dayName];
@@ -2210,4 +2211,260 @@ export function simulateBluetoothPairing() {
   saveState();
   if (window.updateAppleWatchModalUI) window.updateAppleWatchModalUI();
   showIosToast(` Pulsómetro Apple Watch enlazado por Bluetooth: Frecuencia cardíaca en directo 142 BPM`, "fa-solid fa-heart-pulse");
+}
+
+let currentWorkoutsHistoryPeriod = '30d';
+
+export function setWorkoutsHistoryPeriod(period) {
+  try {
+    triggerHapticTouch();
+    currentWorkoutsHistoryPeriod = period;
+    renderWorkoutsHistoryView();
+  } catch(e) {
+    console.error("Error setting workouts history period:", e);
+  }
+}
+
+export function renderWorkoutsHistoryView() {
+  try {
+    const container = document.getElementById("workouts-history-container");
+    if (!container) return;
+
+    const pid = appState.activeProfileId || getMasterProfileId();
+    const p = appState.profiles?.[pid] || { name: pid === 'he' ? 'Carlos' : 'Andrea' };
+    const pName = p.name || (pid === 'he' ? 'Carlos' : 'Andrea');
+
+    const badgeContainer = document.getElementById("workouts-history-profile-badge");
+    if (badgeContainer) {
+      badgeContainer.innerHTML = `
+        <span class="routine-badge" style="background: ${pid === 'he' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(244, 63, 94, 0.15)'}; color: ${pid === 'he' ? '#0284c7' : '#e11d48'}; font-weight: 700; font-size: 0.82rem; padding: 4px 10px; border-radius: 12px;">
+          <i class="fa-solid ${pid === 'he' ? 'fa-mars' : 'fa-venus'}"></i> ${pName}
+        </span>
+      `;
+    }
+
+    const period = currentWorkoutsHistoryPeriod || '30d';
+    const periodDays = {
+      '7d': 7,
+      '14d': 14,
+      '30d': 30,
+      'all': 90
+    };
+    const daysCount = periodDays[period] || 30;
+    const historyList = getHistoricalData(pid, daysCount) || [];
+
+    const schedule = getWeeklyWorkoutSchedule(pid) || {};
+
+    let totalCompletedWorkouts = 0;
+    let totalWorkoutMin = 0;
+    let totalWorkoutKcal = 0;
+    let scheduledWorkoutsCount = 0;
+
+    const enrichedHistory = historyList.map(d => {
+      const isCurrentWeekDay = getDateForDayNameInCurrentWeek(d.dayName) === d.dateIso;
+      let sessions = Array.isArray(d.sessions) ? [...d.sessions] : [];
+      let isCompleted = sessions.length > 0 || (Array.isArray(d.completedWorkouts) && d.completedWorkouts.length > 0);
+
+      if (isCurrentWeekDay) {
+        if (isDayCompleted(pid, d.dayName)) {
+          isCompleted = true;
+          const liveSessions = getDaySessions(pid, d.dayName);
+          if (liveSessions.length > 0) {
+            sessions = liveSessions;
+          }
+        }
+      }
+
+      const routine = schedule[d.dayName] || {};
+      const isScheduledRest = routine.type === 'Descanso' || (routine.title && routine.title.toLowerCase().includes('descanso'));
+
+      if (!isScheduledRest) {
+        scheduledWorkoutsCount++;
+      }
+
+      const dayMin = sessions.reduce((acc, s) => acc + (Number(s.durationMin) || 0), 0);
+      const dayKcal = sessions.reduce((acc, s) => acc + (Number(s.kcal) || 0), 0);
+
+      if (isCompleted) {
+        totalCompletedWorkouts++;
+        totalWorkoutMin += dayMin;
+        totalWorkoutKcal += dayKcal;
+      }
+
+      return {
+        ...d,
+        sessions,
+        isCompleted,
+        routine,
+        isScheduledRest,
+        dayMin,
+        dayKcal
+      };
+    });
+
+    const adherencePct = scheduledWorkoutsCount > 0
+      ? Math.min(100, Math.round((totalCompletedWorkouts / scheduledWorkoutsCount) * 100))
+      : 0;
+
+    const periodLabels = {
+      '7d': '7 Días',
+      '14d': '14 Días',
+      '30d': '30 Días',
+      'all': 'Histórico (90 Días)'
+    };
+
+    container.innerHTML = `
+      <!-- TIME PERIOD SELECTOR -->
+      <div class="time-period-selector-wrapper">
+        <div class="time-period-selector">
+          <button type="button" class="time-period-btn ${period === '7d' ? 'active' : ''}" onclick="window.setWorkoutsHistoryPeriod('7d')">
+            <i class="fa-solid fa-calendar-week"></i> 7 Días
+          </button>
+          <button type="button" class="time-period-btn ${period === '14d' ? 'active' : ''}" onclick="window.setWorkoutsHistoryPeriod('14d')">
+            <i class="fa-solid fa-calendar"></i> 14 Días
+          </button>
+          <button type="button" class="time-period-btn ${period === '30d' ? 'active' : ''}" onclick="window.setWorkoutsHistoryPeriod('30d')">
+            <i class="fa-solid fa-calendar-days"></i> 30 Días
+          </button>
+          <button type="button" class="time-period-btn ${period === 'all' ? 'active' : ''}" onclick="window.setWorkoutsHistoryPeriod('all')">
+            <i class="fa-solid fa-clock-rotate-left"></i> Histórico
+          </button>
+        </div>
+      </div>
+
+      <!-- SUMMARY METRICS CARDS -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="glass-card stat-summary-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Sesiones Completadas</span>
+            <i class="fa-solid fa-dumbbell" style="color: var(--accent-purple);"></i>
+          </div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-heading);">
+            ${totalCompletedWorkouts} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">sesiones</small>
+          </div>
+          <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
+            En ${periodLabels[period]}
+          </div>
+        </div>
+
+        <div class="glass-card stat-summary-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Tiempo Entrenado</span>
+            <i class="fa-solid fa-stopwatch" style="color: var(--accent-cyan);"></i>
+          </div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-heading);">
+            ${Math.floor(totalWorkoutMin / 60)}h ${totalWorkoutMin % 60}m
+          </div>
+          <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
+            Media: ~${totalCompletedWorkouts > 0 ? Math.round(totalWorkoutMin / totalCompletedWorkouts) : 0} min / entreno
+          </div>
+        </div>
+
+        <div class="glass-card stat-summary-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Calorías Quemadas</span>
+            <i class="fa-solid fa-fire" style="color: var(--accent-rose);"></i>
+          </div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-heading);">
+            ${totalWorkoutKcal.toLocaleString()} <small style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">kcal</small>
+          </div>
+          <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
+            En entrenamientos medidos
+          </div>
+        </div>
+
+        <div class="glass-card stat-summary-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Adherencia al Plan</span>
+            <i class="fa-solid fa-bullseye" style="color: var(--accent-emerald);"></i>
+          </div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-heading);">
+            ${adherencePct}%
+          </div>
+          <div style="margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
+            ${totalCompletedWorkouts} de ${scheduledWorkoutsCount} días asignados
+          </div>
+        </div>
+      </div>
+
+      <!-- DETALLE DE JORNADAS RECIENTES -->
+      <div class="glass-card" style="padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+            <i class="fa-solid fa-list-ul" style="color: var(--accent-cyan);"></i> Detalle de Jornadas Recientes (${pName})
+          </h3>
+          <span style="font-size: 0.75rem; color: var(--text-muted); background: rgba(0,0,0,0.04); padding: 3px 10px; border-radius: 12px; border: 1px solid var(--border-color);">
+            ${enrichedHistory.length} jornadas evaluadas
+          </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 520px; overflow-y: auto;">
+          ${enrichedHistory.slice().reverse().map(d => {
+            const statusBadge = d.isCompleted
+              ? `<span style="font-size: 0.75rem; color: #16a34a; background: rgba(16, 185, 129, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Cumplido</span>`
+              : (d.isScheduledRest
+                  ? `<span style="font-size: 0.75rem; color: #0284c7; background: rgba(56, 189, 248, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-bed"></i> Descanso</span>`
+                  : `<span style="font-size: 0.75rem; color: var(--text-muted); background: rgba(0, 0, 0, 0.04); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border-color);"><i class="fa-solid fa-minus"></i> Sin registro</span>`
+                );
+
+            const workoutsBadge = d.isCompleted
+              ? `<span style="font-size: 0.75rem; color: #9333ea; background: rgba(168, 85, 247, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-dumbbell"></i> ${d.sessions.length > 1 ? d.sessions.length + ' sesiones' : 'Entreno'}</span>`
+              : '';
+
+            const routineTitle = d.routine.title || (d.isScheduledRest ? 'Descanso Activo' : 'Entrenamiento');
+
+            const mainText = d.isCompleted
+              ? `${routineTitle} (${d.dayMin > 0 ? d.dayMin + ' min' : (d.routine.duration || 35) + ' min'})`
+              : (d.isScheduledRest
+                  ? `Día de Descanso Programado`
+                  : `${routineTitle} (Planificado)`
+                );
+
+            let detailsText = '';
+            if (d.isCompleted) {
+              const parts = [];
+              if (d.dayKcal > 0) parts.push(`${d.dayKcal} kcal`);
+              if (d.dayMin > 0) parts.push(`${d.dayMin} min medidos`);
+              if (d.sessions.length > 0 && d.sessions[0].deviceName) parts.push(d.sessions[0].deviceName);
+              if (d.steps > 0) parts.push(`${d.steps.toLocaleString()} pasos`);
+              detailsText = parts.length > 0 ? parts.join(' • ') : 'Sesión completada';
+            } else if (d.isScheduledRest) {
+              detailsText = d.steps > 0 ? `Recuperación activa • ${d.steps.toLocaleString()} pasos` : `Recuperación y descanso muscular`;
+            } else {
+              detailsText = d.hasData && d.steps > 0
+                ? `Sin sesión de entreno • ${d.steps.toLocaleString()} pasos caminados`
+                : `Sin actividad o entreno registrado`;
+            }
+
+            const isOpac = !d.isCompleted && !d.isScheduledRest && (!d.hasData || d.steps === 0);
+
+            return `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); flex-wrap: wrap; gap: 0.5rem; opacity: ${isOpac ? '0.65' : '1'};">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(0,0,0,0.04); border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--text-main);">
+                    <span>${d.dayName.slice(0, 3)}</span>
+                    <span style="font-size: 0.65rem; color: var(--text-muted);">${d.shortLabel.split(' ')[0]}</span>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.92rem; font-weight: 700; color: ${d.isCompleted ? 'var(--text-main)' : (d.isScheduledRest ? 'var(--text-main)' : 'var(--text-muted)')};">
+                      ${mainText}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                      ${detailsText}
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  ${workoutsBadge}
+                  ${statusBadge}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  } catch(err) {
+    console.error("Error rendering Workouts History View:", err);
+  }
 }
