@@ -180,56 +180,6 @@ export function removeExclusion(ingredient) {
   } catch(e) {
     console.error("Error removing exclusion:", e);
   }
-/**
- * Toggle week quick jump selector drawer in compact toolbar
- */
-export function toggleWeekSelector() {
-  try {
-    triggerHapticTouch();
-    const panel = document.getElementById("planner-week-jump-drawer");
-    const icon = document.getElementById("planner-week-toggle-icon");
-    if (!panel) return;
-    const isHidden = panel.classList.contains("hidden");
-    if (isHidden) {
-      panel.classList.remove("hidden");
-      if (icon) icon.className = "fa-solid fa-chevron-up";
-    } else {
-      panel.classList.add("hidden");
-      if (icon) icon.className = "fa-solid fa-chevron-down";
-    }
-  } catch(e) {
-    console.error("Error toggling week selector:", e);
-  }
-}
-
-/**
- * Toggle daily nutrition balance expanded details
- */
-export function toggleDailyNutritionBalanceDetails() {
-  try {
-    triggerHapticTouch();
-    const details = document.getElementById("daily-balance-details-drawer");
-    const icon = document.getElementById("daily-balance-expand-icon");
-    if (!details) return;
-    const isHidden = details.classList.contains("hidden");
-    if (isHidden) {
-      details.classList.remove("hidden");
-      if (icon) icon.className = "fa-solid fa-chevron-up";
-      appState.balanceDetailsExpanded = true;
-    } else {
-      details.classList.add("hidden");
-      if (icon) icon.className = "fa-solid fa-chevron-down";
-      appState.balanceDetailsExpanded = false;
-    }
-    saveState();
-  } catch(e) {
-    console.error("Error toggling balance details:", e);
-  }
-}
-
-if (typeof window !== 'undefined') {
-  window.toggleWeekSelector = toggleWeekSelector;
-  window.toggleDailyNutritionBalanceDetails = toggleDailyNutritionBalanceDetails;
 }
 
 /**
@@ -569,67 +519,77 @@ export function renderNutritionMenuView() {
 
     const totalScheduled = getWeeklyScheduledCount();
 
-    // 1. Render Top Planner Toolbar & Header Controls (Compact Dishes-First Design)
+    // 1. Render Top Planner Toolbar & Header Controls
     const toolbar = document.createElement("div");
-    toolbar.className = "planner-top-toolbar compact-planner";
+    toolbar.className = "planner-top-toolbar";
     toolbar.innerHTML = `
-      <!-- COMPACT WEEK ROW -->
-      <div class="planner-week-compact-card">
-        <div class="week-compact-main-row">
-          <div class="week-compact-nav">
-            <button type="button" class="btn-week-nav-sm" onclick="prevNutritionWeek()" title="Semana Anterior">
-              <i class="fa-solid fa-chevron-left"></i>
-            </button>
+      <!-- WEEK NAVIGATION BAR -->
+      <div class="planner-week-nav-bar">
+        <div class="week-nav-controls">
+          <button type="button" class="btn-week-nav" onclick="prevNutritionWeek()" title="Semana Anterior">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
 
-            <button type="button" class="week-compact-title-btn" onclick="toggleWeekSelector()" title="Tocar para cambiar de semana">
-              <span class="week-title-text">${getWeekDisplayLabel(activeWeekKey)}</span>
-              ${isCurrentWeek ? '<span class="badge-week-compact current">Esta Semana</span>' : (isPastWeek ? '<span class="badge-week-compact past">Pasada</span>' : '<span class="badge-week-compact future">Futura</span>')}
-              <span class="badge-week-compact count" title="Comidas planificadas"><i class="fa-solid fa-utensils"></i> ${totalScheduled}/28</span>
-              <i id="planner-week-toggle-icon" class="fa-solid fa-chevron-down" style="font-size: 0.68rem; opacity: 0.7; margin-left: 2px;"></i>
-            </button>
-
-            <button type="button" class="btn-week-nav-sm" onclick="nextNutritionWeek()" title="Semana Siguiente">
-              <i class="fa-solid fa-chevron-right"></i>
-            </button>
+          <div class="week-nav-info">
+            <div class="week-nav-title">
+              <i class="fa-solid fa-calendar-week" style="color: var(--accent-emerald);"></i>
+              <span>${getWeekDisplayLabel(activeWeekKey)}</span>
+            </div>
+            <div class="week-nav-subtitle">
+              ${isCurrentWeek ? '<span class="badge-current-week">Esta Semana</span>' : (isPastWeek ? '<span class="badge-past-week">Semana Pasada</span>' : '<span class="badge-future-week">Planificación Futura</span>')} • ${totalScheduled}/28 comidas asignadas
+            </div>
           </div>
 
-          <div class="planner-quick-tools-sm">
-            <button type="button" class="btn-tool-sm" onclick="autoFillWeeklyPlan()" title="Auto-rellenar semana con platos variados">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Auto</span>
-            </button>
-            <button type="button" class="btn-tool-sm" onclick="copyWeeklyMenuToClipboard()" title="Copiar menú semanal a texto">
-              <i class="fa-solid fa-share-nodes"></i>
-            </button>
-            <button type="button" class="btn-tool-sm danger" onclick="clearWeeklyPlan()" title="Vaciar semana">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          </div>
+          <button type="button" class="btn-week-nav" onclick="nextNutritionWeek()" title="Semana Siguiente">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
         </div>
 
-        <!-- COLLAPSIBLE WEEK JUMP DRAWER -->
-        <div id="planner-week-jump-drawer" class="week-jump-drawer hidden">
-          <div class="week-quick-jump-pills">
-            <button type="button" class="week-jump-pill ${isCurrentWeek ? 'active' : ''}" onclick="goToCurrentNutritionWeek()">
-              Esta Semana
-            </button>
-            <button type="button" class="week-jump-pill ${activeWeekKey === nextWeekKey ? 'active' : ''}" onclick="setNutritionActiveWeek('${nextWeekKey}')">
-              Próxima Semana
-            </button>
-            <button type="button" class="week-jump-pill ${activeWeekKey === week2Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week2Key}')">
-              En +2 Semanas
-            </button>
-            <button type="button" class="week-jump-pill ${activeWeekKey === week3Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week3Key}')">
-              En +3 Semanas
-            </button>
-            <button type="button" class="week-jump-pill" onclick="copyPreviousWeekPlan()" title="Copiar menú de la semana anterior">
-              <i class="fa-solid fa-clone"></i> Copiar anterior
-            </button>
-          </div>
+        <div class="week-quick-jump-pills">
+          <button type="button" class="week-jump-pill ${isCurrentWeek ? 'active' : ''}" onclick="goToCurrentNutritionWeek()">
+            Esta Semana
+          </button>
+          <button type="button" class="week-jump-pill ${activeWeekKey === nextWeekKey ? 'active' : ''}" onclick="setNutritionActiveWeek('${nextWeekKey}')">
+            Próxima Semana
+          </button>
+          <button type="button" class="week-jump-pill ${activeWeekKey === week2Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week2Key}')">
+            En +2 Semanas
+          </button>
+          <button type="button" class="week-jump-pill ${activeWeekKey === week3Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week3Key}')">
+            En +3 Semanas
+          </button>
+          <button type="button" class="week-jump-pill" onclick="copyPreviousWeekPlan()" title="Copiar menú de la semana anterior">
+            <i class="fa-solid fa-clone"></i> Copiar anterior
+          </button>
         </div>
       </div>
 
-      <!-- DAYS SELECTOR & VIEW MODE TOGGLE -->
-      <div class="planner-days-bar-wrapper compact">
+      <div class="planner-actions-bar">
+        <button type="button" class="btn-generate-shopping-glow" onclick="generateShoppingListFromPlan()">
+          <i class="fa-solid fa-cart-shopping"></i> Lista de la Compra
+          <span class="shopping-count-badge">${totalScheduled}/28</span>
+        </button>
+
+        <button type="button" class="btn-generate-shopping-glow" onclick="openBatchCookingView()" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(234, 88, 12, 0.3)); border: 1px solid var(--accent-amber); color: #fde68a;">
+          <i class="fa-solid fa-layer-group" style="color: var(--accent-amber);"></i> Plan Batch Cooking
+          <span class="shopping-count-badge" style="background: rgba(245, 158, 11, 0.3); color: #fff;"><i class="fa-solid fa-robot"></i> Cocina</span>
+        </button>
+
+        <div class="planner-quick-tools">
+          <button type="button" class="btn-planner-tool" onclick="autoFillWeeklyPlan()" title="Auto-rellenar semana con platos variados">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Auto</span>
+          </button>
+          <button type="button" class="btn-planner-tool" onclick="copyWeeklyMenuToClipboard()" title="Copiar menú semanal a texto">
+            <i class="fa-solid fa-share-nodes"></i> <span>Compartir</span>
+          </button>
+          <button type="button" class="btn-planner-tool danger" onclick="clearWeeklyPlan()" title="Vaciar semana">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- VIEW MODE SWITCHER & DAYS BAR -->
+      <div class="planner-days-bar-wrapper">
         <div class="planner-days-scroll">
           ${DAYS_OF_WEEK.map(dayName => {
             const dayPlan = currentWeeklyPlan?.[dayName] || {};
@@ -698,71 +658,40 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
   const safeTargetCalories = Number(targetCalories) > 0 ? Number(targetCalories) : (appState.activeProfileId === 'he' ? 2150 : 1850);
   const safeTargetProtein = Number(targetProtein) > 0 ? Number(targetProtein) : (appState.activeProfileId === 'he' ? 155 : 130);
 
-  // Daily Nutritional Balance Bar - Ultra Compact Collapsible
+  // Daily Nutritional Balance Bar
   const kcalPercent = Math.min(Math.max(Math.round((dayKcal / safeTargetCalories) * 100), 0), 100);
   const protPercent = Math.min(Math.max(Math.round((dayProtein / safeTargetProtein) * 100), 0), 100);
-  const isDetailsExpanded = Boolean(appState.balanceDetailsExpanded);
 
   const balanceCard = document.createElement("div");
-  balanceCard.className = "glass-card daily-nutrition-compact-strip";
+  balanceCard.className = "glass-card daily-nutrition-balance-card";
   balanceCard.innerHTML = `
-    <div class="compact-balance-header" onclick="toggleDailyNutritionBalanceDetails()" title="Tocar para ver u ocultar desglose de macros">
-      <div class="compact-balance-left">
-        <span class="compact-macro-item cal">
-          <i class="fa-solid fa-fire"></i>
-          <strong>${dayKcal}</strong><small>/${safeTargetCalories} kcal</small>
-        </span>
-        <span class="compact-macro-divider">•</span>
-        <span class="compact-macro-item prot">
-          <i class="fa-solid fa-dumbbell"></i>
-          <strong>${dayProtein}g</strong><small>/${safeTargetProtein}g P</small>
-        </span>
-      </div>
-
-      <div class="compact-balance-right">
-        <div class="compact-mini-progress" title="Calorías: ${kcalPercent}% | Proteína: ${protPercent}%">
-          <div class="mini-bar-track">
-            <div class="mini-bar-fill cal" style="width: ${kcalPercent}%;"></div>
-          </div>
-          <div class="mini-bar-track">
-            <div class="mini-bar-fill prot" style="width: ${protPercent}%;"></div>
-          </div>
+    <div class="balance-header">
+      <div class="balance-title">
+        <i class="fa-solid fa-chart-pie" style="color: var(--accent-cyan);"></i>
+        <div>
+          <h4>Balance Nutricional de ${dayName}</h4>
+          <p>Objetivo Diario: ${safeTargetCalories} kcal • ${safeTargetProtein}g Proteína</p>
         </div>
-        <button type="button" class="btn-toggle-balance-details" aria-label="Desplegar balance">
-          <i id="daily-balance-expand-icon" class="fa-solid ${isDetailsExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
-        </button>
+      </div>
+      <div class="balance-totals-chips">
+        <span class="macro-chip cal"><i class="fa-solid fa-fire"></i> <strong>${dayKcal}</strong> / ${safeTargetCalories} kcal</span>
+        <span class="macro-chip prot"><i class="fa-solid fa-dumbbell"></i> <strong>${dayProtein}g</strong> / ${safeTargetProtein}g Prot</span>
+        <span class="macro-chip carbs"><i class="fa-solid fa-wheat-awn"></i> <strong>${dayCarbs}g</strong> Carbs</span>
+        <span class="macro-chip fats"><i class="fa-solid fa-droplet"></i> <strong>${dayFats}g</strong> Grasas</span>
       </div>
     </div>
 
-    <!-- EXPANDABLE MACRO DETAILS DRAWER -->
-    <div id="daily-balance-details-drawer" class="balance-details-drawer ${isDetailsExpanded ? '' : 'hidden'}">
-      <div class="balance-extended-stats">
-        <div class="extended-macro-pill carbs">
-          <i class="fa-solid fa-wheat-awn"></i>
-          <span>Carbs: <strong>${dayCarbs}g</strong></span>
-        </div>
-        <div class="extended-macro-pill fats">
-          <i class="fa-solid fa-droplet"></i>
-          <span>Grasas: <strong>${dayFats}g</strong></span>
-        </div>
-        <div class="extended-macro-pill target">
-          <i class="fa-solid fa-bullseye"></i>
-          <span>Obj: ${safeTargetCalories} kcal • ${safeTargetProtein}g Prot</span>
+    <div class="balance-progress-bars">
+      <div class="balance-bar-row">
+        <span class="bar-label">Calorías (${kcalPercent}%)</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill cal" style="width: ${kcalPercent}%;"></div>
         </div>
       </div>
-
-      <div class="balance-progress-bars">
-        <div class="balance-bar-row">
-          <span class="bar-label">Calorías (${kcalPercent}%)</span>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill cal" style="width: ${kcalPercent}%;"></div>
-          </div>
-        </div>
-        <div class="balance-bar-row">
-          <span class="bar-label">Proteína (${protPercent}%)</span>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill prot" style="width: ${protPercent}%;"></div>
-          </div>
+      <div class="balance-bar-row">
+        <span class="bar-label">Proteína (${protPercent}%)</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill prot" style="width: ${protPercent}%;"></div>
         </div>
       </div>
     </div>
