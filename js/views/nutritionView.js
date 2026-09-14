@@ -180,6 +180,8 @@ export function removeExclusion(ingredient) {
   } catch(e) {
     console.error("Error removing exclusion:", e);
   }
+}
+
 /**
  * Toggle week quick jump selector drawer in compact toolbar
  */
