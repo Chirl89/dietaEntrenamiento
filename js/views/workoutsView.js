@@ -637,17 +637,14 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
         <text x="10" y="19" font-size="12" fill="#34d399" font-weight="bold" text-anchor="middle">→</text>
       </g>
 
-      <!-- Right: Sentadilla Rozando Silla -->
+      <!-- Right: Sentadilla en Esterilla -->
       <g transform="translate(185, 15)">
         <rect x="10" y="5" width="135" height="18" rx="4" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="1"/>
-        <text x="77" y="17" font-size="8.5" fill="#34d399" font-weight="bold" text-anchor="middle">2. ROZAR LA SILLA</text>
+        <text x="77" y="17" font-size="8.5" fill="#34d399" font-weight="bold" text-anchor="middle">2. SENTADILLA EN ESTERILLA</text>
 
-        <!-- Chair Drawn clearly -->
-        <rect x="15" y="125" width="45" height="8" rx="2" fill="#475569"/>
-        <line x1="20" y1="133" x2="20" y2="180" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-        <line x1="55" y1="133" x2="55" y2="180" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-        <line x1="16" y1="80" x2="16" y2="133" stroke="#475569" stroke-width="4.5" stroke-linecap="round"/>
-        <text x="37" y="120" font-size="7.5" fill="#94a3b8" text-anchor="middle">SILLA</text>
+        <!-- Mat Base Drawn clearly -->
+        <rect x="10" y="180" width="130" height="5" rx="2" fill="#0284c7" opacity="0.6"/>
+        <text x="35" y="174" font-size="7" fill="#38bdf8" text-anchor="middle">ESTERILLA</text>
 
         <!-- Squatting Figure -->
         <line x1="55" y1="126" x2="105" y2="126" stroke="#64748b" stroke-width="6.5" stroke-linecap="round"/>
@@ -1136,11 +1133,9 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
       <line x1="25" y1="185" x2="295" y2="185" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
       <ellipse cx="160" cy="186" rx="85" ry="6" fill="url(#gradFloor_${vType})" />
 
-      <!-- Support Chair -->
-      <line x1="85" y1="110" x2="85" y2="185" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
-      <line x1="60" y1="140" x2="60" y2="185" stroke="#475569" stroke-width="3.5" stroke-linecap="round" />
-      <line x1="60" y1="140" x2="90" y2="140" stroke="#64748b" stroke-width="5" stroke-linecap="round" />
-      <text x="75" y="132" font-size="8" fill="#94a3b8" text-anchor="middle">Apoyo</text>
+      <!-- Esterilla Mat Ground -->
+      <rect x="30" y="183" width="260" height="4" rx="2" fill="#0284c7" opacity="0.6"/>
+      <text x="50" y="178" font-size="7" fill="#38bdf8">ESTERILLA</text>
 
       <!-- Moving Figure -->
       <g class="anim-split-squat">
@@ -1159,14 +1154,16 @@ export function getExerciseVisualSvg(visualType, exerciseName = "Ejercicio") {
         <line x1="155" y1="125" x2="155" y2="68" stroke="#10b981" stroke-width="7" stroke-linecap="round" filter="url(#glowGreen_${vType})" />
         <circle cx="155" cy="48" r="13" fill="#38bdf8" />
 
-        <!-- Support arm reaching chair -->
-        <line x1="155" y1="78" x2="115" y2="95" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
-        <line x1="115" y1="95" x2="85" y2="112" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
-        <circle cx="85" cy="112" r="4" fill="#38bdf8" />
+        <!-- Arms holding Ring-Con forward for balance -->
+        <line x1="155" y1="78" x2="118" y2="82" stroke="#94a3b8" stroke-width="4.5" stroke-linecap="round" />
+        <circle cx="104" cy="82" r="13" fill="none" stroke="#f43f5e" stroke-width="3.5" filter="url(#glowRose_${vType})" />
+        <rect x="101" y="69" width="6" height="4" rx="1" fill="#38bdf8" />
+        <rect x="101" y="91" width="6" height="4" rx="1" fill="#38bdf8" />
+        <text x="104" y="85" font-size="6.5" fill="#fff" font-weight="bold" text-anchor="middle">RING</text>
       </g>
 
-      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Zancada Asistida en Silla • Piernas & Glúteos</text>
-      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Columna 100% erguida • Cero carga compresiva axial</text>
+      <text x="160" y="28" font-size="11" fill="#34d399" font-weight="700" text-anchor="middle">Zancada Estática con Ring-Con • Piernas & Glúteos</text>
+      <text x="160" y="198" font-size="9.5" fill="#94a3b8" text-anchor="middle">Columna 100% erguida • Contrapeso frontal con Ring-Con</text>
     </svg>`;
   }
 

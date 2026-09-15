@@ -9,7 +9,7 @@ export const INITIAL_PROFILES = {
     activityLevel: 1.2, // Sedentario / 10 años sin hacer ejercicio
     goal: "recomp", // Recomposición corporal: Perder grasa y ganar músculo progresivamente
     experience: "beginner",
-    equipment: ["bodyweight", "chair", "mat", "elastic_bands", "ring_con_switch"],
+    equipment: ["bodyweight", "mat", "ring_con_switch"],
     targetCalories: 2150,
     protein: 155, // g
     carbs: 210, // g
@@ -17,7 +17,7 @@ export const INITIAL_PROFILES = {
     moveGoal: 600, // kcal objetivo anillo movimiento
     exerciseGoal: 30, // min objetivo anillo ejercicio
     stepsGoal: 10000, // pasos objetivo anillo de pasos/de pie
-    notes: "Rehabilitación e hipertrofia segura (RM: hernias dorsales D7-D8 y D10-D11 con deshidratación discal). Equipamiento: Banda elástica + Ring-Con Switch + esterilla y silla. Cero carga axial en columna, columna neutra, faja core 360° y retracción escapular sin impacto."
+    notes: "Rehabilitación e hipertrofia segura (RM: hernias dorsales D7-D8 y D10-D11 con deshidratación discal). Equipamiento: Únicamente Esterilla y Ring-Con Switch (sin bandas ni sillas). Cero carga axial en columna, columna neutra, faja core 360° y retracción escapular sin impacto."
   },
   she: {
     id: "she",
@@ -27,7 +27,7 @@ export const INITIAL_PROFILES = {
     activityLevel: 1.35, // Moderadamente activa / paseos
     goal: "recomp", // Tonificar y ganar fuerza
     experience: "intermediate_light",
-    equipment: ["bodyweight", "chair", "mat", "light_bands"],
+    equipment: ["bodyweight", "mat", "ring_con_switch"],
     targetCalories: 1850,
     protein: 130, // g
     carbs: 180, // g
@@ -35,7 +35,7 @@ export const INITIAL_PROFILES = {
     moveGoal: 500, // kcal objetivo anillo movimiento
     exerciseGoal: 30, // min objetivo anillo ejercicio
     stepsGoal: 10000, // pasos objetivo anillo de pasos/de pie
-    notes: "Tonificación general, mejora de resistencia cardio con la Border Collie (Boo) y trabajo de core/glúteos."
+    notes: "Tonificación general, mejora de resistencia cardio con la Border Collie (Boo) y trabajo de core/glúteos con Esterilla y Ring-Con."
   },
   dog: {
     name: "Boo",
@@ -64,49 +64,49 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     title: "Lunes: Fuerza Base & Cadena Posterior Segura (Carlos)",
     duration: 35,
     location: "En casa",
-    equipment: ["Ring-Con (Switch)", "Banda Elástica", "Silla", "Esterilla"],
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
     type: "Rehabilitación & Hipertrofia Segura",
     focus: "Postura erguida, retracción escapular y core profundo sin carga axial",
     exercises: [
       {
         id: "sentadilla_ring_con",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-squat.gif",
-        name: "Sentadilla a Silla con Contrapeso de Ring-Con",
+        name: "Sentadilla Libre con Contrapeso de Ring-Con",
         sets: 3,
         reps: "10 - 12",
         rest: "60 seg",
-        equipment: "Ring-Con + Silla",
-        technique: "Sujeta el Ring-Con extendido al frente mientras bajas a rozar la silla. Activa cuádriceps y glúteos manteniendo el torso recto.",
-        spinalSafetyNote: "Sujetar el Ring-Con extendido al frente crea un contrapeso reflejo que erige la caja torácica e impide flexionar la espalda dorsal, reduciendo a cero la presión sobre los discos D7-D8 y D10-D11.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "De pie sobre la esterilla, sujeta el Ring-Con extendido horizontalmente al frente mientras realizas una sentadilla controlada. Activa cuádriceps y glúteos manteniendo el torso recto.",
+        spinalSafetyNote: "Sujetar el Ring-Con extendido al frente crea un contrapeso reflejo que erige la caja torácica e impide flexionar la espalda dorsal, reduciendo a cero la presión sobre los discos D7-D8 y D10-D11 sin necesidad de soporte externo.",
         targetMuscles: ["Cuádriceps", "Glúteos", "Erectores Espinales", "Core"],
         steps: [
-          "Colócate de pie delante de una silla estable, con los pies a la anchura de hombros y puntas ligeramente hacia afuera.",
+          "Colócate de pie sobre la esterilla con los pies a la anchura de hombros y puntas ligeramente hacia afuera.",
           "Sujeta el Ring-Con con ambas manos y extiéndelo horizontalmente al frente a la altura del esternón.",
-          "Inhala, empuja la cadera hacia atrás y flexiona las rodillas hasta rozar ligeramente el asiento de la silla sin dejarte caer.",
+          "Inhala, empuja la cadera hacia atrás y flexiona las rodillas bajando con control manteniendo el pecho alto y la columna neutra.",
           "Exhala y empuja fuerte contra el suelo a través de los talones para volver arriba, manteniendo el Ring-Con firme al frente."
         ],
-        commonMistakes: ["Dejarse caer bruscamente en el asiento", "Bajar los brazos perdiendo la línea del Ring-Con", "Meter las rodillas hacia adentro"],
+        commonMistakes: ["Bajar los brazos perdiendo la línea del Ring-Con", "Meter las rodillas hacia adentro", "Despegar los talones del suelo"],
         visualType: "ring_squat"
       },
       {
-        id: "remo_banda_puerta",
+        id: "remo_isometrico_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/resistance-band-seated-straight-back-row.gif",
-        name: "Remo Horizontal con Banda Elástica (Retracción Escapular)",
+        name: "Remo Escapular Isométrico con Ring-Con en Esterilla",
         sets: 3,
-        reps: "12 - 15",
+        reps: "10 - 12 (3s contracción)",
         rest: "45 seg",
-        equipment: "Banda Elástica",
-        technique: "Ancla la banda en una puerta o pásala por los pies. Tira de los codos pegados al cuerpo y junta fuerte las escápulas 1 segundo.",
-        spinalSafetyNote: "Al tirar de forma horizontal sin peso muerto, fortaleces el dorsal ancho y los romboides sin compresión axial vertical. Quita tensión de la hipercifosis dorsal.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sentado erguido en la esterilla con piernas cómodas, sujeta el Ring-Con con codos flexionados pegados a los costados. Tracciona hacia afuera y junta fuerte las escápulas 3 segundos.",
+        spinalSafetyNote: "Al realizar la tracción isométrica sobre la esterilla sin bandas elásticas, fortaleces el dorsal ancho y los romboides con máxima estabilidad y cero compresión axial sobre D7-D8.",
         targetMuscles: ["Dorsal Ancho", "Romboides", "Trapecio Medio", "Bíceps"],
         steps: [
-          "Ancla la banda a media altura (en el pomo de una puerta cerrada) o siéntate en el suelo con las piernas estiradas pasando la banda por las plantas de los pies.",
-          "Agarra los extremos con ambas manos, mantén la espalda totalmente erguida y los hombros relajados abajo.",
-          "Exhala y tira de los codos hacia atrás pegados a las costillas, juntando escápulas como si atraparas una moneda entre los omóplatos.",
-          "Mantén la contracción máxima 1 segundo y regresa despacio inhalando."
+          "Siéntate con la espalda erguida sobre la esterilla con piernas flexionadas o cruzadas y hombros relajados abajo.",
+          "Agarra los laterales del Ring-Con frente a tu ombligo con codos flexionados y pegados a las costillas.",
+          "Exhala y tira con fuerza de las manos hacia afuera ensanchando el aro, llevando los codos atrás y juntando escápulas como si atraparas una moneda entre los omóplatos.",
+          "Mantén la contracción máxima durante 3 segundos respirando continuo, y relaja despacio inhalando."
         ],
-        commonMistakes: ["Encoger los hombros hacia las orejas", "Balancear el torso hacia atrás para hacer fuerza de inercia", "Separar los codos excesivamente"],
-        visualType: "band_row"
+        commonMistakes: ["Encoger los hombros hacia las orejas", "Balancear el torso hacia atrás", "Separar los codos excesivamente"],
+        visualType: "ring_pull"
       },
       {
         id: "traccion_escapular_ring",
@@ -114,12 +114,12 @@ export const CARLOS_WORKOUT_SCHEDULE = {
         sets: 3,
         reps: "8 - 10 (3s aguante)",
         rest: "45 seg",
-        equipment: "Ring-Con (Switch)",
+        equipment: "Ring-Con + Esterilla",
         technique: "Sujeta el aro frente al pecho e intenta tirar hacia afuera separándolo. Aguanta 3 segundos de tensión máxima apretando omóplatos.",
         spinalSafetyNote: "La contracción isométrica pura activa los romboides y trapecio inferior sin mover la articulación vertebral. Es el ejercicio más seguro para despertar la espalda dorsal debilitada.",
         targetMuscles: ["Romboides", "Trapecio Medio/Inferior", "Deltoides Posterior"],
         steps: [
-          "Colócate de pie o sentado erguido en una silla con los pies bien apoyados.",
+          "Colócate de pie o sentado erguido sobre la esterilla con la espalda completamente alargada.",
           "Agarra los agarres acolchados del Ring-Con por dentro o firme por los laterales frente a tu pecho, codos a 90°.",
           "Tira hacia afuera con ambas manos como si quisieras ensanchar el aro, apretando las escápulas hacia abajo y atrás.",
           "Mantén la tensión continua durante 3 segundos respirando con normalidad, luego relaja 2 segundos antes de la siguiente repetición."
@@ -148,21 +148,21 @@ export const CARLOS_WORKOUT_SCHEDULE = {
         visualType: "ring_glute_bridge"
       },
       {
-        id: "deadbug_neutro",
+        id: "deadbug_ring_con",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/dead-bug.gif",
-        name: "Deadbug (Bicho Muerto con Columna Neutra)",
+        name: "Deadbug McGill con Presión de Ring-Con",
         sets: 3,
-        reps: "8 - 10 alternadas",
+        reps: "8 - 10 alternadas (2s pausa)",
         rest: "45 seg",
-        equipment: "Esterilla",
-        technique: "Espalda baja y dorsal pegada a la esterilla. Extiende brazo derecho y pierna izquierda despacio sin despegar la columna del suelo.",
-        spinalSafetyNote: "Entrena la faja abdominal profunda (transverso) en posición de reposo absoluto para los discos D7-D8 y D10-D11. Cero flexión del cuello ni del torso.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Tumbado en la esterilla, sujeta el Ring-Con entre las manos hacia el techo mientras extiendes alternadamente pierna y brazo opuestos con la columna neutra pegada al suelo.",
+        spinalSafetyNote: "La contra-tensión del Ring-Con activa la faja abdominal profunda (transverso) en descarga articular absoluta para D7-D8 y D10-D11. Cero flexión cervical ni dorsal.",
         targetMuscles: ["Transverso Abdominal", "Oblicuos", "Coordinación Core"],
         steps: [
-          "Túmbate boca arriba con brazos apuntando al techo y rodillas flexionadas a 90 grados sobre las caderas.",
+          "Túmbate boca arriba en la esterilla con el Ring-Con sostenido con ambas manos frente al pecho y rodillas flexionadas a 90 grados.",
           "Pega toda la espalda al suelo, activando el abdomen como si cerraras una cremallera.",
-          "Inhala y baja lentamente el brazo derecho hacia atrás y la pierna izquierda hacia adelante rozando el suelo.",
-          "Exhala activando el ombligo hacia dentro para regresar al centro. Alterna con el brazo y pierna opuestos."
+          "Inhala y baja lentamente una pierna hacia adelante rozando el suelo mientras mantienes el Ring-Con firme y estable.",
+          "Exhala activando el ombligo hacia dentro para regresar al centro. Alterna con la pierna opuesta sin despegar la espalda del suelo."
         ],
         commonMistakes: ["Arquear la espalda y separarla del suelo", "Moverse rápido por inercia", "Tensar el cuello o la mandíbula"],
         visualType: "deadbug"
@@ -254,50 +254,49 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     title: "Miércoles: Tren Inferior & Core Antilesión 360°",
     duration: 35,
     location: "En casa",
-    equipment: ["Ring-Con (Switch)", "Banda Elástica", "Silla", "Esterilla"],
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
     type: "Estabilidad & Tren Inferior",
     focus: "Glúteos, cuádriceps, anti-rotación y faja abdominal McGill",
     exercises: [
       {
-        id: "split_squat_asistido",
+        id: "split_squat_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/quads/band-single-leg-split-squat.gif",
-        name: "Zancadas Estáticas Asistidas (Split Squat)",
+        name: "Zancada Estática (Split Squat) con Contrapeso de Ring-Con",
         sets: 3,
         reps: "8 - 10 / pierna",
         rest: "60 seg",
-        equipment: "Silla / Pared (Apoyo)",
-        technique: "Paso largo hacia atrás. Baja la rodilla trasera hacia el suelo manteniendo el torso 100% vertical, apoyando una mano si necesitas equilibrio.",
-        spinalSafetyNote: "Aísla el tren inferior de forma unilateral sin ninguna barra sobre los hombros ni impacto. Cero estrés en las hernias dorsales.",
-        targetMuscles: ["Cuádriceps", "Glúteos", "Estabilizadores de Cadera"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sobre la esterilla, da un paso amplio atrás. Sujeta el Ring-Con extendido al frente a la altura del esternón como timón de equilibrio. Baja flexionando ambas rodillas a 90° con el torso 100% vertical.",
+        spinalSafetyNote: "Aísla el tren inferior de forma unilateral. El Ring-Con al frente crea un contrapeso reflejo que erige el torso, anulando el estrés en las hernias dorsales D7-D11 sin necesidad de apoyos externos.",
+        targetMuscles: ["Cuádriceps", "Glúteos", "Estabilizadores de Cadera", "Core"],
         steps: [
-          "Colócate de pie junto a una silla o pared para apoyar ligeramente una mano si necesitas equilibrio.",
+          "Colócate de pie sobre la esterilla sujetando el Ring-Con con ambas manos frente al pecho.",
           "Da un paso amplio hacia atrás con una pierna, apoyando el metatarso con el talón elevado.",
-          "Baja verticalmente flexionando ambas rodillas hasta que la rodilla trasera quede a unos centímetros del suelo formando ángulos de 90°.",
-          "Empuja con el talón delantero para volver arriba manteniendo el pecho alto y la columna neutra."
+          "Baja verticalmente flexionando ambas rodillas hasta que la rodilla trasera quede a un par de centímetros de la esterilla formando ángulos de 90°.",
+          "Empuja con el talón delantero para volver arriba manteniendo el Ring-Con firme al frente y la columna neutra."
         ],
-        commonMistakes: ["Inclinarse excesivamente hacia adelante", "Golpear la rodilla trasera contra el suelo", "Dejar que la rodilla delantera sobrepase la punta del pie descontroladamente"],
+        commonMistakes: ["Inclinarse excesivamente hacia adelante", "Golpear la rodilla trasera contra la esterilla", "Dejar que la rodilla delantera sobrepase la punta del pie descontroladamente"],
         visualType: "split_squat"
       },
       {
-        id: "press_pallof_banda",
+        id: "press_antirotacion_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/band-horizontal-pallof-press.gif",
-        name: "Press Pallof con Banda Elástica (Anti-Rotación)",
+        name: "Press Anti-Rotación Isométrico con Ring-Con en Esterilla",
         sets: 3,
-        reps: "10 - 12 / lado",
+        reps: "10 - 12 / lado (3s contracción)",
         rest: "45 seg",
-        equipment: "Banda Elástica + Puerta",
-        technique: "De pie, de perfil a la puerta. Sujeta la banda con ambas manos pegada al esternón y estira los brazos al frente resistiendo que la goma te gire.",
-        spinalSafetyNote: "Imprescindible para tu hernia lateral izquierda D10-D11: enseña a los oblicuos y al transverso a frenar las torsiones, eliminando los peligrosos cizallamientos rotacionales.",
-        targetMuscles: ["Oblicuos", "Transverso Abdominal", "Cuadrado Lumbar"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "En la esterilla, de rodillas o en posición de caballero, extiende el Ring-Con al frente. Comprime el aro aplicando una fuerza anti-rotación isométrica continua, impidiendo cualquier torsión de torso.",
+        spinalSafetyNote: "Imprescindible para tu hernia lateral izquierda D10-D11: enseña a los oblicuos y al transverso a frenar las fuerzas de torsión sin cizallamiento vertebral ni bandas elásticas.",
+        targetMuscles: ["Oblicuos", "Transverso Abdominal", "Cuadrado Lumbar", "Serratos"],
         steps: [
-          "Ancla la banda elástica en una puerta a la altura del pecho. Colócate de pie de lado al punto de anclaje.",
-          "Agarra la banda con ambas manos entrecruzadas, pégala a tu esternón y da un paso lateral para generar tensión media.",
-          "Pies a la anchura de hombros, rodillas semiflexionadas y glúteos activos.",
-          "Exhala y empuja los brazos en línea recta hacia adelante, aguantando 2 segundos la fuerza de la goma que intenta girarte.",
-          "Inhala y regresa los puños al pecho de forma lenta y controlada."
+          "Colócate de rodillas erguido o en posición de zancada/caballero sobre la esterilla.",
+          "Sujeta el Ring-Con con ambas manos extendido al frente a la altura del esternón.",
+          "Exhala y comprime el aro firmemente mientras activas la faja abdominal 360°, resistiendo cualquier oscilación lateral durante 3 segundos.",
+          "Inhala relajando la presión y repite manteniendo la pelvis y hombros perfectamente alineados."
         ],
-        commonMistakes: ["Girar el torso o las caderas hacia el anclaje", "Bloquear la respiración", "Subir los hombros hacia las orejas"],
-        visualType: "pallof_press"
+        commonMistakes: ["Girar el torso o las caderas", "Bloquear la respiración", "Subir los hombros hacia las orejas"],
+        visualType: "ring_chest_core"
       },
       {
         id: "prensa_pectoral_core_ring",
@@ -305,12 +304,12 @@ export const CARLOS_WORKOUT_SCHEDULE = {
         sets: 3,
         reps: "10 reps (3s compresión)",
         rest: "45 seg",
-        equipment: "Ring-Con (Switch)",
+        equipment: "Ring-Con + Esterilla",
         technique: "Sujeta el Ring-Con con ambas manos frente al pecho. Comprime el aro hacia adentro mientras exhalas vaciando el abdomen y activando el transverso.",
         spinalSafetyNote: "La compresión frontal del aro genera una co-activación refleja del abdomen profundo y pectoral sin mover las vértebras dorsales ni comprimir los discos.",
         targetMuscles: ["Pectoral", "Transverso Abdominal", "Deltoides Anterior", "Serrato"],
         steps: [
-          "Colócate de pie o sentado erguido, con los hombros relajados hacia atrás y abajo.",
+          "Colócate de pie o sentado erguido sobre la esterilla, con los hombros relajados hacia atrás y abajo.",
           "Sujeta el Ring-Con horizontal frente a tu pecho apoyando las palmas en las almohadillas laterales.",
           "Exhala lentamente por la boca y aprieta el aro hacia adentro con fuerza, sintiendo cómo se endurece toda la faja abdominal.",
           "Mantén la compresión durante 3 segundos, inhala relajando la presión y repite."
@@ -325,7 +324,7 @@ export const CARLOS_WORKOUT_SCHEDULE = {
         reps: "8 - 10 / lado (3s pausa)",
         rest: "45 seg",
         equipment: "Esterilla",
-        technique: "En cuadrupedia, extiende a la vez brazo derecho y pierna izquierda hasta formar una línea recta con el cuerpo. Aguanta 3 segundos arriba.",
+        technique: "En cuadrupedia sobre la esterilla, extiende a la vez brazo derecho y pierna izquierda hasta formar una línea recta con el cuerpo. Aguanta 3 segundos arriba.",
         spinalSafetyNote: "Considerado por la biomecánica deportiva mundial (Prof. Stuart McGill) el mejor ejercicio para rehabilitación discal dorsal y lumbar. Compresión discal mínima con máxima activación de multífidos.",
         targetMuscles: ["Multífidos", "Erectores Espinales Dorsales", "Glúteo Mayor", "Deltoides"],
         steps: [
@@ -345,7 +344,7 @@ export const CARLOS_WORKOUT_SCHEDULE = {
         reps: "20 - 30 seg / lado",
         rest: "45 seg",
         equipment: "Esterilla",
-        technique: "Apoya el antebrazo en el suelo y eleva la cadera alineando tobillos, rodillas, cadera y hombro. Si cuesta, apoya las rodillas flexionadas.",
+        technique: "Apoya el antebrazo en la esterilla y eleva la cadera alineando tobillos, rodillas, cadera y hombro. Si cuesta, apoya las rodillas flexionadas.",
         spinalSafetyNote: "Fortalece el cuadrado lumbar y los oblicuos laterales, vital para sostener la vértebra D10 y proteger la hernia posterolateral izquierda.",
         targetMuscles: ["Cuadrado Lumbar", "Oblicuos", "Glúteo Medio", "Dorsal Ancho"],
         steps: [
@@ -427,48 +426,48 @@ export const CARLOS_WORKOUT_SCHEDULE = {
     title: "Viernes: Espalda Alta, Postura & Escápulas (Alivio D7-D11)",
     duration: 35,
     location: "En casa",
-    equipment: ["Ring-Con (Switch)", "Banda Elástica", "Silla", "Esterilla"],
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
     type: "Tonificación Postural & Escápulas",
     focus: "Trapecio inferior, romboides, rotadores externos y tríceps",
     exercises: [
       {
-        id: "face_pull_banda",
+        id: "face_pull_isometrico_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-standing-rear-delt-row.gif",
-        name: "Face Pull con Banda Elástica (Alineación Postural)",
+        name: "Face Pull Isométrico / Corona Escapular con Ring-Con",
         sets: 3,
-        reps: "12 - 15",
+        reps: "10 - 12 (3s contracción)",
         rest: "45 seg",
-        equipment: "Banda Elástica + Puerta",
-        technique: "Ancla la banda a la altura de los ojos. Tira hacia la frente separando las manos y abriendo codos hacia afuera.",
-        spinalSafetyNote: "El mejor ejercicio para contrarrestar la postura cifótica de oficina. Fortalece el trapecio inferior y rotadores externos, abriendo espacio en D7-D8.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "De pie o de rodillas en la esterilla, eleva el Ring-Con a la altura de la frente con los codos abiertos a 90°. Tira fuertemente de las manos hacia afuera ensanchando el aro y juntando los omóplatos con rotación externa de hombros.",
+        spinalSafetyNote: "Sustituye a la perfección el face pull con goma: fortalece el trapecio inferior, romboides y manguito rotador sin tirones asimétricos, abriendo la cifosis dorsal y aliviando D7-D8.",
         targetMuscles: ["Deltoides Posterior", "Trapecio Inferior/Medio", "Manguito Rotador", "Romboides"],
         steps: [
-          "Ancla la banda elástica a la altura de los ojos o frente en una puerta.",
-          "Agarra los extremos con las palmas mirándose o hacia abajo y da un paso atrás para crear tensión.",
-          "Tira de la banda directamente hacia tu frente o nariz, separando las manos y llevando los codos altos y hacia atrás.",
-          "Al final del movimiento realiza una suave rotación externa (puños hacia arriba), aguanta 1 segundo y regresa despacio."
+          "Colócate de pie o de rodillas erguido sobre la esterilla con el abdomen activo.",
+          "Eleva el Ring-Con con ambas manos a la altura de tu frente o vista, con los codos flexionados.",
+          "Exhala y realiza una tracción isométrica continua hacia afuera ensanchando el aro, llevando los codos hacia atrás y juntando escápulas.",
+          "Aguanta 3 segundos de contracción máxima periescapular y relaja inhalando despacio."
         ],
-        commonMistakes: ["Tirar hacia el pecho en vez de hacia la frente", "Bajar los codos", "Tirar con impulso de la espalda baja"],
-        visualType: "face_pull"
+        commonMistakes: ["Bajar los codos al pecho", "Echar el cuello hacia adelante", "Arquear las lumbares"],
+        visualType: "ring_pull"
       },
       {
-        id: "traccion_w_banda",
-        name: "Tracción en 'W' con Banda Elástica (Retracción Escapular Baja)",
+        id: "traccion_w_ring",
+        name: "Tracción en 'W' Isométrica con Ring-Con",
         sets: 3,
-        reps: "12",
+        reps: "10 - 12 (3s aguante)",
         rest: "45 seg",
-        equipment: "Banda Elástica",
-        technique: "Sujeta la banda con ambas manos delante del pecho. Tira hacia afuera bajando codos hacia las costillas formando una letra 'W' con los brazos.",
-        spinalSafetyNote: "Activa con gran precisión el trapecio inferior y los serratos, estabilizando la escápula sobre la caja torácica sin sobrecarga vertebral.",
-        targetMuscles: ["Trapecio Inferior", "Romboides", "Dorsal Ancho"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sujeta el Ring-Con con ambas manos frente al pecho. Baja los codos pegándolos a las costillas para formar una 'W' con los brazos, traccionando el aro hacia afuera y clavando las escápulas hacia abajo.",
+        spinalSafetyNote: "Fija y deprime la escápula sobre la parrilla costal, activando serratos y trapecio inferior con cero compresión vertical.",
+        targetMuscles: ["Trapecio Inferior", "Romboides", "Dorsal Ancho", "Serrato"],
         steps: [
-          "De pie, con las rodillas suaves y el abdomen activo, sujeta la banda elástica con ambas manos a unos 25 cm de distancia.",
-          "Comienza con los brazos semiflexionados frente a ti.",
-          "Tira de la banda hacia afuera mientras flexionas los codos y los pegas a los costados, formando una clara letra 'W' con tus brazos.",
-          "Junta las escápulas atrás y abajo durante 2 segundos, y regresa inhalando.",
+          "De pie sobre la esterilla con rodillas semiflexionadas y faja core activada.",
+          "Sujeta el Ring-Con a la altura de las clavículas y tira de las manos hacia afuera mientras bajas los codos a las costillas.",
+          "Forma una 'W' con tus brazos, apretando los omóplatos hacia abajo y atrás durante 3 segundos.",
+          "Vuelve controladamente a la posición inicial inhalando."
         ],
-        commonMistakes: ["Subir los hombros hacia el cuello", "Arquear la zona lumbar", "Perder la tensión en la banda"],
-        visualType: "w_extension"
+        commonMistakes: ["Encoger los hombros hacia arriba", "Arquear la espalda lumbar", "Perder la contracción en los omóplatos"],
+        visualType: "ring_pull"
       },
       {
         id: "elevaciones_yt_prono",
@@ -495,12 +494,12 @@ export const CARLOS_WORKOUT_SCHEDULE = {
         sets: 3,
         reps: "10 reps (3s aguante)",
         rest: "45 seg",
-        equipment: "Ring-Con (Switch)",
+        equipment: "Ring-Con + Esterilla",
         technique: "Sujeta el aro con ambas manos frente al pecho y tira hacia afuera intentando ensancharlo durante 3 segundos.",
         spinalSafetyNote: "Fortalecimiento isométrico puro de la musculatura periescapular sin ningún impacto ni compresión discal.",
         targetMuscles: ["Romboides", "Deltoides Posterior", "Trapecio Medio"],
         steps: [
-          "De pie erguido, sujeta el Ring-Con frente al pecho con codos a 90 grados.",
+          "De pie erguido sobre la esterilla, sujeta el Ring-Con frente al pecho con codos a 90 grados.",
           "Tira hacia afuera con ambas manos como si intentaras ensanchar el aro.",
           "Mantén 3 segundos la tensión escapular respirando fluido y relaja."
         ],
@@ -508,24 +507,24 @@ export const CARLOS_WORKOUT_SCHEDULE = {
         visualType: "ring_pull"
       },
       {
-        id: "fondos_triceps_silla",
+        id: "prensa_triceps_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/bench-dip-on-floor.gif",
-        name: "Fondos de Tríceps en Silla Asistidos",
+        name: "Prensa & Extensión de Tríceps con Ring-Con en Esterilla",
         sets: 3,
-        reps: "8 - 10",
-        rest: "60 seg",
-        equipment: "Silla",
-        technique: "Manos apoyadas en el borde de la silla, pies planos en el suelo con rodillas a 90°. Flexiona los codos hacia atrás y empuja con los tríceps.",
-        spinalSafetyNote: "Mantén la espalda rozando el borde de la silla para que no se separe el torso. Al tener los pies firmes en el suelo, regulas exactamente cuánto peso levantas.",
-        targetMuscles: ["Tríceps", "Deltoides Anterior", "Pectoral Menor"],
+        reps: "10 - 12 (3s compresión)",
+        rest: "45 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sentado erguido o de rodillas en la esterilla, sujeta el Ring-Con frente al pecho o junto a las caderas con codos flexionados a 90°. Comprime el aro firmemente hacia adentro activando tríceps y estabilizadores escapulares.",
+        spinalSafetyNote: "Elimina la excesiva hiperextensión anterior de hombro que provocan los fondos de silla. Cero compresión en columna, trabajo limpio y seguro de tríceps.",
+        targetMuscles: ["Tríceps Braquial", "Deltoides Posterior", "Estabilizadores Escapulares"],
         steps: [
-          "Siéntate en el borde de una silla sólida y apoya las palmas junto a tus caderas con los dedos hacia adelante.",
-          "Adelanta los pies manteniendo las rodillas a 90 grados y los pies totalmente apoyados en el suelo.",
-          "Desplaza los glúteos fuera del asiento y flexiona los codos hacia atrás (no hacia afuera) hasta unos 90 grados, manteniendo la espalda muy cerca de la silla.",
-          "Exhala y empuja fuerte con las palmas para extender los brazos hasta la posición inicial."
+          "Siéntate erguido sobre la esterilla con la columna alineada y abdomen activo.",
+          "Coloca las palmas de las manos en los agarres del Ring-Con frente al pecho con codos flexionados y pegados a los costados.",
+          "Exhala y comprime el aro firmemente hacia adentro concentrando el esfuerzo en los tríceps.",
+          "Mantén la compresión durante 3 segundos respirando continuo, y relaja despacio."
         ],
-        commonMistakes: ["Alejar la espalda de la silla hacia adelante", "Abrir los codos en exceso", "Hundir la cabeza entre los hombros"],
-        visualType: "chair_dips"
+        commonMistakes: ["Encorvar la espalda al apretar", "Subir los hombros", "Contener la respiración"],
+        visualType: "ring_chest_core"
       }
     ]
   },
@@ -650,106 +649,106 @@ export const ANDREA_WORKOUT_SCHEDULE = {
     title: "Lunes: Tren Inferior & Glúteos Esculpidos (Andrea)",
     duration: 35,
     location: "En casa",
-    equipment: ["Banda Elástica", "Silla", "Esterilla"],
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
     type: "Tonificación Piernas & Glúteos",
     focus: "Activación de glúteo medio, cuádriceps, isquios y abdomen firme",
     exercises: [
       {
-        id: "andrea_sentadilla_banda",
+        id: "andrea_sentadilla_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-squat.gif",
-        name: "Sentadilla Profunda con Banda Elástica",
+        name: "Sentadilla Profunda con Compresión de Ring-Con",
         sets: 3,
         reps: "12 - 15",
         rest: "45 seg",
-        equipment: "Banda Elástica",
-        technique: "Coloca la banda circular por encima de las rodillas. Abre las rodillas empujando hacia afuera mientras bajas y aprieta glúteos arriba.",
-        focusTip: "Mantén tensión continua en la banda elástica empujando las rodillas hacia afuera en todo el rango de recorrido.",
-        targetMuscles: ["Glúteo Mayor", "Glúteo Medio", "Cuádriceps", "Core"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sujeta el Ring-Con con ambas manos frente al pecho. Aplica una compresión continua sobre el aro mientras desciendes en sentadilla profunda con espalda erguida.",
+        focusTip: "La compresión frontal del Ring-Con activa simultáneamente el core y pectorales mientras esculpes piernas y glúteos.",
+        targetMuscles: ["Glúteo Mayor", "Cuádriceps", "Aductores", "Core"],
         steps: [
-          "Coloca la banda de resistencia elástica 5 cm por encima de tus rodillas.",
-          "Separa los pies a la anchura de hombros con puntas orientadas 30° hacia afuera.",
-          "Inhala, empuja la cadera hacia atrás y flexiona rodillas hasta que los muslos queden paralelos al suelo.",
-          "Exhala empujando contra el suelo a través de los talones y aprieta fuertemente los glúteos al llegar arriba."
+          "Colócate de pie sobre la esterilla con los pies a la anchura de hombros y puntas ligeramente abiertas.",
+          "Sujeta el Ring-Con horizontal frente al pecho con ambas manos.",
+          "Inhala, empuja la cadera atrás y flexiona rodillas bajando con control mientras aplicas una suave compresión al aro.",
+          "Exhala empujando a través de los talones y aprieta fuertemente los glúteos arriba."
         ],
-        commonMistakes: ["Dejar que las rodillas colapsen hacia adentro (valgo)", "Despegar los talones del suelo", "Arquear excesivamente la espalda"],
+        commonMistakes: ["Dejar que las rodillas colapsen hacia adentro", "Despegar los talones del suelo", "Arquear excesivamente la espalda"],
         visualType: "ring_squat"
       },
       {
-        id: "andrea_hip_thrust_banda",
+        id: "andrea_hip_thrust_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-hip-lift.gif",
-        name: "Puente de Glúteos / Hip Thrust con Banda",
+        name: "Puente de Glúteos con Compresión de Ring-Con",
         sets: 3,
         reps: "15 reps (2s pausa arriba)",
         rest: "45 seg",
-        equipment: "Banda Elástica + Esterilla",
-        technique: "Tumbada en la esterilla con la banda en las rodillas, eleva la pelvis contrayendo glúteos al máximo durante 2 segundos arriba.",
-        focusTip: "La clave está en la pausa isométrica de 2 segundos arriba: aprieta los glúteos como si sostuvieras una moneda entre ellos.",
-        targetMuscles: ["Glúteo Mayor", "Isquiosurales", "Core Inferior"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "Tumbada en la esterilla, coloca el Ring-Con entre tus rodillas. Comprime el aro hacia adentro mientras elevas la cadera contrayendo glúteos al máximo.",
+        focusTip: "Apretar el aro activa los aductores y estabiliza la pelvis, disparando la activación del glúteo medio y mayor.",
+        targetMuscles: ["Glúteo Mayor", "Aductores", "Isquiosurales", "Core Inferior"],
         steps: [
-          "Túmbate boca arriba sobre la esterilla con rodillas flexionadas y pies apoyados a la anchura de caderas.",
-          "Coloca la banda sobre las rodillas manteniendo una ligera apertura hacia afuera.",
+          "Túmbate boca arriba en la esterilla con rodillas flexionadas y pies apoyados a la anchura de caderas.",
+          "Coloca el Ring-Con entre tus rodillas aplicando una suave presión continua hacia adentro.",
           "Apoya los talones con firmeza y eleva las caderas hasta formar una línea recta de rodillas a hombros.",
-          "Sostén la contracción en el punto más alto durante 2 segundos y desciende de forma controlada sin tocar del todo el suelo."
+          "Sostén la contracción en la cima 2 segundos apretando glúteos y desciende con control."
         ],
-        commonMistakes: ["Hiperextender la zona lumbar en lugar de apretar el glúteo", "Juntar las rodillas al subir", "Hacer repeticiones rápidas con rebote"],
+        commonMistakes: ["Hiperextender la zona lumbar en lugar de apretar el glúteo", "Dejar de presionar el Ring-Con", "Hacer repeticiones rápidas con rebote"],
         visualType: "ring_glute_bridge"
       },
       {
-        id: "andrea_zancada_bulgara",
+        id: "andrea_zancada_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/quads/band-single-leg-split-squat.gif",
-        name: "Zancada Búlgara / Split Squat en Silla",
+        name: "Zancada Estática con Contrapeso de Ring-Con",
         sets: 3,
         reps: "10 - 12 / pierna",
         rest: "60 seg",
-        equipment: "Silla + Esterilla",
-        technique: "Apoya el empeine trasero en el asiento de la silla. Desciende flexionando la pierna delantera con el torso ligeramente inclinado al frente para enfatizar glúteo.",
-        focusTip: "Inclinar el torso unos 15° hacia adelante transfiere la mayor parte de la carga directamente al glúteo de la pierna adelantada.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Da un paso atrás en la esterilla. Sujeta el Ring-Con extendido al frente como estabilizador mientras desciendes flexionando ambas rodillas a 90°.",
+        focusTip: "Mantén el Ring-Con alineado con el esternón; te aportará estabilidad total para focalizar toda la fuerza en el glúteo adelantado.",
         targetMuscles: ["Glúteo Mayor", "Cuádriceps", "Isquios", "Equilibrio & Estabilidad"],
         steps: [
-          "Colócate a un metro de espaldas a la silla y apoya el empeine de un pie sobre el asiento.",
-          "Mantén el pie delantero completamente plantado en el suelo con el peso en el talón.",
+          "Colócate sobre la esterilla sujetando el Ring-Con con ambas manos frente al pecho.",
+          "Da un paso amplio hacia atrás apoyando el metatarso con el talón elevado.",
           "Desciende flexionando la rodilla delantera hasta que el muslo quede casi paralelo al suelo.",
-          "Empuja con el talón delantero para volver a la posición inicial manteniendo la estabilidad."
+          "Empuja con el talón delantero para volver arriba manteniendo el Ring-Con firme y estable."
         ],
-        commonMistakes: ["Colocar el pie delantero demasiado cerca de la silla", "Empujar con el pie trasero en lugar de con el delantero", "Perder el equilibrio por mirar a los lados"],
+        commonMistakes: ["Inclinarse excesivamente hacia adelante", "Golpear la rodilla trasera contra la esterilla", "Perder el equilibrio por mirar a los lados"],
         visualType: "split_squat"
       },
       {
-        id: "andrea_monster_walk",
+        id: "andrea_abduccion_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/monster-walk.gif",
-        name: "Monster Walk Lateral con Banda",
+        name: "Abducción de Cadera en Esterilla con Prensa de Ring-Con",
         sets: 3,
-        reps: "15 pasos / lado",
+        reps: "12 - 15 / pierna",
         rest: "45 seg",
-        equipment: "Banda Elástica",
-        technique: "En posición de media sentadilla (cuarto de sentadilla), da pasos laterales manteniendo la banda en tensión continua para activar glúteo medio.",
-        focusTip: "No juntes los pies al cerrar el paso; mantén siempre al menos 20 cm de separación para que la banda nunca pierda tensión.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Tumbada de lado en la esterilla, coloca el Ring-Con sobre la parte externa del muslo superior sujetándolo con la mano, y eleva la pierna venciendo la resistencia del aro.",
+        focusTip: "Movimiento lento y controlado: siente el ardor en la porción lateral del glúteo (glúteo medio).",
         targetMuscles: ["Glúteo Medio", "Glúteo Menor", "Tensor de la Fascia Lata", "Estabilidad de Cadera"],
         steps: [
-          "Coloca la banda circular alrededor de los muslos (o en tobillos para mayor intensidad).",
-          "Adopta una posición atlética: rodillas semiflexionadas, cadera atrás y pecho erguido.",
-          "Da un paso lateral amplio hacia la derecha empujando con la rodilla y el talón.",
-          "Sigue con el pie izquierdo sin permitir que la banda pierda resistencia, repite 15 pasos y vuelve hacia el otro lado."
+          "Túmbate de lado en la esterilla con piernas extendidas y cabeza apoyada en el brazo inferior.",
+          "Apoya el Ring-Con contra la parte lateral del muslo superior sujetándolo con la mano libre.",
+          "Exhala y eleva la pierna superior aplicando una suave contra-presión con el aro durante 1-2 segundos.",
+          "Baja lentamente sin tocar por completo la pierna inferior y completa la serie antes de cambiar."
         ],
-        commonMistakes: ["Ponerse de pie entre pasos perdiendo la media sentadilla", "Girar los pies hacia afuera en exceso", "Dejar que la banda se destense"],
-        visualType: "monster_walk"
+        commonMistakes: ["Rotar la pelvis hacia atrás", "Mover la pierna con tirones rápidos", "Perder la alineación corporal"],
+        visualType: "side_plank"
       },
       {
         id: "andrea_donkey_kicks",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-bent-over-hip-extension.gif",
-        name: "Patada de Glúteo en Cuadrupedia con Banda",
+        name: "Patada de Glúteo Isométrica en Cuadrupedia",
         sets: 3,
         reps: "12 - 15 / pierna",
         rest: "45 seg",
-        equipment: "Banda Elástica + Esterilla",
-        technique: "En 4 puntos de apoyo en esterilla, empuja la planta del pie hacia el techo flexionando a 90°, concentrando la contracción en la parte alta del glúteo.",
+        equipment: "Esterilla",
+        technique: "En 4 puntos de apoyo en la esterilla, empuja la planta del pie hacia el techo con rodilla flexionada a 90°, concentrando la contracción en la parte alta del glúteo.",
         focusTip: "Imagina que quieres estampar la suela de tu zapatilla en el techo, sin balancear la pelvis ni arquear la espalda.",
-        targetMuscles: ["Glúteo Mayor (fibras superiores)", "Isquiotibiales", "Core Estabilizador"],
+        targetMuscles: ["Glúteo Mayor", "Isquiotibiales", "Core Estabilizador"],
         steps: [
           "Colócate en cuadrupedia sobre la esterilla con manos bajo hombros y rodillas bajo caderas.",
-          "Fija la banda elástica entre ambas piernas o en el hueco poplíteo de la pierna activa.",
-          "Con la rodilla flexionada a 90°, eleva el talón hacia el techo apretando el glúteo en la cima 1 segundo.",
-          "Baja de forma controlada sin apoyar la rodilla en el suelo y repite todas las repeticiones antes de cambiar de pierna."
+          "Con la rodilla flexionada a 90°, eleva el talón hacia el techo apretando el glúteo en la cima 2 segundos.",
+          "Baja de forma controlada sin apoyar la rodilla en el suelo.",
+          "Completa todas las repeticiones antes de cambiar de pierna."
         ],
         commonMistakes: ["Arquear la espalda lumbar al subir la pierna", "Abrir la cadera hacia el lado", "Usar impulso rápido en lugar de control"],
         visualType: "donkey_kick"
@@ -858,7 +857,7 @@ export const ANDREA_WORKOUT_SCHEDULE = {
     title: "Miércoles: Tren Superior & Brazos Definidos (Andrea)",
     duration: 35,
     location: "En casa",
-    equipment: ["Banda Elástica", "Silla", "Esterilla"],
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
     type: "Definición Tren Superior & Postura",
     focus: "Espalda esbelta, hombros redondeados, brazos tonificados y pecho firme",
     exercises: [
@@ -870,97 +869,97 @@ export const ANDREA_WORKOUT_SCHEDULE = {
         reps: "10 - 12",
         rest: "60 seg",
         equipment: "Esterilla",
-        technique: "Cuerpo alineado como una tabla. Desciende el pecho rozando el suelo con codos formando 45° respecto al torso.",
+        technique: "Cuerpo alineado como una tabla. Desciende el pecho rozando la esterilla con codos formando 45° respecto al torso.",
         focusTip: "Activa el abdomen y los glúteos para que tu cadera no se hunda; el pecho y la pelvis bajan y suben al mismo tiempo.",
         targetMuscles: ["Pectoral", "Tríceps", "Deltoides Anterior", "Core"],
         steps: [
-          "Colócate en posición de plancha en el suelo con manos separadas algo más del ancho de hombros (apoya rodillas si lo necesitas).",
+          "Colócate en posición de plancha en la esterilla con manos separadas algo más del ancho de hombros (apoya rodillas si lo necesitas).",
           "Inhala y desciende el pecho controladamente flexionando los codos hacia atrás a 45°.",
-          "Baja hasta que el pecho quede a un puño del suelo sin arquear la zona lumbar.",
+          "Baja hasta que el pecho quede a un puño de la esterilla sin arquear la zona lumbar.",
           "Exhala y empuja fuerte contra el suelo para volver a la posición inicial."
         ],
         commonMistakes: ["Abrir los codos a 90° en T (estresa los hombros)", "Dejar caer la cadera hacia el suelo", "Doblar el cuello hacia abajo"],
         visualType: "pushup"
       },
       {
-        id: "andrea_remo_banda",
+        id: "andrea_remo_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/resistance-band-seated-straight-back-row.gif",
-        name: "Remo Sentada / de Pie con Banda Elástica",
+        name: "Tracción Escapular & Remo con Ring-Con en Esterilla",
         sets: 3,
         reps: "12 - 15",
         rest: "45 seg",
-        equipment: "Banda Elástica + Silla",
-        technique: "Ancla la banda en los pies o en un punto fijo. Tira llevando los codos pegados al cuerpo y junta las escápulas al final.",
-        focusTip: "Inicia el movimiento juntando las escápulas atrás antes de flexionar los brazos. Sentirás la espalda media activarse.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sentada erguida sobre la esterilla, sujeta el Ring-Con por los laterales con codos flexionados y pegados al cuerpo. Tracciona fuertemente hacia afuera juntando escápulas 2 segundos.",
+        focusTip: "Inicia el movimiento juntando las escápulas atrás antes de flexionar los brazos. Sentirás la espalda media activarse y estilizarse.",
         targetMuscles: ["Dorsal Ancho", "Romboides", "Bíceps", "Deltoides Posterior"],
         steps: [
-          "Siéntate en la esterilla con piernas estiradas o de pie con rodillas semiflexionadas pasando la banda bajo los pies.",
-          "Sujeta los extremos de la banda manteniendo el pecho erguido y hombros abajo.",
-          "Tira de la banda hacia tu ombligo llevando los codos hacia atrás y apretando la espalda media 1 segundo.",
-          "Regresa lentamente resistiendo la tensión elástica sin redondear los hombros."
+          "Siéntate en la esterilla con la espalda completamente alargada y hombros abajo.",
+          "Sujeta el Ring-Con frente a tu ombligo con codos flexionados y pegados a los costados.",
+          "Exhala y tracciona hacia afuera ensanchando el aro mientras juntas los omóplatos con fuerza durante 2 segundos.",
+          "Regresa lentamente resistiendo la tensión sin encorvar los hombros."
         ],
-        commonMistakes: ["Elevar los hombros hacia las orejas", "Dar tirones con la espalda baja en lugar de tirar con brazos y dorsales"],
-        visualType: "band_row"
+        commonMistakes: ["Elevar los hombros hacia las orejas", "Balancear el tronco hacia atrás"],
+        visualType: "ring_pull"
       },
       {
-        id: "andrea_press_militar_banda",
+        id: "andrea_press_overhead_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-shoulder-press.gif",
-        name: "Press Militar de Hombros con Banda",
+        name: "Press Overhead con Compresión de Ring-Con",
         sets: 3,
         reps: "12 - 15",
         rest: "45 seg",
-        equipment: "Banda Elástica",
-        technique: "Pisa la banda con ambos pies y empuja las manos desde los hombros directamente hacia el techo sin arquear la espalda.",
-        focusTip: "Aprieta glúteos y abdomen mientras empujas hacia arriba para mantener una postura impecable y estilizada.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "De pie o de rodillas en la esterilla, eleva el Ring-Con sobre la cabeza y realiza compresiones rítmicas y controladas hacia adentro.",
+        focusTip: "Aprieta glúteos y abdomen mientras comprimes el aro para mantener una postura impecable y estilizada.",
         targetMuscles: ["Deltoides", "Trapecio Superior", "Tríceps", "Estabilidad Escapular"],
         steps: [
-          "Pisa el centro de la banda elástica con los pies a la anchura de hombros.",
-          "Lleva las manos a la altura de las clavículas con palmas hacia el frente.",
-          "Exhala y empuja las manos hacia el techo en línea vertical hasta extender casi por completo los codos.",
-          "Inhala y baja controladamente hasta la altura de los hombros."
+          "Colócate de rodillas o de pie erguida sobre la esterilla con el abdomen firme.",
+          "Eleva el Ring-Con sobre tu cabeza con los brazos extendidos y codos suaves.",
+          "Exhala y comprime el aro hacia adentro durante 2 segundos activando hombros y deltoides.",
+          "Inhala relajando la presión sin bajar los brazos y repite la secuencia."
         ],
-        commonMistakes: ["Arquear la espalda lumbar al empujar hacia arriba", "Bajar los codos demasiado por debajo de los hombros"],
+        commonMistakes: ["Arquear la espalda lumbar al empujar hacia arriba", "Bajar los brazos por debajo de la cabeza"],
         visualType: "shoulder_press"
       },
       {
-        id: "andrea_face_pull",
+        id: "andrea_face_pull_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-standing-rear-delt-row.gif",
-        name: "Face Pull con Banda para Postura & Hombros",
+        name: "Face Pull Isométrico con Ring-Con para Postura",
         sets: 3,
-        reps: "15",
+        reps: "12 - 15",
         rest: "45 seg",
-        equipment: "Banda Elástica",
-        technique: "Ancla la banda a la altura de la cabeza. Tira llevando las manos hacia las sienes con codos altos y abiertos hacia afuera.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sujeta el Ring-Con frente a la cara a la altura de los ojos. Tira hacia afuera abriendo codos hacia los lados y juntando omóplatos.",
         focusTip: "Excelente para abrir el pecho, corregir la postura del trabajo de oficina y redondear la parte posterior del hombro.",
         targetMuscles: ["Deltoides Posterior", "Manguito Rotador", "Trapecio Medio"],
         steps: [
-          "Sujeta la banda con agarre neutro o prono a la altura de los ojos.",
-          "Da un paso atrás para generar tensión constante en la goma.",
-          "Tira hacia tu cara separando las manos y llevando los codos bien altos hacia los lados.",
-          "Mantén 1 segundo la contracción rotando externamente los hombros y regresa con suavidad."
+          "De pie o sentada erguida sobre la esterilla, eleva el Ring-Con a la altura de los ojos.",
+          "Exhala y realiza una tracción isométrica hacia afuera como si quisieras ensanchar el aro.",
+          "Abre bien los codos hacia los lados y junta los omóplatos atrás durante 2 segundos.",
+          "Regresa con suavidad inhalando despacio."
         ],
-        commonMistakes: ["Bajar los codos pegados al cuerpo (se convierte en remo)", "Echar la cabeza hacia adelante para buscar la banda"],
-        visualType: "face_pull"
+        commonMistakes: ["Bajar los codos pegados al cuerpo", "Echar la cabeza hacia adelante para buscar el aro"],
+        visualType: "ring_pull"
       },
       {
-        id: "andrea_fondos_silla",
+        id: "andrea_triceps_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/bench-dip-on-floor.gif",
-        name: "Fondos de Tríceps en Silla",
+        name: "Prensa de Tríceps con Ring-Con en Esterilla",
         sets: 3,
-        reps: "10 - 12",
+        reps: "12 - 15",
         rest: "45 seg",
-        equipment: "Silla",
-        technique: "Apoya las manos en el borde de la silla y flexiona codos a 90° manteniendo la espalda cerca del asiento antes de extender.",
-        focusTip: "Mantén los codos apuntando hacia atrás, no permitas que se abran hacia los lados.",
-        targetMuscles: ["Tríceps Braquial", "Deltoides Anterior", "Pectoral Menor"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sentada o de rodillas en la esterilla, apoya las palmas en los agarres del Ring-Con pegado al torso y comprímelo hacia adentro activando la cara posterior del brazo.",
+        focusTip: "Concéntrate en apretar desde los tríceps con los codos pegados a las costillas para reafirmar brazos.",
+        targetMuscles: ["Tríceps Braquial", "Deltoides", "Pectoral Menor"],
         steps: [
-          "Siéntate en el borde de una silla firme y coloca las palmas junto a tus caderas.",
-          "Desplaza la cadera hacia adelante justo fuera del asiento manteniendo los pies plantados en el suelo.",
-          "Inhala y flexiona los codos hasta unos 90° manteniendo la espalda rozando el borde de la silla.",
-          "Exhala y empuja con fuerza las palmas para extender los brazos y volver arriba."
+          "Siéntate erguida sobre la esterilla con la columna alargada.",
+          "Coloca el Ring-Con frente al pecho o abdomen con codos flexionados a 90°.",
+          "Exhala y comprime el aro hacia adentro sintiendo la activación directa en los tríceps.",
+          "Sostén 2 segundos de contracción y relaja suavemente sin soltar el aro."
         ],
-        commonMistakes: ["Alejar la cadera de la silla (sobrecarga el hombro)", "Bajar demasiado profundo provocando pellizco articular"],
-        visualType: "chair_dips"
+        commonMistakes: ["Encorvar los hombros", "Comprimir solo con las muñecas en lugar de con los brazos"],
+        visualType: "ring_chest_core"
       }
     ]
   },
@@ -1075,69 +1074,69 @@ export const ANDREA_WORKOUT_SCHEDULE = {
     title: "Viernes: Full Body Tone & Glúteo Sculpt (Andrea)",
     duration: 35,
     location: "En casa",
-    equipment: ["Banda Elástica", "Silla", "Esterilla"],
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
     type: "Full Body Dinámico & Glúteos",
     focus: "Combinación de fuerza y tonificación metabólica de todo el cuerpo",
     exercises: [
       {
-        id: "andrea_peso_muerto_banda",
+        id: "andrea_peso_muerto_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-stiff-leg-deadlift.gif",
-        name: "Peso Muerto Rumano con Banda Elástica",
+        name: "Peso Muerto Rumano & Bisagra con Ring-Con",
         sets: 3,
         reps: "12 - 15",
         rest: "60 seg",
-        equipment: "Banda Elástica",
-        technique: "Pisa la banda con ambos pies, agarra los extremos y realiza una bisagra de cadera llevando los glúteos atrás con espalda recta antes de subir apretando glúteos.",
-        focusTip: "El movimiento nace de empujar la cadera hacia atrás como si quisieras tocar una pared con los glúteos.",
-        targetMuscles: ["Isquiotibiales", "Glúteo Mayor", "Erectores Espinales", "Fuerza de Agarre"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "De pie sobre la esterilla con pies a anchura de caderas, sujeta el Ring-Con extendido al frente. Realiza una bisagra de cadera llevando los glúteos atrás con la espalda recta hasta sentir los isquios, y sube apretando glúteos.",
+        focusTip: "El Ring-Con al frente sirve de referencia postural para no redondear la espalda y focalizar toda la tensión en isquios y glúteos.",
+        targetMuscles: ["Isquiotibiales", "Glúteo Mayor", "Erectores Espinales", "Core"],
         steps: [
-          "Pisa el centro de la banda elástica con los pies a la anchura de hombros.",
-          "Flexiona ligeramente las rodillas (sin agacharte) y agarra los extremos de la goma con firmeza.",
-          "Empuja la cadera hacia atrás inclinando el torso al frente hasta sentir tensión en los isquiosurales.",
-          "Exhala y empuja la pelvis hacia adelante apretando los glúteos firmemente en la cima."
+          "De pie sobre la esterilla con pies al ancho de caderas y rodillas suaves.",
+          "Sujeta el Ring-Con con ambas manos extendido al frente a la altura de la cadera.",
+          "Empuja la cadera hacia atrás inclinando el torso al frente con la columna neutra hasta sentir tensión en los isquiosurales.",
+          "Exhala y empuja la pelvis adelante apretando glúteos fuertemente en la cima."
         ],
-        commonMistakes: ["Doblar las rodillas como en una sentadilla", "Redondear la espalda dorsal o lumbar", "Tirar de la banda con los brazos"],
-        visualType: "deadlift_band"
+        commonMistakes: ["Doblar las rodillas como en una sentadilla", "Redondear la espalda", "Bajar los brazos perdiendo la línea del Ring-Con"],
+        visualType: "ring_squat"
       },
       {
-        id: "andrea_remo_unilateral",
+        id: "andrea_remo_isometrico_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/resistance-band-seated-straight-back-row.gif",
-        name: "Remo Unilateral con Banda & Apoyo en Silla",
+        name: "Remo Escapular Isométrico con Ring-Con en Esterilla",
         sets: 3,
-        reps: "12 / lado",
+        reps: "12 - 15 (2s contracción)",
         rest: "45 seg",
-        equipment: "Banda Elástica + Silla",
-        technique: "Apoya una mano en el asiento de la silla, pisa la banda con el pie contrario y rema con el codo pegado al torso sintiendo el dorsal.",
-        focusTip: "El apoyo en la silla te permite aislar completamente el dorsal y los romboides con máxima estabilidad.",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sentada erguida sobre la esterilla, tracciona el Ring-Con hacia afuera juntando fuertemente las escápulas y activando el dorsal ancho y romboides.",
+        focusTip: "Mantén el pecho erguido y hombros abajo; la tensión isométrica esculpe la espalda media con cero impacto articular.",
         targetMuscles: ["Dorsal Ancho", "Bíceps", "Romboides", "Core"],
         steps: [
-          "Coloca una mano y la rodilla opuesta sobre la silla o en zancada apoyando la mano libre en el respaldo.",
-          "Pisa la banda con el pie delantero y toma el extremo con la mano activa.",
-          "Tracciona hacia la cadera llevando el codo hacia atrás y arriba.",
-          "Extiende el brazo con control resistiendo la banda."
+          "Siéntate erguida sobre la esterilla con la espalda recta.",
+          "Sujeta el Ring-Con frente a tu ombligo con codos flexionados a los costados.",
+          "Tracciona hacia afuera separando las manos y juntando los omóplatos durante 2 segundos.",
+          "Regresa despacio inhalando."
         ],
-        commonMistakes: ["Rotar el tronco para subir la banda con impulso", "Tirar con el cuello tenso"],
-        visualType: "band_row"
+        commonMistakes: ["Rotar el tronco para hacer palanca", "Tirar con el cuello tenso"],
+        visualType: "ring_pull"
       },
       {
-        id: "andrea_elevaciones_laterales",
+        id: "andrea_elevaciones_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-front-lateral-raise.gif",
-        name: "Elevaciones Laterales de Hombro con Banda",
+        name: "Elevaciones Frontales con Compresión de Ring-Con",
         sets: 3,
         reps: "12 - 15",
         rest: "45 seg",
-        equipment: "Banda Elástica",
-        technique: "Pisa la banda y eleva los brazos hacia los lados hasta la altura de los hombros con una ligera flexión en los codos.",
-        focusTip: "Imagina que viertes agua de una jarra en el punto más alto para enfatizar el deltoides lateral y estilizar los brazos.",
-        targetMuscles: ["Deltoides Lateral", "Trapecio Superior"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "De pie sobre la esterilla, eleva el Ring-Con desde los muslos hasta la altura de los hombros aplicando una compresión continua hacia adentro.",
+        focusTip: "La combinación de elevación y compresión esculpe los hombros y tonifica los brazos con suavidad articular.",
+        targetMuscles: ["Deltoides", "Pectoral Superior", "Trapecio", "Core"],
         steps: [
-          "Pisa la banda con uno o ambos pies (según la resistencia deseada).",
-          "Con palmas orientadas hacia adentro y codos ligeramente flexionados, eleva los brazos hacia los costados.",
-          "Detente a la altura de los hombros (no subas más arriba de la horizontal).",
-          "Desciende de manera lenta y controlada."
+          "De pie sobre la esterilla con los pies al ancho de hombros y postura erguida.",
+          "Sujeta el Ring-Con a la altura de los muslos.",
+          "Inhala y eleva el aro hasta la altura de los hombros mientras aplicas una compresión continua hacia adentro.",
+          "Exhala y desciende lentamente controlando el movimiento."
         ],
         commonMistakes: ["Dar impulso con el tronco balanceándose", "Elevar las manos por encima de las orejas"],
-        visualType: "yt_raises"
+        visualType: "ring_chest_core"
       },
       {
         id: "andrea_plancha_lateral",
