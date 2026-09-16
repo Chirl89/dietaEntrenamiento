@@ -171,82 +171,119 @@ export const CARLOS_WORKOUT_SCHEDULE = {
   },
   Martes: {
     day: "Martes",
-    title: "Martes: Cardio Fartlek & Agilidad en Parque con Boo",
-    duration: 40,
-    location: "Al aire libre (Parque)",
-    equipment: ["Zapatillas", "Arnés Boo", "Frisbee/Juguete"],
-    type: "Cardio Intervalar + Agilidad",
-    focus: "Resistencia aeróbica y quema de calorías compartida",
+    title: "Martes: Movilidad Torácica Sin Torsión, Serratos & Core Profundo (Carlos)",
+    duration: 35,
+    location: "En casa + Paseo suave con Boo",
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
+    type: "Rehabilitación Discal & Core Profundo",
+    focus: "Rehidratación de discos D7-D11 a 0 gravedad, serratos anteriores y faja core McGill",
     exercises: [
       {
-        id: "martes_calentamiento",
-        name: "Paseo Activo de Calentamiento",
-        sets: 1,
-        reps: "10 min",
-        rest: "-",
-        equipment: "Zapatillas",
-        technique: "Caminata ligera a ritmo vivo mientras Boo olfatea.",
-        spinalSafetyNote: "Caminar a ritmo vivo estimula el bombeo de líquido sinovial y nutre los discos intervertebrales por difusión.",
-        targetMuscles: ["Sistema Cardiovascular", "Gemelos", "Glúteos"],
-        steps: ["Inicia el paseo a ritmo moderado manteniendo la mirada al frente y los hombros relajados."],
-        commonMistakes: ["Llevar la cabeza agachada mirando el móvil"],
-        visualType: "walking"
-      },
-      {
-        id: "martes_fartlek",
-        name: "Fartlek: 1 min trote suave + 2 min caminata (5 Bloques)",
-        sets: 5,
-        reps: "3 min c/u",
-        rest: "En caminata",
-        equipment: "Zapatillas + Arnés",
-        technique: "Intercala trote suave a ritmo conversacional con caminata rápida.",
-        spinalSafetyNote: "El trote debe ser con paso corto y pisada de mediopié para amortiguar el impacto sobre la columna.",
-        targetMuscles: ["Capacidad Cardiopulmonar", "Piernas"],
-        steps: ["Trote suave y relajado durante 60 segundos.", "Continúa con 120 segundos de caminata rápida recuperadora."],
-        commonMistakes: ["Correr dando zancadas demasiado largas talonando fuerte"],
-        visualType: "walking"
-      },
-      {
-        id: "martes_stepups",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-step-up.gif",
-        name: "Circuito en Banco: Step-ups + Flexiones en banco",
-        sets: 3,
-        reps: "10 / pierna + 10 flex",
-        rest: "45 seg",
-        equipment: "Banco de Parque",
-        technique: "Carlos y Andrea se turnan mientras Boo realiza 'Sentado/Quieto'.",
-        spinalSafetyNote: "El banco elevado permite hacer flexiones con menor palanca, manteniendo la columna 100% recta y sin arqueos.",
-        targetMuscles: ["Cuádriceps", "Pectoral", "Core"],
-        steps: ["Sube con el talón apoyado en el banco.", "Haz flexiones apoyando las manos en el respaldo o asiento."],
-        commonMistakes: ["Dejar caer la cadera en las flexiones"],
-        visualType: "step_up"
-      },
-      {
-        id: "martes_estiramientos",
+        id: "martes_gatovaca_discal",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/spine/spine-stretch.gif",
-        name: "Estiramientos de Enfriamiento",
+        name: "Gato-Vaca Controlado de Rehidratación Discal en Esterilla",
+        sets: 3,
+        reps: "10 lentas",
+        rest: "30 seg",
+        equipment: "Esterilla",
+        technique: "En cuadrupedia sobre la esterilla con columna neutra. Moviliza la zona dorsal de forma suave y sin forzar los topes articulares al ritmo de la respiración.",
+        spinalSafetyNote: "La movilización suave a 0 gravedad bombea líquido sinovial y nutre los discos deshidratados D7-D8 por difusión, aliviando la rigidez matutina.",
+        targetMuscles: ["Columna Dorsal", "Erectores Espinales", "Fascia Toracolumbar"],
+        steps: [
+          "Colócate en cuatro apoyos sobre la esterilla con manos bajo hombros y rodillas bajo caderas.",
+          "Inhala suavemente manteniendo la cabeza alineada y permitiendo una ligera extensión dorsal sin arquear las lumbares.",
+          "Exhala empujando la esterilla con las manos, redondeando suavemente la parte media de la espalda hacia el techo y metiendo el ombligo.",
+          "Fluye de forma lenta y rítmica sin rebotes ni tirones."
+        ],
+        commonMistakes: ["Hiperextender bruscamente la columna", "Dejar caer la cabeza forzando las cervicales"],
+        visualType: "cat_cow"
+      },
+      {
+        id: "martes_halo_ring",
+        name: "Corona / Halo Escapular Isométrico con Ring-Con",
+        sets: 3,
+        reps: "8 - 10 / lado",
+        rest: "45 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "De rodillas en la esterilla, sujeta el Ring-Con con ambas manos sobre la cabeza. Dibuja círculos controlados alrededor de la coronilla manteniendo el torso y la pelvis completamente fijos.",
+        spinalSafetyNote: "Activa los serratos anteriores y trapecio inferior sin torsión vertebral, estabilizando la cintura escapular para proteger D7-D8.",
+        targetMuscles: ["Serrato Anterior", "Trapecio Inferior", "Core Anti-Rotación", "Deltoides"],
+        steps: [
+          "Ponte de rodillas sobre la esterilla con la pelvis neutra y glúteos activos.",
+          "Eleva el Ring-Con sobre la cabeza con codos ligeramente flexionados.",
+          "Realiza círculos lentos alrededor de la cabeza manteniendo una ligera compresión en el aro.",
+          "El torso debe permanecer como un bloque sólido sin balancearse ni rotar."
+        ],
+        commonMistakes: ["Balancear el torso o las caderas", "Arquear la zona lumbar", "Perder la firmeza en el abdomen"],
+        visualType: "ring_pull"
+      },
+      {
+        id: "martes_birddog_isometria",
+        name: "Bird-Dog McGill con Pausa Isométrica de 4 Segundos",
+        sets: 3,
+        reps: "6 - 8 / lado (4s pausa)",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "En cuadrupedia, extiende simultáneamente brazo derecho al frente y pierna izquierda atrás hasta formar una línea recta. Sostén 4 segundos apretando glúteo.",
+        spinalSafetyNote: "Pilar fundamental del método del Dr. Stuart McGill: activa los multífidos que rodean D7-D11 con la menor presión discal calculada biomecánicamente.",
+        targetMuscles: ["Multífidos", "Erectores Espinales", "Glúteo Mayor", "Deltoides"],
+        steps: [
+          "Cuadrupedia sobre la esterilla con mirada fija entre tus manos.",
+          "Extiende brazo y pierna opuestos paralelos al suelo sin elevarlos por encima de la cadera.",
+          "Aguanta la contracción isométrica durante 4 segundos completos respirando con calma.",
+          "Vuelve al punto inicial sin tocar el suelo bruscamente y cambia de lado."
+        ],
+        commonMistakes: ["Arquear la espalda lumbar", "Rotar la cadera hacia un lado"],
+        visualType: "bird_dog"
+      },
+      {
+        id: "martes_plancha_antebrazo_corta",
+        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/bodyweight-incline-side-plank.gif",
+        name: "Plancha Frontal Corta McGill (Bloqueos de 10s en Esterilla)",
+        sets: 3,
+        reps: "3 bloqueos de 10s por serie",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "Apoya los antebrazos y las rodillas en la esterilla. Contrae glúteos y transverso abdominal al máximo durante 10 segundos continuos, descansa 3 segundos y repite.",
+        spinalSafetyNote: "Las contracciones cortas de 10 s evitan la fatiga muscular que induce colapso postural sobre las hernias D7-D11, aumentando la resistencia del core de forma segura.",
+        targetMuscles: ["Transverso Abdominal", "Recto Abdominal", "Glúteos", "Serratos"],
+        steps: [
+          "Túmbate prono sobre la esterilla y apoya los codos bajo los hombros y las rodillas en el suelo.",
+          "Eleva el torso alineando rodillas, cadera y hombros formando una línea recta.",
+          "Aprieta con fuerza el abdomen como si fueras a recibir un impacto y sostén 10 segundos.",
+          "Baja a la esterilla 3 segundos para relajar y realiza otros dos bloqueos."
+        ],
+        commonMistakes: ["Hundir la cadera hacia la esterilla", "Contener la respiración en apnea"],
+        visualType: "side_plank"
+      },
+      {
+        id: "martes_paseo_boo_suave",
+        name: "Paseo Suave Terapéutico con Boo (Sin Trote de Impacto)",
         sets: 1,
-        reps: "5 min",
+        reps: "25 - 30 min",
         rest: "-",
-        equipment: "Esterilla / Banco",
-        technique: "Estiramiento de cuádriceps, gemelos e isquios.",
-        spinalSafetyNote: "Estira manteniendo la columna erguida, flexionando desde la cadera sin redondear la espalda.",
-        targetMuscles: ["Isquiotibiales", "Cuádriceps", "Gemelos"],
-        steps: ["Mantén cada estiramiento 25-30 segundos sin rebotes."],
-        commonMistakes: ["Rebotar durante el estiramiento"],
-        visualType: "stretching"
+        equipment: "Zapatillas + Arnés Boo",
+        technique: "Caminata continua a paso tranquilo y amortiguado dejando que Boo explore rastros. Sin carreras ni saltos para proteger los discos.",
+        spinalSafetyNote: "Sustituye al fartlek/trote durante la fase dolorosa: caminar a ritmo regular sin impacto estimula la circulación y nutre los discos sin microtraumatismos.",
+        targetMuscles: ["Sistema Cardiovascular", "Gemelos", "Glúteos"],
+        steps: [
+          "Camina a paso cómodo y firme manteniendo la postura erguida y mirada al frente.",
+          "Deja que Boo olfatee libremente para su estimulación mental canina.",
+          "Mantén los brazos relajados y bracea suavemente."
+        ],
+        commonMistakes: ["Dar zancadas excesivamente largas talonando fuerte"],
+        visualType: "walking"
       }
     ],
     routeDetails: {
-      title: "Ruta Fartlek Urbano & Parque con Boo",
-      description: "Combina paseo activo con intervalos de trote y paradas de ejercicio funcional mientras Boo canaliza su energía.",
+      title: "Paseo Suave Terapéutico & Rehabilitación en Parque con Boo",
+      description: "Combina paseo suave en terreno llano para favorecer la difusión discal sin impactos con descanso de olfateo para Boo.",
       breakdown: [
-        { step: "0 - 10 min", activity: "Paseo de Calentamiento y olfateo libre para Boo." },
-        { step: "10 - 25 min", activity: "Fartlek Intervalar: 1 min trote suave + 2 min caminata rápida (5 bloques)." },
-        { step: "25 - 35 min", activity: "Circuito en Banco de Parque: Step-ups + Flexiones + Sentadillas mientras Boo realiza 'Sentado/Quieto'." },
-        { step: "35 - 40 min", activity: "Paseo de vuelta a casa y estiramientos suaves." }
+        { step: "0 - 15 min", activity: "Paseo a paso tranquilo en terreno llano. Boo olfatea a su ritmo." },
+        { step: "15 - 25 min", activity: "Caminata suave de retorno manteniendo la postura erguida sin cargar peso." },
+        { step: "25 - 35 min", activity: "Llegada a casa y ejecución de los ejercicios de movilidad y core en esterilla." }
       ],
-      collieTips: "Lleva agua para Boo, un juguete lanzador o Frisbee y premios magros (ej. taquitos de pechuga de pavo)."
+      collieTips: "Durante fases de dolor de Carlos, sustituir lanzamientos explosivos de pelota por juegos de búsqueda olfativa pausada."
     }
   },
   Miércoles: {
@@ -360,63 +397,111 @@ export const CARLOS_WORKOUT_SCHEDULE = {
   },
   Jueves: {
     day: "Jueves",
-    title: "Jueves: Descanso Activo & Paseo de Olfateo con Boo",
-    duration: 30,
-    location: "Al aire libre / En casa",
-    equipment: ["Esterilla (para movilidad)"],
-    type: "Recuperación Activa & Movilidad",
-    focus: "Recuperación muscular y movilidad de cadera/espalda",
+    title: "Jueves: Espalda Media, Trapecio Inferior & Descompresión Dorsal (Carlos)",
+    duration: 35,
+    location: "En casa + Paseo regenerativo",
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
+    type: "Rehabilitación Postural & Descompresión",
+    focus: "Apertura torácica, descompresión de discos D7-D11 y fortalecimiento de romboides",
     exercises: [
       {
-        id: "jueves_paseo",
-        name: "Paseo Tranquilo de Olfateo con Boo",
-        sets: 1,
-        reps: "25 min",
-        rest: "-",
-        equipment: "Zapatillas",
-        technique: "Paseo a ritmo suave permitiendo que Boo explore a su aire.",
-        spinalSafetyNote: "Disminuye la tensión miofascial y reduce los niveles de cortisol, acelerando la recuperación de los tejidos discales.",
-        targetMuscles: ["Sistema Parasimpático", "Articulaciones"],
-        steps: ["Camina a ritmo tranquilo sin prisas dejando que el perro olfatee."],
-        commonMistakes: ["Dar tirones bruscos de la correa"],
-        visualType: "walking"
+        id: "jueves_elevaciones_yt",
+        name: "Elevaciones Escapulares en 'Y' y 'T' en Esterilla",
+        sets: 3,
+        reps: "8 en 'Y' + 8 en 'T'",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "Tumbado boca abajo en la esterilla con la frente apoyada en una toalla. Eleva los brazos unos centímetros con pulgares al techo apretando escápulas.",
+        spinalSafetyNote: "A diferencia del hiperextensor Superman, aísla el trapecio inferior y romboides con columna neutra, abriendo espacio en D7-D8 sin pellizco discal.",
+        targetMuscles: ["Trapecio Inferior", "Romboides", "Deltoides Posterior"],
+        steps: [
+          "Túmbate boca abajo con cuello neutro y frente en la toalla doblada.",
+          "Brazos en diagonal a 45° formando una 'Y' con pulgares hacia arriba.",
+          "Eleva los brazos 5 cm del suelo apretando las escápulas atrás y abajo 2 segundos.",
+          "Tras 8 repeticiones, abre los brazos en cruz formando una 'T' y completa otras 8."
+        ],
+        commonMistakes: ["Levantar el pecho o la cabeza del suelo", "Dar tirones rápidos"],
+        visualType: "yt_raises"
       },
       {
-        id: "jueves_gatovaca",
-        name: "Movilidad Columna 'Gato-Vaca' Suave",
-        sets: 2,
-        reps: "10",
+        id: "jueves_traccion_w_ring",
+        name: "Tracción en 'W' Isométrica con Ring-Con",
+        sets: 3,
+        reps: "8 - 10 (3s aguante)",
+        rest: "45 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "De pie o de rodillas en la esterilla, flexiona los codos hacia las costillas en forma de 'W' mientras traccionas el aro hacia afuera.",
+        spinalSafetyNote: "Fija y deprime la escápula sobre la parrilla costal, activando serratos y trapecio inferior con cero compresión vertical.",
+        targetMuscles: ["Trapecio Inferior", "Romboides", "Dorsal Ancho"],
+        steps: [
+          "Colócate sobre la esterilla con postura erguida.",
+          "Sujeta el Ring-Con con ambas manos frente al pecho.",
+          "Tracciona hacia afuera mientras bajas los codos pegándolos a las costillas en forma de 'W'.",
+          "Aguanta 3 segundos apretando los omóplatos y relaja despacio."
+        ],
+        commonMistakes: ["Encoger los hombros hacia arriba", "Arquear la zona lumbar"],
+        visualType: "ring_pull"
+      },
+      {
+        id: "jueves_descompresion_mcgill",
+        name: "Descompresión Axial Supina & Respiración 360° McGill",
+        sets: 3,
+        reps: "5 respiraciones profundas (3 min)",
         rest: "30 seg",
         equipment: "Esterilla",
-        technique: "Moviliza la espalda suavemente para liberar tensión sin forzar los rangos finales.",
-        spinalSafetyNote: "Movilización articular sin carga que mejora la hidratación de los discos dorsales y alivia rigideces matutinas.",
-        targetMuscles: ["Columna Dorsal y Lumbar", "Fascia Toracolumbar"],
-        steps: ["En cuadrupedia, redondea suavemente la columna hacia el techo exhalando.", "Inhala volviendo a posición neutra sin arquear en exceso."],
-        commonMistakes: ["Forzar la hiperextensión lumbar o dorsal"],
-        visualType: "cat_cow"
+        technique: "Tumbado boca arriba en la esterilla con rodillas flexionadas a 90° apoyadas en el suelo. Inhala expandiendo las costillas en 360° y exhala vaciando el abdomen.",
+        spinalSafetyNote: "La respiración diafragmática 360° en descarga total genera micro-descompresión de los discos intervertebrales y disminuye la reactividad nerviosa.",
+        targetMuscles: ["Diafragma", "Transverso Abdominal", "Músculos Paravertebrales"],
+        steps: [
+          "Túmbate boca arriba en la esterilla con toda la espalda plana contra el suelo.",
+          "Coloca una mano en el abdomen y otra en las costillas laterales.",
+          "Inhala lentamente por la nariz sintiendo cómo se expanden las costillas hacia los lados y la espalda contra el suelo.",
+          "Exhala despacio por la boca sintiendo cómo se libera la tensión en las vértebras dorsales."
+        ],
+        commonMistakes: ["Respirar inflando solo el pecho", "Arquear la espalda al inhalar"],
+        visualType: "deadbug"
       },
       {
-        id: "jueves_psoas",
+        id: "jueves_estiramiento_psoas",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/spine/spine-stretch.gif",
-        name: "Estiramiento de Psoas e Isquios",
+        name: "Estiramiento de Psoas en Posición de Caballero",
         sets: 2,
         reps: "30 seg / lado",
         rest: "30 seg",
         equipment: "Esterilla",
-        technique: "Relaja flexores de cadera tras horas de postura sentado.",
-        spinalSafetyNote: "Liberar el psoas ilíaco desactiva la tracción anterior sobre la columna, protegiendo la transición dorso-lumbar.",
+        technique: "En posición de zancada en el suelo con una rodilla apoyada, bascula la pelvis hacia atrás y adelanta suavemente la cadera manteniendo el tronco erguido.",
+        spinalSafetyNote: "Liberar la tensión del psoas ilíaco desactiva el tirón anterior sobre la unión dorso-lumbar D10-D11, aliviando la compresión posterior.",
         targetMuscles: ["Psoas Ilíaco", "Isquiotibiales"],
-        steps: ["En posición de caballero (una rodilla en suelo), adelanta la pelvis manteniendo el tronco erguido."],
-        commonMistakes: ["Arquear la espalda hacia atrás en vez de vascular la pelvis"],
+        steps: [
+          "Da un paso adelante en la esterilla y apoya la rodilla trasera en el suelo.",
+          "Activa el glúteo de la pierna trasera y lleva la pelvis en retroversión (ombligo adentro).",
+          "Desplaza suavemente la cadera hacia adelante hasta notar estiramiento suave en la parte frontal de la cadera trasera.",
+          "Respira continuo sin arquear la espalda baja."
+        ],
+        commonMistakes: ["Arquear la espalda hacia atrás en vez de bascular la pelvis"],
         visualType: "stretching"
+      },
+      {
+        id: "jueves_paseo",
+        name: "Paseo Tranquilo de Olfateo & Desconexión con Boo",
+        sets: 1,
+        reps: "25 min",
+        rest: "-",
+        equipment: "Zapatillas + Correa Boo",
+        technique: "Paseo regenerativo a paso libre sin exigencias físicas mientras Boo olfatea.",
+        spinalSafetyNote: "Disminuye el cortisol y favorece la nutrición discal pasiva sin generar impacto articular.",
+        targetMuscles: ["Sistema Parasimpático", "Articulaciones"],
+        steps: ["Camina a ritmo tranquilo sin prisas dejando que el perro olfatee."],
+        commonMistakes: ["Dar tirones bruscos de la correa"],
+        visualType: "walking"
       }
     ],
     routeDetails: {
-      title: "Paseo de Olfateo & Recuperación Activa con Boo",
-      description: "Sesión enfocada en la recuperación muscular y estimulación mental sensorial para Boo.",
+      title: "Paseo de Olfateo & Descompresión con Boo",
+      description: "Sesión enfocada en la recuperación muscular y estimulación mental sensorial para Boo combinada con ejercicios posturales.",
       breakdown: [
-        { step: "0 - 25 min", activity: "Paseo a ritmo libre y pausado. Deja que Boo explore rastros y olfatee a su aire (reduce el estrés canino)." },
-        { step: "25 - 30 min", activity: "Vuelta a casa + rutina de movilidad articular (Gato-Vaca y estiramiento de psoas)." }
+        { step: "0 - 20 min", activity: "Paseo a ritmo libre y pausado. Deja que Boo explore rastros y olfatee a su aire (reduce el estrés canino)." },
+        { step: "20 - 35 min", activity: "Vuelta a casa + rutina completa de descompresión dorsal (Y-T prono, W con Ring-Con y respiración McGill)." }
       ],
       collieTips: "El olfateo activo durante 20-25 min cansa mentalmente a un Border Collie tanto como 1 hora de carrera continua."
     }
@@ -530,116 +615,331 @@ export const CARLOS_WORKOUT_SCHEDULE = {
   },
   Sábado: {
     day: "Sábado",
-    title: "Sábado: Senderismo Trail Active & Naturaleza con Boo",
-    duration: 60,
-    location: "Monte / Vía Verde",
-    equipment: ["Zapatillas trail", "Arnés canicross Boo", "Agua"],
-    type: "Resistencia Aeróbica en Naturaleza",
-    focus: "Gasto calórico elevado, resistencia y diversión con Boo",
+    title: "Sábado: Estabilidad Global Funcional & Glúteos Fuertes (Protección Lumbo-Dorsal)",
+    duration: 40,
+    location: "En casa + Marcha natural con Boo",
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
+    type: "Fuerza Funcional & Estabilidad",
+    focus: "Refuerzo pélvico, glúteos protectores, anti-rotación y marcha activa sin impactos",
     exercises: [
       {
-        id: "sabado_marcha",
-        name: "Marcha Activa a Ritmo Vivo (5.5 km/h)",
-        sets: 1,
-        reps: "25 min",
-        rest: "-",
-        equipment: "Zapatillas Trail",
-        technique: "Paso firme apretando glúteos en subidas.",
-        spinalSafetyNote: "Caminar por senderos naturales con calzado amortiguado activa la propiocepción pélvica.",
-        targetMuscles: ["Glúteos", "Piernas", "Cardiovascular"],
-        steps: ["Marcha continua a ritmo enérgico sincronizando el braceo."],
-        commonMistakes: ["Cargar mochilas pesadas asimétricas"],
-        visualType: "walking"
-      },
-      {
-        id: "sabado_agilidad",
+        id: "sabado_sentadilla_isometrica_ring",
         gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-squat.gif",
-        name: "Parada de Agilidad con Boo + Sentadillas Asistidas",
+        name: "Sentadilla Isométrica en Esterilla con Contrapeso Ring-Con",
         sets: 3,
-        reps: "12 - 15",
+        reps: "8 - 10 reps (3s pausa abajo)",
         rest: "60 seg",
-        equipment: "Arnés Boo",
-        technique: "Mientras Boo hace juegos de buscar el juguete, realizáis sentadillas manteniendo la espalda recta.",
-        spinalSafetyNote: "Mantén el pecho erguido y peso en talones.",
-        targetMuscles: ["Cuádriceps", "Glúteos"],
-        steps: ["Flexiona caderas y rodillas manteniendo el tronco alto."],
-        commonMistakes: ["Curvar la espalda al agacharse"],
+        equipment: "Ring-Con + Esterilla",
+        technique: "Desciende en sentadilla controlada sobre la esterilla con el Ring-Con extendido al frente. Sostén 3 segundos abajo con el torso erguido antes de subir.",
+        spinalSafetyNote: "La pausa isométrica elimina el efecto rebote y activa cuádriceps y glúteos con la columna torácica perfectamente alineada y cero carga axial.",
+        targetMuscles: ["Cuádriceps", "Glúteo Mayor", "Core", "Erectores Espinales"],
+        steps: [
+          "Pies a la anchura de hombros sobre la esterilla y Ring-Con extendido al frente a la altura del pecho.",
+          "Inhala y baja flexionando rodillas y caderas hasta la posición paralela.",
+          "Mantén la posición 3 segundos respirando continuo con el Ring-Con firme.",
+          "Exhala y empuja fuerte con los talones para extender caderas y rodillas."
+        ],
+        commonMistakes: ["Bajar los brazos perdiendo la línea del Ring-Con", "Despegar los talones del suelo"],
         visualType: "ring_squat"
       },
       {
-        id: "sabado_enfriamiento",
-        name: "Caminata de Regreso y Enfriamiento",
+        id: "sabado_press_antirotacion",
+        name: "Press Anti-Rotación de Rodillas con Ring-Con",
+        sets: 3,
+        reps: "8 - 10 / lado (3s compresión)",
+        rest: "45 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "De rodillas sobre la esterilla, sujeta el Ring-Con extendido al frente. Comprime el aro aplicando resistencia contra cualquier balanceo o giro del torso.",
+        spinalSafetyNote: "Protección crucial para la hernia posterolateral D10-D11: enseña a la faja abdominal a bloquear torsiones que desgastan los discos.",
+        targetMuscles: ["Oblicuos", "Transverso Abdominal", "Cuadrado Lumbar"],
+        steps: [
+          "Ponte de rodillas sobre la esterilla con la pelvis neutra y glúteos firmes.",
+          "Extiende el Ring-Con frente a tu esternón con ambas manos.",
+          "Exhala comprimiendo el aro y mantén la posición 3 segundos sin que el torso oscile.",
+          "Inhala relajando la tensión al centro y repite."
+        ],
+        commonMistakes: ["Rotar las caderas o el torso", "Arquear la espalda lumbar"],
+        visualType: "ring_chest_core"
+      },
+      {
+        id: "sabado_puente_gluteo_marcha",
+        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-hip-lift.gif",
+        name: "Puente de Glúteo Isométrico con Compresión de Ring-Con",
+        sets: 3,
+        reps: "10 - 12 (3s arriba)",
+        rest: "45 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Tumbado boca arriba con el Ring-Con entre las rodillas. Comprime el aro hacia adentro mientras elevas la cadera y mantienes 3 segundos la contracción.",
+        spinalSafetyNote: "Glúteos y aductores activados en descarga 100% de la columna. Los glúteos fuertes son el principal amortiguador de impacto para D7-D11.",
+        targetMuscles: ["Glúteo Mayor", "Aductores", "Isquiotibiales"],
+        steps: [
+          "Túmbate en la esterilla con pies apoyados y Ring-Con entre las rodillas.",
+          "Aplica compresión suave sobre el aro y eleva la cadera al techo apretando glúteos.",
+          "Mantén la posición alta durante 3 segundos respirando continuo.",
+          "Desciende vértebra a vértebra de forma controlada."
+        ],
+        commonMistakes: ["Arquear la zona lumbar", "Dejar de apretar el Ring-Con"],
+        visualType: "ring_glute_bridge"
+      },
+      {
+        id: "sabado_plancha_lateral_rodilla",
+        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/bodyweight-incline-side-plank.gif",
+        name: "Plancha Lateral con Rodilla Apoyada en Esterilla",
+        sets: 3,
+        reps: "20 - 25 seg / lado",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "Tumbado de lado en la esterilla con codo bajo hombro y rodilla inferior flexionada a 90° apoyada en el suelo. Eleva la cadera formando una línea recta.",
+        spinalSafetyNote: "La flexión de rodilla reduce el brazo de palanca, protegiendo el cuadrado lumbar y la hernia D10-D11 de fatiga excesiva.",
+        targetMuscles: ["Cuadrado Lumbar", "Oblicuos", "Glúteo Medio"],
+        steps: [
+          "Apoya el codo bajo el hombro y dobla la rodilla inferior a 90°.",
+          "Exhala y despega la cadera del suelo alineando hombro, cadera y rodilla.",
+          "Mantén la posición respirando relajadamente sin dejar caer la pelvis.",
+          "Desciende con control y cambia de lado."
+        ],
+        commonMistakes: ["Dejar caer la cadera hacia el suelo", "Girar el hombro superior hacia adelante"],
+        visualType: "side_plank"
+      },
+      {
+        id: "sabado_marcha_activa",
+        name: "Marcha Activa Amortiguada en Terreno Blando con Boo",
         sets: 1,
-        reps: "20 min",
+        reps: "30 min",
         rest: "-",
-        equipment: "Zapatillas",
-        technique: "Ritmo progresivamente más suave.",
-        spinalSafetyNote: "Permite una bajada progresiva de pulsaciones y relajación lumbar.",
-        targetMuscles: ["Recuperación Activa"],
-        steps: ["Paso tranquilo de vuelta al coche o casa."],
-        commonMistakes: ["Parar de golpe en frío"],
+        equipment: "Zapatillas Trail + Arnés Boo",
+        technique: "Caminata continua por senderos naturales blandos (césped, tierra) con zancada media y braceo fluido. Sin carreras ni desniveles bruscos.",
+        spinalSafetyNote: "El terreno blando natural amortigua las fuerzas de reacción del suelo, nutriendo los discos sin sobrecarga vertebral.",
+        targetMuscles: ["Glúteos", "Piernas", "Cardiovascular"],
+        steps: [
+          "Marcha constante a ritmo vivo (5 - 5.5 km/h) en terreno plano o de pendiente muy suave.",
+          "Coordina el braceo relajando hombros y cuello.",
+          "Disfruta del entorno junto a Boo manteniendo el arnés cómodo."
+        ],
+        commonMistakes: ["Cargar mochilas pesadas asimétricas", "Caminar con calzado duro sin amortiguación"],
         visualType: "walking"
       }
     ],
     routeDetails: {
-      title: "Ruta Senderismo Trail Active & Agilidad en Naturaleza",
-      description: "Marcha activa con desnivel moderado que quema calorías a ritmo sostenido y ejercita a Boo en su entorno ideal.",
+      title: "Ruta Senderismo Trail Amortiguado con Boo",
+      description: "Marcha en terreno natural blando que protege las vértebras dorsales de impactos mientras ejercitas la musculatura pélvica.",
       breakdown: [
-        { step: "Fase 1 (20 min)", activity: "Caminata a ritmo vivo (5.5 - 6 km/h) en terreno plano o ligera subida." },
-        { step: "Fase 2 (20 min)", activity: "Subida con pasos largos apretando glúteos. Boo en arnés o suelta si el espacio es seguro." },
-        { step: "Fase 3 (15 min)", activity: "Parada de descanso activo: Juego de buscar el juguete entre arbustos (estimulación mental Collie) + Sentadillas." },
-        { step: "Fase 4 (Regreso)", activity: "Bajada a ritmo tranquilo para soltar piernas." }
+        { step: "Fase 1 (15 min)", activity: "Caminata a ritmo suave en sendero de tierra o parque arbolado." },
+        { step: "Fase 2 (15 min)", activity: "Paseo de retorno manteniendo el torso recto y la pisada de mediopié." },
+        { step: "Fase 3 (En casa)", activity: "Ejercicios de estabilidad pélvica y sentadillas con Ring-Con en esterilla." }
       ],
-      collieTips: "Usa un arnés ergonómico tipo correa de cintura (canicross) para poder caminar o trotar con las manos libres de forma cómoda."
+      collieTips: "Usa un arnés ergonómico tipo canicross para que la correa no transmita tirones directos a tus brazos ni a la espalda dorsal."
     }
   },
   Domingo: {
     day: "Domingo",
-    title: "Domingo: Descanso Total & Regeneración",
-    duration: 20,
+    title: "Domingo: Descompresión Vertebral, Multífidos & Regeneración Discal Total (Carlos)",
+    duration: 35,
     location: "En casa",
-    equipment: ["Ninguno"],
-    type: "Descanso y Recuperación",
-    focus: "Recarga de energía para la nueva semana",
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
+    type: "Descompresión & Regeneración",
+    focus: "Alivio profundo del dolor, nutrición discal, activación de multífidos y relajación paravertebral",
     exercises: [
       {
-        id: "domingo_paseo",
-        name: "Paseo Libre en Familia con Boo",
-        sets: 1,
-        reps: "Libre",
-        rest: "-",
-        equipment: "Correa",
-        technique: "Disfrutad del día sin exigencia física.",
-        spinalSafetyNote: "Paseo regenerativo sin tensión que promueve la oxigenación de tejidos musculares.",
-        targetMuscles: ["Bienestar General"],
-        steps: ["Paseo relajado sin métricas ni exigencias."],
-        commonMistakes: ["Comenzar actividades explosivas sin calentamiento"],
-        visualType: "walking"
+        id: "domingo_descompresion_axial",
+        name: "Tracción Isométrica de Descompresión en Esterilla con Ring-Con",
+        sets: 3,
+        reps: "6 reps (5s tracción suave)",
+        rest: "45 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Tumbado boca arriba o sentado sobre la esterilla, sujeta el Ring-Con frente al pecho y realiza una tracción suave hacia afuera sintiendo cómo se ensancha la espalda alta.",
+        spinalSafetyNote: "Abre suavemente el espacio entre costillas y vértebras dorsales D7-D8, relajando la musculatura paravertebral contracturada.",
+        targetMuscles: ["Romboides", "Trapecio Medio e Inferior", "Músculos Paravertebrales"],
+        steps: [
+          "Túmbate sobre la esterilla con la espalda completamente relajada y rodillas dobladas.",
+          "Sujeta el Ring-Con con ambas manos frente al pecho.",
+          "Exhala y tracciona hacia afuera con una fuerza suave y progresiva (50-60% de tu máximo) durante 5 segundos.",
+          "Inhala soltando la tensión y siente la descompresión entre tus omóplatos."
+        ],
+        commonMistakes: ["Tirar con violencia", "Elevar los hombros hacia las orejas"],
+        visualType: "ring_pull"
       },
       {
-        id: "domingo_masaje",
-        gifUrl: "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/spine/spine-stretch.gif",
-        name: "Masaje de Soltado / Estiramientos Suaves",
+        id: "domingo_gatovaca_suave",
+        name: "Movilidad Articular Gato-Vaca Suave en Esterilla",
+        sets: 3,
+        reps: "8 - 10 lentas",
+        rest: "30 seg",
+        equipment: "Esterilla",
+        technique: "En cuadrupedia, moviliza la columna al ritmo de tu respiración de forma fluida y placentera.",
+        spinalSafetyNote: "Rehidrata los discos intervertebrales mediante difusión de nutrientes a carga articular cero.",
+        targetMuscles: ["Columna Dorsal", "Columna Lumbar", "Fascias"],
+        steps: [
+          "Colócate en cuatro apoyos sobre la esterilla.",
+          "Inhala suavemente manteniendo la cabeza neutra.",
+          "Exhala empujando el suelo con las palmas y redondeando la columna como un gato.",
+          "Regresa despacio a posición neutra sin forzar la curvatura hacia abajo."
+        ],
+        commonMistakes: ["Forzar la hiperextensión lumbar"],
+        visualType: "cat_cow"
+      },
+      {
+        id: "domingo_birddog_control",
+        name: "Bird-Dog McGill Lento de Conexión Muscular",
+        sets: 3,
+        reps: "6 / lado (3s pausa)",
+        rest: "45 seg",
+        equipment: "Esterilla",
+        technique: "En cuadrupedia, extiende brazo y pierna opuesta con lentitud y precisión milimétrica. Mantén 3 segundos sin oscilaciones.",
+        spinalSafetyNote: "Despierta y fortalece los multífidos que abrazan las vértebras D7-D11, dotándolas de un soporte muscular protector.",
+        targetMuscles: ["Multífidos", "Erectores Espinales", "Glúteo Mayor"],
+        steps: [
+          "Ponte en cuatro apoyos sobre la esterilla.",
+          "Extiende despacio brazo y pierna opuestos hasta quedar paralelos al suelo.",
+          "Aguanta 3 segundos respirando tranquilo sintiendo la faja activa.",
+          "Regresa al centro con control total y repite con el otro lado."
+        ],
+        commonMistakes: ["Moverse rápido por inercia", "Arquear las lumbares"],
+        visualType: "bird_dog"
+      },
+      {
+        id: "domingo_respiracion_diafragmatica",
+        name: "Respiración Diafragmática 360° en Esterilla",
         sets: 1,
-        reps: "10 min",
+        reps: "5 min (15 ciclos)",
         rest: "-",
         equipment: "Esterilla",
-        technique: "Masajea suavemente muslos y espalda para soltar rigidez.",
-        spinalSafetyNote: "Evita presiones directas y fuertes sobre las vértebras dorsales D7-D11; masajea los costados musculares.",
-        targetMuscles: ["Músculos Paravertebrales", "Fascias"],
-        steps: ["Aplica respiración diafragmática profunda mientras liberas tensiones."],
-        commonMistakes: ["Apretar con fuerza sobre la columna vertebral"],
-        visualType: "stretching"
+        technique: "Tumbado boca arriba con rodillas flexionadas y manos en las costillas. Inhala expandiendo la caja torácica en 360° y exhala vaciando el aire sin tensión.",
+        spinalSafetyNote: "Desactiva la señal simpática de dolor crónico, relaja el diafragma y descomprime las inserciones dorsales D10-D11.",
+        targetMuscles: ["Diafragma", "Transverso Abdominal", "Sistema Nervioso Parasimpático"],
+        steps: [
+          "Túmbate boca arriba en la esterilla en un ambiente tranquilo.",
+          "Coloca una mano sobre el vientre y otra sobre las costillas bajas.",
+          "Inhala lento por la nariz durante 4 segundos expandiendo costillas y abdomen.",
+          "Exhala suave por la boca durante 6 segundos dejando caer todo el peso del cuerpo en la esterilla."
+        ],
+        commonMistakes: ["Respirar de forma superficial solo con el pecho"],
+        visualType: "deadbug"
+      },
+      {
+        id: "domingo_paseo",
+        name: "Paseo Libre Regenerativo en Familia con Boo",
+        sets: 1,
+        reps: "Libre (20-30 min)",
+        rest: "-",
+        equipment: "Zapatillas + Correa",
+        technique: "Paseo relajado sin métricas ni exigencias físicas para favorecer la oxigenación y soltar tensiones.",
+        spinalSafetyNote: "El movimiento libre no forzado favorece la recuperación neuromuscular y la oxigenación de los tejidos vertebrales.",
+        targetMuscles: ["Bienestar General", "Articulaciones"],
+        steps: ["Disfruta del paseo a vuestro ritmo en familia con Boo."],
+        commonMistakes: ["Hacer movimientos bruscos sin calentar"],
+        visualType: "walking"
       }
     ],
     routeDetails: {
-      title: "Paseo Libre en Familia con Boo",
-      description: "Paseo recreativo en parque o zona verde sin exigencia física intensa.",
+      title: "Paseo Libre Regenerativo en Familia con Boo",
+      description: "Paseo suave y relajante en entorno verde para desconectar y favorecer la circulación.",
       breakdown: [
-        { step: "Libre", activity: "Disfrutad del paseo a vuestro ritmo en familia con Boo, dejando espacio para juegos sencillos o descanso." }
+        { step: "Libre", activity: "Paseo relajado en familia con Boo, dejando espacio para juegos olfativos tranquilos o descanso al sol." }
       ],
       collieTips: "Aprovecha para reforzar comandos de obediencia básica de forma lúdica y positiva."
     }
+  },
+  ProtocoloDiario: {
+    day: "ProtocoloDiario",
+    title: "⚡ Protocolo Diario de Rescate & Descompresión D7-D11 (Carlos)",
+    duration: 15,
+    location: "En casa",
+    equipment: ["Ring-Con (Switch)", "Esterilla"],
+    type: "Descompresión & Alivio Rápido",
+    focus: "Rutina diaria de rescate de 15 minutos para alivio agudo del dolor en D7-D8 y D10-D11",
+    exercises: [
+      {
+        id: "rescate_descompresion_respiracion",
+        name: "1. Descompresión Axial Supina & Respiración 360° McGill",
+        sets: 1,
+        reps: "3 min (10 respiraciones)",
+        rest: "20 seg",
+        equipment: "Esterilla",
+        technique: "Túmbate boca arriba en la esterilla con rodillas flexionadas a 90° apoyadas en el suelo. Inhala inflando la faja 360° y exhala soltando toda la tensión dorsal.",
+        spinalSafetyNote: "Descomprime de inmediato los discos D7-D8 y D10-D11 disminuyendo la presión sobre las raíces nerviosas.",
+        targetMuscles: ["Diafragma", "Transverso Abdominal", "Descompresión Discal"],
+        steps: [
+          "Túmbate boca arriba en la esterilla con espalda plana y cuello alargado.",
+          "Inhala profundo por la nariz expandiendo costillas y abdomen 4 segundos.",
+          "Exhala largo y suave por la boca 6 segundos sintiendo el alivio en la espalda media."
+        ],
+        commonMistakes: ["Tensar los hombros o el cuello al respirar"],
+        visualType: "deadbug"
+      },
+      {
+        id: "rescate_gatovaca_discal",
+        name: "2. Gato-Vaca de Rehidratación Discal en Rango Neutro",
+        sets: 2,
+        reps: "8 - 10 lentas",
+        rest: "30 seg",
+        equipment: "Esterilla",
+        technique: "En cuadrupedia, redondea la espalda muy suavemente exhalando y regresa al neutro inhalando. Sin hiperextensiones forzadas.",
+        spinalSafetyNote: "A 0 carga axial, bombea agua y nutrientes a los discos deshidratados.",
+        targetMuscles: ["Columna Dorsal", "Músculos Paravertebrales"],
+        steps: [
+          "Cuadrupedia con manos bajo hombros y rodillas bajo caderas.",
+          "Exhala empujando la esterilla y redondeando la columna dorsal.",
+          "Inhala volviendo a la línea recta neutra."
+        ],
+        commonMistakes: ["Forzar el rango final doloroso"],
+        visualType: "cat_cow"
+      },
+      {
+        id: "rescate_birddog_isometria",
+        name: "3. Bird-Dog Isométrico McGill en Esterilla",
+        sets: 2,
+        reps: "6 / lado (4s pausa)",
+        rest: "30 seg",
+        equipment: "Esterilla",
+        technique: "Extiende brazo y pierna opuestos en cuadrupedia. Mantén 4 segundos de máxima firmeza del core.",
+        spinalSafetyNote: "Reactiva los multífidos inhibidos por el dolor sin comprimir las hernias.",
+        targetMuscles: ["Multífidos", "Core 360°", "Glúteo Mayor"],
+        steps: [
+          "Extiende brazo y pierna opuestos paralelos al suelo.",
+          "Sostén 4 segundos apretando glúteo y transverso.",
+          "Cambia de lado con fluidez."
+        ],
+        commonMistakes: ["Arquear las lumbares"],
+        visualType: "bird_dog"
+      },
+      {
+        id: "rescate_puente_gluteo_ring",
+        name: "4. Puente de Glúteo con Compresión de Ring-Con",
+        sets: 2,
+        reps: "10 reps (2s contracción)",
+        rest: "30 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Tumbado boca arriba, comprime el Ring-Con entre las rodillas y eleva la cadera activando glúteos.",
+        spinalSafetyNote: "Despierta los glúteos en descarga articular completa para absorber las cargas cotidianas.",
+        targetMuscles: ["Glúteo Mayor", "Aductores", "Core"],
+        steps: [
+          "Coloca el Ring-Con entre rodillas tumbado en la esterilla.",
+          "Aprieta suavemente hacia adentro y eleva la pelvis.",
+          "Aguanta 2 segundos arriba y baja despacio."
+        ],
+        commonMistakes: ["Arquear la espalda baja"],
+        visualType: "ring_glute_bridge"
+      },
+      {
+        id: "rescate_traccion_escapular_ring",
+        name: "5. Tracción Escapular Isométrica con Ring-Con",
+        sets: 2,
+        reps: "8 reps (3s tracción)",
+        rest: "30 seg",
+        equipment: "Ring-Con + Esterilla",
+        technique: "Sujeta el Ring-Con frente al pecho y tracciona hacia afuera juntando fuertemente las escápulas 3 segundos.",
+        spinalSafetyNote: "Fortalece romboides y trapecio medio abriendo la hipercifosis dorsal y aliviando D7-D8.",
+        targetMuscles: ["Romboides", "Trapecio Medio", "Deltoides Posterior"],
+        steps: [
+          "Sentado erguido o de pie sobre la esterilla con el aro al pecho.",
+          "Tira de las manos hacia afuera ensanchando el Ring-Con.",
+          "Junta escápulas atrás durante 3 segundos y relaja inhalando."
+        ],
+        commonMistakes: ["Subir los hombros"],
+        visualType: "ring_pull"
+      }
+    ]
   }
 };
 

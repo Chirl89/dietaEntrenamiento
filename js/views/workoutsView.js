@@ -2063,6 +2063,40 @@ export function renderExerciseTableView() {
     const routine = currentSchedule?.[activeDay] || currentSchedule?.["Lunes"];
     if (!routine) return;
 
+    if (profileId === 'he') {
+      const isProtocol = activeDay === 'ProtocoloDiario';
+      const todayName = getTodayDayName();
+      const banner = document.createElement("div");
+      banner.className = "glass-card";
+      banner.style.cssText = "margin-bottom: 1rem; border-left: 4px solid var(--accent-cyan); background: rgba(56, 189, 248, 0.08); padding: 0.95rem 1.15rem; border-radius: var(--radius-md);";
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.85rem;">
+          <div style="flex: 1; min-width: 250px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: var(--accent-cyan);">
+              <i class="fa-solid fa-shield-halved"></i> Plan Diario de Columna (D7-D8 y D10-D11)
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.4;">
+              ${isProtocol 
+                ? '⚡ <strong>Protocolo de Rescate Activo (15 min)</strong>: Hazlo al levantarte o si sientes sobrecarga. 0 impacto, 0 rotaciones.' 
+                : '🛡️ Rutina completa de hoy activa. <strong>7/7 días adaptados</strong> exclusivamente a <strong>Esterilla + Ring-Con</strong> sin bandas.'}
+            </p>
+          </div>
+          <div>
+            ${isProtocol ? `
+              <button type="button" class="btn-secondary-sm" onclick="selectExerciseDayFromDropdown('${todayName}');" style="display:inline-flex; align-items:center; gap:0.45rem; font-size: 0.82rem; padding: 7px 14px; border-radius: 8px; border-color: var(--accent-cyan); color: var(--accent-cyan); font-weight: 600; cursor: pointer;">
+                <i class="fa-solid fa-calendar-day"></i> Ver Rutina de Hoy (${todayName})
+              </button>
+            ` : `
+              <button type="button" class="btn-secondary-sm" onclick="selectExerciseDayFromDropdown('ProtocoloDiario');" style="display:inline-flex; align-items:center; gap:0.45rem; font-size: 0.82rem; padding: 7px 14px; border-radius: 8px; background: rgba(245, 158, 11, 0.16); border-color: var(--accent-amber); color: var(--accent-amber); font-weight: 700; cursor: pointer;">
+                <i class="fa-solid fa-bolt"></i> ⚡ Protocolo Rápido Rescate (15 min)
+              </button>
+            `}
+          </div>
+        </div>
+      `;
+      container.appendChild(banner);
+    }
+
     const card = document.createElement("div");
     card.className = "glass-card";
 
