@@ -59,9 +59,10 @@ export function normalizeBatchIngredientName(rawName) {
   const n = rawName.toLowerCase().trim();
 
   // Rice and grains
-  if (/arroz|basmati|jazm[ií]n|integral|vaporizado/i.test(n)) return "Arroz (grano o cocido)";
+  if (/arroz|basmati|jazm[ií]n|integral|vaporizado|arborio|carnaroli|bomba/i.test(n)) return "Arroz (grano o cocido)";
   if (/quinoa/i.test(n)) return "Quinoa";
   if (/pasta|macarron|espagueti|plumas/i.test(n)) return "Pasta integral / de trigo";
+  if (/gnocchi|ñoqui/i.test(n)) return "Gnocchis de patata";
 
   // Tubers
   if (/patata|papas/i.test(n)) return "Patatas frescas";
@@ -69,11 +70,12 @@ export function normalizeBatchIngredientName(rawName) {
 
   // Meats and Proteins
   if (/cabecero|lomo/i.test(n)) return "Cabecero de lomo / Lomo de cerdo";
-  if (/pollo|pechuga/i.test(n)) return "Pechuga o pollo";
+  if (/pollo|pechuga|kebab/i.test(n)) return "Pechuga o pollo";
   if (/pavo/i.test(n)) return "Pavo";
   if (/ternera|carne picada/i.test(n)) return "Carne de ternera";
   if (/salm[oó]n/i.test(n)) return "Salmón";
   if (/merluza|pescado/i.test(n)) return "Pescado blanco (merluza/lubina)";
+  if (/sepia|calamar|gamba/i.test(n)) return "Marisco limpio (sepia/gambas)";
   if (/huevo/i.test(n)) return "Huevos";
 
   // Vegetables

@@ -700,8 +700,134 @@ export const RECIPES_DATABASE = [
     instructions: [
       "Tomar en el escritorio. El edamame tostado aporta textura crocante sin calorías vacías y la manzana aporta agua y fibra soluble."
     ]
+  },
+
+  // --- GRUPO 9: ARROCES ESPECIALES (RISOTTOS & PAELLA LIMPIA DE OFICINA) ---
+  {
+    id: "risotto_setas_cecotec",
+    name: "Risotto Cremoso de Setas y Parmesano (Cecotec o Cazuela)",
+    type: "comida",
+    servings: 1,
+    prepTime: 25,
+    calories: 480,
+    protein: 20,
+    carbs: 66,
+    fats: 14,
+    appliance: "cecotec",
+    tags: ["Risotto", "Setas", "Cecotec", "Cremoso", "Confort Food"],
+    batchNotes: "En el Robot Cecotec se cocina en la jarra con la pala MamboMix a 100°C sin romper el grano, liberando almidón perfecto. Mientras tanto, en la vaporera superior se pueden cocer huevos o verduras al vapor simultáneamente.",
+    ingredients: [
+      { name: "Arroz arborio, carnaroli o redondo", amount: 75, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Variado de setas (boletus, champiñones y portobello)", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Caldo de verduras o ave caliente", amount: 250, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Cebolla dulce picada fina", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Diente de ajo picado", amount: 4, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Vino blanco seco", amount: 30, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Queso Parmesano o Grana Padano rallado", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "CECOTEC: Colocar la pala MamboMix. Poner el AOVE, la cebolla y el ajo; sofreír a 110°C, vel 1 durante 4 min.",
+      "Añadir las setas troceadas y rehogar 4 min a 100°C vel 1. Incorporar el arroz y sofreír 2 min para nacarar el grano.",
+      "Verter el vino blanco y programar 1.5 min a 100°C vel 1 sin cubilete para evaporar el alcohol.",
+      "Verter el caldo caliente y programar 16-18 min a 100°C vel 1.",
+      "Al terminar, retirar la jarra y mantecar con el queso parmesano rallado y una pizca de pimienta negra recién molida. Dejar reposar 2 minutos y servir meloso."
+    ]
+  },
+  {
+    id: "risotto_pollo_portobello",
+    name: "Risotto de Pollo y Portobello al Parmesano",
+    type: "comida",
+    servings: 1,
+    prepTime: 25,
+    calories: 520,
+    protein: 36,
+    carbs: 64,
+    fats: 13,
+    appliance: "cecotec",
+    tags: ["Risotto", "Alta Proteína", "Pollo Batch", "Setas", "Cecotec"],
+    batchNotes: "Aprovecha pechuga de pollo de batch o dados dorados en sartén. Equilibrio de alta proteína con la cremosidad del risotto.",
+    ingredients: [
+      { name: "Arroz arborio o redondo", amount: 75, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pollo en dados o deshilachada", amount: 110, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Champiñones Portobello laminados", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Caldo de ave caliente", amount: 250, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Cebolla dulce picada", amount: 35, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Vino blanco seco", amount: 25, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Queso Parmesano rallado", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "En sartén o en la Cecotec sofreír la cebolla picada con el AOVE y saltear los champiñones Portobello 3 minutos.",
+      "Añadir el pollo en dados y dorar 2 minutos. Añadir el arroz para nacararlo y desglasar con el vino blanco.",
+      "Ir añadiendo el caldo caliente poco a poco removiendo (o en Cecotec a 100°C vel 1 durante 16 min).",
+      "Terminar mantecando con el queso parmesano rallado hasta que ligue en una crema irresistible."
+    ]
+  },
+  {
+    id: "paella_senyoret_oficina",
+    name: "Arroz del Senyoret Limpio para Oficina (Sin Huesos ni Cáscaras)",
+    type: "comida",
+    servings: 1,
+    prepTime: 25,
+    calories: 490,
+    protein: 36,
+    carbs: 62,
+    fats: 11,
+    appliance: "fuegos",
+    tags: ["Oficina", "Paella Limpia", "Sin Espinas", "Senyoret", "Alta Proteína"],
+    batchNotes: "100% pensada para el táper de la oficina: sin espinas, sin huesos, sin cáscaras y sin mancharse las manos. Se recalienta en 1 min en el microondas y queda suelto y sabroso.",
+    ingredients: [
+      { name: "Arroz bomba o redondo", amount: 75, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pollo en dados limpios", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Sepia o calamar limpio en dados", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Gambitas peladas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Judías verdes troceadas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Tomate triturado con ajo y pimentón", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Caldo de pescado o ave suave", amount: 200, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Azafrán o colorante natural", amount: 1, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "En sartén o paellera con el AOVE dorar a fuego vivo los daditos de pechuga de pollo y la sepia limpia durante 4-5 minutos hasta que tomen color dorado.",
+      "Añadir las judías verdes y el sofrito de tomate triturado con ajo y pimentón dulce. Rehogar 2 minutos.",
+      "Incorporar el arroz bomba y mezclar bien 1 minuto para que absorba todo el sabor del sofrito.",
+      "Verter el caldo caliente con el azafrán bien repartido. Cocinar 8 minutos a fuego fuerte y bajar a fuego suave otros 8-9 minutos sin remover.",
+      "En los últimos 3 minutos colocar las gambitas peladas por encima. Dejar reposar 5 minutos tapado antes de envasar en el táper de oficina."
+    ]
+  },
+
+  // --- GRUPO 10: SALVADORES RÁPIDOS MERCADONA ---
+  {
+    id: "gnocchis_kebab_mercadona_express",
+    name: "Gnocchis Dorados con Pollo Kebab Mercadona al Estilo Express",
+    type: "comida",
+    servings: 1,
+    prepTime: 8,
+    calories: 520,
+    protein: 35,
+    carbs: 60,
+    fats: 15,
+    appliance: "fuegos",
+    tags: ["Salva-Comidas", "Mercadona", "Kebab Fit", "Gnocchis", "Ultra Rápida", "8 Minutos"],
+    batchNotes: "El plato salvavidas definitivo de Mercadona. La carne de pollo asada kebab viene lista y sazonada (alta proteína ~22g/100g). Los gnocchis se doran en sartén o Airfryer sin hervir agua.",
+    ingredients: [
+      { name: "Gnocchis de patata frescos Hacendado", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Carne de pollo asada estilo Kebab Hacendado", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Tomates cherry", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Cebolla morada en tiras finas", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Yogur griego natural 0% con orégano y ajo", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "TRUCO CRUJIENTE EN SARTÉN: Calentar una sartén antiadherente amplia con unas gotas de AOVE a fuego medio-alto. Añadir los gnocchis DIRECTOS de la bolsa (sin hervir) y saltear 4-5 minutos hasta que queden dorados y crujientes por fuera y tiernos por dentro (o 7 min en Airfryer a 195°C).",
+      "En la misma sartén, apartar los gnocchis a un lateral y volcar la carne de pollo kebab con la cebolla morada. Saltear a fuego vivo 2 minutos para que se dore y suelte sus aromas especiados.",
+      "Añadir los tomates cherry partidos por la mitad para que se templen 1 minuto.",
+      "Mezclar todo en la sartén y servir en el plato o táper coronado con la salsa fría de yogur griego ligero aliñado con orégano y un toque de ajo. ¡Comida completa en 8 minutos!"
+    ]
   }
 ];
+
 
 
 export const CARLOS_WORKOUT_SCHEDULE = {
