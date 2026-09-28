@@ -1759,6 +1759,20 @@ body[data-profile="she"] .btn-generate-shopping-glow:hover {
   transition: width 0.3s ease;
 }
 
+.progress-bar-fill.carbs {
+  background: linear-gradient(90deg, #06b6d4, #3b82f6);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-bar-fill.fats {
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
 /* DAILY NUTRITION COMPACT STRIP (COLLAPSIBLE WIDGET) */
 .daily-nutrition-compact-strip {
   margin-bottom: 0.85rem;
@@ -1850,6 +1864,20 @@ body[data-profile="she"] .btn-generate-shopping-glow:hover {
 
 .mini-bar-fill.prot {
   background: linear-gradient(90deg, #10b981, #06b6d4);
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.mini-bar-fill.carbs {
+  background: linear-gradient(90deg, #06b6d4, #3b82f6);
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.mini-bar-fill.fats {
+  background: linear-gradient(90deg, #a855f7, #ec4899);
   height: 100%;
   border-radius: 2px;
   transition: width 0.3s ease;

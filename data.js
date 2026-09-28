@@ -57,28 +57,102 @@ export const INGREDIENT_CATEGORIES = {
 };
 
 export const RECIPES_DATABASE = [
-  // --- GRUPO 1: ENSALADAS RÁPIDAS Y LIGERAS DE OFICINA (SIN BRÓCOLI NI COLIFLOR) ---
+  // --- GRUPO 0: DESAYUNOS RÁPIDOS (CAFÉ CON LECHE Y VARIANTES) ---
+  {
+    id: "desayuno_cafe_con_leche",
+    name: "Café con Leche Semidesnatada / Entera de Desayuno",
+    type: "desayuno",
+    servings: 1,
+    prepTime: 3,
+    calories: 95,
+    protein: 7,
+    carbs: 10,
+    fats: 3,
+    appliance: "microondas",
+    tags: ["Desayuno", "Café", "Rápido", "Básico"],
+    batchNotes: "Desayuno habitual rápido. Aporta la cafeína matutina y una base ligera de proteínas y calcio. Para compensar calorías y macros en el día, la media mañana y la comida aportan la energía principal.",
+    ingredients: [
+      { name: "Leche semidesnatada o entera Hacendado", amount: 200, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Café molido o en cápsula", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Preparar un café solo corto o largo según preferencia en cafetera italiana, espresso o cápsula.",
+      "Calentar 200ml de leche en el microondas o emulsionar con espumador.",
+      "Mezclar en taza grande. Se puede tomar sin azúcar o con una gota de edulcorante/canela."
+    ]
+  },
+  {
+    id: "desayuno_cafe_con_leche_proteica",
+    name: "Café con Leche +Proteínas Hacendado",
+    type: "desayuno",
+    servings: 1,
+    prepTime: 3,
+    calories: 125,
+    protein: 16,
+    carbs: 10,
+    fats: 1,
+    appliance: "microondas",
+    tags: ["Desayuno", "Alta Proteína", "Mercadona", "Fit"],
+    batchNotes: "Usando la leche desnatada +Proteínas de Mercadona (aporta 8g proteína por cada 100ml), un solo café con leche eleva el desayuno a 16g de proteína limpia sin grasas.",
+    ingredients: [
+      { name: "Leche desnatada +Proteínas Hacendado", amount: 200, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Café espresso recién hecho", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY }
+    ],
+    instructions: [
+      "Extraer el café en taza grande.",
+      "Calentar los 200ml de leche +Proteínas en el microondas (o batir para hacer espuma densa).",
+      "Verter sobre el café. Opción ideal para sumar proteína matutina en 1 minuto."
+    ]
+  },
+  {
+    id: "desayuno_cafe_tostada_tomate",
+    name: "Café con Leche y Tostada Integral con Tomate y AOVE",
+    type: "desayuno",
+    servings: 1,
+    prepTime: 5,
+    calories: 270,
+    protein: 12,
+    carbs: 36,
+    fats: 8,
+    appliance: "microondas",
+    tags: ["Desayuno", "Tradicional", "Tostada", "Mediterráneo"],
+    batchNotes: "Versión desayuno clásico con hidratos de carbono complejos para días con mayor demanda de energía matutina.",
+    ingredients: [
+      { name: "Leche semidesnatada Hacendado", amount: 180, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Café espresso", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Pan integral de masa madre", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Tomate rallado natural", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+    ],
+    instructions: [
+      "Tostar la rebanada de pan integral.",
+      "Untar el tomate natural rallado y regar con el hilo de AOVE y pizca de sal.",
+      "Acompañar con el café con leche caliente recién hecho."
+    ]
+  },
+
+  // --- GRUPO 1: ENSALADAS RÁPIDAS Y COMPLETAS DE OFICINA (SIN BRÓCOLI NI COLIFLOR) ---
   {
     id: "ensalada_pollo_mediterranea_oficina",
     name: "Ensalada Mediterránea de Pollo Asado y Garbanzos",
     type: "comida",
     servings: 1,
     prepTime: 10,
-    calories: 440,
-    protein: 38,
-    carbs: 36,
-    fats: 14,
+    calories: 650,
+    protein: 50,
+    carbs: 62,
+    fats: 20,
     appliance: "cecotec",
     tags: ["Oficina", "Ensalada", "Batch Cooking", "Sin Cocinar", "Alta Proteína"],
     batchNotes: "Aprovecha pechuga de pollo asada o mechada en batch dominical y garbanzos cocidos en conserva. El aliño se añade al momento en la oficina.",
     ingredients: [
-      { name: "Pechuga de pollo asada o mechada", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Garbanzos cocidos en conserva", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pollo asada o mechada", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Garbanzos cocidos en conserva", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
       { name: "Canónigos y espinacas baby", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Tomates cherry", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Pepino fresco", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Queso feta", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Queso feta", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 12, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Zumo de limón y orégano", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
@@ -95,27 +169,28 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 10,
-    calories: 430,
-    protein: 36,
-    carbs: 28,
-    fats: 18,
+    calories: 640,
+    protein: 48,
+    carbs: 55,
+    fats: 22,
     appliance: "horno",
     tags: ["Oficina", "Ensalada", "Aprovechamiento Lomo", "Rápida", "Gourmet"],
-    batchNotes: "Sinergia estelar con la pieza maestra de 1kg de lomo al horno. El contraste del lomo templado al vino con la manzana ácida y nueces es exquisito.",
+    batchNotes: "Sinergia estelar con la pieza maestra de 1kg de lomo al horno. Incluye patatas asadas al jugo del lomo para asegurar los carbohidratos necesarios.",
     ingredients: [
-      { name: "Lomo mechado al vino", amount: 130, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Lomo mechado al vino", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Patatas asadas al jugo del lomo", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Mezcla de brotes tiernos y canónigos", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Manzana ácida (Granny Smith o Fuji)", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Nueces peladas", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Queso curado o semicurado en lascas", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Vinagre balsámico de Módena y AOVE", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
+      { name: "Nueces peladas", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Queso curado o semicurado en lascas", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Vinagre balsámico de Módena y AOVE", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
       "Disponer la cama de brotes tiernos en el táper.",
       "Cortar la manzana en láminas muy finas e incorporar las nueces partidas y las lascas de queso.",
-      "Llevar el lomo mechado con una cucharada de su reducción en un recipiente pequeño apto para microondas.",
-      "En el trabajo, templar el lomo 30 segundos en el microondas para reactivar sus jugos aromáticos al vino.",
-      "Verter el lomo tibio sobre la ensalada crujiente y rematar con la vinagreta balsámica."
+      "Llevar el lomo mechado y las patatas asadas con una cucharada de su reducción en un recipiente pequeño apto para microondas.",
+      "En el trabajo, templar el lomo y las patatas 45 segundos en el microondas para reactivar sus jugos aromáticos al vino.",
+      "Verter sobre la ensalada crujiente y rematar con la vinagreta balsámica."
     ]
   },
   {
@@ -124,56 +199,58 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 12,
-    calories: 480,
-    protein: 34,
-    carbs: 46,
-    fats: 16,
+    calories: 680,
+    protein: 46,
+    carbs: 74,
+    fats: 22,
     appliance: "cecotec",
     tags: ["Oficina", "Poke", "Salmón", "Arroz Cecotec", "Omega 3"],
-    batchNotes: "Utiliza el arroz cocido en lote en la jarra de la Cecotec. El salmón se puede marcar brevemente en sartén/airfryer la noche anterior o usar marinado.",
+    batchNotes: "Utiliza el arroz cocido en lote en la jarra de la Cecotec y edamame para redondear proteínas e hidratos de lenta absorción.",
     ingredients: [
-      { name: "Lomo de salmón fresco en dados", amount: 130, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Arroz jazmín o basmati cocido", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Lomo de salmón fresco en dados", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Arroz jazmín o basmati cocido", amount: 200, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Edamame cocido desgranado", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
       { name: "Pepino fresco en dados", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Zanahoria rallada", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aguacate", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Aguacate", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Salsa de soja baja en sal", amount: 15, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
       { name: "Semillas de sésamo tostado", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Colocar el arroz jazmín cocido a temperatura ambiente como base en el recipiente de oficina.",
+      "Colocar los 200g de arroz jazmín cocido a temperatura ambiente como base en el recipiente de oficina.",
       "Dorar ligeramente los dados de salmón en una sartén antiadherente caliente 2 minutos (vuelta y vuelta rápida para sellar y mantener jugoso el interior).",
-      "Disponer en secciones ordenadas el pepino en dados, la zanahoria rallada, el aguacate en láminas y el salmón.",
+      "Disponer en secciones ordenadas el edamame, el pepino en dados, la zanahoria rallada, el aguacate en láminas y el salmón.",
       "Rociar con la salsa de soja y espolvorear semillas de sésamo tostado. Se come delicioso a temperatura ambiente o frío de nevera."
     ]
   },
   {
     id: "ensalada_atun_huevo_pimientos",
-    name: "Ensalada de Atún Claro, Huevo Duro y Pimientos Asados",
+    name: "Ensalada Campera de Atún Claro, Huevo Duro y Pimientos Asados",
     type: "comida",
     servings: 1,
     prepTime: 8,
-    calories: 410,
-    protein: 35,
-    carbs: 16,
-    fats: 22,
+    calories: 590,
+    protein: 46,
+    carbs: 45,
+    fats: 24,
     appliance: "cecotec",
     tags: ["Oficina", "Ensalada", "Huevos Vapor", "Sin Cocinar", "Clásico"],
-    batchNotes: "Aprovecha huevos cocidos al vapor en la vaporera superior de la Cecotec y pimientos asados al horno en la hornada compartida del lomo.",
+    batchNotes: "Aprovecha huevos cocidos al vapor en la vaporera superior de la Cecotec, patata cocida y pimientos asados al horno en la hornada del lomo.",
     ingredients: [
-      { name: "Atún claro al natural o en AOVE", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Huevo duro campero", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Atún claro al natural o en AOVE", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Huevo duro campero", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Patatas cocidas en dados", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Pimientos rojos asados en tiras", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Canónigos y hojas de rúcula", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceitunas negras en rodajas", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Cebolla morada picada", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra y vinagre", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Aceitunas negras en rodajas", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Cebolla morada picada", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra y vinagre", amount: 12, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
-      "En el recipiente táper poner la base de canónigos y rúcula fresca.",
+      "En el recipiente táper poner la base de dados de patata cocida, canónigos y rúcula fresca.",
       "Añadir las tiras de pimiento rojo asado, la cebolla morada fina y las rodajas de aceituna negra.",
       "Escurrir el atún claro y desmigarlo por encima.",
-      "Pelar el huevo duro (cocinado al vapor en la sesión batch), cortarlo en gajos y coronar la ensalada.",
+      "Pelar los dos huevos duros (cocinados al vapor en la sesión batch), cortarlos en cuartos y coronar la ensalada.",
       "Aderezar con AOVE, vinagre de manzana o jerez y sal marina."
     ]
   },
@@ -183,25 +260,25 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 10,
-    calories: 450,
-    protein: 34,
-    carbs: 50,
-    fats: 12,
+    calories: 670,
+    protein: 48,
+    carbs: 82,
+    fats: 16,
     appliance: "fuegos",
     tags: ["Oficina", "Pasta Fría", "Alta Proteína", "Batch Cooking", "Fresca"],
-    batchNotes: "Aprovecha pasta integral cocida al dente en lote de 500g. Enjuagar con agua fría tras cocer para cortar cocción y evitar que se ablande.",
+    batchNotes: "Aprovecha pasta integral cocida al dente en lote de 500g. Enjuagar con agua fría tras cocer para cortar cocción y mantener textura firme.",
     ingredients: [
-      { name: "Pasta integral cocida al dente", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Pechuga de pavo o pollo asada en dados", amount: 110, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Mozzarella fresca light", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Tomates cherry partidos", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Pasta integral cocida al dente", amount: 220, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pavo o pollo asada en dados", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Mozzarella fresca light", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Tomates cherry partidos", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Albahaca fresca picada", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Aceite de oliva virgen extra", amount: 7, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
-      "Sacar la pasta integral cocida del táper de batch.",
+      "Sacar los 220g de pasta integral cocida del táper de batch.",
       "Añadir los tomates cherry partidos por la mitad y la mozzarella light en perlas o cubos.",
-      "Agregar la pechuga de pavo o pollo asada troceada en dados pequeños.",
+      "Agregar la pechuga de pavo o pollo asada troceada en dados generosos.",
       "Condimentar con albahaca fresca picada, sal y un hilo de AOVE. Mezclar bien; aguanta 3 días perfecta en la nevera."
     ]
   },
@@ -213,25 +290,25 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 20,
-    calories: 510,
-    protein: 42,
-    carbs: 38,
-    fats: 18,
+    calories: 720,
+    protein: 52,
+    carbs: 72,
+    fats: 22,
     appliance: "horno",
     tags: ["Pieza Maestra", "Batch Cooking", "Horno", "Cocción Lenta", "Carne Mechada"],
     batchNotes: "PIEZA MAESTRA: Se asa la pieza de 1kg a 130-140°C durante 4h tapada con vino blanco, patatas y aromáticos. Se desmiga con dos tenedores y rinde para 6-8 raciones repartidas en arepas, tacos, ensaladas y tostas.",
     ingredients: [
-      { name: "Lomo o cabecero de cerdo asado y mechado", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Patatas asadas al jugo del lomo", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Reducción de vino blanco, cebolla y jugos", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Cebolla asada confitada", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
+      { name: "Lomo o cabecero de cerdo asado y mechado", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Patatas asadas al jugo del lomo", amount: 240, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Reducción de vino blanco, cebolla y jugos", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Cebolla asada confitada", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
     ],
     instructions: [
       "SESIÓN DOMINGO: En una fuente honda o cocotte, colocar 1kg de lomo de cerdo con sal, pimienta, orégano, 4 dientes de ajo y 2 cebollas en cuartos. Verter 300ml de vino blanco seco y 50ml de agua.",
-      "Añadir alrededor 800g de patatas peladas en mitades. Cubrir con papel de aluminio sellado o tapa.",
+      "Añadir alrededor 1kg de patatas peladas en mitades. Cubrir con papel de aluminio sellado o tapa.",
       "Hornear a 130-140°C durante 4 horas (o 160°C 2h30). La carne quedará ultrasuave y se deshilachará sin esfuerzo con dos tenedores.",
       "Deshilachar la carne en su propio jugo. Triturar parte de la cebolla con el jugo para crear una reducción espesa.",
-      "Servir la primera ración con las patatas asadas melosas y guardar el resto de carne mechada en recipientes herméticos de cristal."
+      "Servir la ración completa con 240g de patatas asadas melosas y guardar el resto de carne mechada en recipientes herméticos de cristal."
     ]
   },
   {
@@ -240,25 +317,25 @@ export const RECIPES_DATABASE = [
     type: "cena",
     servings: 1,
     prepTime: 12,
-    calories: 430,
-    protein: 35,
-    carbs: 38,
-    fats: 14,
+    calories: 620,
+    protein: 48,
+    carbs: 64,
+    fats: 18,
     appliance: "fuegos",
     tags: ["Cena Rápida", "Aprovechamiento Lomo", "Sartén", "Mex", "Batch Cooking"],
-    batchNotes: "Aprovecha 120g de lomo mechado de la pieza maestra. Se regenera en la sartén en 2 minutos absorbiendo el sofrito.",
+    batchNotes: "Aprovecha 150g de lomo mechado de la pieza maestra con 3 tortillas para aportar la energía adecuada.",
     ingredients: [
-      { name: "Lomo mechado al vino", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Tortillas de trigo integral o maíz", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Pimientos variados en tiras", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Cebolla en juliana", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Yogur natural tipo griego 0%", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Lomo mechado al vino", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Tortillas de trigo integral o maíz", amount: 3, unit: "ud", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pimientos variados en tiras", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Cebolla en juliana", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Yogur natural tipo griego 0%", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
       { name: "Zumo de lima y especias fajita", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
       "En sartén a fuego vivo con unas gotas de AOVE, saltear los pimientos y la cebolla en tiras durante 4-5 minutos hasta que estén tiernos pero al dente.",
       "Añadir el lomo mechado y dos cucharadas de su jugo al vino. Saltear 2 minutos para que se integre todo caliente y jugoso.",
-      "Calentar las tortillas en sartén seca vuelta y vuelta 15 segundos.",
+      "Calentar las 3 tortillas en sartén seca vuelta y vuelta 15 segundos.",
       "Montar las fajitas con la carne y verduras, añadir una cucharada de yogur con lima y enrollar."
     ]
   },
@@ -268,18 +345,18 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 8,
-    calories: 490,
-    protein: 38,
-    carbs: 54,
-    fats: 13,
+    calories: 710,
+    protein: 50,
+    carbs: 84,
+    fats: 18,
     appliance: "fuegos",
     tags: ["Comida Rápida", "Aprovechamiento Lomo", "Arroz Cecotec", "Fusión"],
-    batchNotes: "Sinergia doble: Arroz cocido en la Cecotec + Lomo mechado de la pieza maestra de 1kg.",
+    batchNotes: "Sinergia doble: 220g de arroz cocido en la Cecotec + Lomo mechado de la pieza maestra de 1kg.",
     ingredients: [
-      { name: "Arroz basmati cocido en Cecotec", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Lomo mechado al vino", amount: 130, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Zanahoria en juliana fina", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Champiñones salteados", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Arroz basmati cocido en Cecotec", amount: 220, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Lomo mechado al vino", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Zanahoria en juliana fina", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Champiñones salteados", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Salsa de soja y sésamo tostado", amount: 15, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
@@ -293,283 +370,286 @@ export const RECIPES_DATABASE = [
   // --- GRUPO 3: AREPAS Y TOSTAS / SANDWICHES CON RELLENOS SANOS ---
   {
     id: "arepa_reina_pepiada_fit",
-    name: "Arepa Asada Reina Pepiada Fit (Pollo y Aguacate)",
+    name: "Arepas Asadas Reina Pepiada Fit (2 uds - Pollo y Aguacate)",
     type: "cena",
     servings: 1,
     prepTime: 18,
-    calories: 440,
-    protein: 34,
-    carbs: 42,
-    fats: 14,
+    calories: 610,
+    protein: 46,
+    carbs: 62,
+    fats: 20,
     appliance: "airfryer",
     tags: ["Arepas", "Reina Pepiada", "Fit", "Pollo Batch", "Airfryer"],
-    batchNotes: "Versión saludable sin mayonesa: aguacate maduro emulsionado con yogur griego natural. Pollo deshilachado de la sesión de batch.",
+    batchNotes: "Ración completa con 2 arepas asadas. Aguacate maduro emulsionado con yogur griego natural y 140g de pollo deshilachado.",
     ingredients: [
-      { name: "Harina de maíz precocida", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Pechuga de pollo cocida o asada deshilachada", amount: 110, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Aguacate maduro", amount: 45, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Yogur griego natural 0%", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Cebolleta picada muy fina", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Harina de maíz precocida", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pollo cocida o asada deshilachada", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Aguacate maduro", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Yogur griego natural 0%", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Cebolleta picada muy fina", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Zumo de lima, sal y pimienta", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Mezclar en un bol 60g de harina de maíz precocida con 75ml de agua tibia y una pizca de sal. Amasar 2 min hasta que no se agriete y formar una arepa redonda de 1.5 cm de grosor.",
-      "Dorar en sartén untada con unas gotas de aceite o en Airfryer (190°C durante 12-14 minutos, volteando a mitad) hasta que la costra suene hueca.",
-      "Para el relleno: machacar el aguacate con un tenedor junto al yogur griego, zumo de lima, sal y pimienta. Mezclar con el pollo deshilachado y la cebolleta picada.",
-      "Abrir la arepa caliente longitudinalmente y rellenar con la crema de pollo y aguacate."
+      "Mezclar en un bol 80g de harina de maíz precocida con 100ml de agua tibia y sal. Amasar y formar 2 arepas de 1.5 cm de grosor.",
+      "Dorar en sartén o Airfryer (190°C durante 12-14 minutos, volteando a mitad) hasta que la costra suene hueca.",
+      "Para el relleno: machacar el aguacate con el yogur griego, lima, sal y pimienta. Mezclar con el pollo deshilachado y la cebolleta.",
+      "Abrir las 2 arepas calientes y rellenar generosamente con la mezcla."
     ]
   },
   {
     id: "arepa_pelua_lomo_mechado",
-    name: "Arepa Asada Pelúa Fit (Lomo Mechado y Queso Light)",
+    name: "Arepas Asadas Pelúas Fit (2 uds - Lomo Mechado y Queso)",
     type: "cena",
     servings: 1,
     prepTime: 15,
-    calories: 460,
-    protein: 38,
-    carbs: 44,
-    fats: 14,
+    calories: 640,
+    protein: 48,
+    carbs: 64,
+    fats: 20,
     appliance: "airfryer",
     tags: ["Arepas", "Lomo Mechado", "Batch Cooking", "Cena Rápida"],
-    batchNotes: "Aprovecha directamente las hebras de lomo mechado al vino. El queso se funde con el propio calor de la carne.",
+    batchNotes: "Aprovecha 150g de lomo mechado al vino caliente repartido en 2 arepas crujientes.",
     ingredients: [
-      { name: "Harina de maíz precocida", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Lomo mechado al vino caliente", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Queso bajo en grasa rallado o queso fresco", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Tomate en rodajas finas", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
+      { name: "Harina de maíz precocida", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Lomo mechado al vino caliente", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Queso bajo en grasa rallado o queso fresco", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Tomate en rodajas finas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
     ],
     instructions: [
-      "Amasar la harina de maíz con agua tibia y sal, formar la arepa y dorar en sartén o Airfryer a 190°C durante 12 min.",
-      "Calentar el lomo mechado en el microondas o sartén con una cucharada de su reducción jugosa.",
-      "Abrir la arepa, colocar las rodajas de tomate en el fondo, rellenar con el lomo mechado bien caliente y coronar con el queso rallado para que se funda."
+      "Amasar la harina de maíz con agua tibia y sal, formar 2 arepas y dorar en sartén o Airfryer a 190°C durante 12 min.",
+      "Calentar el lomo mechado en el microondas o sartén con su salsa al vino.",
+      "Abrir las 2 arepas, colocar rodajas de tomate en el fondo, rellenar con el lomo caliente y coronar con el queso rallado."
     ]
   },
   {
     id: "tosta_lomo_queso_fundido",
-    name: "Tosta Rústica de Lomo Mechado con Queso Havarti Light y Rúcula",
+    name: "Tosta Rústica Doble de Lomo Mechado con Havarti Light y Rúcula",
     type: "cena",
     servings: 1,
     prepTime: 8,
-    calories: 390,
-    protein: 32,
-    carbs: 32,
-    fats: 14,
+    calories: 550,
+    protein: 44,
+    carbs: 52,
+    fats: 18,
     appliance: "airfryer",
     tags: ["Tostas", "Cena Rápida", "Lomo Mechado", "Crujiente"],
-    batchNotes: "Gratinado rápido en Airfryer de 2 minutos para fundir el queso sobre el lomo mechado jugoso.",
+    batchNotes: "Doble rebanada de pan de masa madre tostado con 140g de lomo mechado y gratinado en Airfryer.",
     ingredients: [
-      { name: "Pan de masa madre o rústico integral", amount: 65, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Lomo mechado al vino", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Queso Havarti Light o Mozzarella", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Rúcula fresca", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Reducción de salsa del lomo", amount: 10, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+      { name: "Pan de masa madre o rústico integral", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Lomo mechado al vino", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Queso Havarti Light o Mozzarella", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Rúcula fresca", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Reducción de salsa del lomo", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Tostar la rebanada de pan de masa madre en tostadora o Airfryer (3 min a 180°C).",
-      "Extender sobre el pan tostado una cucharadita de reducción del lomo y cubrir con las hebras de carne mechada.",
-      "Colocar la loncha de queso Havarti light encima y gratinar en la Airfryer 2 minutos a 200°C hasta que el queso burbujee.",
-      "Terminar con hojas de rúcula fresca recién puestas por encima y servir crujiente."
+      "Tostar las rebanadas de pan de masa madre en tostadora o Airfryer (3 min a 180°C).",
+      "Extender sobre el pan la reducción del lomo y cubrir con las hebras de carne mechada.",
+      "Colocar el queso Havarti light encima y gratinar en la Airfryer 2 minutos a 200°C hasta que burbujee.",
+      "Terminar con hojas de rúcula fresca por encima."
     ]
   },
   {
     id: "sandwich_club_fit_pollo",
-    name: "Sandwich Integral Club Fit de Pollo, Huevo y Mostaza Dijon",
+    name: "Sandwich Integral Club Doble de Pollo, Huevo y Mostaza Dijon",
     type: "cena",
     servings: 1,
     prepTime: 10,
-    calories: 420,
-    protein: 35,
-    carbs: 36,
-    fats: 14,
+    calories: 560,
+    protein: 46,
+    carbs: 54,
+    fats: 18,
     appliance: "fuegos",
     tags: ["Sandwich", "Cena Ligera", "Oficina", "Alto en Proteína"],
-    batchNotes: "Cena completa o táper de comida. Utiliza pollo a la plancha o restos de pechuga asada.",
+    batchNotes: "Sandwich completo con 130g de pechuga de pollo y huevo a la plancha.",
     ingredients: [
-      { name: "Pan de molde 100% integral", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Pechuga de pollo a la plancha o asada", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Huevo campero a la plancha", amount: 55, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Tomate en rodajas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Hojas de lechuga o espinacas", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Mostaza Dijon mezclada con yogur natural", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+      { name: "Pan de molde 100% integral", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pollo a la plancha o asada", amount: 130, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Huevo campero a la plancha", amount: 1, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Tomate en rodajas", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Hojas de lechuga o espinacas", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Mostaza Dijon mezclada con yogur natural", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Tostar las dos rebanadas de pan de molde integral.",
-      "Cuajar un huevo a la plancha en sartén con una gota de aceite (dejando la yema tierna).",
+      "Tostar el pan integral.",
+      "Cuajar un huevo a la plancha en sartén con una gota de aceite.",
       "Untar el pan con la emulsión ligera de mostaza Dijon y yogur.",
-      "Montar en capas: hojas verdes, filetes finos de pechuga de pollo, rodajas de tomate y el huevo caliente. Cerrar y cortar en diagonal."
+      "Montar en capas: hojas verdes, filetes de pechuga de pollo, rodajas de tomate y el huevo caliente. Cerrar y cortar en diagonal."
     ]
   },
   {
     id: "tosta_salmon_aguacate",
-    name: "Tosta Crujiente de Salmón, Requesón/Ricotta y Aguacate",
+    name: "Tosta Rústica de Salmón, Requesón/Ricotta y Aguacate",
     type: "cena",
     servings: 1,
     prepTime: 6,
-    calories: 370,
-    protein: 26,
-    carbs: 28,
-    fats: 16,
+    calories: 520,
+    protein: 36,
+    carbs: 48,
+    fats: 20,
     appliance: "fuegos",
     tags: ["Tostas", "Salmón", "Cena Express", "Omega 3", "Sin Cocinar"],
-    batchNotes: "Cena sin manchar nada. Alto en ácidos grasos saludables y proteínas ligeras de fácil asimilación nocturna.",
+    batchNotes: "Cena sin manchar nada. Salmón marinado con requesón magro y aguacate sobre pan crujiente de centeno.",
     ingredients: [
-      { name: "Pan de centeno o integral rústico", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Salmón marinado o ahumado", amount: 70, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Requesón, Ricotta o queso untar light", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aguacate en láminas", amount: 35, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Semillas de sésamo y eneldo", amount: 3, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+      { name: "Pan de centeno o integral rústico", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Salmón marinado o ahumado", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Requesón, Ricotta o queso untar light", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aguacate en láminas", amount: 45, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Semillas de sésamo y eneldo", amount: 4, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Tostar la rebanada de pan hasta que quede firme y dorada.",
+      "Tostar el pan hasta que quede firme y dorado.",
       "Untar una capa generosa de requesón o queso fresco batido desnatado.",
       "Distribuir las láminas de aguacate y colocar encima las lonchas de salmón.",
       "Espolvorear con eneldo fresco y semillas de sésamo."
     ]
   },
 
-  // --- GRUPO 4: CENAS LIGERAS CLÁSICAS ---
+  // --- GRUPO 4: CENAS LIGERAS Y NUTRITIVAS ---
   {
     id: "pollo_plancha_limon_esparragos",
-    name: "Pechuga de Pollo Marinada al Limón con Espárragos a la Plancha",
+    name: "Pechuga de Pollo al Limón con Patata Asada y Espárragos",
     type: "cena",
     servings: 1,
     prepTime: 12,
-    calories: 340,
-    protein: 42,
-    carbs: 8,
-    fats: 14,
+    calories: 520,
+    protein: 50,
+    carbs: 42,
+    fats: 16,
     appliance: "fuegos",
-    tags: ["Cena Ligera", "Bajo en Carbos", "Alta Proteína", "Sartén"],
-    batchNotes: "Cena limpia, digestiva y reconstituyente para la noche. Cero digestiones pesadas.",
+    tags: ["Cena Completa", "Alta Proteína", "Sartén", "Airfryer"],
+    batchNotes: "Cena reconstituyente y digestiva. Incorpora dados de patata dorados en Airfryer para cuadrar los carbohidratos necesarios tras un desayuno ligero.",
     ingredients: [
-      { name: "Pechuga de pollo fresca en filetes gruesos", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Pechuga de pollo fresca en filetes gruesos", amount: 180, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Patatas en dados doradas en Airfryer", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Espárragos verdes trigueros", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Zumo de medio limón", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
       { name: "Ajo en polvo, orégano y sal marina", amount: 3, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Marinar los filetes de pollo con el zumo de limón, ajo en polvo y orégano durante 5 minutos.",
-      "Calentar una sartén o plancha con 5ml de AOVE y cocinar los espárragos verdes a fuego medio 6-7 minutos hasta que queden tiernos con puntas crujientes.",
-      "En la misma sartén bien caliente, dorar los filetes de pechuga 3 minutos por cada lado para que sellen dorados y queden tiernos por dentro.",
-      "Servir el pollo recién hecho con los espárragos y una rodajita de limón."
+      "Dorar los dados de patata en la Airfryer 14 minutos a 195°C hasta que estén crujientes.",
+      "En sartén con unas gotas de AOVE dorar los espárragos verdes a fuego medio 6-7 minutos.",
+      "Marcar la pechuga de pollo marinada al limón 3 minutos por lado a fuego vivo.",
+      "Servir la pechuga jugosa con los espárragos y las patatas crujientes."
     ]
   },
   {
     id: "tortilla_atun_espinacas",
-    name: "Tortilla Francesa Jugosa de Atún y Espinacas con Tomate Aliñado",
+    name: "Tortilla Francesa de Atún y Espinacas con Tosta y Tomate Aliñado",
     type: "cena",
     servings: 1,
     prepTime: 10,
-    calories: 360,
-    protein: 32,
-    carbs: 8,
-    fats: 22,
+    calories: 490,
+    protein: 42,
+    carbs: 34,
+    fats: 20,
     appliance: "fuegos",
     tags: ["Cena Ligera", "Tortilla", "Rápida", "Sin Complicaciones"],
-    batchNotes: "Plato estrella de noche sin tiempo. Las espinacas baby reducen solas con el calor en 40 segundos.",
+    batchNotes: "Tortilla jugosa con 2 huevos enteros + 1 clara (o 3 huevos) y 80g de atún, acompañada de tosta de pan integral para equilibrar hidratos.",
     ingredients: [
       { name: "Huevos camperos frescos", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Atún claro al natural escurrido", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Espinacas baby frescas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Tomate de ensalada maduro", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Orégano y sal marina", amount: 2, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
+      { name: "Claras de huevo o huevo extra", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Atún claro al natural escurrido", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Espinacas baby frescas", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Pan integral tostado", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Tomate de ensalada maduro", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
-      "En sartén con una cucharadita de AOVE saltear las espinacas baby 1 minuto hasta que bajen de volumen.",
-      "Batir los dos huevos con una pizca de sal en un bol e incorporar el atún bien escurrido y las espinacas salteadas.",
-      "Verter en la sartén antiadherente caliente a fuego medio; cuajar 1.5 minutos por lado doblando sobre sí misma para que el centro quede sedoso y jugoso.",
-      "Acompañar con el tomate cortado en gajos con orégano y un toque de sal."
+      "Saltear las espinacas en sartén con una gota de AOVE 1 minuto.",
+      "Batir los huevos con la clara, sal y el atún escurrido; añadir las espinacas.",
+      "Cuajar la tortilla en sartén dejando el corazón jugoso.",
+      "Servir con la rebanada de pan integral tostado y los gajos de tomate aliñados."
     ]
   },
   {
     id: "revuelto_gambas_champinones",
-    name: "Revuelto de Gambas y Champiñones al Ajillo",
+    name: "Revuelto de Gambas y Champiñones con Tostas Integrales",
     type: "cena",
     servings: 1,
     prepTime: 12,
-    calories: 330,
-    protein: 30,
-    carbs: 6,
-    fats: 19,
+    calories: 480,
+    protein: 42,
+    carbs: 32,
+    fats: 20,
     appliance: "fuegos",
     tags: ["Cena Ligera", "Huevos", "Marisco", "Keto Friendly"],
-    batchNotes: "Salteado rápido de 6 minutos en sartén grande. Los champiñones aportan saciedad con calorías insignificantes.",
+    batchNotes: "Revuelto cremoso con 140g de gambas y huevos camperos sobre rebanada de pan rústico integral.",
     ingredients: [
       { name: "Huevos camperos frescos", amount: 2, unit: "ud", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Gambas peladas (frescas o descongeladas)", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Gambas peladas (frescas o descongeladas)", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
       { name: "Champiñones frescos laminados", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Pan integral tostado", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
       { name: "Diente de ajo picado", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Perejil fresco picado y sal", amount: 3, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Picar el ajo y dorarlo a fuego medio en sartén con el AOVE sin quemarlo.",
-      "Añadir los champiñones laminados y saltear 4 minutos. Incorporar las gambas peladas y saltear 2 minutos más hasta que cambien de color.",
-      "Bajar el fuego a potencia mínima, verter los huevos batidos y remover suavemente con espátula durante 60 segundos.",
-      "Retirar del fuego cuando aún esté brillante y meloso (el calor residual terminará de cuajarlo sin secarlo). Espolvorear perejil fresco."
+      "Dorar el ajo picado en sartén con el AOVE.",
+      "Añadir los champiñones y saltear 4 minutos. Incorporar las gambas y saltear 2 minutos más.",
+      "Bajar el fuego al mínimo, verter los huevos batidos y remover suavemente con espátula 60 segundos.",
+      "Retirar meloso y servir sobre la tosta de pan integral con perejil fresco."
     ]
   },
 
   // --- GRUPO 5: SALMÓN, ARROZ Y SOJA ---
   {
     id: "salmon_glaseado_soja_arroz",
-    name: "Lomo de Salmón Glaseado en Salsa de Soja y Miel con Arroz Cecotec",
+    name: "Lomo de Salmón Glaseado en Soja y Miel con Arroz Cecotec",
     type: "comida",
     servings: 1,
     prepTime: 15,
-    calories: 530,
-    protein: 36,
-    carbs: 48,
-    fats: 20,
+    calories: 720,
+    protein: 46,
+    carbs: 76,
+    fats: 24,
     appliance: "airfryer",
     tags: ["Salmón", "Arroz Cecotec", "Salsa Soja", "Omega 3", "Airfryer"],
-    batchNotes: "Aprovecha el arroz basmati cocido previamente en la jarra Cecotec. El salmón se glasea en Airfryer o sartén en solo 8 minutos.",
+    batchNotes: "Salmón fresco en Airfryer con 220g de arroz basmati cocido previamente en la jarra Cecotec.",
     ingredients: [
-      { name: "Lomo de salmón fresco", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Arroz basmati cocido en Cecotec", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Lomo de salmón fresco", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Arroz basmati cocido en Cecotec", amount: 220, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
       { name: "Salsa de soja baja en sal", amount: 15, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Miel pura o sirope de agave", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Miel pura o sirope de agave", amount: 8, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
       { name: "Jengibre fresco rallado", amount: 3, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Semillas de sésamo y cebollino", amount: 4, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Aceite de oliva virgen extra", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Semillas de sésamo y cebollino", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Aceite de oliva virgen extra", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "Mezclar la salsa de soja con la miel y el jengibre rallado.",
-      "Pintar el lomo de salmón con la mitad del glaseado y cocinar en la cesta de la Airfryer a 190°C durante 7-8 minutos (o marcar en sartén por el lado de la piel primero).",
-      "Pincelar con el resto del glaseado durante el último minuto para que quede caramelizado y brillante.",
-      "Regenerar el arroz basmati 1 minuto al microondas, colocar el salmón sobre el arroz y espolvorear sésamo tostado y cebollino picado."
+      "Pintar el lomo de salmón y cocinar en Airfryer a 190°C durante 7-8 minutos.",
+      "Pincelar con el resto del glaseado durante el último minuto para que caramelice.",
+      "Regenerar el arroz basmati 1 minuto al microondas, colocar el salmón sobre el arroz y espolvorear sésamo tostado y cebollino."
     ]
   },
 
-  // --- GRUPO 6: PASTAS SENCILLAS (SIN FANTASÍAS) ---
+  // --- GRUPO 6: PASTAS COMPLETAS ---
   {
     id: "pasta_ternera_tomate_casero",
     name: "Plumas Integrales con Ternera Magra y Tomate Natural Casero",
     type: "comida",
     servings: 1,
     prepTime: 15,
-    calories: 510,
-    protein: 38,
-    carbs: 62,
-    fats: 11,
+    calories: 710,
+    protein: 50,
+    carbs: 85,
+    fats: 18,
     appliance: "fuegos",
     tags: ["Pasta", "Comida Clásica", "Ternera Magra", "Batch Cooking"],
-    batchNotes: "Aprovecha pasta integral cocida al dente en batch. La boloñesa express se prepara en 10 min en sartén grande.",
+    batchNotes: "Aprovecha pasta integral cocida al dente en batch (240g cocida o 90g en seco). Boloñesa ligera con 150g de ternera magra.",
     ingredients: [
-      { name: "Pasta integral (plumas o espaguetis)", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Carne picada de ternera magra", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Tomate triturado natural", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Cebolla picada fina", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Pasta integral (plumas o espaguetis)", amount: 240, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Carne picada de ternera magra", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Tomate triturado natural", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Cebolla picada fina", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Diente de ajo picado", amount: 4, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
-      { name: "Queso parmesano o grana padano rallado", amount: 10, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Queso parmesano o grana padano rallado", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
       { name: "Orégano y sal marina", amount: 2, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Cocer la pasta integral en agua hirviendo con sal durante 8-9 minutos (o sacar 180g de pasta ya cocida en batch).",
-      "En una sartén con el AOVE pochar la cebolla y el ajo 3 minutos. Añadir la carne picada de ternera y dorar picándola con la cuchara de madera.",
+      "Calentar la pasta integral cocida al dente.",
+      "En una sartén con el AOVE pochar la cebolla y el ajo 3 minutos. Añadir los 150g de carne picada de ternera y dorar.",
       "Verter el tomate triturado y el orégano. Dejar hacer chup-chup a fuego medio 8 minutos hasta que reduzca.",
       "Mezclar la pasta escurrida directamente en la sartén con la salsa y servir con el parmesano rallado."
     ]
@@ -580,125 +660,125 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 12,
-    calories: 470,
-    protein: 32,
-    carbs: 60,
-    fats: 10,
+    calories: 670,
+    protein: 45,
+    carbs: 84,
+    fats: 16,
     appliance: "fuegos",
     tags: ["Pasta Rápida", "Atún", "Mediterránea", "Oficina Friendly"],
-    batchNotes: "Receta comodín de despensa que se elabora en 10 minutos reales. Sabores limpios y mediterráneos.",
+    batchNotes: "Receta comodín de despensa con 140g de atún claro (2 latas) y 240g de pasta integral cocida.",
     ingredients: [
-      { name: "Espaguetis o hélices integrales", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Atún claro al natural", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Tomates cherry", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Espaguetis o hélices integrales cocidos", amount: 240, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Atún claro al natural", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Tomates cherry", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Dientes de ajo laminados", amount: 8, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Aceite de oliva virgen extra", amount: 12, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Albahaca seca o fresca", amount: 3, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
-      "Hervir la pasta integral al dente.",
-      "En sartén amplia calentar el AOVE y dorar los ajos laminados sin quemarlos.",
-      "Añadir los tomates cherry enteros o partidos por la mitad; saltear a fuego fuerte aplastando un par para que liberen su jugo dulce concentrado.",
-      "Añadir el atún escurrido y la pasta recién sacada del agua. Saltear todo junto 1 minuto para ligar y terminar con albahaca."
+      "En sartén amplia calentar el AOVE y dorar los ajos laminados.",
+      "Añadir los tomates cherry partidos por la mitad; saltear a fuego fuerte aplastando algunos para que liberen su jugo.",
+      "Añadir el atún escurrido y la pasta. Saltear todo junto 1 minuto para ligar y terminar con albahaca."
     ]
   },
 
-  // --- GRUPO 7: PIZZA CON MASA CASERA FIT ---
+  // --- GRUPO 7: PIZZA CASERA FIT ---
   {
     id: "pizza_casera_fit_pollo_champinones",
     name: "Pizza Casera Rústica de Pollo Mechado, Mozzarella Light y Champiñones",
     type: "cena",
     servings: 1,
     prepTime: 25,
-    calories: 520,
-    protein: 42,
-    carbs: 58,
-    fats: 13,
+    calories: 680,
+    protein: 50,
+    carbs: 76,
+    fats: 18,
     appliance: "horno",
     tags: ["Pizza Casera", "Fit", "Horno", "Fin de Semana", "Aprovechamiento Lomo"],
-    batchNotes: "Masa casera integral fermentada estirada muy fina. Se aprovecha el pollo asado o lomo mechado del batch como topping de lujo.",
+    batchNotes: "Masa casera integral fermentada con 85g de harina, 130g de pollo o lomo mechado y mozzarella light.",
     ingredients: [
-      { name: "Harina de trigo o espelta para masa casera", amount: 70, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Tomate triturado natural con orégano", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Mozzarella fresca light", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Pechuga de pollo mechada o lomo mechado", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Champiñones laminados", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Rúcula fresca", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Aceite de oliva virgen extra", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Harina de trigo o espelta para masa casera", amount: 85, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Tomate triturado natural con orégano", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Mozzarella fresca light", amount: 75, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Pechuga de pollo mechada o lomo mechado", amount: 130, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Champiñones laminados", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Rúcula fresca", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Aceite de oliva virgen extra", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
-      "MASA CASERA: Mezclar 70g de harina con 45ml de agua, 1g de levadura seca y pizca de sal. Amasar 5 min y dejar levar (o usar bola guardada en nevera).",
-      "Precalentar el horno a máxima potencia (240-250°C) con la bandeja dentro para que esté ardiendo.",
-      "Estirar la masa muy fina sobre papel vegetal. Repartir el tomate triturado con orégano y la mozzarella light desmenuzada y bien escurrida.",
-      "Distribuir los champiñones laminados y las hebras de pollo o lomo mechado de batch.",
-      "Deslizar sobre la bandeja caliente y hornear 8-10 minutos en la parte baja del horno hasta que la masa esté crujiente y tostada.",
-      "Sacar y coronar con la rúcula fresca y unas gotas de AOVE."
+      "MASA CASERA: Mezclar 85g de harina con 50ml de agua, levadura y sal. Amasar y estirar muy fina sobre papel vegetal.",
+      "Precalentar el horno a máxima potencia (240-250°C).",
+      "Repartir el tomate con orégano, la mozzarella light desmenuzada, champiñones y el lomo o pollo mechado.",
+      "Hornear 8-10 minutos en la parte baja del horno hasta que la masa esté crujiente y tostada.",
+      "Sacar y coronar con rúcula fresca y unas gotas de AOVE."
     ]
   },
 
   // --- GRUPO 8: SNACKS DE MEDIA MAÑANA PARA OFICINA (ESCRITORIO, SIN LEVANTARSE) ---
   {
     id: "snack_barrita_mercadona_fruta",
-    name: "Barrita Proteica Mercadona (+Proteínas) y Plátano de Mano",
+    name: "Combo Media Mañana: Barrita +Proteínas, Plátano y Nueces",
     type: "snack",
     servings: 1,
     prepTime: 1,
-    calories: 230,
-    protein: 12,
-    carbs: 32,
-    fats: 5,
+    calories: 340,
+    protein: 20,
+    carbs: 46,
+    fats: 10,
     appliance: "microondas",
     tags: ["Oficina", "Escritorio", "Mercadona", "Media Mañana", "Sin Preparación"],
-    batchNotes: "Snack directo de cajón para tomar frente al ordenador sin mancharse ni requerir plato ni cubiertos.",
+    batchNotes: "Snack completo de escritorio. La barrita + plátano + nueces aseguran el combustible necesario para aguantar con energía hasta la comida sin hipoglucemias.",
     ingredients: [
       { name: "Barrita +Proteínas o Enervit cacahuete Mercadona", amount: 35, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Plátano maduro de mano", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
+      { name: "Plátano maduro de mano", amount: 110, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Nueces peladas en bolsa", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
-      "Consumir en el puesto de trabajo a media mañana para sostener la energía mental y evitar caídas de glucosa tras el café con leche temprano."
+      "Consumir en el escritorio a media mañana. No ensucia el teclado y aporta 20g de proteína y energía limpia de digestión prolongada."
     ]
   },
   {
     id: "snack_yogur_bebible_nueces",
-    name: "Yogur Bebible +Proteínas Mercadona y Nueces Peladas",
+    name: "Yogur Bebible +Proteínas Mercadona y Nueces Peladas (25g)",
     type: "snack",
     servings: 1,
     prepTime: 1,
-    calories: 240,
-    protein: 22,
-    carbs: 14,
-    fats: 10,
+    calories: 320,
+    protein: 24,
+    carbs: 22,
+    fats: 15,
     appliance: "microondas",
     tags: ["Oficina", "Escritorio", "Alta Proteína", "Mercadona", "Sin Cuchara"],
-    batchNotes: "Formato líquido bebible que no requiere cuchara. Se toma directamente de la botellita con pajita o sorbo.",
+    batchNotes: "Botella entera bebible (20g P) + 25g de nueces (grasas saludables Omega 3 y saciedad).",
     ingredients: [
-      { name: "Yogur bebible +Proteínas Hacendado (fresa o plátano)", amount: 250, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Nueces peladas en bolsa", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Yogur bebible +Proteínas Hacendado (fresa o plátano)", amount: 280, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Nueces peladas en bolsa", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "Agitar la botellita de yogur proteico y beber directamente en el escritorio.",
-      "Acompañar con el puñado de nueces para aportar saciedad prolongada gracias a sus grasas saludables y fibra."
+      "Acompañar con el puñado de nueces."
     ]
   },
   {
     id: "snack_edamame_tostado_manzana",
-    name: "Edamame Tostado Crujiente Mercadona y Manzana de Mano",
+    name: "Mix Edamame Tostado Crujiente, Barrita y Manzana",
     type: "snack",
     servings: 1,
     prepTime: 1,
-    calories: 190,
-    protein: 14,
-    carbs: 24,
-    fats: 4,
+    calories: 330,
+    protein: 22,
+    carbs: 45,
+    fats: 8,
     appliance: "microondas",
     tags: ["Oficina", "Escritorio", "Crujiente", "Fibra", "Mercadona"],
-    batchNotes: "Snack seco que no pringa los dedos en el teclado. Crujiente, saciante y alto en proteína vegetal.",
+    batchNotes: "Snack seco crujiente que no pringa los dedos, alto en proteína vegetal y fibra.",
     ingredients: [
-      { name: "Mix de soja y edamame tostado crujiente Hacendado", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Manzana lavada de mano", amount: 130, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
+      { name: "Mix de soja y edamame tostado crujiente Hacendado", amount: 35, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Barrita proteica Hacendado", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Manzana lavada de mano", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE }
     ],
     instructions: [
-      "Tomar en el escritorio. El edamame tostado aporta textura crocante sin calorías vacías y la manzana aporta agua y fibra soluble."
+      "Tomar en el escritorio de forma limpia y directa."
     ]
   },
 
@@ -709,22 +789,22 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 25,
-    calories: 480,
-    protein: 20,
-    carbs: 66,
-    fats: 14,
+    calories: 640,
+    protein: 26,
+    carbs: 88,
+    fats: 19,
     appliance: "cecotec",
     tags: ["Risotto", "Setas", "Cecotec", "Cremoso", "Confort Food"],
-    batchNotes: "En el Robot Cecotec se cocina en la jarra con la pala MamboMix a 100°C sin romper el grano, liberando almidón perfecto. Mientras tanto, en la vaporera superior se pueden cocer huevos o verduras al vapor simultáneamente.",
+    batchNotes: "En el Robot Cecotec se cocina en la jarra con la pala MamboMix a 100°C sin romper el grano, liberando almidón perfecto. Mientras tanto, en la vaporera superior se pueden cocer huevos o pechugas al vapor simultáneamente.",
     ingredients: [
-      { name: "Arroz arborio, carnaroli o redondo", amount: 75, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Variado de setas (boletus, champiñones y portobello)", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Caldo de verduras o ave caliente", amount: 250, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Cebolla dulce picada fina", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Arroz arborio, carnaroli o redondo", amount: 95, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Variado de setas (boletus, champiñones y portobello)", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Caldo de verduras o ave caliente", amount: 300, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Cebolla dulce picada fina", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Diente de ajo picado", amount: 4, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Vino blanco seco", amount: 30, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Queso Parmesano o Grana Padano rallado", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Queso Parmesano o Grana Padano rallado", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "CECOTEC: Colocar la pala MamboMix. Poner el AOVE, la cebolla y el ajo; sofreír a 110°C, vel 1 durante 4 min.",
@@ -740,22 +820,22 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 25,
-    calories: 520,
-    protein: 36,
-    carbs: 64,
-    fats: 13,
+    calories: 720,
+    protein: 50,
+    carbs: 84,
+    fats: 18,
     appliance: "cecotec",
     tags: ["Risotto", "Alta Proteína", "Pollo Batch", "Setas", "Cecotec"],
-    batchNotes: "Aprovecha pechuga de pollo de batch o dados dorados en sartén. Equilibrio de alta proteína con la cremosidad del risotto.",
+    batchNotes: "Aprovecha pechuga de pollo de batch o dados dorados en sartén. Equilibrio de 50g de proteína limpia con la cremosidad del risotto.",
     ingredients: [
-      { name: "Arroz arborio o redondo", amount: 75, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Pechuga de pollo en dados o deshilachada", amount: 110, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Champiñones Portobello laminados", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Caldo de ave caliente", amount: 250, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Cebolla dulce picada", amount: 35, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Arroz arborio o redondo", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pollo en dados o deshilachada", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Champiñones Portobello laminados", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Caldo de ave caliente", amount: 300, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Cebolla dulce picada", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Vino blanco seco", amount: 25, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Queso Parmesano rallado", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Queso Parmesano rallado", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "En sartén o en la Cecotec sofreír la cebolla picada con el AOVE y saltear los champiñones Portobello 3 minutos.",
@@ -770,22 +850,22 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 25,
-    calories: 490,
-    protein: 36,
-    carbs: 62,
-    fats: 11,
+    calories: 720,
+    protein: 50,
+    carbs: 88,
+    fats: 16,
     appliance: "fuegos",
     tags: ["Oficina", "Paella Limpia", "Sin Espinas", "Senyoret", "Alta Proteína"],
-    batchNotes: "100% pensada para el táper de la oficina: sin espinas, sin huesos, sin cáscaras y sin mancharse las manos. Se recalienta en 1 min en el microondas y queda suelto y sabroso.",
+    batchNotes: "100% pensada para el táper de la oficina: sin espinas, sin huesos, sin cáscaras y sin mancharse las manos. Aporta 50g de proteína marina limpia y 88g de hidratos para energía continua.",
     ingredients: [
-      { name: "Arroz bomba o redondo", amount: 75, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Pechuga de pollo en dados limpios", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Sepia o calamar limpio en dados", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Gambitas peladas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Judías verdes troceadas", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Tomate triturado con ajo y pimentón", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Caldo de pescado o ave suave", amount: 200, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
-      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Arroz bomba o redondo", amount: 95, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Pechuga de pollo en dados limpios", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Sepia o calamar limpio en dados", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Gambitas peladas", amount: 70, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Judías verdes troceadas", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Tomate triturado con ajo y pimentón", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Caldo de pescado o ave suave", amount: 250, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY },
+      { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Azafrán o colorante natural", amount: 1, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
@@ -804,20 +884,20 @@ export const RECIPES_DATABASE = [
     type: "comida",
     servings: 1,
     prepTime: 8,
-    calories: 520,
-    protein: 35,
-    carbs: 60,
-    fats: 15,
+    calories: 720,
+    protein: 48,
+    carbs: 82,
+    fats: 20,
     appliance: "fuegos",
     tags: ["Salva-Comidas", "Mercadona", "Kebab Fit", "Gnocchis", "Ultra Rápida", "8 Minutos"],
-    batchNotes: "El plato salvavidas definitivo de Mercadona. La carne de pollo asada kebab viene lista y sazonada (alta proteína ~22g/100g). Los gnocchis se doran en sartén o Airfryer sin hervir agua.",
+    batchNotes: "El plato salvavidas definitivo de Mercadona. La carne de pollo asada kebab viene lista y sazonada (160g aportan ~35g P). Los gnocchis se doran en sartén o Airfryer sin hervir agua.",
     ingredients: [
-      { name: "Gnocchis de patata frescos Hacendado", amount: 150, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
-      { name: "Carne de pollo asada estilo Kebab Hacendado", amount: 120, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Tomates cherry", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Cebolla morada en tiras finas", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Yogur griego natural 0% con orégano y ajo", amount: 30, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aceite de oliva virgen extra", amount: 6, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Gnocchis de patata frescos Hacendado", amount: 200, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
+      { name: "Carne de pollo asada estilo Kebab Hacendado", amount: 160, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
+      { name: "Tomates cherry", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Cebolla morada en tiras finas", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Yogur griego natural 0% con orégano y ajo", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
+      { name: "Aceite de oliva virgen extra", amount: 8, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "TRUCO CRUJIENTE EN SARTÉN: Calentar una sartén antiadherente amplia con unas gotas de AOVE a fuego medio-alto. Añadir los gnocchis DIRECTOS de la bolsa (sin hervir) y saltear 4-5 minutos hasta que queden dorados y crujientes por fuera y tiernos por dentro (o 7 min en Airfryer a 195°C).",
@@ -827,7 +907,6 @@ export const RECIPES_DATABASE = [
     ]
   }
 ];
-
 
 
 export const CARLOS_WORKOUT_SCHEDULE = {

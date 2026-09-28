@@ -568,6 +568,8 @@ export function renderNutritionMenuView() {
     const userProfile = appState.profiles?.[profileId] || {};
     const targetCalories = userProfile.targetCalories || (profileId === 'he' ? 2150 : 1850);
     const targetProtein = userProfile.protein || (profileId === 'he' ? 155 : 130);
+    const targetCarbs = userProfile.carbs || (profileId === 'he' ? 210 : 180);
+    const targetFats = userProfile.fats || (profileId === 'he' ? 65 : 55);
 
     const totalScheduled = getWeeklyScheduledCount();
 
@@ -664,7 +666,7 @@ export function renderNutritionMenuView() {
 
     // 2. Render Plan Content according to View Mode
     if (viewMode === "day") {
-      renderDayDetailView(container, activeDay, targetCalories, targetProtein);
+      renderDayDetailView(container, activeDay, targetCalories, targetProtein, targetCarbs, targetFats);
     } else {
       renderFullWeekGridView(container);
     }
@@ -677,7 +679,7 @@ export function renderNutritionMenuView() {
 /**
  * Render Day-by-Day focused detail view
  */
-function renderDayDetailView(container, dayName, targetCalories, targetProtein) {
+function renderDayDetailView(container, dayName, targetCalories, targetProtein, targetCarbs, targetFats) {
   const currentWeeklyPlan = getActiveWeeklyPlan();
   const dayPlan = currentWeeklyPlan?.[dayName] || {};
   let dayKcal = 0;
@@ -699,35 +701,55 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
 
   const safeTargetCalories = Number(targetCalories) > 0 ? Number(targetCalories) : (appState.activeProfileId === 'he' ? 2150 : 1850);
   const safeTargetProtein = Number(targetProtein) > 0 ? Number(targetProtein) : (appState.activeProfileId === 'he' ? 155 : 130);
+  const safeTargetCarbs = Number(targetCarbs) > 0 ? Number(targetCarbs) : (appState.activeProfileId === 'he' ? 210 : 180);
+  const safeTargetFats = Number(targetFats) > 0 ? Number(targetFats) : (appState.activeProfileId === 'he' ? 65 : 55);
 
   // Daily Nutritional Balance Bar - Ultra Compact Collapsible
   const kcalPercent = Math.min(Math.max(Math.round((dayKcal / safeTargetCalories) * 100), 0), 100);
   const protPercent = Math.min(Math.max(Math.round((dayProtein / safeTargetProtein) * 100), 0), 100);
+  const carbsPercent = Math.min(Math.max(Math.round((dayCarbs / safeTargetCarbs) * 100), 0), 100);
+  const fatsPercent = Math.min(Math.max(Math.round((dayFats / safeTargetFats) * 100), 0), 100);
   const isDetailsExpanded = Boolean(appState.balanceDetailsExpanded);
 
   const balanceCard = document.createElement("div");
   balanceCard.className = "glass-card daily-nutrition-compact-strip";
   balanceCard.innerHTML = `
-    <div class="compact-balance-header" onclick="toggleDailyNutritionBalanceDetails()" title="Tocar para ver u ocultar desglose de macros">
-      <div class="compact-balance-left">
-        <span class="compact-macro-item cal">
+    <div class="compact-balance-header" onclick="toggleDailyNutritionBalanceDetails()" title="Tocar para ver u ocultar desglose completo de macros">
+      <div class="compact-balance-left" style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+        <span class="compact-macro-item cal" title="Calorías">
           <i class="fa-solid fa-fire"></i>
-          <strong>${dayKcal}</strong><small>/${safeTargetCalories} kcal</small>
+          <strong>${dayKcal}</strong><small>/${safeTargetCalories} (${kcalPercent}%)</small>
         </span>
         <span class="compact-macro-divider">•</span>
-        <span class="compact-macro-item prot">
+        <span class="compact-macro-item prot" title="Proteína">
           <i class="fa-solid fa-dumbbell"></i>
-          <strong>${dayProtein}g</strong><small>/${safeTargetProtein}g P</small>
+          <strong>${dayProtein}g</strong><small>/${safeTargetProtein}g (${protPercent}%)</small>
+        </span>
+        <span class="compact-macro-divider">•</span>
+        <span class="compact-macro-item carbs" style="color:var(--accent-cyan);" title="Carbohidratos">
+          <i class="fa-solid fa-wheat-awn"></i>
+          <strong>${dayCarbs}g</strong><small>/${safeTargetCarbs}g (${carbsPercent}%)</small>
+        </span>
+        <span class="compact-macro-divider">•</span>
+        <span class="compact-macro-item fats" style="color:var(--accent-violet);" title="Grasas">
+          <i class="fa-solid fa-droplet"></i>
+          <strong>${dayFats}g</strong><small>/${safeTargetFats}g (${fatsPercent}%)</small>
         </span>
       </div>
 
       <div class="compact-balance-right">
-        <div class="compact-mini-progress" title="Calorías: ${kcalPercent}% | Proteína: ${protPercent}%">
-          <div class="mini-bar-track">
+        <div class="compact-mini-progress" title="Kcal: ${kcalPercent}% | Prot: ${protPercent}% | Carbs: ${carbsPercent}% | Grasas: ${fatsPercent}%">
+          <div class="mini-bar-track" title="Calorías: ${kcalPercent}%">
             <div class="mini-bar-fill cal" style="width: ${kcalPercent}%;"></div>
           </div>
-          <div class="mini-bar-track">
+          <div class="mini-bar-track" title="Proteína: ${protPercent}%">
             <div class="mini-bar-fill prot" style="width: ${protPercent}%;"></div>
+          </div>
+          <div class="mini-bar-track" title="Carbohidratos: ${carbsPercent}%">
+            <div class="mini-bar-fill carbs" style="width: ${carbsPercent}%;"></div>
+          </div>
+          <div class="mini-bar-track" title="Grasas: ${fatsPercent}%">
+            <div class="mini-bar-fill fats" style="width: ${fatsPercent}%;"></div>
           </div>
         </div>
         <button type="button" class="btn-toggle-balance-details" aria-label="Desplegar balance">
@@ -738,32 +760,48 @@ function renderDayDetailView(container, dayName, targetCalories, targetProtein) 
 
     <!-- EXPANDABLE MACRO DETAILS DRAWER -->
     <div id="daily-balance-details-drawer" class="balance-details-drawer ${isDetailsExpanded ? '' : 'hidden'}">
-      <div class="balance-extended-stats">
-        <div class="extended-macro-pill carbs">
-          <i class="fa-solid fa-wheat-awn"></i>
-          <span>Carbs: <strong>${dayCarbs}g</strong></span>
+      <div class="balance-extended-stats" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem;">
+        <div class="extended-macro-pill cal" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;">
+          <i class="fa-solid fa-fire" style="color:var(--accent-amber);"></i>
+          <span>Kcal: <strong>${dayKcal}/${safeTargetCalories}</strong> (${kcalPercent}%)</span>
         </div>
-        <div class="extended-macro-pill fats">
-          <i class="fa-solid fa-droplet"></i>
-          <span>Grasas: <strong>${dayFats}g</strong></span>
+        <div class="extended-macro-pill prot" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;">
+          <i class="fa-solid fa-dumbbell" style="color:var(--accent-emerald);"></i>
+          <span>Prot: <strong>${dayProtein}g/${safeTargetProtein}g</strong> (${protPercent}%)</span>
         </div>
-        <div class="extended-macro-pill target">
-          <i class="fa-solid fa-bullseye"></i>
-          <span>Obj: ${safeTargetCalories} kcal • ${safeTargetProtein}g Prot</span>
+        <div class="extended-macro-pill carbs" style="background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.3); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;">
+          <i class="fa-solid fa-wheat-awn" style="color:var(--accent-cyan);"></i>
+          <span>Carbs: <strong>${dayCarbs}g/${safeTargetCarbs}g</strong> (${carbsPercent}%)</span>
+        </div>
+        <div class="extended-macro-pill fats" style="background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;">
+          <i class="fa-solid fa-droplet" style="color:var(--accent-violet);"></i>
+          <span>Grasas: <strong>${dayFats}g/${safeTargetFats}g</strong> (${fatsPercent}%)</span>
         </div>
       </div>
 
       <div class="balance-progress-bars">
         <div class="balance-bar-row">
-          <span class="bar-label">Calorías (${kcalPercent}%)</span>
+          <span class="bar-label">Calorías (${dayKcal} / ${safeTargetCalories} kcal • ${kcalPercent}%)</span>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill cal" style="width: ${kcalPercent}%;"></div>
           </div>
         </div>
         <div class="balance-bar-row">
-          <span class="bar-label">Proteína (${protPercent}%)</span>
+          <span class="bar-label">Proteína (${dayProtein}g / ${safeTargetProtein}g • ${protPercent}%)</span>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill prot" style="width: ${protPercent}%;"></div>
+          </div>
+        </div>
+        <div class="balance-bar-row">
+          <span class="bar-label">Carbohidratos (${dayCarbs}g / ${safeTargetCarbs}g • ${carbsPercent}%)</span>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill carbs" style="width: ${carbsPercent}%;"></div>
+          </div>
+        </div>
+        <div class="balance-bar-row">
+          <span class="bar-label">Grasas (${dayFats}g / ${safeTargetFats}g • ${fatsPercent}%)</span>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill fats" style="width: ${fatsPercent}%;"></div>
           </div>
         </div>
       </div>
