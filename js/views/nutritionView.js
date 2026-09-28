@@ -2689,6 +2689,7 @@ if (typeof window !== "undefined") {
   window.renderBatchCookingView = renderBatchCookingView;
   window.copyBatchCookingPlanToClipboard = copyBatchCookingPlanToClipboard;
   window.copyMercadonaShoppingList = copyMercadonaShoppingList;
+  window.setShoppingWeekSpan = setShoppingWeekSpan;
 }
 
 /**
@@ -3184,6 +3185,23 @@ export function setShoppingDaysPreset(preset) {
   }
 }
 
+/**
+ * Set multi-week span for shopping list consolidation (1, 2, 3 or 4 weeks)
+ */
+export function setShoppingWeekSpan(span) {
+  try {
+    triggerHapticTouch();
+    const safeSpan = Math.max(1, Math.min(4, Number(span) || 1));
+    appState.shoppingWeekSpan = safeSpan;
+    saveState();
+    renderShoppingView();
+    const spanName = safeSpan === 1 ? '1 semana' : safeSpan === 2 ? '2 semanas (Quincena)' : safeSpan === 4 ? '4 semanas (Mes)' : `${safeSpan} semanas`;
+    showIosToast(`🛒 Comprando para ${spanName}`, "fa-solid fa-cart-shopping");
+  } catch(e) {
+    console.error("Error setting shopping week span:", e);
+  }
+}
+
 export function renderShoppingView() {
   try {
     const container = document.getElementById("shopping-categories-container");
@@ -3205,39 +3223,63 @@ export function renderShoppingView() {
     const isWorkdaysSelected = (selectedDays.length === 5 && ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].every(d => selectedDays.includes(d)));
     const isWeekendSelected = (selectedDays.length === 2 && ["Sábado", "Domingo"].every(d => selectedDays.includes(d)));
 
-    const currentWeeklyPlan = getActiveWeeklyPlan();
+    const weekSpan = Number(appState.shoppingWeekSpan) || 1;
     const aggregated = {};
     let totalMealsCount = 0;
 
-    // Aggregate ingredients only from selected days of the weekly plan
-    selectedDays.forEach(day => {
-      const plan = currentWeeklyPlan?.[day] || {};
-      MEAL_SLOTS.forEach(slot => {
-        const recipeId = plan[slot.key];
-        const meal = getRecipeById(recipeId);
-        if (!meal) return;
+    // Aggregate ingredients across all weeks in the span (1 week, 2 weeks quincena, 3 weeks, 4 weeks mes)
+    for (let offset = 0; offset < weekSpan; offset++) {
+      const targetWeekKey = getOffsetWeekKey(activeWeekKey, offset);
+      const plan = appState.weeklyMealPlans?.[targetWeekKey] || (offset === 0 ? getActiveWeeklyPlan() : {});
+      selectedDays.forEach(day => {
+        const dayPlan = plan?.[day] || {};
+        MEAL_SLOTS.forEach(slot => {
+          const recipeId = dayPlan[slot.key];
+          const meal = getRecipeById(recipeId);
+          if (!meal) return;
 
-        totalMealsCount++;
-        const slotServings = getMealSlotServings(activeWeekKey, day, slot.key);
-        const baseServings = Number(meal.servings) || 2;
-        const scale = slotServings / baseServings;
+          totalMealsCount++;
+          const slotServings = getMealSlotServings(targetWeekKey, day, slot.key);
+          const baseServings = Number(meal.servings) || 2;
+          const scale = slotServings / baseServings;
 
-        (meal.ingredients || []).forEach(ing => {
-          const key = `${(ing.name || "").trim().toLowerCase()}___${(ing.unit || "").trim().toLowerCase()}`;
-          if (!aggregated[key]) {
-            aggregated[key] = {
-              name: ing.name,
-              amount: 0,
-              unit: ing.unit || "ud",
-              category: ing.category || INGREDIENT_CATEGORIES.PANTRY
-            };
-          }
-          aggregated[key].amount += (Number(ing.amount || 0) * scale);
+          (meal.ingredients || []).forEach(ing => {
+            const key = `${(ing.name || "").trim().toLowerCase()}___${(ing.unit || "").trim().toLowerCase()}`;
+            if (!aggregated[key]) {
+              aggregated[key] = {
+                name: ing.name,
+                amount: 0,
+                unit: ing.unit || "ud",
+                category: ing.category || INGREDIENT_CATEGORIES.PANTRY
+              };
+            }
+            aggregated[key].amount += (Number(ing.amount || 0) * scale);
+          });
         });
       });
-    });
+    }
 
-    // 1. Top Week Indicator & Selector for Shopping List
+    // 1. Top Week Indicator & Multi-Week Period Selector for Shopping List
+    const startRange = getWeekDateRange(activeWeekKey);
+    const endTargetWeekKey = getOffsetWeekKey(activeWeekKey, weekSpan - 1);
+    const endRange = getWeekDateRange(endTargetWeekKey);
+    const MONTHS_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const mDay = startRange.monday.getDate();
+    const mMonth = MONTHS_SHORT[startRange.monday.getMonth()];
+    const sDay = endRange.sunday.getDate();
+    const sMonth = MONTHS_SHORT[endRange.sunday.getMonth()];
+    const spanDateLabel = (startRange.monday.getMonth() === endRange.sunday.getMonth())
+      ? `${mDay} - ${sDay} ${mMonth}`
+      : `${mDay} ${mMonth} - ${sDay} ${sMonth}`;
+
+    const spanTitle = weekSpan === 1
+      ? `Lista para: ${getWeekDisplayLabel(activeWeekKey)}`
+      : weekSpan === 2
+      ? `Lista Quincenal: ${spanDateLabel}`
+      : weekSpan === 4
+      ? `Lista Mensual: ${spanDateLabel}`
+      : `Lista Multisemana: ${spanDateLabel} (${weekSpan} Semanas)`;
+
     const weekHeader = document.createElement("div");
     weekHeader.className = "planner-week-nav-bar";
     weekHeader.style.cssText = "margin-bottom: 0.85rem;";
@@ -3250,10 +3292,10 @@ export function renderShoppingView() {
         <div class="week-nav-info">
           <div class="week-nav-title">
             <i class="fa-solid fa-cart-shopping" style="color: var(--accent-emerald);"></i>
-            <span>Lista para: ${getWeekDisplayLabel(activeWeekKey)}</span>
+            <span>${spanTitle}</span>
           </div>
           <div class="week-nav-subtitle">
-            ${isCurrentWeek ? '<span class="badge-current-week">Esta Semana</span>' : '<span class="badge-future-week">Planificación Futura</span>'} • ${totalMealsCount} comidas incluidas
+            ${weekSpan > 1 ? `<span class="badge-current-week" style="background:rgba(6,182,212,0.2); color:var(--accent-cyan); border-color:var(--accent-cyan);">${weekSpan} Semanas Combinadas</span>` : isCurrentWeek ? '<span class="badge-current-week">Esta Semana</span>' : '<span class="badge-future-week">Planificación Futura</span>'} • ${totalMealsCount} comidas incluidas
           </div>
         </div>
 
@@ -3278,6 +3320,35 @@ export function renderShoppingView() {
       </div>
     `;
     container.appendChild(weekHeader);
+
+    // 1.5 MULTI-WEEK DURATION SELECTOR CARD (1 Semana, 2 Semanas / Quincena, 3 Semanas, 4 Semanas / Mes)
+    const spanSelectorCard = document.createElement("div");
+    spanSelectorCard.className = "shopping-span-control-card glass-card";
+    spanSelectorCard.style.cssText = "margin-bottom: 0.85rem; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.04);";
+    spanSelectorCard.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-layer-group" style="color: var(--accent-cyan); font-size: 1.05rem;"></i>
+        <div>
+          <strong style="font-size: 0.85rem; color: var(--text-main); display: block;">Periodo de Compra:</strong>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">${weekSpan === 1 ? '1 semana estándar' : `Acumulando y unificando ingredientes para ${weekSpan} semanas`}</span>
+        </div>
+      </div>
+      <div class="day-filter-presets" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+        <button type="button" class="btn-preset-pill ${weekSpan === 1 ? 'active' : ''}" onclick="setShoppingWeekSpan(1)" title="Comprar solo para 1 semana">
+          <i class="fa-solid ${weekSpan === 1 ? 'fa-check' : 'fa-circle-dot'}"></i> 1 Semana
+        </button>
+        <button type="button" class="btn-preset-pill ${weekSpan === 2 ? 'active' : ''}" onclick="setShoppingWeekSpan(2)" title="Comprar para 2 semanas (Quincena)">
+          <i class="fa-solid ${weekSpan === 2 ? 'fa-check' : 'fa-circle-dot'}"></i> 2 Semanas (Quincena)
+        </button>
+        <button type="button" class="btn-preset-pill ${weekSpan === 3 ? 'active' : ''}" onclick="setShoppingWeekSpan(3)" title="Comprar para 3 semanas">
+          <i class="fa-solid ${weekSpan === 3 ? 'fa-check' : 'fa-circle-dot'}"></i> 3 Semanas
+        </button>
+        <button type="button" class="btn-preset-pill ${weekSpan === 4 ? 'active' : ''}" onclick="setShoppingWeekSpan(4)" title="Comprar para 4 semanas (Mes)">
+          <i class="fa-solid ${weekSpan === 4 ? 'fa-check' : 'fa-circle-dot'}"></i> 4 Semanas (Mes)
+        </button>
+      </div>
+    `;
+    container.appendChild(spanSelectorCard);
 
     // 2. Interactive Day Selection Card for Shopping List
     const dayFilterCard = document.createElement("div");
@@ -3603,7 +3674,23 @@ export function copyMercadonaShoppingList() {
   try {
     triggerHapticTouch();
     const activeWeekKey = appState.activeNutritionWeekKey || getCurrentWeekKey();
-    let text = `🛒 LISTA DE LA COMPRA MERCADONA - FITDUO (${getWeekDisplayLabel(activeWeekKey)}) 🛍️\n`;
+    const weekSpan = Number(appState.shoppingWeekSpan) || 1;
+    let periodLabel = getWeekDisplayLabel(activeWeekKey);
+    if (weekSpan > 1) {
+      const startRange = getWeekDateRange(activeWeekKey);
+      const endTargetWeekKey = getOffsetWeekKey(activeWeekKey, weekSpan - 1);
+      const endRange = getWeekDateRange(endTargetWeekKey);
+      const MONTHS_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+      const mDay = startRange.monday.getDate();
+      const mMonth = MONTHS_SHORT[startRange.monday.getMonth()];
+      const sDay = endRange.sunday.getDate();
+      const sMonth = MONTHS_SHORT[endRange.sunday.getMonth()];
+      const spanDateLabel = (startRange.monday.getMonth() === endRange.sunday.getMonth())
+        ? `${mDay} - ${sDay} ${mMonth}`
+        : `${mDay} ${mMonth} - ${sDay} ${sMonth}`;
+      periodLabel = `${spanDateLabel} (${weekSpan === 2 ? 'Quincena / 2 semanas' : weekSpan === 4 ? 'Mes / 4 semanas' : weekSpan + ' semanas'})`;
+    }
+    let text = `🛒 LISTA DE LA COMPRA MERCADONA - FITDUO (${periodLabel}) 🛍️\n`;
     text += `Para: ${getProfileShortName(appState.activeProfileId || 'he')}\n\n`;
     text += `💡 REGLAS DE DESPENSA Y AHORRO:\n`;
     text += `• Variedades equivalentes (ej. arroz bomba y basmati) se han unificado en la de mayor volumen.\n`;
