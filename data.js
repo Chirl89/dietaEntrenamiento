@@ -271,7 +271,7 @@ export const RECIPES_DATABASE = [
       { name: "Pasta integral cocida al dente", amount: 220, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
       { name: "Pechuga de pavo o pollo asada en dados", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
       { name: "Mozzarella fresca light", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Tomates cherry partidos", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
+      { name: "Tomates cherry", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Albahaca fresca picada", amount: 5, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
       { name: "Aceite de oliva virgen extra", amount: 10, unit: "ml", category: INGREDIENT_CATEGORIES.FATS }
     ],
@@ -384,7 +384,7 @@ export const RECIPES_DATABASE = [
     ingredients: [
       { name: "Harina de maíz precocida", amount: 80, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
       { name: "Pechuga de pollo cocida o asada deshilachada", amount: 140, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
-      { name: "Aguacate maduro", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Aguacate", amount: 50, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Yogur griego natural 0%", amount: 40, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
       { name: "Cebolleta picada muy fina", amount: 20, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
       { name: "Zumo de lima, sal y pimienta", amount: 5, unit: "ml", category: INGREDIENT_CATEGORIES.PANTRY }
@@ -493,7 +493,7 @@ export const RECIPES_DATABASE = [
       { name: "Pan de centeno o integral rústico", amount: 90, unit: "g", category: INGREDIENT_CATEGORIES.GRAINS },
       { name: "Salmón marinado o ahumado", amount: 100, unit: "g", category: INGREDIENT_CATEGORIES.PROTEIN },
       { name: "Requesón, Ricotta o queso untar light", amount: 60, unit: "g", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Aguacate en láminas", amount: 45, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
+      { name: "Aguacate", amount: 45, unit: "g", category: INGREDIENT_CATEGORIES.FATS },
       { name: "Semillas de sésamo y eneldo", amount: 4, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY }
     ],
     instructions: [
@@ -731,7 +731,7 @@ export const RECIPES_DATABASE = [
     ingredients: [
       { name: "Barrita +Proteínas o Enervit cacahuete Mercadona", amount: 35, unit: "g", category: INGREDIENT_CATEGORIES.PANTRY },
       { name: "Plátano maduro de mano", amount: 110, unit: "g", category: INGREDIENT_CATEGORIES.PRODUCE },
-      { name: "Nueces peladas en bolsa", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Nueces peladas", amount: 15, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "Consumir en el escritorio a media mañana. No ensucia el teclado y aporta 20g de proteína y energía limpia de digestión prolongada."
@@ -752,7 +752,7 @@ export const RECIPES_DATABASE = [
     batchNotes: "Botella entera bebible (20g P) + 25g de nueces (grasas saludables Omega 3 y saciedad).",
     ingredients: [
       { name: "Yogur bebible +Proteínas Hacendado (fresa o plátano)", amount: 280, unit: "ml", category: INGREDIENT_CATEGORIES.DAIRY },
-      { name: "Nueces peladas en bolsa", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
+      { name: "Nueces peladas", amount: 25, unit: "g", category: INGREDIENT_CATEGORIES.FATS }
     ],
     instructions: [
       "Agitar la botellita de yogur proteico y beber directamente en el escritorio.",

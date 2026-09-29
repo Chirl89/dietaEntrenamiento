@@ -37,7 +37,8 @@ import {
 } from '../batchCookingEngine.js';
 import {
   unifyAndOptimizeForMercadona,
-  optimizeMercadonaListWithAi
+  optimizeMercadonaListWithAi,
+  normalizeShoppingIngredientName
 } from '../mercadonaOptimizer.js';
 
 // MEAL SLOTS DEFINITION
@@ -3252,6 +3253,7 @@ export function renderShoppingView() {
     const week2Key = getOffsetWeekKey(curWeekKey, 2);
     const week3Key = getOffsetWeekKey(curWeekKey, 3);
     const isCurrentWeek = (activeWeekKey === curWeekKey);
+    const currentWeeklyPlan = appState.weeklyMealPlans?.[activeWeekKey] || getActiveWeeklyPlan() || {};
 
     if (!Array.isArray(appState.selectedShoppingDays)) {
       appState.selectedShoppingDays = [...DAYS_OF_WEEK];
@@ -3268,7 +3270,7 @@ export function renderShoppingView() {
     // Aggregate ingredients across all weeks in the span (1 week, 2 weeks quincena, 3 weeks, 4 weeks mes)
     for (let offset = 0; offset < weekSpan; offset++) {
       const targetWeekKey = getOffsetWeekKey(activeWeekKey, offset);
-      const plan = appState.weeklyMealPlans?.[targetWeekKey] || (offset === 0 ? getActiveWeeklyPlan() : {});
+      const plan = appState.weeklyMealPlans?.[targetWeekKey] || (offset === 0 ? currentWeeklyPlan : {});
       selectedDays.forEach(day => {
         const dayPlan = plan?.[day] || {};
         MEAL_SLOTS.forEach(slot => {
@@ -3282,10 +3284,13 @@ export function renderShoppingView() {
           const scale = slotServings / baseServings;
 
           (meal.ingredients || []).forEach(ing => {
-            const key = `${(ing.name || "").trim().toLowerCase()}___${(ing.unit || "").trim().toLowerCase()}`;
+            const rawName = (ing.name || "").trim();
+            const normalizedName = normalizeShoppingIngredientName(rawName);
+            const rawUnit = (ing.unit || "ud").trim().toLowerCase();
+            const key = `${normalizedName.toLowerCase()}___${rawUnit}`;
             if (!aggregated[key]) {
               aggregated[key] = {
-                name: ing.name,
+                name: normalizedName,
                 amount: 0,
                 unit: ing.unit || "ud",
                 category: ing.category || INGREDIENT_CATEGORIES.PANTRY

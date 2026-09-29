@@ -112,8 +112,176 @@ export const INTERCHANGEABLE_FAMILIES = [
     detector: /\b(aceite|aove|oliva)\b/i,
     extractVariant: () => "Aceite de oliva virgen extra",
     mercadonaMatch: () => ({ name: "Aceite de oliva virgen extra Hacendado", pack: "Botella 1 litro", query: "aceite oliva virgen extra hacendado" })
+  },
+  {
+    family: "aguacate",
+    label: "Aguacates",
+    detector: /\baguacate/i,
+    extractVariant: () => "Aguacates frescos",
+    mercadonaMatch: () => ({ name: "Aguacate listo para comer Hacendado", pack: "Malla 500g o 2 piezas al peso", query: "aguacate listo para comer" })
+  },
+  {
+    family: "salmon",
+    label: "Salmón",
+    detector: /\bsalm[oó]n\b/i,
+    extractVariant: (n) => (/ahumado|marinado/i.test(n) ? "Salmón ahumado / marinado" : "Lomos de salmón fresco"),
+    mercadonaMatch: (v) => ({
+      name: v.includes("ahumado") ? "Salmón ahumado Hacendado" : "Lomos de salmón fresco sin espinas",
+      pack: v.includes("ahumado") ? "Sobre 100g" : "Bandeja 2 lomos ~300g",
+      query: v.includes("ahumado") ? "salmon ahumado hacendado" : "salmon fresco lomos"
+    })
+  },
+  {
+    family: "atun",
+    label: "Atún",
+    detector: /\bat[uú]n\b/i,
+    extractVariant: () => "Atún claro al natural",
+    mercadonaMatch: () => ({ name: "Atún claro al natural Hacendado", pack: "Pack 6 latas", query: "atun claro natural hacendado" })
+  },
+  {
+    family: "nueces",
+    label: "Nueces",
+    detector: /\bnueces?\b/i,
+    extractVariant: () => "Nueces peladas",
+    mercadonaMatch: () => ({ name: "Nueces peladas naturales Hacendado", pack: "Bolsa 200g", query: "nueces peladas naturales hacendado" })
+  },
+  {
+    family: "tomate_cherry",
+    label: "Tomates cherry",
+    detector: /\b(cherry|cherrys)\b/i,
+    extractVariant: () => "Tomates cherry",
+    mercadonaMatch: () => ({ name: "Tomate cherry en rama / tarrina", pack: "Tarrina 500g", query: "tomate cherry" })
+  },
+  {
+    family: "yogur_griego",
+    label: "Yogur griego",
+    detector: /\byogur.*griego\b/i,
+    extractVariant: () => "Yogur griego natural 0%",
+    mercadonaMatch: () => ({ name: "Yogur griego natural 0% materia grasa Hacendado", pack: "Pack 6 uds o tarrina 1 kg", query: "yogur griego natural 0" })
+  },
+  {
+    family: "yogur_bebible",
+    label: "Yogur bebible proteico",
+    detector: /\b(bebible|\+prote[ií]nas.*bebible|bebida l[aá]ctea)\b/i,
+    extractVariant: () => "Bebida láctea +Proteínas",
+    mercadonaMatch: () => ({ name: "Bebida láctea +Proteínas Hacendado (fresa o plátano)", pack: "Botella 280ml", query: "bebida lactea proteinas" })
+  },
+  {
+    family: "gnocchi",
+    label: "Gnocchis",
+    detector: /\b(gnocchi|ñoqui)\b/i,
+    extractVariant: () => "Gnocchis de patata frescos",
+    mercadonaMatch: () => ({ name: "Gnocchis de patata frescos Hacendado", pack: "Paquete 500g", query: "gnocchis patata frescos" })
+  },
+  {
+    family: "kebab",
+    label: "Pollo Kebab",
+    detector: /\bkebab\b/i,
+    extractVariant: () => "Carne de pollo asada Kebab",
+    mercadonaMatch: () => ({ name: "Carne de pollo asada estilo Kebab Hacendado", pack: "Bandeja 350g", query: "pollo kebab hacendado" })
+  },
+  {
+    family: "champinon",
+    label: "Champiñones y Setas",
+    detector: /\b(champi[ñn][oó]n|setas?|boletus|portobello)\b/i,
+    extractVariant: (n) => (/setas?|boletus|portobello/i.test(n) ? "Variado de setas y portobello" : "Champiñones frescos laminados"),
+    mercadonaMatch: (v) => ({
+      name: v.includes("setas") ? "Surtido de setas frescas o Portobello Hacendado" : "Champiñones laminados limpios Hacendado",
+      pack: "Bandeja 300g o 400g",
+      query: v.includes("setas") ? "setas frescas bandeja" : "champinon laminado bandeja"
+    })
+  },
+  {
+    family: "leche",
+    label: "Leche",
+    detector: /\bleche\b/i,
+    extractVariant: (n) => (/\+prote/i.test(n) ? "Leche desnatada +Proteínas" : "Leche semidesnatada"),
+    mercadonaMatch: (v) => ({
+      name: v.includes("+Proteínas") ? "Bebida láctea desnatada +Proteínas Hacendado" : "Leche semidesnatada Hacendado",
+      pack: "Brik 1L (pack 6)",
+      query: v.includes("+Proteínas") ? "leche proteinas hacendado" : "leche semidesnatada hacendado"
+    })
+  },
+  {
+    family: "cafe",
+    label: "Café",
+    detector: /\bcaf[eé]\b/i,
+    extractVariant: () => "Café molido natural",
+    mercadonaMatch: () => ({
+      name: "Café molido tueste natural Hacendado / Cápsulas",
+      pack: "Paquete 250g o caja cápsulas",
+      query: "cafe molido natural hacendado"
+    })
+  },
+  {
+    family: "pan",
+    label: "Pan integral / Centeno",
+    detector: /\b(pan\s+de\s+centeno|pan\s+integral|pan\s+de\s+molde|pan\s+de\s+masa\s+madre)\b/i,
+    extractVariant: () => "Pan integral de masa madre o centeno",
+    mercadonaMatch: () => ({
+      name: "Pan de molde 100% integral o hogaza masa madre corte",
+      pack: "Paquete / Hogaza",
+      query: "pan integral hacendado"
+    })
   }
 ];
+
+/**
+ * Cleanly normalizes ingredient names so identical supermarket items with
+ * preparation or cutting descriptors (e.g. "Aguacate maduro", "Aguacate en láminas",
+ * "Tomates cherry partidos", "Nueces peladas en bolsa") collapse into a single unified item.
+ */
+export function normalizeShoppingIngredientName(rawName) {
+  if (!rawName || typeof rawName !== 'string') return '';
+  let n = rawName.trim();
+
+  // 1. Direct canonical name overrides
+  if (/^aguacate\b/i.test(n)) return "Aguacate";
+  if (/^tomates?\s+cherry\b/i.test(n)) return "Tomates cherry";
+  if (/^nueces?\b/i.test(n)) return "Nueces peladas";
+  if (/^cebolla\s+morada\b/i.test(n)) return "Cebolla morada";
+  if (/^cebolla\b/i.test(n)) return "Cebolla";
+  if (/^cebolleta\b/i.test(n)) return "Cebolleta fresca";
+  if (/^pepino\b/i.test(n)) return "Pepino fresco";
+  if (/^zanahoria\b/i.test(n)) return "Zanahoria";
+  if (/^champi[ñn]ones?\b/i.test(n)) return "Champiñones";
+  if (/^patatas?\b/i.test(n)) return "Patatas";
+  if (/^lomo\s+(mechado|asado|de\s+cerdo|o\s+cabecero)\b/i.test(n)) return "Lomo de cerdo";
+  if (/^pechuga\s+de\s+pollo\b/i.test(n)) return "Pechuga de pollo";
+  if (/^pechuga\s+de\s+pavo\b/i.test(n)) return "Pechuga de pavo";
+  if (/^carne\s+de\s+(pollo\s+)?kebab\b/i.test(n) || /^kebab\b/i.test(n)) return "Carne de pollo estilo Kebab";
+  if (/^gnocchis?\b/i.test(n) || /^ñoquis?\b/i.test(n)) return "Gnocchis de patata";
+  if (/^lomo\s+de\s+salm[oó]n\b/i.test(n) || /^salm[oó]n\s+fresco\b/i.test(n)) return "Lomo de salmón fresco";
+  if (/^salm[oó]n\s+(marinado|ahumado)\b/i.test(n)) return "Salmón ahumado";
+  if (/^at[uú]n\s+claro\b/i.test(n)) return "Atún claro al natural";
+  if (/^barrita\b.*(prote|hacendado|enervit)/i.test(n)) return "Barrita proteica Hacendado";
+  if (/^caf[eé]\s+(espresso|molido|en\s+c[aá]psula)/i.test(n)) return "Café molido o en cápsula";
+  if (/^leche\s+desnatada\s+\+prote[ií]nas/i.test(n)) return "Leche desnatada +Proteínas Hacendado";
+  if (/^leche\s+semidesnatada/i.test(n)) return "Leche semidesnatada Hacendado";
+  if (/^yogur\s+griego\s+natural/i.test(n) || /^yogur\s+natural\s+tipo\s+griego/i.test(n)) return "Yogur griego natural 0%";
+  if (/^yogur\s+bebible\s+\+prote[ií]nas/i.test(n) || /^bebida\s+l[aá]ctea\s+\+prote/i.test(n)) return "Bebida láctea +Proteínas Hacendado";
+  if (/^queso\s+parmesano\b/i.test(n) || /^queso\s+grana\s+padano\b/i.test(n)) return "Queso Parmesano";
+  if (/^pan\s+(de\s+centeno|integral|de\s+molde|de\s+masa\s+madre|tostado)\b/i.test(n)) return "Pan integral / centeno";
+  if (/^arroz\s+basmati\b/i.test(n)) return "Arroz basmati";
+  if (/^arroz\s+bomba\b/i.test(n)) return "Arroz bomba";
+  if (/^arroz\s+jazm[ií]n\b/i.test(n)) return "Arroz jazmín";
+  if (/^arroz\s+(redondo|arborio|carnaroli)\b/i.test(n)) return "Arroz redondo";
+  if (/^gambas?\s+peladas?\b/i.test(n) || /^gambitas?\b/i.test(n)) return "Gambas peladas";
+  if (/^semillas\s+de\s+s[eé]samo\b/i.test(n)) return "Semillas de sésamo tostado";
+  if (/^salsa\s+de\s+soja\b/i.test(n)) return "Salsa de soja baja en sal";
+  if (/^tomate\s+triturado\b/i.test(n)) return "Tomate triturado natural";
+  if (/^tomate\s+rallado\b/i.test(n)) return "Tomate rallado natural";
+  if (/^tomate\s+(de\s+ensalada|en\s+rodajas)\b/i.test(n)) return "Tomate de ensalada";
+  if (/^manzana\b/i.test(n)) return "Manzana";
+  if (/^pl[aá]tano\b/i.test(n)) return "Plátano";
+  if (/^espinacas?\s+baby\b/i.test(n)) return "Espinacas baby";
+  if (/^can[oó]nigos\b/i.test(n)) return "Canónigos";
+
+  // General culinary cuts and prep suffixes cleaner (e.g. en dados, en láminas, picado, etc.)
+  n = n.replace(/\s+(en\s+(dados|láminas|laminas|rodajas|tiras|trozos|juliana|mitades|lascas|conserva|bolsa)|picad[oa][as]?|trocead[oa][as]?|rallad[oa][as]?|madur[oa][as]?|fresc[oa][as]?|limpi[oa][as]?|asad[oa][as]?|cocid[oa][as]?|saltead[oa][as]?|partid[oa][as]?|escurrid[oa][as]?|laminad[oa][as]?)\b/gi, '').trim();
+
+  return n.charAt(0).toUpperCase() + n.slice(1);
+}
 
 /**
  * Unifies interchangeable ingredients into the predominant variant (the one with highest quantity)
@@ -126,11 +294,12 @@ export function unifyAndOptimizeForMercadona(rawItemsList) {
   const independentItems = [];
 
   rawItemsList.forEach(item => {
-    const name = (item.name || "").trim();
+    const rawName = (item.name || "").trim();
+    const name = normalizeShoppingIngredientName(rawName);
     let matchedFamily = null;
 
     for (const fam of INTERCHANGEABLE_FAMILIES) {
-      if (fam.detector.test(name)) {
+      if (fam.detector.test(name) || fam.detector.test(rawName)) {
         matchedFamily = fam;
         break;
       }
@@ -150,11 +319,28 @@ export function unifyAndOptimizeForMercadona(rawItemsList) {
       const bucket = familyBuckets.get(matchedFamily.family);
       const variantName = matchedFamily.extractVariant(name);
       const currentAmt = bucket.variants.get(variantName) || 0;
-      const addAmt = Number(item.amount) || 0;
+      let addAmt = Number(item.amount) || 0;
+
+      // Smart unit conversion if units mismatch within the same family (e.g. pieces vs grams)
+      const itemUnit = (item.unit || "").toLowerCase();
+      const bucketUnit = (bucket.unit || "").toLowerCase();
+      if (bucketUnit === "g" && (itemUnit === "ud" || itemUnit === "pieza" || itemUnit === "unidad")) {
+        if (matchedFamily.family === "aguacate") addAmt *= 150;
+        else if (matchedFamily.family === "huevos") addAmt *= 60;
+        else if (matchedFamily.family === "cebolla" || matchedFamily.family === "patata" || matchedFamily.family === "pimiento") addAmt *= 150;
+      } else if ((bucketUnit === "ud" || bucketUnit === "pieza" || bucketUnit === "unidad") && (itemUnit === "g" || itemUnit === "gr")) {
+        if (matchedFamily.family === "aguacate") addAmt = addAmt / 150;
+        else if (matchedFamily.family === "huevos") addAmt = addAmt / 60;
+        else if (matchedFamily.family === "cebolla" || matchedFamily.family === "patata" || matchedFamily.family === "pimiento") addAmt = addAmt / 150;
+      }
+
       bucket.variants.set(variantName, currentAmt + addAmt);
       bucket.totalAmount += addAmt;
     } else {
-      independentItems.push(item);
+      independentItems.push({
+        ...item,
+        name: name
+      });
     }
   });
 
