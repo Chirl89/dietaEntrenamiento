@@ -94,7 +94,7 @@ Estructura indexada por perfil (`he` / `she`) y fecha en formato local ISO plano
 
 ### C. Diferenciación de Estados de Actividad
 Para calcular rachas y visualizaciones con precisión:
-1. **🟢 Objetivo Cumplido**: Anillos de movimiento/pasos completados y entreno realizado.
+1. **🟢 Objetivo Cumplido**: Anillos de movimiento/pasos completados (≥ 10.000 pasos) o entrenamiento realizado (≥ 30 min de entreno registrado independientemente de registro manual, o entreno en app).
 2. **🟡 Actividad Parcial**: Parte de los objetivos diarios alcanzados.
 3. **⚪ Descanso Programado (`isRestDay: true`)**: Día de recuperación según la rutina semanal (mantiene las rachas sin penalizar).
 4. **⚫ Sin Datos**: Días en los que no se registraron métricas (ej. no se usó el reloj).

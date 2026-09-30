@@ -211,15 +211,15 @@ export function calculateProfileStats(profileId, period = '7d') {
   const totalExMin30d = data30d.reduce((acc, d) => acc + (d.exerciseMin || 0), 0);
   const totalDist7d = parseFloat(data7d.reduce((acc, d) => acc + (d.distanceKm || 0), 0).toFixed(1));
   const totalDist30d = parseFloat(data30d.reduce((acc, d) => acc + (d.distanceKm || 0), 0).toFixed(1));
-  const workouts7d = data7d.filter(d => d && d.completedWorkouts && d.completedWorkouts.length > 0).length;
+  const workouts7d = data7d.filter(d => d && ((d.completedWorkouts && d.completedWorkouts.length > 0) || (d.exerciseMin || 0) >= 30)).length;
   const targetWorkouts7d = 5;
   const adherencePct = Math.min(100, Math.round((workouts7d / targetWorkouts7d) * 100));
 
-  // Streaks calculation (Consecutive days >= 10,000 steps OR completed workout OR rest day)
+  // Streaks calculation (Consecutive days >= 10,000 steps OR completed workout OR >=30 min exercise OR rest day)
   let currentStreak = 0;
   for (let i = data30d.length - 1; i >= 0; i--) {
     const d = data30d[i];
-    if (d && d.hasData && (d.steps >= 10000 || (d.completedWorkouts && d.completedWorkouts.length > 0) || d.isRestDay)) {
+    if (d && d.hasData && (d.steps >= 10000 || (d.completedWorkouts && d.completedWorkouts.length > 0) || (d.exerciseMin || 0) >= 30 || d.isRestDay)) {
       currentStreak++;
     } else {
       break;
@@ -289,8 +289,8 @@ export function calculateBadges(profileId) {
   const todayEntry = data7d.length > 0 ? data7d[data7d.length - 1] : { dayName: getTodayDayName(), steps: 0, moveKcal: 0, exerciseMin: 0, hasData: false, completedWorkouts: [] };
   const partnerToday = partnerData7d.length > 0 ? partnerData7d[partnerData7d.length - 1] : { dayName: getTodayDayName(), steps: 0, moveKcal: 0, exerciseMin: 0, hasData: false, completedWorkouts: [] };
 
-  const isTodayWorkoutDone = !!(todayEntry?.hasData && Array.isArray(todayEntry.completedWorkouts) && todayEntry.completedWorkouts.length > 0);
-  const isPartnerWorkoutDone = !!(partnerToday?.hasData && Array.isArray(partnerToday.completedWorkouts) && partnerToday.completedWorkouts.length > 0);
+  const isTodayWorkoutDone = !!(todayEntry?.hasData && ((Array.isArray(todayEntry.completedWorkouts) && todayEntry.completedWorkouts.length > 0) || (todayEntry.exerciseMin || 0) >= 30));
+  const isPartnerWorkoutDone = !!(partnerToday?.hasData && ((Array.isArray(partnerToday.completedWorkouts) && partnerToday.completedWorkouts.length > 0) || (partnerToday.exerciseMin || 0) >= 30));
   const bothWorkoutsToday = isTodayWorkoutDone && isPartnerWorkoutDone;
 
   const maxSteps7d = data7d.filter(d => d.hasData).reduce((max, d) => Math.max(max, d.steps || 0), 0);
@@ -740,7 +740,8 @@ function renderPeriodOverview(period, pid, pName, container) {
       </h3>
       <div style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 480px; overflow-y: auto;">
         ${historyData.slice(-historyDaysCount).reverse().map(d => {
-          const isGoalMet = d.hasData && d.steps >= 10000;
+          const isWorkoutDone = (d.completedWorkouts && d.completedWorkouts.length > 0) || (d.exerciseMin || 0) >= 30;
+          const isGoalMet = d.hasData && (d.steps >= 10000 || isWorkoutDone);
           const statusBadge = !d.hasData
             ? `<span style="font-size: 0.75rem; color: var(--text-muted); background: rgba(0, 0, 0, 0.04); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border-color);"><i class="fa-solid fa-minus"></i> Sin datos</span>`
             : (d.isRestDay
@@ -751,7 +752,7 @@ function renderPeriodOverview(period, pid, pName, container) {
                   )
               );
           
-          const workoutsBadge = d.hasData && d.completedWorkouts && d.completedWorkouts.length > 0
+          const workoutsBadge = d.hasData && isWorkoutDone
             ? `<span style="font-size: 0.75rem; color: #9333ea; background: rgba(168, 85, 247, 0.15); padding: 3px 8px; border-radius: 12px; font-weight: 600;"><i class="fa-solid fa-dumbbell"></i> Entreno</span>`
             : '';
 
@@ -960,13 +961,13 @@ function renderHeatmapView(pid, pName, container) {
         const liveKcal = Number(currentLive.moveKcal || 0);
         const liveExMin = Number(currentLive.exerciseMin || 0);
 
-        const hasWorkouts = isTodayWorkoutDone;
+        const hasWorkouts = isTodayWorkoutDone || liveExMin >= 30;
         const hasData = liveSteps > 0 || liveKcal > 0 || liveExMin > 0 || hasWorkouts || !!entry?.isRestDay;
         entry = {
           steps: liveSteps,
           moveKcal: liveKcal,
           exerciseMin: liveExMin,
-          completedWorkouts: hasWorkouts ? [dayName] : [],
+          completedWorkouts: hasWorkouts ? (isTodayWorkoutDone ? [dayName] : ['Entreno (+30m)']) : [],
           sessions: todaySessions,
           isRestDay: entry?.isRestDay || false,
           hasData: hasData
@@ -974,8 +975,10 @@ function renderHeatmapView(pid, pName, container) {
       }
 
       const isStepsGoalMet = (entry?.steps || 0) >= 10000;
+      const isExerciseGoalMet = (entry?.exerciseMin || 0) >= 30;
       const hasWorkoutSessions = Array.isArray(entry?.sessions) && entry.sessions.length > 0;
-      const hasRealWorkout = !!(entry?.completedWorkouts && entry.completedWorkouts.length > 0 && ((entry?.exerciseMin || 0) >= 20 || (entry?.moveKcal || 0) >= 180 || hasWorkoutSessions));
+      const hasManualWorkout = !!(entry?.completedWorkouts && entry.completedWorkouts.length > 0);
+      const hasRealWorkout = isExerciseGoalMet || hasManualWorkout || hasWorkoutSessions;
 
       let status = 'none';
       let statusColor = 'rgba(156, 163, 175, 0.1)';
@@ -995,13 +998,22 @@ function renderHeatmapView(pid, pName, container) {
           status = 'completed';
           statusColor = 'rgba(16, 185, 129, 0.85)';
           completedDaysCount++;
-          const reason = isStepsGoalMet && hasRealWorkout ? '¡Entreno y Pasos cumplidos!' : (isStepsGoalMet ? '¡Objetivo de 10k pasos cumplido!' : '¡Entrenamiento completado!');
+          let reason = '';
+          if (isStepsGoalMet && hasRealWorkout) {
+            reason = '¡Entreno y Pasos cumplidos!';
+          } else if (isStepsGoalMet) {
+            reason = '¡Objetivo de 10k pasos cumplido!';
+          } else if (isExerciseGoalMet) {
+            reason = '¡Objetivo de entrenamiento cumplido (≥30 min)!';
+          } else {
+            reason = '¡Entrenamiento completado!';
+          }
           tooltip = `${dayNum} de ${capitalizedMonth}: ${reason} (${(entry.steps || 0).toLocaleString()} pasos, ${entry.moveKcal || 0} kcal, ${entry.exerciseMin || 0} min)`;
         } else if ((entry.steps || 0) > 0 || (entry.moveKcal || 0) > 0 || (entry.exerciseMin || 0) > 0) {
           status = 'partial';
           statusColor = 'rgba(245, 158, 11, 0.75)';
           partialDaysCount++;
-          tooltip = `${dayNum} de ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} / 10.000 pasos, ${entry.moveKcal || 0} kcal)`;
+          tooltip = `${dayNum} de ${capitalizedMonth}: Actividad Parcial (${(entry.steps || 0).toLocaleString()} / 10.000 pasos, ${entry.exerciseMin || 0} / 30 min entreno, ${entry.moveKcal || 0} kcal)`;
         }
       }
 
@@ -1087,7 +1099,7 @@ function renderHeatmapView(pid, pName, container) {
         <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-top: 1.25rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-muted);">
           <div style="display: flex; align-items: center; gap: 0.4rem;">
             <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(16, 185, 129, 0.85);"></div>
-            <span>Meta Cumplida</span>
+            <span>Meta Cumplida (10k pasos o ≥30m entreno)</span>
           </div>
           <div style="display: flex; align-items: center; gap: 0.4rem;">
             <div style="width: 12px; height: 12px; border-radius: 3px; background: rgba(245, 158, 11, 0.75);"></div>
@@ -1198,10 +1210,13 @@ function renderBadgesView(pid, pName, container) {
 window.showDayDetailToast = function(dateIso, dayNum, monthName, steps, kcal, exMin, isRest, hasWorkout) {
   triggerHapticTouch();
   const restText = isRest ? " • 🛌 Descanso" : "";
-  const workoutText = hasWorkout ? " • 🏋️‍♂️ Entreno" : "";
-  const goalBadge = (steps >= 10000 || hasWorkout)
+  const isExMet = (exMin || 0) >= 30;
+  const isWorkoutMet = !!hasWorkout || isExMet;
+  const workoutText = isWorkoutMet ? " • 🏋️‍♂️ Entreno" : "";
+  const isCompleted = (steps >= 10000 || isWorkoutMet);
+  const goalBadge = isCompleted
     ? `<span style="color: var(--accent-emerald); font-weight: 700;">🟢 Cumplido</span>`
-    : (steps > 0 ? `<span style="color: var(--accent-amber); font-weight: 700;">🟡 Parcial (${(steps || 0).toLocaleString()}/10k)</span>` : `<span style="color: var(--text-muted);">Sin actividad</span>`);
+    : ((steps > 0 || (kcal || 0) > 0 || (exMin || 0) > 0) ? `<span style="color: var(--accent-amber); font-weight: 700;">🟡 Parcial (${(steps || 0).toLocaleString()}/10k • ${exMin || 0}/30m)</span>` : `<span style="color: var(--text-muted);">Sin actividad</span>`);
   
   showIosToast(
     `📅 <strong>${dayNum} de ${monthName}</strong>${restText}${workoutText}<br/>👟 ${(steps || 0).toLocaleString()} pasos • 🔥 ${kcal || 0} kcal • ⏱️ ${exMin || 0} min<br/>${goalBadge}`,
