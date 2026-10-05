@@ -52,41 +52,113 @@ export const KITCHEN_APPLIANCES = {
 };
 
 /**
+ * Checks if an ingredient is suitable for batch cooking preparation in bulk.
+ * Excludes seasonings, oils, breads, fresh snacking fruits, breakfast dairy/powders, ready-to-eat canned items.
+ */
+export function isBatchableIngredient(rawName) {
+  if (!rawName) return false;
+  const n = rawName.toLowerCase().trim();
+
+  // Exclude non-batchable pantry/breakfast/seasoning items
+  // Breads, toasts, wraps, tortillas, doughs
+  if (/\b(pan|tostada|tostadas|tosta|tostas|molde|picos|rebanada|tortilla\s+de\s+trigo|tortillas\s+de\s+trigo|wrap|wraps|fajita|fajitas|masa)\b/i.test(n)) {
+    return false;
+  }
+
+  // Oils, vinegars, fats, dressings, spices, seasonings, condiments
+  if (/\b(aceite|aove|vinagre|sal|pimienta|orégano|oregano|laurel|piment[oó]n|comino|ajo\s+en\s+polvo|especias|hierbas|salsa\s+de\s+soja|soja|mostaza|miel|curry|mayonesa|salsa)\b/i.test(n)) {
+    return false;
+  }
+
+  // Breakfast, liquids, dairy, supplements, sweet items
+  if (/\b(leche|bebida\s+vegetal|caf[eé]|t[eé]|agua|zumo|yogur|yogurt|queso|mozzarella|parmesano|reques[oó]n|feta|mantequilla|whey|prote[ií]na|edulcorante|cacao|avena|copos)\b/i.test(n)) {
+    return false;
+  }
+
+  // Canned items ready to eat without cooking
+  if (/\b(at[uú]n\s+en\s+lata|at[uú]n\s+claro|bonito\s+del\s+norte|sardinas?\s+en\s+lata|jam[oó]n\s+serrano|fiambre|lonchas?)\b/i.test(n)) {
+    return false;
+  }
+
+  // Fresh raw fruits & nuts & raw snacking vegetables
+  if (/\b(manzana|pl[aá]tano|fresas?|ar[aá]ndanos?|aguacate|lim[oó]n|naranja|nueces|almendras|cacahuete|crema\s+de\s+cacahuete|semillas|lechuga|can[oó]nigos|r[uú]cula)\b/i.test(n)) {
+    return false;
+  }
+
+  // Raw eggs / egg whites for quick pan cooking (not batch prep unless explicitly boiled egg)
+  if (/\b(claras?|huevo|huevos)\b/i.test(n) && !/cocido|duro/i.test(n)) {
+    return false;
+  }
+
+  // Only return true if it matches a known batchable food group
+  return isKnownBatchCandidateFood(n);
+}
+
+function isKnownBatchCandidateFood(n) {
+  // Grains & starches - strictly rice, pasta, quinoa, gnocchi, legumes
+  if (/\b(arroz|basmati|jazm[ií]n|arborio|carnaroli|bomba)\b|arroz\s+(integral|vaporizado|redondo|largo)/i.test(n)) return true;
+  if (/\b(pasta|macarr[oó]n|macarrones|espagueti|espaguetis|plumas|h[eé]lices|tallarines|fideos)\b/i.test(n)) return true;
+  if (/\bquinoa\b/i.test(n)) return true;
+  if (/\b(gnocchi|gnocchis|ñoqui|ñoquis)\b/i.test(n)) return true;
+  if (/\b(lenteja|lentejas|garbanzo|garbanzos|alubia|alubias)\b/i.test(n)) return true;
+
+  // Tubers
+  if (/\b(patata|patatas|papas|boniato|boniatos|batata|batatas)\b/i.test(n)) return true;
+
+  // Proteins
+  if (/\b(cabecero|lomo|pollo|pechuga|pechugas|pavo|ternera|carne\s+picada|salm[oó]n|merluza|pescado|lubina|dorada|bacalao|sepia|calamar|calamares|gamba|gambas|langostino|langostinos)\b/i.test(n)) return true;
+  if (/\bhuevo.*(cocido|duro)/i.test(n)) return true;
+
+  // Veggies
+  if (/\b(calabac[ií]n|champi[ñn]on|champi[ñn]ones|seta|setas|pimiento|pimientos|cebolla|cebollas|br[oó]coli|zanahoria|zanahorias|jud[ií]as?\s+verdes?|berenjena|berenjenas|coliflor|esp[aá]rragos?)\b/i.test(n)) return true;
+
+  return false;
+}
+
+/**
  * Normalizes an ingredient name for grouping common batch cooking foods.
  */
 export function normalizeBatchIngredientName(rawName) {
   if (!rawName) return "";
   const n = rawName.toLowerCase().trim();
 
-  // Rice and grains
-  if (/arroz|basmati|jazm[ií]n|integral|vaporizado|arborio|carnaroli|bomba/i.test(n)) return "Arroz (grano o cocido)";
-  if (/quinoa/i.test(n)) return "Quinoa";
-  if (/pasta|macarron|espagueti|plumas/i.test(n)) return "Pasta integral / de trigo";
-  if (/gnocchi|ñoqui/i.test(n)) return "Gnocchis de patata";
+  // Rice and grains - strictly rice! NEVER match standalone 'integral' which catches bread and pasta!
+  if (/\b(arroz|basmati|jazm[ií]n|arborio|carnaroli|bomba)\b|arroz\s+(integral|vaporizado|redondo|largo)/i.test(n)) {
+    return "Arroz (grano o cocido)";
+  }
+  if (/\b(pasta|macarr[oó]n|macarrones|espagueti|espaguetis|plumas|h[eé]lices|tallarines|fideos)\b/i.test(n)) {
+    return "Pasta (integral / de trigo)";
+  }
+  if (/\bquinoa\b/i.test(n)) return "Quinoa";
+  if (/\b(gnocchi|gnocchis|ñoqui|ñoquis)\b/i.test(n)) return "Gnocchis de patata";
+  if (/\b(lenteja|lentejas)\b/i.test(n)) return "Lentejas cocidas";
+  if (/\b(garbanzo|garbanzos)\b/i.test(n)) return "Garbanzos cocidos";
 
   // Tubers
-  if (/patata|papas/i.test(n)) return "Patatas frescas";
-  if (/boniato|batata/i.test(n)) return "Boniato / Batata";
+  if (/\b(patata|patatas|papas)\b/i.test(n)) return "Patatas frescas";
+  if (/\b(boniato|boniatos|batata|batatas)\b/i.test(n)) return "Boniato / Batata";
 
   // Meats and Proteins
-  if (/cabecero|lomo/i.test(n)) return "Cabecero de lomo / Lomo de cerdo";
-  if (/pollo|pechuga|kebab/i.test(n)) return "Pechuga o pollo";
-  if (/pavo/i.test(n)) return "Pavo";
-  if (/ternera|carne picada/i.test(n)) return "Carne de ternera";
-  if (/salm[oó]n/i.test(n)) return "Salmón";
-  if (/merluza|pescado/i.test(n)) return "Pescado blanco (merluza/lubina)";
-  if (/sepia|calamar|gamba/i.test(n)) return "Marisco limpio (sepia/gambas)";
-  if (/huevo/i.test(n)) return "Huevos";
+  if (/\b(cabecero|lomo)\b/i.test(n)) return "Cabecero de lomo / Lomo de cerdo";
+  if (/\b(pollo|pechuga|pechugas|kebab)\b/i.test(n)) return "Pechuga o pollo";
+  if (/\bpavo\b/i.test(n)) return "Pavo";
+  if (/\b(ternera|carne\s+picada)\b/i.test(n)) return "Carne de ternera";
+  if (/\bsalm[oó]n\b/i.test(n)) return "Salmón";
+  if (/\b(merluza|pescado|lubina|dorada|bacalao)\b/i.test(n)) return "Pescado blanco (merluza/lubina)";
+  if (/\b(sepia|calamar|calamares|gamba|gambas|langostino|langostinos)\b/i.test(n)) return "Marisco limpio (sepia/gambas)";
+  if (/\bhuevo.*(cocido|duro)/i.test(n)) return "Huevos cocidos";
 
   // Vegetables
-  if (/calabac[ií]n/i.test(n)) return "Calabacín";
-  if (/champi[ñn]on|seta/i.test(n)) return "Champiñones / Setas";
-  if (/pimiento/i.test(n)) return "Pimientos variados";
-  if (/cebolla/i.test(n)) return "Cebolla";
-  if (/br[oó]coli/i.test(n)) return "Brócoli";
-  if (/zanahoria/i.test(n)) return "Zanahorias";
-  if (/jud[ií]as? verdes?/i.test(n)) return "Judías verdes";
-  if (/tomate/i.test(n)) return "Tomates";
+  if (/\bcalabac[ií]n\b/i.test(n)) return "Calabacín";
+  if (/\b(champi[ñn]on|champi[ñn]ones|seta|setas)\b/i.test(n)) return "Champiñones / Setas";
+  if (/\bpimiento\b/i.test(n)) return "Pimientos variados";
+  if (/\bcebolla\b/i.test(n)) return "Cebolla";
+  if (/\bbr[oó]coli\b/i.test(n)) return "Brócoli";
+  if (/\bzanahoria\b/i.test(n)) return "Zanahorias";
+  if (/\bjud[ií]as?\s+verdes?\b/i.test(n)) return "Judías verdes";
+  if (/\bberenjena\b/i.test(n)) return "Berenjena";
+  if (/\bcoliflor\b/i.test(n)) return "Coliflor";
+  if (/\besp[aá]rragos?\b/i.test(n)) return "Espárragos";
 
   return rawName.trim();
 }
@@ -96,7 +168,7 @@ export function normalizeBatchIngredientName(rawName) {
  */
 export function getBatchCategory(normalizedName) {
   const n = normalizedName.toLowerCase();
-  if (/arroz|quinoa|pasta/.test(n)) return { key: "grains", label: "Cereales & Carbohidratos", icon: "fa-solid fa-bowl-rice", color: "var(--accent-amber)" };
+  if (/arroz|quinoa|pasta|lenteja|garbanzo/.test(n)) return { key: "grains", label: "Cereales & Carbohidratos", icon: "fa-solid fa-bowl-rice", color: "var(--accent-amber)" };
   if (/patata|boniato/.test(n)) return { key: "tubers", label: "Tubérculos & Raíces", icon: "fa-solid fa-cubes-stacked", color: "#f97316" };
   if (/lomo|cabecero|pollo|pavo|ternera|salm|pescado|huevo/.test(n)) return { key: "proteins", label: "Proteínas Base & Asados", icon: "fa-solid fa-drumstick-bite", color: "var(--accent-rose)" };
   return { key: "veggies", label: "Verduras & Guarniciones", icon: "fa-solid fa-carrot", color: "var(--accent-emerald)" };
@@ -105,7 +177,7 @@ export function getBatchCategory(normalizedName) {
 /**
  * Assigns optimal kitchen appliance based on food type and prep style.
  */
-export function assignAppliance(normalizedName, totalGrams, recipeStyles = []) {
+export function assignAppliance(normalizedName, totalGrams, recipeStyles = [], hasGrainsInCecotec = false) {
   const n = normalizedName.toLowerCase();
 
   // Rice and grains -> Cecotec jarra
@@ -117,12 +189,24 @@ export function assignAppliance(normalizedName, totalGrams, recipeStyles = []) {
     };
   }
 
+  // Pasta -> Fuegos
+  if (/pasta/.test(n)) {
+    return {
+      appliance: KITCHEN_APPLIANCES.HOBS,
+      containerZone: "Olla Grande / Fuego Central",
+      prepText: `Cocer los ${totalGrams}g de pasta al dente (8-10 min) en agua hirviendo con sal, escurrir, cortar la cocción con agua fría y guardar en tupper con un hilo de AOVE.`
+    };
+  }
+
   // Steamed veggies -> Cecotec vaporera superior
-  if (/br[oó]coli|jud[ií]as? verdes?|zanahoria/.test(n)) {
+  if (/br[oó]coli|jud[ií]as? verdes?|zanahoria|coliflor/.test(n)) {
+    const steamNote = hasGrainsInCecotec
+      ? `en la vaporera superior colocada sobre la jarra mientras se cuece el arroz/cereal, aprovechando el mismo calor.`
+      : `al vapor en la vaporera del Robot Cecotec (jarra con 500ml agua a 120°C temperatura vapor, 15-18 min) conservando nutrientes y color vivo.`;
     return {
       appliance: KITCHEN_APPLIANCES.CECOTEC_STEAMER,
       containerZone: "Vaporera Cecotec (Nivel Superior)",
-      prepText: `Cocinar al vapor en la vaporera superior colocada sobre la jarra mientras se hace el arroz, aprovechando el mismo calor.`
+      prepText: `Cocinar al vapor los ${totalGrams}g ${steamNote}`
     };
   }
 
@@ -136,11 +220,11 @@ export function assignAppliance(normalizedName, totalGrams, recipeStyles = []) {
   }
 
   // Roasted tray veggies -> Oven
-  if (/calabac[ií]n|pimiento|cebolla|champi/.test(n) && totalGrams >= 400) {
+  if (/calabac[ií]n|pimiento|cebolla|champi|berenjena/.test(n) && totalGrams >= 350) {
     return {
       appliance: KITCHEN_APPLIANCES.OVEN,
       containerZone: "Horno (Bandeja Inferior)",
-      prepText: `Cortar en dados grandes o tiras y hornear a la vez que el asado en la bandeja inferior con AOVE y hierbas provenzales.`
+      prepText: `Cortar en dados grandes o tiras y hornear a 190°C durante 25-30 min con un toque de AOVE y hierbas provenzales.`
     };
   }
 
@@ -156,13 +240,13 @@ export function assignAppliance(normalizedName, totalGrams, recipeStyles = []) {
       return {
         appliance: KITCHEN_APPLIANCES.OVEN,
         containerZone: "Horno (Bandeja)",
-        prepText: `Por el volumen (${totalGrams}g), hornear en bandeja junto al asado principal para aprovechar el espacio.`
+        prepText: `Por el volumen (${totalGrams}g), hornear en bandeja a 200°C durante 30-35 min con AOVE y especias para aprovechar el espacio.`
       };
     }
   }
 
   // Smaller veggie sauté / quick proteins -> Airfryer or Hobs
-  if (/champi|dados|tiras/.test(n)) {
+  if (/champi|dados|tiras|sepia|calamar|gamba/.test(n)) {
     return {
       appliance: KITCHEN_APPLIANCES.AIRFRYER,
       containerZone: "Airfryer",
@@ -174,7 +258,7 @@ export function assignAppliance(normalizedName, totalGrams, recipeStyles = []) {
   return {
     appliance: KITCHEN_APPLIANCES.HOBS,
     containerZone: "Fuego / Sartén Grande",
-    prepText: `Saltear en sartén o wok a fuego vivo 6-8 minutos con unas gotas de AOVE.`
+    prepText: `Cocinar los ${totalGrams}g en sartén o wok a fuego vivo 6-8 minutos con unas gotas de AOVE y reservar para tus comidas de la semana.`
   };
 }
 
@@ -196,19 +280,42 @@ function buildParallelTimeline(batchCandidates) {
     microondas: batchCandidates.filter(c => c.appliance?.id === "microondas")
   };
 
+  const cecotecGrains = byAppliance.cecotec.filter(c => /arroz|quinoa/i.test(c.name));
+  const cecotecVeggies = byAppliance.cecotec.filter(c => !/arroz|quinoa/i.test(c.name));
+  const hasVeggiesOrTubers = batchCandidates.some(c => c.category?.key === "veggies" || c.category?.key === "tubers");
+
+  const phase1Actions = [];
+  if (byAppliance.horno.length > 0) {
+    phase1Actions.push("Encender el Horno a 180°C para que tome temperatura de inmediato.");
+    phase1Actions.push(`Sazonar la pieza principal de horno (${byAppliance.horno.map(h => h.name).join(", ")}) con AOVE, ajo, hierbas y vino blanco.`);
+  }
+  if (hasVeggiesOrTubers) {
+    phase1Actions.push("Lavar, pelar y trocear las verduras y tubérculos de la semana en cortes homogéneos.");
+  }
+  if (cecotecGrains.length > 0) {
+    phase1Actions.push(`Pesar ${cecotecGrains.map(g => `${g.totalAmount}${g.unit} de ${g.name}`).join(", ")} en la jarra del Robot Cecotec.`);
+  }
+  if (cecotecVeggies.length > 0) {
+    phase1Actions.push(`Colocar las verduras de vaporera (${cecotecVeggies.map(v => v.name).join(", ")}) en la bandeja superior.`);
+  }
+  if (byAppliance.airfryer.length > 0) {
+    phase1Actions.push(`Preparar la cesta de la Airfryer para ${byAppliance.airfryer.map(a => a.name).join(", ")}.`);
+  }
+  if (byAppliance.fuegos.length > 0) {
+    phase1Actions.push(`Tener lista la olla/sartén para las elaboraciones en fuegos (${byAppliance.fuegos.map(f => f.name).join(", ")}).`);
+  }
+  if (phase1Actions.length === 0) {
+    phase1Actions.push("Disponer los recipientes herméticos y los ingredientes a preparar sobre la encimera.");
+  }
+
   // Phase 1: Prep & Mise en Place
   phase1.push({
     step: 1,
     timeRange: "0 - 10 min",
-    title: "Mise en place y precalentamiento",
+    title: "Mise en place y preparativos",
     icon: "fa-solid fa-kitchen-set",
     color: "var(--accent-amber)",
-    actions: [
-      "Encender el Horno a 180°C para que tome temperatura de inmediato.",
-      "Lavar, pelar y trocear las verduras y patatas de la semana.",
-      byAppliance.horno.length > 0 ? `Sazonar la pieza principal (${byAppliance.horno.map(h => h.name).join(", ")}) con AOVE, ajo, hierbas y vino.` : null,
-      byAppliance.cecotec.length > 0 ? "Pesar el arroz / granos en la jarra del Robot Cecotec." : null
-    ].filter(Boolean)
+    actions: phase1Actions
   });
 
   // Phase 2: Simultaneous cooking stations
@@ -225,11 +332,18 @@ function buildParallelTimeline(batchCandidates) {
   }
 
   if (byAppliance.cecotec.length > 0) {
+    const hasGrains = cecotecGrains.length > 0;
+    const hasVeggies = cecotecVeggies.length > 0;
+    const zoneName = hasGrains && hasVeggies 
+      ? "Jarra + Vaporera Doble Nivel" 
+      : (hasGrains ? "Jarra Cecotec" : "Vaporera Cecotec");
+    const timeEst = hasGrains ? "10 - 32 min (22 min)" : "10 - 28 min (18 min)";
+
     const cecotecText = byAppliance.cecotec.map(c => `<strong>${c.name}</strong> (${c.totalAmount}${c.unit} en ${c.containerZone}): ${c.prepGuideline}`).join(" ");
     activeStations.push({
       appliance: KITCHEN_APPLIANCES.CECOTEC_STEAMER,
-      zone: "Jarra + Vaporera Doble Nivel",
-      time: "10 - 32 min (22 min)",
+      zone: zoneName,
+      time: timeEst,
       instruction: cecotecText
     });
   }
@@ -248,8 +362,8 @@ function buildParallelTimeline(batchCandidates) {
     const fuegosText = byAppliance.fuegos.map(f => `<strong>${f.name}</strong> (${f.totalAmount}${f.unit}): ${f.prepGuideline}`).join(" ");
     activeStations.push({
       appliance: KITCHEN_APPLIANCES.HOBS,
-      zone: "Fuegos 1 y 2",
-      time: "30 - 45 min (15 min)",
+      zone: "Fuegos de Cocina",
+      time: "25 - 45 min (20 min)",
       instruction: fuegosText
     });
   }
@@ -301,7 +415,9 @@ function buildParallelTimeline(batchCandidates) {
  */
 export function analyzeWeeklyPlanForBatchCooking(weekKey) {
   const targetWeekKey = weekKey || appState.activeNutritionWeekKey || getCurrentWeekKey();
-  const currentPlan = appState.weeklyMealPlans?.[targetWeekKey] || appState.weeklyMealPlan || {};
+  const currentPlan = (appState.weeklyMealPlans && appState.weeklyMealPlans[targetWeekKey])
+    ? appState.weeklyMealPlans[targetWeekKey]
+    : ((!appState.activeNutritionWeekKey || appState.activeNutritionWeekKey === targetWeekKey) ? (appState.weeklyMealPlan || {}) : {});
 
   const plannedItems = [];
   const consolidationMap = new Map();
@@ -328,7 +444,7 @@ export function analyzeWeeklyPlanForBatchCooking(weekKey) {
         factor
       });
 
-      // Scan ingredients
+      // Scan ingredients - strictly filtering for batchable food!
       (recipe.ingredients || []).forEach(ing => {
         const u = (ing.unit || "").toLowerCase();
         const rawAmt = Number(ing.amount) || 0;
@@ -336,6 +452,9 @@ export function analyzeWeeklyPlanForBatchCooking(weekKey) {
 
         // Only consolidate ingredients with gram or ml measurements
         if (u !== "g" && u !== "gr" && u !== "gramos" && u !== "ml") return;
+
+        // Skip non-batchable items (e.g. bread, toast, oil, seasoning, coffee, milk, snacks)
+        if (!isBatchableIngredient(ing.name)) return;
 
         const normName = normalizeBatchIngredientName(ing.name);
         const scaledAmt = Math.round(rawAmt * factor);
@@ -364,13 +483,20 @@ export function analyzeWeeklyPlanForBatchCooking(weekKey) {
     });
   });
 
-  // Filter items that have at least 150g/ml or are used in 2+ meals (true batch candidates)
+  // Filter items:
+  // Must be used in 2+ meals OR be a bulk meat cut / roast >= 350g
   const batchCandidates = [];
   const singleUseItems = [];
 
+  // Check if any grain/rice is in consolidationMap
+  const hasGrainsTotal = Array.from(consolidationMap.values()).some(it => /arroz|quinoa/i.test(it.name));
+
   for (const item of consolidationMap.values()) {
-    if (item.usage.length >= 2 || item.totalAmount >= 250 || /arroz|lomo|pollo|patata|cabecero/i.test(item.name)) {
-      const assigned = assignAppliance(item.name, item.totalAmount);
+    const isMultiMeal = item.usage.length >= 2;
+    const isLargeBulkCut = item.totalAmount >= 350 && /cabecero|lomo|pollo|asado|ternera/i.test(item.name);
+
+    if (isMultiMeal || isLargeBulkCut) {
+      const assigned = assignAppliance(item.name, item.totalAmount, [], hasGrainsTotal);
       batchCandidates.push({
         ...item,
         appliance: assigned.appliance,

@@ -275,6 +275,7 @@ export function setNutritionActiveWeek(weekKey) {
     saveState();
     renderNutritionMenuView();
     renderShoppingView();
+    renderBatchCookingView();
   } catch(e) {
     console.error("Error setting nutrition active week:", e);
   }
@@ -3799,15 +3800,57 @@ export function renderBatchCookingView() {
     const batchData = analyzeWeeklyPlanForBatchCooking(targetWeekKey);
     const existingBases = getExistingBatchBases();
 
+    const curWeekKey = getCurrentWeekKey();
+    const isCurrentWeek = targetWeekKey === curWeekKey;
+    const nextWeekKey = getOffsetWeekKey(curWeekKey, 1);
+    const week2Key = getOffsetWeekKey(curWeekKey, 2);
+
+    const weekNavHtml = `
+      <div class="planner-week-nav-bar" style="margin-bottom: 1.25rem;">
+        <div class="week-nav-controls">
+          <button type="button" class="btn-week-nav" onclick="prevNutritionWeek();" title="Semana Anterior">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="week-nav-info">
+            <div class="week-nav-title">
+              <i class="fa-solid fa-layer-group" style="color: var(--accent-amber);"></i>
+              <span>Batch Cooking: ${batchData.weekLabel}</span>
+            </div>
+            <div class="week-nav-subtitle">
+              ${isCurrentWeek ? '<span class="badge-current-week">Esta Semana</span>' : '<span class="badge-future-week">Semana Seleccionada</span>'} • ${batchData.totalMealsPlanned} comidas planificadas
+            </div>
+          </div>
+
+          <button type="button" class="btn-week-nav" onclick="nextNutritionWeek();" title="Semana Siguiente">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="week-quick-jump-pills">
+          <button type="button" class="week-jump-pill ${isCurrentWeek ? 'active' : ''}" onclick="goToCurrentNutritionWeek();">
+            Esta Semana
+          </button>
+          <button type="button" class="week-jump-pill ${targetWeekKey === nextWeekKey ? 'active' : ''}" onclick="setNutritionActiveWeek('${nextWeekKey}');">
+            Próxima Semana
+          </button>
+          <button type="button" class="week-jump-pill ${targetWeekKey === week2Key ? 'active' : ''}" onclick="setNutritionActiveWeek('${week2Key}');">
+            En +2 Semanas
+          </button>
+        </div>
+      </div>
+    `;
+
     if (!batchData.hasBatchWork) {
       container.innerHTML = `
+        ${weekNavHtml}
         <div class="glass-card" style="padding: 2.5rem 1.5rem; text-align: center; border-radius: var(--radius-md); border: 1px dashed rgba(245,158,11,0.35); background: rgba(245,158,11,0.03);">
           <div style="font-size: 3rem; margin-bottom: 0.75rem; color: var(--accent-amber);">🥘</div>
           <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">
             Plan de Batch Cooking (${batchData.weekLabel})
           </h3>
           <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
-            Aún no hay suficientes platos planificados para consolidar ingredientes en bloque. Asigna tus comidas en el <strong>Plan Semanal</strong> o deja que la app auto-complete la semana para orquestar tu cocinado en paralelo.
+            Aún no hay suficientes platos con ingredientes compatibles para consolidar en bloque en esta semana. Asigna tus comidas en el <strong>Plan Semanal</strong> o deja que la app auto-complete la semana para orquestar tu cocinado en paralelo.
           </p>
           <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
             <button type="button" class="btn-primary" onclick="autoFillWeeklyPlan(); renderBatchCookingView();" style="background: linear-gradient(135deg, var(--accent-amber), #ea580c); border: none; padding: 0.75rem 1.25rem;">
@@ -3971,6 +4014,7 @@ export function renderBatchCookingView() {
     }).join("");
 
     container.innerHTML = `
+      ${weekNavHtml}
       <div style="margin-bottom: 1.25rem;">
         <!-- BANNER DE LOTES ANTERIORES -->
         ${existingBasesHtml}
